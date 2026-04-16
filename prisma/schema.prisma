@@ -1,0 +1,190 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RolFamiliar {
+  Padre
+  Madre
+  Hijo
+  Hija
+}
+
+enum EstadoTarea {
+  Pendiente
+  En_progreso @map("En progreso")
+  Pausada
+  Completada
+  Vencida
+  Esperando_Aprobacion
+  Aprobada
+  Rechazada
+  Expirada
+  No_Realizada
+}
+
+enum TipoRecurrencia {
+  Unica
+  Diaria
+  Semanal
+  Mensual_Fecha
+  Mensual_Ordinal
+}
+
+model Usuario {
+  id                        Int         @id @default(autoincrement())
+  nombre                    String
+  pinSecretoHash            String      @map("PIN_Secreto")
+  fechaNacimiento           DateTime    @map("Fecha_Nacimiento")
+  rolFamiliar               RolFamiliar @map("Rol_Familiar")
+  puntosAcumulados          Int         @default(0) @map("Puntos_Acumulados")
+  availablePoints           Int         @default(0) @map("Available_Points")
+  lockedPoints              Int         @default(0) @map("Locked_Points")
+  stars                     Int         @default(0) @map("Stars")
+  surprises                 Int         @default(0) @map("Surprises")
+  completionPercentage      Float       @default(0.0) @map("Completion_Percentage")
+  fotoUrl                   String?     @map("Foto_URL")
+  penalizacionesReparacion  Int         @default(0) @map("Penalizaciones_Reparacion")
+
+  moodEmoji                 String?     @map("Mood_Emoji")
+  moodSetAt                 DateTime?   @map("Mood_Set_At")
+
+  tareasCreadas             Tarea[]     @relation("TareasCreadas")
+  tareasAsignadas           Tarea[]     @relation("TareasAsignadas")
+  historialAcciones         HistorialAccion[]
+  premiosEntregados        PremioEntregado[]
+
+  @@map("Usuarios")
+}
+
+model Tarea {
+  id                               Int             @id @default(autoincrement())
+  titulo                           String          @map("Titulo")
+  descripcion                      String?         @map("Descripcion")
+  creadorId                        Int             @map("Creador_ID")
+  asignadoId                       Int             @map("Asignado_ID")
+  tiempoEjecucionEstimadoSeg       Int             @map("Tiempo_Ejecucion_Estimado_Segundos")
+  tiempoConsumidoTotalSeg         Int             @default(0) @map("Tiempo_Consumido_Total_Segundos")
+  generaPuntosYRecompensa          Boolean         @default(false) @map("Genera_Puntos_Y_Recompensa")
+  tipoRecurrencia                  TipoRecurrencia @default(Unica) @map("Tipo_Recurrencia")
+  fechaVencimiento                 DateTime?       @map("Fecha_Vencimiento")
+  horaEjecucion                    DateTime?       @map("Hora_Ejecucion")
+  estado                           EstadoTarea     @default(Pendiente)
+  
+  // Recurrencia avanzada
+  diaDelMes                        Int?            @map("Dia_Del_Mes")
+  ordinalSemana                    Int?            @map("Ordinal_Semana")
+  diaDeLaSemana                    Int?            @map("Dia_De_La_Semana")
+  
+  // Seguimiento de clones
+  parentTaskId                     Int?            @map("Parent_Task_ID")
+  parentTask                       Tarea?          @relation("TaskHistory", fields: [parentTaskId], references: [id])
+  clonedTasks                      Tarea[]         @relation("TaskHistory")
+
+  // Novedades Gamificación
+  tiempoRealEjecucionSeg           Int?            @map("Tiempo_Real_Ejecucion_Segundos")
+  puntosGanadosPerdidos            Float?          @map("Puntos_Ganados_Perdidos")
+  retroalimentacionAlgoritmo       String?         @map("Retroalimentacion_Algoritmo")
+  grupoTareaId                     String?         @map("Grupo_Tarea_ID")
+  
+  isSurpriseEligible               Boolean         @default(false) @map("Is_Surprise_Eligible")
+  puntosGenerados                  Int             @default(0) @map("Puntos_Generados")
+  fechaCompletado                  DateTime?       @map("Fecha_Completado")
+  
+  isChecklist                      Boolean         @default(false) @map("Is_Checklist")
+  checklistItems                   ChecklistItem[]
+
+  // Cronómetro persistente
+  timerStartedAt                   DateTime?       @map("Timer_Started_At")
+  tiempoAcumuladoTimer             Int             @default(0) @map("Tiempo_Acumulado_Timer_Seg")
+
+  // Identificador de tarea generada por cron
+  generadaPorCron                 Boolean         @default(false) @map("Generada_Por_Cron")
+
+  creador                          Usuario         @relation("TareasCreadas", fields: [creadorId], references: [id])
+  asignado                         Usuario         @relation("TareasAsignadas", fields: [asignadoId], references: [id])
+  historialAcciones                HistorialAccion[]
+
+  @@map("Tareas")
+}
+
+model HistorialAccion {
+  id                  Int          @id @default(autoincrement())
+  tareaId             Int          @map("Tarea_ID")
+  actorId             Int          @map("Actor_ID")
+  estadoAnterior      EstadoTarea? @map("Estado_Anterior")
+  estadoNuevo         EstadoTarea  @map("Estado_Nuevo")
+  duracionSesionSeg   Int?         @map("Duracion_Sesion_Segundos")
+  timestamp           DateTime     @default(now())
+
+  tarea               Tarea        @relation(fields: [tareaId], references: [id])
+  actor               Usuario      @relation(fields: [actorId], references: [id])
+
+  @@map("Historial_Acciones")
+}
+
+model ReglaHogar {
+  id                  Int      @id @default(autoincrement())
+  textoEstricto       String   @map("Texto_Estricto")
+  actualizadoPorId    Int      @map("Actualizado_Por_ID")
+  fechaActualizacion  DateTime @updatedAt
+
+  @@map("Reglas_Hogar")
+}
+
+model ChecklistItem {
+  id          Int     @id @default(autoincrement())
+  tareaId     Int     @map("Tarea_ID")
+  texto       String
+  completado  Boolean @default(false)
+  orden       Int     @default(0)
+  
+  tarea       Tarea   @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  
+  @@map("Checklist_Items")
+}
+
+enum TipoFrecuencia {
+  Semanal
+  Mensual
+}
+
+enum EstadoPremio {
+  Entregado
+  Pendiente
+  No_ganado
+}
+
+model Premio {
+  id                    Int           @id @default(autoincrement())
+  titulo                String        @map("Titulo")
+  cantidad             Int            @map("Cantidad")
+  tipoFrecuencia        TipoFrecuencia @map("Tipo_Frecuencia")
+  diaEntregaSemana       Int?          @map("Dia_Entrega_Semana")
+  diaDelMes             Int?          @map("Dia_Del_Mes")
+  tareasRequeridasIds    String        @map("Tareas_Requeridas_Ids")
+  activo               Boolean       @default(true) @map("Activo")
+  createdAt            DateTime      @default(now()) @map("Created_At")
+  updatedAt            DateTime      @updatedAt @map("Updated_At")
+
+  entregas              PremioEntregado[]
+
+  @@map("Premios")
+}
+
+model PremioEntregado {
+  id           Int          @id @default(autoincrement())
+  premioId     Int          @map("Premio_ID")
+  usuarioId    Int          @map("Usuario_ID")
+  estado       EstadoPremio @default(Pendiente) @map("Estado")
+  fechaEntrega  DateTime     @default(now()) @map("Fecha_Entrega")
+
+  premio       Premio      @relation(fields: [premioId], references: [id], onDelete: Cascade)
+  usuario      Usuario     @relation(fields: [usuarioId], references: [id])
+
+  @@unique([premioId, usuarioId])
+  @@map("Premios_Entregados")
+}
