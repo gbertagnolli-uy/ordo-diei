@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import prisma from "@/lib/prisma";
 import { Header } from "@/components/dashboard/Header";
 import { FamilyTree } from "@/components/dashboard/FamilyTree";

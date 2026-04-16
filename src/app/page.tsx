@@ -1,6 +1,8 @@
 import { AuthPageClient } from "@/components/auth/AuthPageClient";
 import prisma from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   // Lógica de DB y reglas de negocio del Backend
   let users: any[] = [];
