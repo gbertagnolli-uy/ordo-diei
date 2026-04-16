@@ -1,4 +1,5 @@
 import "dotenv/config";
+// Prisma v7 Configuration: Manages DATABASE_URL and DIRECT_URL
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({
