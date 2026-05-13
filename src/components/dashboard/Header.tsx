@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Menu, FileText, Plus, UserPlus, Sunset, Calendar as CalendarIcon, Moon, Sun, History, Trophy, Gift } from "lucide-react";
+import { Menu, FileText, Plus, UserPlus, Sunset, Calendar as CalendarIcon, Moon, Sun, History, Trophy, Gift, Flame } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
 import { useModalStore } from "@/store/modalStore";
+import { calculateLevel, calculateLevelProgress } from "@/lib/clientUtils/userLevel";
 
 export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUsers?: any[] }) {
   const [time, setTime] = useState("");
@@ -136,14 +137,37 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
           <span className="hidden md:inline">Ranking</span>
         </button>
 
-        <div className="relative group" onClick={handleLogout} title="Cerrar Sessión">
-          <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden cursor-pointer elevation-ambient transition-transform hover:scale-105 active:scale-95 bg-[var(--surface-container)]">
-             {currentUser?.fotoUrl ? (
-               <img src={currentUser.fotoUrl} alt="Yo" className="w-full h-full object-cover" />
-             ) : (
-               <div className="w-full h-full bg-[var(--primary)] flex items-center justify-center text-[var(--on-primary)] font-bold">
-                 {currentUser?.nombre?.charAt(0)}
-               </div>
+        <div className="flex flex-col items-end hidden sm:flex">
+          {currentUser && (() => {
+            const { level, title } = calculateLevel(currentUser.puntosAcumulados);
+            const progress = calculateLevelProgress(currentUser.puntosAcumulados);
+            return (
+              <div className="flex flex-col items-end text-xs mr-2 cursor-pointer" title={`${currentUser.puntosAcumulados} pts`}>
+                <span className="font-bold text-[var(--primary)]">Lvl {level} <span className="font-normal text-[var(--on-surface-variant)]">({title})</span></span>
+                <div className="w-20 bg-[var(--surface-container-high)] h-1.5 rounded-sm overflow-hidden mt-0.5">
+                  <div className="h-full bg-[var(--primary)] transition-all" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        <div className="relative group" onClick={handleLogout} title="Cerrar Sesión">
+          <div className="relative">
+             <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden cursor-pointer elevation-ambient transition-transform hover:scale-105 active:scale-95 bg-[var(--surface-container)]">
+               {currentUser?.fotoUrl ? (
+                 <img src={currentUser.fotoUrl} alt="Yo" className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full bg-[var(--primary)] flex items-center justify-center text-[var(--on-primary)] font-bold">
+                   {currentUser?.nombre?.charAt(0)}
+                 </div>
+               )}
+             </div>
+             {currentUser?.rachaDias > 0 && (
+                <div className="absolute -bottom-2 -left-2 bg-[var(--surface-container-lowest)] rounded-full border border-[var(--outline-variant)] px-1.5 py-0.5 flex items-center shadow-sm" title={`¡Racha de ${currentUser.rachaDias} días!`}>
+                  <Flame className="w-3 h-3 text-[#FF5722] fill-[#FF5722]" />
+                  <span className="text-[10px] font-bold text-[var(--on-surface)] ml-0.5">{currentUser.rachaDias}</span>
+                </div>
              )}
           </div>
           

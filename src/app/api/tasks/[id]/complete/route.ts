@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { updateUserCompletionPercentage } from "@/lib/userUtils.server";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -95,6 +95,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
+    // Lógica de Racha Diaria (Streak)
+    const user = await prisma.usuario.findUnique({ where: { id: task.asignadoId }, select: { rachaDias: true, mejorRachaDias: true, ultimaActividadRacha: true } });
+    let newStreak = user?.rachaDias || 0;
+    let newBestStreak = user?.mejorRachaDias || 0;
+
+    if (user) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const lastActivity = user.ultimaActividadRacha ? new Date(user.ultimaActividadRacha) : null;
+      if (lastActivity) {
+        lastActivity.setHours(0, 0, 0, 0);
+      }
+
+      const isToday = lastActivity && lastActivity.getTime() === today.getTime();
+      const isYesterday = lastActivity && (today.getTime() - lastActivity.getTime()) === (1000 * 60 * 60 * 24);
+
+      if (isYesterday) {
+        newStreak += 1;
+      } else if (!isToday) {
+        // First task of the day, but they missed a day previously
+        newStreak = 1;
+      }
+      // If isToday, streak remains the same
+
+      if (newStreak > newBestStreak) {
+        newBestStreak = newStreak;
+      }
+    }
+
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
       prisma.tarea.update({
@@ -115,7 +145,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: {
           lockedPoints: {
             increment: rewardPoints
-          }
+          },
+          rachaDias: newStreak,
+          mejorRachaDias: newBestStreak,
+          ultimaActividadRacha: now
         }
       })
     ]);

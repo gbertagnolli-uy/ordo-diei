@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { updateUserCompletionPercentage } from "@/lib/userUtils.server";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
