@@ -1,5 +1,5 @@
 import prisma from "../src/lib/prisma";
-import { updateUserCompletionPercentage } from "../src/lib/userUtils.server";
+import { updateUserCompletionPercentage } from "../src/lib/userUtils";
 
 function getFechaLimite(fechaVenc: Date, tipoRecurrencia: string): Date {
   const limite = new Date(fechaVenc);

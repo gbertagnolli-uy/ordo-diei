@@ -5,7 +5,6 @@ import { Clock, Play, Square, Pause, Flame, ListChecks, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 import { ChecklistModal } from "./ChecklistModal";
-import confetti from "canvas-confetti";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 
@@ -183,11 +182,6 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
       if (res.ok) {
         const data = await res.json();
         setIsConfirmOpen(false);
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
         openModal("TASK_SUCCESS", {
           mensaje: data.mensaje,
           puntos: data.puntos

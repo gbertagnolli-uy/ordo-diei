@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { getLevelInfo } from "@/lib/levelUtils";
 
 interface Tarea {
   estado: string;
@@ -19,6 +20,7 @@ interface Usuario {
   stars?: number;
   completionPercentage?: number;
   moodEmoji?: string | null;
+  streakDays?: number;
 }
 
 interface Props {
@@ -105,17 +107,22 @@ function Node({ user, isParent = false }: { user: Usuario, isParent?: boolean })
         <span className="font-display font-bold text-[var(--on-surface)] text-lg">{user.nombre}</span>
         <div className="flex items-center gap-1 mt-0.5">
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest font-title border ${isParent ? 'bg-[color-mix(in-srgb,var(--primary)_8%,transparent)] text-[var(--primary)] border-[var(--primary)]' : 'bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] text-[var(--secondary)] border-[var(--secondary)]'}`}>
-            {user.rolFamiliar.replace("_", " ")}
+            {getLevelInfo(user.puntosAcumulados || 0).title} (Lvl {getLevelInfo(user.puntosAcumulados || 0).level})
           </span>
-          <span className="text-sm font-bold text-[var(--secondary)] ml-1 drop-shadow-sm">
+          {user.streakDays && user.streakDays > 0 ? (
+             <span className="text-xs text-orange-500 font-bold ml-1 drop-shadow-sm flex items-center gap-1" title={`Racha: ${user.streakDays} días`}>
+               🔥 {user.streakDays}
+             </span>
+          ) : null}
+          <span className="text-sm font-bold text-[var(--secondary)] ml-1 drop-shadow-sm" title="Estrellas">
              ⭐ {user.stars || 0}
           </span>
-          <span className="text-xs font-bold text-[var(--primary)] ml-1">
+          <span className="text-xs font-bold text-[var(--primary)] ml-1" title="Puntos Acumulados">
              🏆 {user.puntosAcumulados || 0}
           </span>
         </div>
         {user.completionPercentage !== undefined && (
-          <div className="w-full mt-3 bg-[var(--surface-container-high)] h-1.5 rounded-sm overflow-hidden ghost-border">
+          <div className="w-full mt-3 bg-[var(--surface-container-high)] h-1.5 rounded-sm overflow-hidden ghost-border" title={`Nivel Completitud Tareas: ${user.completionPercentage}%`}>
             <div 
               className={`h-full transition-all duration-1000 ${user.completionPercentage >= 90 ? 'bg-[var(--success)] shadow-[0_0_8px_rgba(var(--success-rgb),0.3)]' : 'bg-[var(--primary)] shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]'}`} 
               style={{ width: `${user.completionPercentage}%` }}

@@ -1,7 +1,6 @@
 "use client";
-import { Trophy, Star, Award, TrendingUp, X, Flame } from "lucide-react";
+import { Trophy, Star } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { calculateLevel } from "@/lib/clientUtils/userLevel";
 
 export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isOpen: boolean, onClose: () => void }) {
   // Sort users by: 1. completionPercentage, 2. stars, 3. puntosAcumulados
@@ -115,27 +114,25 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
 
         </div>
 
-        <div className="overflow-hidden rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] elevation-ambient transition-colors">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] elevation-ambient transition-colors w-full">
+          <table className="w-full text-left border-collapse min-w-max">
             <thead className="bg-[var(--surface-container-low)]">
               <tr>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">Pos</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest">Usuario</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">Nivel</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🔥 Racha</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">⭐</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🏆 Pts</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🎁</th>
-                <th className="px-5 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-right whitespace-nowrap">% Éxito</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">Pos</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest">Usuario</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🔥</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">⭐</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🏆 Pts</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🎁</th>
+                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-right whitespace-nowrap">% Éxito</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)]">
               {sortedUsers.map((user, index) => {
                 const trophy = getTrophy(index);
-                const { level, title } = calculateLevel(user.puntosAcumulados);
                 return (
                   <tr key={user.id} className={`${index === 0 ? 'bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)]' : ''} hover:bg-[var(--surface-container-low)] transition-colors`}>
-                    <td className="px-5 py-5 text-center">
+                    <td className="px-3 py-4 text-center">
                       <div className="flex justify-center items-center">
                         {trophy ? (
                           <span className="text-2xl drop-shadow-sm">{trophy}</span>
@@ -146,7 +143,7 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-5">
+                    <td className="px-3 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-md ghost-border overflow-hidden elevation-ambient flex-shrink-0">
                           {user.fotoUrl ? (
@@ -157,24 +154,17 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
                             </div>
                           )}
                         </div>
-                        <span className="font-title font-bold text-[var(--on-surface)] truncate max-w-[120px]">{user.nombre}</span>
+                        <div className="flex flex-col">
+                           <span className="font-title font-bold text-[var(--on-surface)] truncate max-w-[120px]">{user.nombre}</span>
+                           <span className="text-[10px] text-[var(--primary)] uppercase tracking-wider font-bold">Lvl {Math.floor(Math.sqrt((user.puntosAcumulados || 0)/100))+1}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-5 py-5 text-center">
-                      <div className="flex flex-col items-center">
-                        <span className="font-bold text-[var(--primary)] text-xs">Lvl {level}</span>
-                        <span className="text-[9px] text-[var(--on-surface-variant)] uppercase">{title}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-5 text-center">
-                      <div className="flex items-center justify-center gap-1 font-bold text-[#FF5722]">
-                        <Flame className="w-4 h-4 fill-[#FF5722]" /> {user.rachaDias || 0}
-                      </div>
-                    </td>
-                    <td className="px-5 py-5 text-center font-bold text-[var(--secondary)]">{user.stars}</td>
-                    <td className="px-5 py-5 text-center font-bold text-[var(--primary)]">{user.puntosAcumulados}</td>
-                    <td className="px-5 py-5 text-center font-bold text-[var(--error)]">{user.surprises}</td>
-                    <td className="px-5 py-5 text-right">
+                    <td className="px-3 py-4 text-center font-bold text-orange-500">{user.streakDays || 0}</td>
+                    <td className="px-3 py-4 text-center font-bold text-[var(--secondary)]">{user.stars}</td>
+                    <td className="px-3 py-4 text-center font-bold text-[var(--primary)]">{user.puntosAcumulados}</td>
+                    <td className="px-3 py-4 text-center font-bold text-[var(--error)]">{user.surprises}</td>
+                    <td className="px-3 py-4 text-right">
                       <div className="flex flex-col items-end gap-1">
                         <span className={`text-sm font-bold font-title ${
                           user.completionPercentage >= 90 ? 'text-[var(--success)]' :
