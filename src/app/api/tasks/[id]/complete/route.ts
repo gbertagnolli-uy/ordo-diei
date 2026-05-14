@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { updateUserCompletionPercentage } from "@/lib/userUtils.server";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -94,36 +94,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
-    // Lógica de Rachas (Streaks)
-    const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
-    let isNewStreak = false;
-    let newStreakDays = asignado?.streakDays || 0;
+    // Lógica de Racha Diaria (Streak)
+    const user = await prisma.usuario.findUnique({ where: { id: task.asignadoId }, select: { rachaDias: true, mejorRachaDias: true, ultimaActividadRacha: true } });
+    let newStreak = user?.rachaDias || 0;
+    let newBestStreak = user?.mejorRachaDias || 0;
 
-    if (asignado && rewardPoints > 0) { // Solo si ganó puntos cuenta para la racha
-      const lastDate = asignado.lastTaskCompletedDate;
+    if (user) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      if (!lastDate) {
-        newStreakDays = 1;
-        isNewStreak = true;
-      } else {
-        const last = new Date(lastDate);
-        last.setHours(0, 0, 0, 0);
+      const lastActivity = user.ultimaActividadRacha ? new Date(user.ultimaActividadRacha) : null;
+      if (lastActivity) {
+        lastActivity.setHours(0, 0, 0, 0);
+      }
 
-        const diffTime = Math.abs(today.getTime() - last.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const isToday = lastActivity && lastActivity.getTime() === today.getTime();
+      const isYesterday = lastActivity && (today.getTime() - lastActivity.getTime()) === (1000 * 60 * 60 * 24);
 
-        if (diffDays === 1) {
-          // Día consecutivo
-          newStreakDays += 1;
-          isNewStreak = true;
-        } else if (diffDays > 1) {
-          // Racha rota
-          newStreakDays = 1;
-          isNewStreak = true;
-        }
-        // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
+      if (isYesterday) {
+        newStreak += 1;
+      } else if (!isToday) {
+        // First task of the day, but they missed a day previously
+        newStreak = 1;
+      }
+      // If isToday, streak remains the same
+
+      if (newStreak > newBestStreak) {
+        newBestStreak = newStreak;
       }
     }
 
@@ -148,8 +145,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           lockedPoints: {
             increment: rewardPoints
           },
-          streakDays: newStreakDays,
-          lastTaskCompletedDate: now
+          rachaDias: newStreak,
+          mejorRachaDias: newBestStreak,
+          ultimaActividadRacha: now
         }
       })
     ]);

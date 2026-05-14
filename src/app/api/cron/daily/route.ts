@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { updateUserCompletionPercentage } from "@/lib/userUtils.server";
 
 export const dynamic = "force-dynamic";
 
