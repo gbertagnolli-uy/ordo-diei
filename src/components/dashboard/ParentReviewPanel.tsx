@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Check, X, Clock, User, AlertCircle } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
   const [loadingId, setLoadingId] = useState<number | null>(null);
@@ -18,19 +17,7 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
       });
 
       if (res.ok) {
-        if (action === "approve") {
-          confetti({
-            particleCount: 150,
-            spread: 80,
-            origin: { y: 0.5 }
-          });
-          // Wait for confetti to show before reloading
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-        } else {
-          window.location.reload();
-        }
+        window.location.reload();
       } else {
         alert(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
       }

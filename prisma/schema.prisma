@@ -52,9 +52,9 @@ model Usuario {
   moodEmoji                 String?     @map("Mood_Emoji")
   moodSetAt                 DateTime?   @map("Mood_Set_At")
 
-  rachaDias                 Int         @default(0) @map("Racha_Dias")
-  mejorRachaDias            Int         @default(0) @map("Mejor_Racha_Dias")
-  ultimaActividadRacha      DateTime?   @map("Ultima_Actividad_Racha")
+  streakDays                Int         @default(0) @map("Streak_Days")
+  lastTaskCompletedDate     DateTime?   @map("Last_Task_Completed_Date")
+  totalTasksCompleted       Int         @default(0) @map("Total_Tasks_Completed")
 
   tareasCreadas             Tarea[]     @relation("TareasCreadas")
   tareasAsignadas           Tarea[]     @relation("TareasAsignadas")
