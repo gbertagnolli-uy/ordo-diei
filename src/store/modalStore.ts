@@ -2,9 +2,9 @@ import { create } from 'zustand';
 
 interface ModalState {
   isOpen: boolean;
-  type: "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD" | null;
+  type: "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD" | "MOOD_SELECTOR" | null;
   data: any;
-  openModal: (type: "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD", data?: any) => void;
+  openModal: (type: "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD" | "MOOD_SELECTOR", data?: any) => void;
   closeModal: () => void;
 }
 
