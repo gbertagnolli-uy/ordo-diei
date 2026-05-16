@@ -75,35 +75,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
-
-    if (task.generaPuntosYRecompensa) {
-      if (esATiempo) {
-        rewardPoints = 50;
-        feedback = "¡Buen trabajo! Completaste la tarea a tiempo.";
-      } else if (estaEnPeriodoGracia) {
-        rewardPoints = 25;
-        feedback = "Tarea completada con retraso (50% puntos).";
-      } else {
-        rewardPoints = 0;
-        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
-      }
-    } else {
-      feedback = "Tarea marcada como realizada. No genera puntos.";
-    }
-
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
 
-    if (asignado && rewardPoints > 0) { // Solo si ganó puntos cuenta para la racha
-      const lastDate = asignado.lastTaskCompletedDate;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
+    if (asignado && task.generaPuntosYRecompensa) {
+      const lastDate = asignado.lastTaskCompletedDate;
       if (!lastDate) {
         newStreakDays = 1;
         isNewStreak = true;
@@ -125,6 +106,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
+    }
+
+    // Regla de Recompensa
+    let rewardPoints = 0;
+    let feedback = "";
+    const estadoFinal = "Esperando_Aprobacion";
+
+    if (task.generaPuntosYRecompensa) {
+      // Dynamic base points based on estimated time (1 point per minute, minimum 10)
+      const basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+
+      // Streak bonus: +2 points per streak day, max +20 points
+      const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
+
+      if (esATiempo) {
+        rewardPoints = basePoints + streakBonus;
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+      } else if (estaEnPeriodoGracia) {
+        rewardPoints = Math.floor((basePoints + streakBonus) / 2);
+        feedback = "Tarea completada con retraso (50% puntos).";
+      } else {
+        rewardPoints = 0;
+        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
+      }
+    } else {
+      feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario

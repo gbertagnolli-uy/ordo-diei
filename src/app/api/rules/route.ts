@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const { textoEstricto } = await req.json();
 
     // Actualizamos o creamos el ID 1 de Reglas
-    let regla = await prisma.reglaHogar.findFirst();
+    const regla = await prisma.reglaHogar.findFirst();
     if (regla) {
       await prisma.reglaHogar.update({
         where: { id: regla.id },
