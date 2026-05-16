@@ -44,14 +44,14 @@ export function getNextDateByNthWeekday(ordinal: number, targetDayOfWeek: number
   const findInMonth = (y: number, m: number) => {
     if (ordinal === -1) {
       // ÚLTIMO [Día]
-      let date = new Date(y, m + 1, 0); 
+      const date = new Date(y, m + 1, 0);
       while (date.getDay() !== targetDayOfWeek) {
         date.setDate(date.getDate() - 1);
       }
       return date;
     } else {
       // N-ésimo [Día]
-      let date = new Date(y, m, 1);
+      const date = new Date(y, m, 1);
       let count = 0;
       while (date.getMonth() === m) {
         if (date.getDay() === targetDayOfWeek) {
