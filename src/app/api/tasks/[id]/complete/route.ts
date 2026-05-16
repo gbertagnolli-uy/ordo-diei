@@ -95,6 +95,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
+    // Lógica de Rachas (Streaks)
+    const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
+    let isNewStreak = false;
+    let newStreakDays = asignado?.streakDays || 0;
+
+    if (asignado && rewardPoints > 0) { // Solo si ganó puntos cuenta para la racha
+      const lastDate = asignado.lastTaskCompletedDate;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (!lastDate) {
+        newStreakDays = 1;
+        isNewStreak = true;
+      } else {
+        const last = new Date(lastDate);
+        last.setHours(0, 0, 0, 0);
+
+        const diffTime = Math.abs(today.getTime() - last.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+          // Día consecutivo
+          newStreakDays += 1;
+          isNewStreak = true;
+        } else if (diffDays > 1) {
+          // Racha rota
+          newStreakDays = 1;
+          isNewStreak = true;
+        }
+        // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
+      }
+    }
+
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
       prisma.tarea.update({
@@ -115,7 +148,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: {
           lockedPoints: {
             increment: rewardPoints
-          }
+          },
+          streakDays: newStreakDays,
+          lastTaskCompletedDate: now
         }
       })
     ]);
@@ -127,10 +162,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      estado: "Esperando_Aprobacion"
+      estado: "Esperando_Aprobacion",
+      isNewStreak,
+      streakDays: newStreakDays
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error en finalización de tarea:", error);
-    return NextResponse.json({ error: "Error interno: " + (error?.message || String(error)) }, { status: 500 });
+    return NextResponse.json({ error: "Error interno: " + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

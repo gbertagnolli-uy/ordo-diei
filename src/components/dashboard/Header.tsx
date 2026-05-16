@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
 import { useModalStore } from "@/store/modalStore";
+import { getLevelInfo } from "@/lib/levelUtils";
 
 export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUsers?: any[] }) {
   const [time, setTime] = useState("");
@@ -136,22 +137,35 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
           <span className="hidden md:inline">Ranking</span>
         </button>
 
-        <div className="relative group" onClick={handleLogout} title="Cerrar Sessión">
-          <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden cursor-pointer elevation-ambient transition-transform hover:scale-105 active:scale-95 bg-[var(--surface-container)]">
-             {currentUser?.fotoUrl ? (
-               <img src={currentUser.fotoUrl} alt="Yo" className="w-full h-full object-cover" />
-             ) : (
-               <div className="w-full h-full bg-[var(--primary)] flex items-center justify-center text-[var(--on-primary)] font-bold">
-                 {currentUser?.nombre?.charAt(0)}
-               </div>
-             )}
-          </div>
-          
-          {currentUser?.moodEmoji && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--surface-container-lowest)] rounded-full flex items-center justify-center text-xs shadow-sm border border-[var(--outline-variant)]">
-              {currentUser.moodEmoji}
+        <div className="relative group flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={handleLogout} title="Cerrar Sessión">
+          {currentUser && (
+            <div className="hidden sm:flex flex-col items-end mr-1">
+               <span className="text-xs font-bold text-[var(--primary)]">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
+               {currentUser.streakDays > 0 && (
+                 <span className="text-xs text-orange-500 font-bold flex items-center gap-1">
+                   🔥 {currentUser.streakDays}
+                 </span>
+               )}
             </div>
           )}
+
+          <div className="relative">
+            <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden elevation-ambient bg-[var(--surface-container)]">
+               {currentUser?.fotoUrl ? (
+                 <img src={currentUser.fotoUrl} alt="Yo" className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full bg-[var(--primary)] flex items-center justify-center text-[var(--on-primary)] font-bold">
+                   {currentUser?.nombre?.charAt(0)}
+                 </div>
+               )}
+            </div>
+
+            {currentUser?.moodEmoji && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--surface-container-lowest)] rounded-full flex items-center justify-center text-xs shadow-sm border border-[var(--outline-variant)]">
+                {currentUser.moodEmoji}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

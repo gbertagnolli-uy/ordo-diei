@@ -22,22 +22,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const tarea = await prisma.tarea.findUnique({ where: { id: taskId } });
     if (!tarea) return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     // Verificamos que la tarea esté en espera
-    if (tarea.estado !== ("Esperando_Aprobacion" as any)) {
+    if (tarea.estado !== "Esperando_Aprobacion") {
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
     }
 
-    // Transacción: Aprobar tarea y transferir puntos de Locked a Available
+    // Transacción: Aprobar tarea y transferir puntos de Locked a Available y subir logros
     await prisma.$transaction([
       prisma.tarea.update({
         where: { id: taskId },
-        data: { estado: "Aprobada" as any }
+        data: { estado: "Aprobada" }
       }),
       prisma.usuario.update({
         where: { id: tarea.asignadoId },
         data: {
-          lockedPoints: { decrement: (tarea as any).puntosGenerados || 0 },
-          availablePoints: { increment: (tarea as any).puntosGenerados || 0 },
-          puntosAcumulados: { increment: (tarea as any).puntosGenerados || 0 }
+          lockedPoints: { decrement: tarea.puntosGenerados || 0 },
+          availablePoints: { increment: tarea.puntosGenerados || 0 },
+          puntosAcumulados: { increment: tarea.puntosGenerados || 0 },
+          totalTasksCompleted: { increment: 1 }
         }
       })
     ]);

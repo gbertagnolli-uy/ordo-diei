@@ -36,9 +36,18 @@ export function ModalManager() {
             <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
               ¡Buen trabajo!
             </h3>
-            <p className="text-[var(--on-surface-variant)] text-lg mb-6 font-body">
+            <p className="text-[var(--on-surface-variant)] text-lg mb-2 font-body">
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
+
+            {data?.isNewStreak && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
+                <span className="text-2xl">🔥</span>
+                <span className="text-orange-500 font-bold text-lg">
+                  ¡Racha de {data?.streakDays} Días!
+                </span>
+              </div>
+            )}
             
             <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3">
               <span className="text-4xl">⭐</span>
@@ -133,6 +142,23 @@ function UserStatsPopup({ user }: { user: any }) {
       </div>
 
       <div className="flex flex-col gap-2">
+      {/* Sección de Logros Resumidos */}
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
+          <div className="text-[var(--primary)] font-bold text-2xl">{user.totalTasksCompleted || 0}</div>
+          <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Tareas de por Vida</div>
+        </div>
+        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--secondary)_20%,transparent)]">
+          <div className="text-orange-500 font-bold text-2xl flex items-center justify-center gap-1">
+            🔥 {user.streakDays || 0}
+          </div>
+          <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+        </div>
+      </div>
+
+      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
+
+      <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
       {tareas.map((t: any) => (
         <div key={t.id} className="flex items-center gap-3 p-3 bg-[var(--surface-container-low)] border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] rounded-md hover:bg-[var(--surface-container-lowest)] ghost-border transition-colors">
           {getIcon(t.estado, t.horaEjecucion || t.fechaVencimiento)}
