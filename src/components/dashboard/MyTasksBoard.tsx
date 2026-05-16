@@ -184,7 +184,9 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
         setIsConfirmOpen(false);
         openModal("TASK_SUCCESS", {
           mensaje: data.mensaje,
-          puntos: data.puntos
+          puntos: data.puntos,
+          isNewStreak: data.isNewStreak,
+          streakDays: data.streakDays
         });
       } else {
         const errData = await res.json().catch(() => ({}));
