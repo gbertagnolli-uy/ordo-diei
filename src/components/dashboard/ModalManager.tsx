@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
+import { MoodSelector } from "./MoodSelector";
 
 export function ModalManager() {
   const { isOpen, type, data, closeModal } = useModalStore();
@@ -97,6 +98,22 @@ export function ModalManager() {
       {type === "SURPRISE_AWARD" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Felicidades!" width="md">
           <SurpriseAwardPopup data={data} onClose={closeModal} />
+        </Modal>
+      )}
+
+      {type === "MOOD_SELECTOR" && (
+        <Modal isOpen={isOpen} onClose={closeModal} title="¿Cómo te sientes hoy?">
+          <div className="py-4">
+             <MoodSelector
+                currentMood={data?.user?.moodEmoji}
+                isOwnProfile={true}
+             />
+             <div className="mt-6 flex justify-center">
+               <button onClick={closeModal} className="btn-secondary px-8">
+                 Cerrar
+               </button>
+             </div>
+          </div>
         </Modal>
       )}
     </>

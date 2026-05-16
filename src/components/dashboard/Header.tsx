@@ -137,7 +137,7 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
           <span className="hidden md:inline">Ranking</span>
         </button>
 
-        <div className="relative group flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={handleLogout} title="Cerrar Sessión">
+        <div className="relative group flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95" title="Actualizar Estado">
           {currentUser && (
             <div className="hidden sm:flex flex-col items-end mr-2">
                <div className="flex items-center gap-2">
@@ -155,11 +155,18 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                    style={{ width: `${getLevelInfo(currentUser.puntosAcumulados || 0).progressPercentage}%` }}
                  />
                </div>
+            <div className="hidden sm:flex flex-col items-end mr-1" onClick={handleLogout} title="Cerrar Sesión">
+               <span className="text-xs font-bold text-[var(--primary)] hover:underline">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
+               {currentUser.streakDays > 0 && (
+                 <span className="text-xs text-orange-500 font-bold flex items-center gap-1">
+                   🔥 {currentUser.streakDays}
+                 </span>
+               )}
             </div>
           )}
 
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden elevation-ambient bg-[var(--surface-container)]">
+          <div className="relative" onClick={() => openModal("MOOD_SELECTOR", { user: currentUser })}>
+            <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden elevation-ambient bg-[var(--surface-container)] hover:ring-2 hover:ring-[var(--primary)] transition-all">
                {currentUser?.fotoUrl ? (
                  <img src={currentUser.fotoUrl} alt="Yo" className="w-full h-full object-cover" />
                ) : (
