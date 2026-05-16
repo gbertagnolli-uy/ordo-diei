@@ -7,7 +7,16 @@ const prismaClientSingleton = () => {
   if (!connectionString) {
     console.error("DATABASE_URL is not defined in environment variables");
   }
-  const pool = new Pool({ connectionString })
+
+  // Supabase Pooler needs SSL rejectUnauthorized: false when connecting
+  // via postgresql://postgres.[project]:[password]@aws-0-sa-east-1.pooler.supabase.com:6543
+  const isSupabase = connectionString?.includes('supabase.com') || connectionString?.includes('pooler.supabase.com');
+
+  const pool = new Pool({
+    connectionString,
+    ssl: isSupabase ? { rejectUnauthorized: false } : undefined
+  });
+
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }
