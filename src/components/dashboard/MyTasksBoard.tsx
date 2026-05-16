@@ -18,18 +18,39 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
   const inReviewTasks = tasks.filter((t) => t.estado === "Esperando_Aprobacion");
   const completedTasks = tasks.filter((t) => t.estado === "Completada" || t.estado === "Aprobada");
 
+  const totalTodayTasks = pendingTasks.length + inReviewTasks.length + completedTasks.length;
+  const doneTodayTasks = inReviewTasks.length + completedTasks.length;
+  const progressPercentage = totalTodayTasks > 0 ? Math.round((doneTodayTasks / totalTodayTasks) * 100) : 100;
+
   return (
     <div className="mb-12">
-      <h2 className="text-3xl font-display text-[var(--on-surface)] mb-6 flex items-center gap-3">
-        <Flame className="w-8 h-8 text-[var(--secondary)]" />
-        MIS TAREAS
-      </h2>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <h2 className="text-3xl font-display text-[var(--on-surface)] flex items-center gap-3">
+          <Flame className="w-8 h-8 text-[var(--secondary)]" />
+          MIS TAREAS
+        </h2>
+
+        {totalTodayTasks > 0 && (
+          <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2 min-w-[250px]">
+             <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+               <span>Progreso Diario</span>
+               <span className="text-[var(--primary)]">{progressPercentage}%</span>
+             </div>
+             <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
+                <div
+                   className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
+                   style={{ width: `${progressPercentage}%` }}
+                />
+             </div>
+          </div>
+        )}
+      </div>
 
       {pendingTasks.length === 0 ? (
         <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient p-10 text-center flex flex-col items-center">
-          <img src="/winners-animate.svg" alt="Winners" className="w-64 h-64 mb-6 drop-shadow-lg" />
-          <h3 className="text-3xl font-display text-[var(--success)] mb-2">¡Estás al día!</h3>
-          <p className="text-lg text-[var(--on-surface-variant)] font-medium">No tenés tareas pendientes. ¡Excelente trabajo!</p>
+          <img src="/relaxing.svg" alt="Relax" className="w-64 h-64 mb-6 drop-shadow-lg opacity-80" onError={(e) => { e.currentTarget.src = "/winners-animate.svg" }} />
+          <h3 className="text-3xl font-display text-[var(--primary)] mb-2">¡Día libre!</h3>
+          <p className="text-lg text-[var(--on-surface-variant)] font-medium">No tienes tareas pendientes o las has terminado todas. ¡Excelente trabajo!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -363,7 +384,7 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
         <div className="flex flex-col items-center gap-4 text-center">
            <img src="/cross-animate.svg" alt="Cancel" className="w-32 h-32 opacity-80 mb-2" onError={(e) => { e.currentTarget.style.display='none'; }} />
            <p className="text-[var(--on-surface-variant)] font-medium text-lg leading-relaxed">
-             Si marcas la tarea como "No Realizada", esta se archivará sin otorgarte puntos. <br/>¿Estás seguro?
+             Si marcas la tarea como &quot;No Realizada&quot;, esta se archivará sin otorgarte puntos. <br/>¿Estás seguro?
            </p>
            <div className="flex w-full gap-4 mt-6">
               <button disabled={loading} onClick={() => setIsConfirmNotDoneOpen(false)} className="flex-1 bg-[var(--surface-container)] hover:bg-[var(--surface-container-high)] text-[var(--on-surface-variant)] font-semibold py-3.5 rounded-md transition-colors">

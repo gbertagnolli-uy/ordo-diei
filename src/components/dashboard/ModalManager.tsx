@@ -2,7 +2,7 @@
 
 import { useModalStore } from "@/store/modalStore";
 import { Modal } from "@/components/ui/Modal";
-import { Clock, CheckCircle2, AlertTriangle, AlertCircle, Save } from "lucide-react";
+import { Clock, CheckCircle2, AlertTriangle, AlertCircle, Save, Info } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { HistoryModal } from "./HistoryModal";
@@ -141,6 +141,24 @@ function UserStatsPopup({ user }: { user: any }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Puntos y Explicación */}
+      <div className="flex justify-between items-center gap-4 bg-[var(--surface-container)] p-4 rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
+        <div className="flex flex-col items-center flex-1" title="Puntos disponibles para gastar o que suman a tu ranking.">
+          <span className="text-2xl font-display text-[var(--success)]">{user.availablePoints || 0}</span>
+          <span className="text-xs font-bold text-[var(--on-surface-variant)] uppercase mt-1 flex items-center gap-1 text-center">
+             Puntos Disponibles <Info className="w-3 h-3" />
+          </span>
+        </div>
+        <div className="w-px h-10 bg-[var(--outline-variant)] opacity-50"></div>
+        <div className="flex flex-col items-center flex-1" title="Puntos de tareas que están en revisión por un administrador. ¡Pronto serán tuyos!">
+          <span className="text-2xl font-display text-[var(--warning)]">{user.lockedPoints || 0}</span>
+          <span className="text-xs font-bold text-[var(--on-surface-variant)] uppercase mt-1 flex items-center gap-1 text-center">
+             Puntos Bloqueados <Info className="w-3 h-3" />
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">

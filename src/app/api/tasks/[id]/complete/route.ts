@@ -78,6 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
+    const estadoFinal = "Esperando_Aprobacion";
 
     if (task.generaPuntosYRecompensa) {
       if (esATiempo) {
