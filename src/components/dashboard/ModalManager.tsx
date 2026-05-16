@@ -7,9 +7,20 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
+import confetti from "canvas-confetti";
 
 export function ModalManager() {
   const { isOpen, type, data, closeModal } = useModalStore();
+
+  useEffect(() => {
+    if (isOpen && type === "TASK_SUCCESS") {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [isOpen, type]);
 
   return (
     <>
@@ -237,6 +248,17 @@ function SurpriseAwardPopup({ data, onClose }: { data: any; onClose: () => void 
       setLoading(false);
     }
   }, [data?.entregaId]);
+
+  useEffect(() => {
+    if (showReward) {
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: ['#FFD700', '#FFA500', '#FF8C00']
+      });
+    }
+  }, [showReward]);
 
   if (showReward) {
     return (
