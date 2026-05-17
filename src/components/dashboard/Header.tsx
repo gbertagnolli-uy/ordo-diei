@@ -137,10 +137,20 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
           <span className="hidden md:inline">Ranking</span>
         </button>
 
+        {currentUser && (
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-[color-mix(in-srgb,var(--error)_8%,transparent)] hover:bg-[color-mix(in-srgb,var(--error)_12%,transparent)] text-[var(--error)] font-semibold rounded-md transition-colors border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]"
+            title="Cerrar Sesión"
+          >
+            <span className="hidden md:inline">Cerrar Sesión</span>
+          </button>
+        )}
+
         <div className="relative group flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95" title="Actualizar Estado">
           {currentUser && (
-            <div className="hidden sm:flex flex-col items-end mr-1" onClick={handleLogout} title="Cerrar Sesión">
-               <span className="text-xs font-bold text-[var(--primary)] hover:underline">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
+            <div className="hidden sm:flex flex-col items-end mr-1">
+               <span className="text-xs font-bold text-[var(--primary)]">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
                {/* Progress bar below level */}
                <div className="w-24 h-1.5 bg-[var(--surface-container-high)] rounded-full mt-1 overflow-hidden" title={`${getLevelInfo(currentUser.puntosAcumulados || 0).progressPercentage}% al siguiente nivel`}>
                  <div
