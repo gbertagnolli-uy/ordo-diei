@@ -75,26 +75,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
-
-    if (task.generaPuntosYRecompensa) {
-      if (esATiempo) {
-        rewardPoints = 50;
-        feedback = "¡Buen trabajo! Completaste la tarea a tiempo.";
-      } else if (estaEnPeriodoGracia) {
-        rewardPoints = 25;
-        feedback = "Tarea completada con retraso (50% puntos).";
-      } else {
-        rewardPoints = 0;
-        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
-      }
-    } else {
-      feedback = "Tarea marcada como realizada. No genera puntos.";
-    }
-
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -131,6 +111,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
+    let basePointsEarned = 0;
+    let streakBonusEarned = 0;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -140,10 +122,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        basePointsEarned = basePoints;
+        streakBonusEarned = streakBonus;
+        rewardPoints = basePointsEarned + streakBonusEarned;
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePointsEarned} pts base y ${streakBonusEarned} pts de bono por racha.`;
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((basePoints + streakBonus) / 2);
+        basePointsEarned = Math.floor(basePoints / 2);
+        streakBonusEarned = Math.floor(streakBonus / 2);
+        rewardPoints = basePointsEarned + streakBonusEarned;
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;
@@ -187,6 +173,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
+      basePoints: basePointsEarned,
+      streakBonus: streakBonusEarned,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays
