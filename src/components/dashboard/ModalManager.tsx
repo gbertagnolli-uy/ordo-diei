@@ -14,11 +14,12 @@ export function ModalManager() {
   const { isOpen, type, data, closeModal } = useModalStore();
 
   useEffect(() => {
-    if (isOpen && type === "TASK_SUCCESS") {
+    if (isOpen && (type === "TASK_SUCCESS" || type === "LEVEL_UP")) {
       confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: type === "LEVEL_UP" ? ['#FFD700', '#FFA500', '#FF8C00', '#8A2BE2', '#00CED1'] : undefined
       });
     }
   }, [isOpen, type]);
@@ -34,6 +35,33 @@ export function ModalManager() {
       {type === "RULES" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="Constitución Familiar" width="lg">
           <RulesPopup />
+        </Modal>
+      )}
+
+      {type === "LEVEL_UP" && (
+        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
+          <div className="flex flex-col items-center text-center py-6">
+            <img
+              src="/winners-animate.svg"
+              alt="¡Subiste de Nivel!"
+              className="w-48 h-48 mb-6 drop-shadow-xl animate-bounce"
+            />
+            <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
+              ¡Nivel {data?.level}!
+            </h3>
+            <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
+              Nuevo Rango: <span className="text-[var(--primary)]">{data?.title}</span>
+            </p>
+            <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
+              ¡Tu esfuerzo está dando frutos! Sigue completando tareas para alcanzar el siguiente rango.
+            </p>
+            <button
+              onClick={closeModal}
+              className="btn-primary w-full py-4 text-lg shadow-lg"
+            >
+              ¡A seguir subiendo!
+            </button>
+          </div>
         </Modal>
       )}
 
@@ -169,7 +197,6 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
@@ -184,7 +211,31 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
+      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mt-2 mb-1">Logros Desbloqueados</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+        <div className={`p-2 rounded-md border text-center ${user.totalTasksCompleted >= 1 ? 'bg-[color-mix(in-srgb,var(--success)_10%,transparent)] border-[var(--success)] text-[var(--success)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
+          <div className="text-lg">👶</div>
+          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Primeros Pasos</div>
+        </div>
+        <div className={`p-2 rounded-md border text-center ${user.streakDays >= 3 ? 'bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border-[var(--warning)] text-[var(--warning)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
+          <div className="text-lg">🔥</div>
+          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Racha x3</div>
+        </div>
+        <div className={`p-2 rounded-md border text-center ${user.streakDays >= 7 ? 'bg-[color-mix(in-srgb,var(--error)_10%,transparent)] border-[var(--error)] text-[var(--error)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
+          <div className="text-lg">🚀</div>
+          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Imparable</div>
+        </div>
+        <div className={`p-2 rounded-md border text-center ${user.totalTasksCompleted >= 50 ? 'bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] border-[var(--primary)] text-[var(--primary)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
+          <div className="text-lg">🎖️</div>
+          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Veterano (50)</div>
+        </div>
+        <div className={`p-2 rounded-md border text-center ${user.completionPercentage >= 90 && user.totalTasksCompleted >= 10 ? 'bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] border-[var(--secondary)] text-[var(--secondary)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
+          <div className="text-lg">💎</div>
+          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Perfeccionista</div>
+        </div>
+      </div>
+
+      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mt-2 mb-[-8px]">Tareas Asignadas</div>
 
       <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
       {tareas.map((t: any) => (
