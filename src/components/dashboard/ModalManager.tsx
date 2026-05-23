@@ -53,15 +53,24 @@ export function ModalManager() {
             </p>
 
             {data?.isNewStreak && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-pulse">
                 <span className="text-2xl">🔥</span>
                 <span className="text-orange-500 font-bold text-lg">
                   ¡Racha de {data?.streakDays} Días!
                 </span>
               </div>
             )}
+
+            {data?.awardedStar && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-bounce">
+                <span className="text-2xl">🌟</span>
+                <span className="text-blue-500 font-bold text-lg">
+                  ¡Ganaste una Estrella Especial!
+                </span>
+              </div>
+            )}
             
-            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3">
+            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3 mb-4">
               <span className="text-4xl">⭐</span>
               <div className="text-left">
                 <div className="text-[var(--warning)] font-headline font-bold text-2xl">
@@ -169,7 +178,6 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
@@ -181,6 +189,26 @@ function UserStatsPopup({ user }: { user: any }) {
             🔥 {user.streakDays || 0}
           </div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+        </div>
+      </div>
+
+      {/* Logros Desbloqueados (Badges) */}
+      <div className="bg-[var(--surface-container)] rounded-md p-3 border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] mb-2">
+        <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-2">Logros Desbloqueados</div>
+        <div className="flex flex-wrap gap-2">
+          {user.totalTasksCompleted >= 10 && <span className="px-2 py-1 text-xs bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-md font-bold" title="10+ Tareas">🥉 Iniciador</span>}
+          {user.totalTasksCompleted >= 50 && <span className="px-2 py-1 text-xs bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-md font-bold" title="50+ Tareas">🥈 Constante</span>}
+          {user.totalTasksCompleted >= 100 && <span className="px-2 py-1 text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-md font-bold" title="100+ Tareas">🥇 Veterano</span>}
+
+          {user.streakDays >= 3 && <span className="px-2 py-1 text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-md font-bold" title="Racha de 3 días">🔥 En Racha</span>}
+          {user.streakDays >= 7 && <span className="px-2 py-1 text-xs bg-red-500/10 text-red-500 border border-red-500/20 rounded-md font-bold" title="Racha de 7 días">🚀 Imparable</span>}
+
+          {user.stars >= 1 && <span className="px-2 py-1 text-xs bg-[var(--secondary)]/10 text-[var(--secondary)] border border-[var(--secondary)]/20 rounded-md font-bold" title="Tiene Estrellas">🌟 Estrella</span>}
+          {user.completionPercentage >= 90 && user.totalTasksCompleted > 5 && <span className="px-2 py-1 text-xs bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 rounded-md font-bold" title=">90% de Éxito">✅ Perfeccionista</span>}
+
+          {user.totalTasksCompleted < 10 && user.streakDays < 3 && user.stars === 0 && (
+            <span className="text-xs text-[var(--on-surface-variant)] italic">Aún no hay logros. ¡Sigue así!</span>
+          )}
         </div>
       </div>
 
