@@ -11,13 +11,25 @@ import confetti from "canvas-confetti";
 import { MoodSelector } from "./MoodSelector";
 
 export function ModalManager() {
-  const { isOpen, type, data, closeModal } = useModalStore();
+  const { isOpen, type, data, closeModal, openModal } = useModalStore();
 
   useEffect(() => {
-    if (isOpen && type === "TASK_SUCCESS") {
+    // Check for level up notification from previous page load
+    const levelUpInfo = sessionStorage.getItem("levelUpNotification");
+    if (levelUpInfo) {
+      sessionStorage.removeItem("levelUpNotification");
+      const info = JSON.parse(levelUpInfo);
+      setTimeout(() => {
+        openModal("LEVEL_UP", info);
+      }, 500); // Small delay to let the page load
+    }
+  }, [openModal]);
+
+  useEffect(() => {
+    if (isOpen && (type === "TASK_SUCCESS" || type === "LEVEL_UP")) {
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: type === "LEVEL_UP" ? 200 : 100,
+        spread: type === "LEVEL_UP" ? 100 : 70,
         origin: { y: 0.6 }
       });
     }
@@ -48,7 +60,14 @@ export function ModalManager() {
             <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
               ¡Buen trabajo!
             </h3>
-            <p className="text-[var(--on-surface-variant)] text-lg mb-2 font-body">
+
+            {data?.puntos > 0 && (
+              <div className="text-4xl font-display font-bold text-[var(--warning)] mb-4 animate-bounce">
+                +{data.puntos} Pts
+              </div>
+            )}
+
+            <p className="text-[var(--on-surface-variant)] text-lg mb-2 font-body px-4">
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
 
@@ -78,6 +97,29 @@ export function ModalManager() {
               className="btn-primary mt-8 w-full py-4 text-lg shadow-lg"
             >
               ¡Genial!
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {type === "LEVEL_UP" && (
+        <Modal isOpen={isOpen} onClose={closeModal} title="🌟 ¡Subida de Nivel!">
+          <div className="flex flex-col items-center text-center py-6">
+            <img
+              src="/winners-animate.svg"
+              alt="¡Sube de Nivel!"
+              className="w-48 h-48 mb-6 drop-shadow-xl animate-bounce"
+            />
+            <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
+              ¡Felicidades!
+            </h3>
+
+            <p className="text-[var(--on-surface-variant)] text-lg mb-4 font-body px-4">
+              ¡<span className="font-bold text-[var(--primary)]">{data?.userName}</span> acaba de alcanzar el nivel <span className="font-bold text-[var(--warning)]">{data?.newLevel}</span>!
+            </p>
+
+            <button onClick={closeModal} className="btn-primary mt-4 w-full py-4 text-lg shadow-lg">
+              ¡Increíble!
             </button>
           </div>
         </Modal>
@@ -207,6 +249,7 @@ function UserStatsPopup({ user }: { user: any }) {
           </div>
         </div>
       ))}
+      </div>
       </div>
     </div>
   );
