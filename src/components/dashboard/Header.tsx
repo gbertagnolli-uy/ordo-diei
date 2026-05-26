@@ -155,6 +155,9 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                    style={{ width: `${getLevelInfo(currentUser.puntosAcumulados || 0).progressPercentage}%` }}
                  />
                </div>
+            </div>
+          )}
+          {currentUser && (
             <div className="hidden sm:flex flex-col items-end mr-1" onClick={handleLogout} title="Cerrar Sesión">
                <span className="text-xs font-bold text-[var(--primary)] hover:underline">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
                {currentUser.streakDays > 0 && (

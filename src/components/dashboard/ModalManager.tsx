@@ -184,6 +184,30 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
+      {/* Badges Dinámicos */}
+      <div className="flex flex-wrap gap-2 mb-4 justify-center">
+        {(user.totalTasksCompleted || 0) >= 1 && (
+          <span className="px-3 py-1 bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] text-[var(--primary)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] flex items-center gap-1">
+             <span className="text-sm">🌱</span> Primer Paso
+          </span>
+        )}
+        {(user.totalTasksCompleted || 0) >= 50 && (
+          <span className="px-3 py-1 bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] text-[var(--secondary)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--secondary)_30%,transparent)] flex items-center gap-1">
+             <span className="text-sm">🛠️</span> Trabajador
+          </span>
+        )}
+        {(user.totalTasksCompleted || 0) >= 200 && (
+          <span className="px-3 py-1 bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] text-[var(--warning)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--warning)_30%,transparent)] flex items-center gap-1">
+             <span className="text-sm">⚙️</span> Máquina
+          </span>
+        )}
+        {(user.streakDays || 0) >= 7 && (
+          <span className="px-3 py-1 bg-orange-500/10 text-orange-500 text-xs font-bold rounded-full border border-orange-500/30 flex items-center gap-1">
+             <span className="text-sm">🔥</span> En Llamas
+          </span>
+        )}
+      </div>
+
       <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
 
       <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -207,6 +231,7 @@ function UserStatsPopup({ user }: { user: any }) {
           </div>
         </div>
       ))}
+      </div>
       </div>
     </div>
   );
