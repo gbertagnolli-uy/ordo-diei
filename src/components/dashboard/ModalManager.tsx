@@ -52,11 +52,32 @@ export function ModalManager() {
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
 
-            {data?.isNewStreak && (
+            {data?.isNewStreak && !data?.isMilestone && (
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
                 <span className="text-2xl">🔥</span>
                 <span className="text-orange-500 font-bold text-lg">
                   ¡Racha de {data?.streakDays} Días!
+                </span>
+              </div>
+            )}
+
+            {data?.isMilestone && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md px-4 py-3 flex flex-col items-center gap-2 mb-6 animate-bounce shadow-[0_0_15px_rgba(234,179,8,0.5)]">
+                <span className="text-4xl">🏆</span>
+                <span className="text-yellow-500 font-black text-xl text-center">
+                  ¡SÚPER RACHA DE {data?.streakDays} DÍAS!
+                </span>
+                <span className="text-yellow-600 font-bold text-md text-center">
+                  +{data?.milestoneBonus} Puntos de Bono
+                </span>
+              </div>
+            )}
+
+            {data?.isHappyHour && (
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                <span className="text-2xl">⚡</span>
+                <span className="text-purple-500 font-bold text-lg text-center">
+                  ¡Bono Happy Hour x1.5 Aplicado!
                 </span>
               </div>
             )}
@@ -169,7 +190,6 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
@@ -181,6 +201,41 @@ function UserStatsPopup({ user }: { user: any }) {
             🔥 {user.streakDays || 0}
           </div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+        </div>
+      </div>
+
+      {/* Insignias Dinámicas */}
+      <div className="bg-[var(--surface-container-low)] rounded-md p-3 border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] mb-2">
+        <div className="text-xs font-bold text-[var(--on-surface)] uppercase tracking-wider mb-2">Insignias Destacadas</div>
+        <div className="flex flex-wrap gap-2">
+          {user.totalTasksCompleted > 0 ? (
+            <span className="bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+              🌱 Novato ({user.totalTasksCompleted})
+            </span>
+          ) : null}
+          {user.totalTasksCompleted >= 10 ? (
+            <span className="bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+              🌟 10 Tareas
+            </span>
+          ) : null}
+          {user.totalTasksCompleted >= 50 ? (
+            <span className="bg-purple-500/10 text-purple-600 border border-purple-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+              🏆 Maestro (50+)
+            </span>
+          ) : null}
+          {user.streakDays >= 3 ? (
+            <span className="bg-orange-500/10 text-orange-600 border border-orange-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+              🔥 Imparable ({user.streakDays}d)
+            </span>
+          ) : null}
+          {user.streakDays >= 7 ? (
+            <span className="bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+              ⚡ Súper Racha
+            </span>
+          ) : null}
+          {user.totalTasksCompleted === 0 && user.streakDays === 0 ? (
+            <span className="text-xs text-[var(--on-surface-variant)] italic">Aún no hay insignias. ¡Empieza hoy!</span>
+          ) : null}
         </div>
       </div>
 

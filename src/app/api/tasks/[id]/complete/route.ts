@@ -128,9 +128,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
+    // Recalcular Regla de Recompensa final
+    // (Sobrescribe la primera vez que se declaran arriba en el código original)
+    rewardPoints = 0;
+    feedback = "";
+    let isMilestone = false;
+    let milestoneBonus = 0;
+    let isHappyHour = false;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -139,11 +143,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
+      // Streak Milestone Bonus: extra 50 points every 7 days
+      if (isNewStreak && newStreakDays > 0 && newStreakDays % 7 === 0) {
+        isMilestone = true;
+        milestoneBonus = 50;
+      }
+
+      // Happy Hour Check: Between 17:00 and 19:00
+      const hour = now.getHours();
+      isHappyHour = hour >= 17 && hour < 19;
+      let happyHourMultiplier = isHappyHour ? 1.5 : 1;
+
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus;
+        rewardPoints = Math.round((basePoints + streakBonus + milestoneBonus) * happyHourMultiplier);
         feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        if (isMilestone) {
+          feedback += ` ¡Y un súper bono de ${milestoneBonus} pts por tu racha de ${newStreakDays} días!`;
+        }
+        if (isHappyHour) {
+          feedback += ` ¡Y un multiplicador x1.5 por Happy Hour!`;
+        }
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((basePoints + streakBonus) / 2);
+        rewardPoints = Math.floor((basePoints + streakBonus + milestoneBonus) / 2);
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;
@@ -189,7 +210,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       puntos: rewardPoints,
       estado: "Esperando_Aprobacion",
       isNewStreak,
-      streakDays: newStreakDays
+      streakDays: newStreakDays,
+      isMilestone,
+      milestoneBonus,
+      isHappyHour
     });
   } catch (error) {
     console.error("Error en finalización de tarea:", error);
