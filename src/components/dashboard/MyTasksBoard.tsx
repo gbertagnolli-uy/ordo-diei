@@ -207,7 +207,11 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
           mensaje: data.mensaje,
           puntos: data.puntos,
           isNewStreak: data.isNewStreak,
-          streakDays: data.streakDays
+          streakDays: data.streakDays,
+          basePoints: data.basePoints,
+          streakBonus: data.streakBonus,
+          speedBonus: data.speedBonus,
+          checklistBonus: data.checklistBonus
         });
       } else {
         const errData = await res.json().catch(() => ({}));

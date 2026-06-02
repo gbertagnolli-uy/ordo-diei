@@ -75,25 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
     const estadoFinal = "Esperando_Aprobacion";
-
-    if (task.generaPuntosYRecompensa) {
-      if (esATiempo) {
-        rewardPoints = 50;
-        feedback = "¡Buen trabajo! Completaste la tarea a tiempo.";
-      } else if (estaEnPeriodoGracia) {
-        rewardPoints = 25;
-        feedback = "Tarea completada con retraso (50% puntos).";
-      } else {
-        rewardPoints = 0;
-        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
-      }
-    } else {
-      feedback = "Tarea marcada como realizada. No genera puntos.";
-    }
 
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
@@ -128,9 +110,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Regla de Recompensa
+    // Regla de Recompensa y Bonificaciones
     let rewardPoints = 0;
     let feedback = "";
+
+    // Breakdown fields for gamification UI
+    let actualBasePoints = 0;
+    let actualStreakBonus = 0;
+    let speedBonus = 0;
+    let checklistBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -139,11 +127,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
+      // Speed bonus: +10 points if completed between 20% and 80% of estimated time
+      if (task.tiempoEjecucionEstimadoSeg > 0 && cleanElapsed > 0) {
+        const completionRatio = cleanElapsed / task.tiempoEjecucionEstimadoSeg;
+        if (completionRatio >= 0.2 && completionRatio <= 0.8) {
+          speedBonus = 10;
+        }
+      }
+
+      // Checklist bonus: +15 points if task has checklist and is completed
+      if (task.isChecklist && task.checklistItems.length > 0) {
+        checklistBonus = 15;
+      }
+
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        actualBasePoints = basePoints;
+        actualStreakBonus = streakBonus;
+        rewardPoints = basePoints + streakBonus + speedBonus + checklistBonus;
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo.`;
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((basePoints + streakBonus) / 2);
+        actualBasePoints = Math.floor(basePoints / 2);
+        actualStreakBonus = Math.floor(streakBonus / 2);
+        speedBonus = 0; // No speed bonus for late tasks
+        checklistBonus = Math.floor(checklistBonus / 2);
+        rewardPoints = actualBasePoints + actualStreakBonus + checklistBonus;
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;
@@ -187,6 +194,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
+      basePoints: actualBasePoints,
+      streakBonus: actualStreakBonus,
+      speedBonus,
+      checklistBonus,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays

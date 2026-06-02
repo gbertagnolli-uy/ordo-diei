@@ -61,16 +61,48 @@ export function ModalManager() {
               </div>
             )}
             
-            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3">
-              <span className="text-4xl">⭐</span>
-              <div className="text-left">
-                <div className="text-[var(--warning)] font-headline font-bold text-2xl">
-                  +{data?.puntos || 0} Puntos
-                </div>
-                <div className="text-[var(--warning)] opacity-80 text-sm font-title font-bold uppercase tracking-wider">
-                  Saldo Bloqueado
+            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 w-full flex flex-col gap-3">
+              <div className="flex items-center gap-3 justify-center border-b border-[color-mix(in-srgb,var(--warning)_20%,transparent)] pb-3">
+                <span className="text-4xl">⭐</span>
+                <div className="text-left">
+                  <div className="text-[var(--warning)] font-headline font-bold text-3xl">
+                    +{data?.puntos || 0} Puntos
+                  </div>
+                  <div className="text-[var(--warning)] opacity-80 text-sm font-title font-bold uppercase tracking-wider">
+                    Saldo Bloqueado
+                  </div>
                 </div>
               </div>
+
+              {/* Detailed Gamification Breakdown */}
+              {(data?.basePoints > 0 || data?.streakBonus > 0 || data?.speedBonus > 0 || data?.checklistBonus > 0) && (
+                <div className="flex flex-col gap-2 mt-1 text-sm">
+                  {data?.basePoints > 0 && (
+                    <div className="flex justify-between items-center text-[var(--warning)] font-medium">
+                      <span>✓ Base por dificultad</span>
+                      <span>+{data.basePoints}</span>
+                    </div>
+                  )}
+                  {data?.streakBonus > 0 && (
+                    <div className="flex justify-between items-center text-orange-500 font-bold">
+                      <span>🔥 Bono de racha</span>
+                      <span>+{data.streakBonus}</span>
+                    </div>
+                  )}
+                  {data?.speedBonus > 0 && (
+                    <div className="flex justify-between items-center text-blue-500 font-bold">
+                      <span>⚡ Bono de velocidad</span>
+                      <span>+{data.speedBonus}</span>
+                    </div>
+                  )}
+                  {data?.checklistBonus > 0 && (
+                    <div className="flex justify-between items-center text-[var(--success)] font-bold">
+                      <span>📝 Bono checklist perfecto</span>
+                      <span>+{data.checklistBonus}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <button 
@@ -169,7 +201,6 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
