@@ -208,6 +208,7 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       ))}
       </div>
+      </div>
     </div>
   );
 }

@@ -75,26 +75,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
-
-    if (task.generaPuntosYRecompensa) {
-      if (esATiempo) {
-        rewardPoints = 50;
-        feedback = "¡Buen trabajo! Completaste la tarea a tiempo.";
-      } else if (estaEnPeriodoGracia) {
-        rewardPoints = 25;
-        feedback = "Tarea completada con retraso (50% puntos).";
-      } else {
-        rewardPoints = 0;
-        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
-      }
-    } else {
-      feedback = "Tarea marcada como realizada. No genera puntos.";
-    }
-
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -139,9 +119,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
+      // Happy Hour Bonus (15:00 - 18:00)
+      const currentHour = now.getHours();
+      const isHappyHour = currentHour >= 15 && currentHour < 18;
+      const happyHourMultiplier = isHappyHour ? 1.5 : 1;
+
+      // Fast Finisher Bonus (10% to 80% of estimated time)
+      let fastFinisherBonus = 0;
+      if (task.tiempoEjecucionEstimadoSeg > 0 && cleanElapsed > 0) {
+        const timeRatio = cleanElapsed / task.tiempoEjecucionEstimadoSeg;
+        if (timeRatio >= 0.1 && timeRatio <= 0.8) {
+          fastFinisherBonus = 15;
+        }
+      }
+
+      // Checklist Bonus
+      const checklistBonus = (task.isChecklist && task.checklistItems.length > 0) ? 10 : 0;
+
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        const calculatedBasePoints = Math.floor(basePoints * happyHourMultiplier);
+        rewardPoints = calculatedBasePoints + streakBonus + fastFinisherBonus + checklistBonus;
+
+        const bonusesFeedback = [];
+        if (streakBonus > 0) bonusesFeedback.push(`${streakBonus} pts por racha`);
+        if (isHappyHour) bonusesFeedback.push(`x1.5 por Hora Feliz`);
+        if (fastFinisherBonus > 0) bonusesFeedback.push(`15 pts por ser rápido`);
+        if (checklistBonus > 0) bonusesFeedback.push(`10 pts por checklist`);
+
+        const bonusStr = bonusesFeedback.length > 0 ? ` (+ ${bonusesFeedback.join(", ")})` : "";
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${calculatedBasePoints} pts base${bonusStr}.`;
       } else if (estaEnPeriodoGracia) {
         rewardPoints = Math.floor((basePoints + streakBonus) / 2);
         feedback = "Tarea completada con retraso (50% puntos).";
