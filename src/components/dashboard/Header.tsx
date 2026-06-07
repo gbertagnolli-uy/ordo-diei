@@ -139,9 +139,9 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
 
         <div className="relative group flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95" title="Actualizar Estado">
           {currentUser && (
-            <div className="hidden sm:flex flex-col items-end mr-2">
+            <div className="hidden sm:flex flex-col items-end mr-2" onClick={handleLogout} title="Cerrar Sesión">
                <div className="flex items-center gap-2">
-                 <span className="text-xs font-bold text-[var(--primary)]">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
+                 <span className="text-xs font-bold text-[var(--primary)] hover:underline">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
                  {currentUser.streakDays > 0 && (
                    <span className="text-xs text-orange-500 font-bold flex items-center gap-1" title="Racha actual">
                      🔥 {currentUser.streakDays}
@@ -155,13 +155,6 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                    style={{ width: `${getLevelInfo(currentUser.puntosAcumulados || 0).progressPercentage}%` }}
                  />
                </div>
-            <div className="hidden sm:flex flex-col items-end mr-1" onClick={handleLogout} title="Cerrar Sesión">
-               <span className="text-xs font-bold text-[var(--primary)] hover:underline">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
-               {currentUser.streakDays > 0 && (
-                 <span className="text-xs text-orange-500 font-bold flex items-center gap-1">
-                   🔥 {currentUser.streakDays}
-                 </span>
-               )}
             </div>
           )}
 
