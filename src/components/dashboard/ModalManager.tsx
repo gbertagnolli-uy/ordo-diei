@@ -52,6 +52,15 @@ export function ModalManager() {
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
 
+            {data?.isHappyHour && (
+              <div className="bg-[color-mix(in-srgb,var(--primary)_15%,transparent)] border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-bounce">
+                <span className="text-2xl">🍹</span>
+                <span className="text-[var(--primary)] font-bold text-lg">
+                  ¡Bonus Happy Hour! (+50%)
+                </span>
+              </div>
+            )}
+
             {data?.isNewStreak && (
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
                 <span className="text-2xl">🔥</span>
@@ -170,7 +179,7 @@ function UserStatsPopup({ user }: { user: any }) {
       </div>
 
       <div className="flex flex-col gap-2">
-      {/* Sección de Logros Resumidos */}
+      {/* Sección de Logros Resumidos e Insignias */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
           <div className="text-[var(--primary)] font-bold text-2xl">{user.totalTasksCompleted || 0}</div>
@@ -181,6 +190,30 @@ function UserStatsPopup({ user }: { user: any }) {
             🔥 {user.streakDays || 0}
           </div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+        </div>
+      </div>
+
+      <div className="bg-[var(--surface-container-low)] rounded-md p-3 mb-2 border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
+        <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider mb-2 text-center">Insignias</div>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {user.totalTasksCompleted >= 10 && (
+            <span className="px-2 py-1 bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] text-[var(--primary)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]" title="Completaste tus primeras 10 tareas">🥉 Misión 10</span>
+          )}
+          {user.totalTasksCompleted >= 50 && (
+            <span className="px-2 py-1 bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] text-[var(--secondary)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--secondary)_20%,transparent)]" title="Completaste 50 tareas">🥈 Misión 50</span>
+          )}
+          {user.totalTasksCompleted >= 100 && (
+            <span className="px-2 py-1 bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] text-[var(--warning)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--warning)_20%,transparent)]" title="¡Increíble! 100 tareas completadas">🥇 Misión 100</span>
+          )}
+          {user.streakDays >= 3 && (
+            <span className="px-2 py-1 bg-orange-500/10 text-orange-500 text-xs font-bold rounded-full border border-orange-500/20" title="Racha de 3 días">🔥 Fuego x3</span>
+          )}
+          {user.streakDays >= 7 && (
+            <span className="px-2 py-1 bg-red-500/10 text-red-500 text-xs font-bold rounded-full border border-red-500/20" title="¡Una semana sin fallar!">🚀 Imparable x7</span>
+          )}
+          {user.totalTasksCompleted < 10 && user.streakDays < 3 && (
+            <span className="text-xs text-slate-400 italic">Sigue completando tareas para ganar insignias...</span>
+          )}
         </div>
       </div>
 
@@ -207,6 +240,7 @@ function UserStatsPopup({ user }: { user: any }) {
           </div>
         </div>
       ))}
+      </div>
       </div>
     </div>
   );

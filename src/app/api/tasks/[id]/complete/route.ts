@@ -128,12 +128,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
+    let isHappyHour = false;
+    const hour = now.getHours();
+    if (hour >= 17 && hour < 19) {
+      isHappyHour = true;
+    }
 
+    // Dynamic base points based on estimated time (1 point per minute, minimum 10)
     if (task.generaPuntosYRecompensa) {
-      // Dynamic base points based on estimated time (1 point per minute, minimum 10)
       const basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
 
       // Streak bonus: +2 points per streak day, max +20 points
@@ -141,7 +143,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       if (esATiempo) {
         rewardPoints = basePoints + streakBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        if (isHappyHour) {
+          rewardPoints = Math.floor(rewardPoints * 1.5);
+          feedback = `¡Buen trabajo! Completaste la tarea a tiempo durante la Happy Hour (+50% puntos). Obtuviste ${rewardPoints} pts.`;
+        } else {
+          feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        }
       } else if (estaEnPeriodoGracia) {
         rewardPoints = Math.floor((basePoints + streakBonus) / 2);
         feedback = "Tarea completada con retraso (50% puntos).";
@@ -189,7 +196,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       puntos: rewardPoints,
       estado: "Esperando_Aprobacion",
       isNewStreak,
-      streakDays: newStreakDays
+      streakDays: newStreakDays,
+      isHappyHour
     });
   } catch (error) {
     console.error("Error en finalización de tarea:", error);

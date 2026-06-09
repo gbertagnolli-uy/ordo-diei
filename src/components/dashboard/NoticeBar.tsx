@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 export function NoticeBar() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | null>(null);
+  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | "happyhour" | null>(null);
 
   useEffect(() => {
     const calculateTime = () => {
@@ -28,6 +28,9 @@ export function NoticeBar() {
         setTimeLeft(
           `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
         );
+      } else if (hour >= 17 && hour < 19) {
+         setIsVisible(true);
+         setMessageType("happyhour");
       } else if (hour >= 6 && hour < 10) {
          setIsVisible(true);
          setMessageType("morning");
@@ -67,6 +70,14 @@ export function NoticeBar() {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--secondary)]">
         ☀️ ¡Buenas tardes! ¿Cómo vas con tus tareas? Sigue así, ¡tú puedes!
+      </div>
+    );
+  }
+
+  if (messageType === "happyhour") {
+    return (
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] text-[var(--primary)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--primary)] animate-pulse">
+        🎉 ¡Happy Hour! Completa tareas ahora y obtén +50% de puntos extra.
       </div>
     );
   }
