@@ -25,25 +25,24 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
   return (
     <div className="mb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <h2 className="text-3xl font-display text-[var(--on-surface)] flex items-center gap-3">
-          <Flame className="w-8 h-8 text-[var(--secondary)]" />
-          MIS TAREAS
-        </h2>
-
-        {totalTodayTasks > 0 && (
-          <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2 min-w-[250px]">
-             <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
-               <span>Progreso Diario</span>
-               <span className="text-[var(--primary)]">{progressPercentage}%</span>
-             </div>
-             <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
-                <div
-                   className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
-                   style={{ width: `${progressPercentage}%` }}
-                />
-             </div>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-3xl font-display text-[var(--on-surface)] flex items-center gap-3">
+            <Flame className="w-8 h-8 text-[var(--secondary)]" />
+            MIS TAREAS
+          </h2>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs font-bold text-[var(--on-surface-variant)] uppercase tracking-wider">
+              Progreso Diario ({doneTodayTasks}/{totalTodayTasks})
+            </span>
+            <div className="flex-1 max-w-[200px] h-2 bg-[var(--surface-container-high)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--success)] transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <span className="text-xs font-bold text-[var(--success)]">{progressPercentage}%</span>
           </div>
-        )}
+        </div>
       </div>
 
       {pendingTasks.length === 0 ? (
