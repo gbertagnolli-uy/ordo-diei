@@ -5,11 +5,45 @@ import { Modal } from "@/components/ui/Modal";
 import { Clock, CheckCircle2, AlertTriangle, AlertCircle, Save, Info } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { getLevelInfo } from "@/lib/levelUtils";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
 import { BadgesDisplay } from "./BadgesDisplay";
 import { MoodSelector } from "./MoodSelector";
+
+
+function LevelUpPopup({ data, onClose }: { data: any; onClose: () => void }) {
+  useEffect(() => {
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.5 },
+      colors: ['#FFD700', '#FFA500', '#FF8C00']
+    });
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center text-center py-6">
+      <div className="text-6xl mb-4 animate-bounce">🌟</div>
+      <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
+        ¡Nivel {data?.level}!
+      </h3>
+      <p className="text-2xl font-display font-bold text-[var(--warning)] mb-4">
+        {data?.title}
+      </p>
+      <p className="text-[var(--on-surface-variant)] text-lg mb-6 font-body">
+        ¡Increíble trabajo! Has acumulado suficientes puntos para subir de nivel.
+      </p>
+      <button
+        onClick={onClose}
+        className="btn-primary w-full py-4 text-lg shadow-lg"
+      >
+        ¡Genial!
+      </button>
+    </div>
+  );
+}
 
 export function ModalManager() {
   const { isOpen, type, data, closeModal, openModal } = useModalStore();
@@ -240,6 +274,12 @@ export function ModalManager() {
         </Modal>
       )}
 
+      {type === "LEVEL_UP" && (
+        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!" width="md">
+          <LevelUpPopup data={data} onClose={closeModal} />
+        </Modal>
+      )}
+
       {type === "MOOD_SELECTOR" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="¿Cómo te sientes hoy?">
           <div className="py-4">
@@ -448,6 +488,25 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
+      {/* Insignias Dinámicas */}
+      <div className="flex flex-wrap gap-2 mb-4 justify-center">
+        {(user.totalTasksCompleted || 0) >= 10 && (
+          <div className="flex items-center gap-1 bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] border border-[color-mix(in-srgb,var(--primary)_20%,transparent)] rounded-full px-3 py-1 text-xs font-bold text-[var(--primary)]" title="Francotirador: Completaste 10+ tareas">
+            🎯 Francotirador
+          </div>
+        )}
+        {(user.streakDays || 0) >= 3 && (
+          <div className="flex items-center gap-1 bg-orange-500/10 border border-orange-500/20 rounded-full px-3 py-1 text-xs font-bold text-orange-600" title="Imparable: Racha de 3+ días">
+            🔥 Imparable
+          </div>
+        )}
+        {getLevelInfo(user.puntosAcumulados || 0).level >= 5 && (
+          <div className="flex items-center gap-1 bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-full px-3 py-1 text-xs font-bold text-[var(--warning)]" title="Estrella Naciente: Alcanzaste el Nivel 5+">
+            🌟 Estrella Naciente
+          </div>
+        )}
+      </div>
+
       <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
 
       <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -473,6 +532,7 @@ function UserStatsPopup({ user }: { user: any }) {
       ))}
       </div>
       </div>
+    </div>
     </div>
   );
 }

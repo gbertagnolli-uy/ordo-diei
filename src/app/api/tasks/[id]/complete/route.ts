@@ -75,6 +75,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
+
+
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -108,11 +110,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
 
-    let isHappyHour = false;
-    const hour = now.getHours();
-    if (hour >= 17 && hour < 19) {
-      isHappyHour = true;
-    }
+    // Regla de Recompensa
+    let rewardPoints = 0;
+    let feedback = "";
+    const estadoFinal = "Esperando_Aprobacion";
+
+    // Happy Hour check (17:00 - 19:00)
+    const currentHour = now.getHours();
+    const isHappyHour = currentHour >= 17 && currentHour < 19;
+    let happyHourMultiplier = isHappyHour ? 1.5 : 1;
 
     // Dynamic base points based on estimated time (1 point per minute, minimum 10)
     if (task.generaPuntosYRecompensa) {
@@ -125,20 +131,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       let flatBonus = 0;
 
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus;
-        if (isHappyHour) {
-          rewardPoints = Math.floor(rewardPoints * 1.5);
-          feedback = `¡Buen trabajo! Completaste la tarea a tiempo durante la Happy Hour (+50% puntos). Obtuviste ${rewardPoints} pts.`;
-        } else {
-          feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
-        }
+        rewardPoints = Math.floor((basePoints + streakBonus) * happyHourMultiplier);
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
+        if (isHappyHour) feedback += " ¡Bono de Happy Hour (1.5x) aplicado!";
       } else if (estaEnPeriodoGracia) {
-        actualBasePoints = Math.floor(basePoints / 2);
-        actualStreakBonus = Math.floor(streakBonus / 2);
-        speedBonus = 0; // No speed bonus for late tasks
-        checklistBonus = Math.floor(checklistBonus / 2);
-        rewardPoints = actualBasePoints + actualStreakBonus + checklistBonus;
+        rewardPoints = Math.floor(((basePoints + streakBonus) / 2) * happyHourMultiplier);
         feedback = "Tarea completada con retraso (50% puntos).";
+        if (isHappyHour) feedback += " ¡Bono de Happy Hour (1.5x) aplicado!";
       } else {
         rewardPoints = 0;
         feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
