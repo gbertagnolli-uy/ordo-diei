@@ -1,8 +1,10 @@
 "use client";
 import { Trophy, Star } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { useAuthStore } from "@/store/authStore";
 
 export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isOpen: boolean, onClose: () => void }) {
+  const currentUser = useAuthStore(state => state.currentUser);
   // Sort users by: 1. completionPercentage, 2. stars, 3. puntosAcumulados
   const sortedUsers = [...users].sort((a, b) => {
     // Principal: completionPercentage
@@ -130,8 +132,21 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
             <tbody className="divide-y divide-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)]">
               {sortedUsers.map((user, index) => {
                 const trophy = getTrophy(index);
+                const isCurrentUser = currentUser?.id === user.id;
+
+                // Calculate points to next position
+                let pointsToNext = null;
+                if (index > 0 && sortedUsers[index - 1]) {
+                  const pointsDiff = (sortedUsers[index - 1].puntosAcumulados || 0) - (user.puntosAcumulados || 0);
+                  if (pointsDiff > 0) pointsToNext = pointsDiff;
+                }
+
                 return (
-                  <tr key={user.id} className={`${index === 0 ? 'bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)]' : ''} hover:bg-[var(--surface-container-low)] transition-colors`}>
+                  <tr key={user.id} className={`
+                    ${index === 0 ? 'bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)]' : ''}
+                    ${isCurrentUser ? 'bg-[color-mix(in-srgb,var(--primary)_15%,transparent)] shadow-[inset_4px_0_0_var(--primary)]' : 'hover:bg-[var(--surface-container-low)]'}
+                    transition-colors
+                  `}>
                     <td className="px-3 py-4 text-center">
                       <div className="flex justify-center items-center">
                         {trophy ? (
@@ -155,15 +170,25 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
                           )}
                         </div>
                         <div className="flex flex-col">
-                           <span className="font-title font-bold text-[var(--on-surface)] truncate max-w-[120px]">{user.nombre}</span>
+                           <div className="flex items-center gap-2">
+                             <span className={`font-title font-bold text-[var(--on-surface)] truncate max-w-[120px] ${isCurrentUser ? 'text-[var(--primary)]' : ''}`}>{user.nombre}</span>
+                             {isCurrentUser && <span className="text-[10px] bg-[var(--primary)] text-[var(--on-primary)] px-1.5 rounded-sm font-bold">TÚ</span>}
+                           </div>
                            <span className="text-[10px] text-[var(--primary)] uppercase tracking-wider font-bold">Lvl {Math.floor(Math.sqrt((user.puntosAcumulados || 0)/100))+1}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-4 text-center font-bold text-orange-500">{user.streakDays || 0}</td>
-                    <td className="px-3 py-4 text-center font-bold text-[var(--secondary)]">{user.stars}</td>
-                    <td className="px-3 py-4 text-center font-bold text-[var(--primary)]">{user.puntosAcumulados}</td>
-                    <td className="px-3 py-4 text-center font-bold text-[var(--error)]">{user.surprises}</td>
+                    <td className="px-3 py-4 text-center font-bold text-orange-500" title="Racha Actual">{user.streakDays || 0}</td>
+                    <td className="px-3 py-4 text-center font-bold text-[var(--secondary)]" title="Estrellas">{user.stars}</td>
+                    <td className="px-3 py-4 text-center font-bold text-[var(--primary)]">
+                      <div className="flex flex-col items-center">
+                        <span>{user.puntosAcumulados}</span>
+                        {pointsToNext && isCurrentUser && (
+                          <span className="text-[8px] text-[var(--on-surface-variant)] uppercase mt-0.5 block whitespace-nowrap">a {pointsToNext} del #{index}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-4 text-center font-bold text-[var(--error)]" title="Premios Sorpresa">{user.surprises}</td>
                     <td className="px-3 py-4 text-right">
                       <div className="flex flex-col items-end gap-1">
                         <span className={`text-sm font-bold font-title ${
