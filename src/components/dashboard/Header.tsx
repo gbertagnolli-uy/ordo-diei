@@ -179,6 +179,8 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
             </>
           )}
 
+          <button onClick={handleLogout} className="text-xs font-bold text-[var(--primary)] hover:underline mr-1 hidden sm:block" title="Cerrar Sesión">Salir</button>
+
           <div className="relative" onClick={() => openModal("MOOD_SELECTOR", { user: currentUser })}>
             <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden elevation-ambient bg-[var(--surface-container)] hover:ring-2 hover:ring-[var(--primary)] transition-all">
                {currentUser?.fotoUrl ? (

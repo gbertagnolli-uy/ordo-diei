@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
+import { BadgesDisplay } from "./BadgesDisplay";
 import { MoodSelector } from "./MoodSelector";
 
 export function ModalManager() {
@@ -76,36 +77,55 @@ export function ModalManager() {
             <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
               ¡Buen trabajo!
             </h3>
-            <p className="text-[var(--on-surface-variant)] text-lg mb-2 font-body">
+            <p className="text-[var(--on-surface-variant)] text-lg mb-6 font-body">
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
-
-            {data?.isNewStreak && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
-                <span className="text-2xl">🔥</span>
-                <span className="text-orange-500 font-bold text-lg">
-                  ¡Racha de {data?.streakDays} Días!
-                </span>
-              </div>
-            )}
             
-            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3">
-              <span className="text-4xl">⭐</span>
-              <div className="text-left">
-                <div className="text-[var(--warning)] font-headline font-bold text-2xl">
-                  +{data?.puntos || 0} Puntos
-                </div>
-                <div className="text-[var(--warning)] opacity-80 text-sm font-title font-bold uppercase tracking-wider">
-                  Saldo Bloqueado
+            <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
+              <div className="bg-[var(--surface-container-high)] p-5 rounded-xl border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] shadow-[0_4px_20px_rgba(var(--primary-rgb),0.15)] relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] opacity-10"></div>
+                <div className="relative z-10 flex flex-col items-center gap-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl">⭐</span>
+                    <div className="text-5xl font-display font-bold text-[var(--warning)] drop-shadow-md">
+                      +{data?.puntos || 0}
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider">Puntos Bloqueados Totales</div>
+
+                  {/* Detailed breakdown */}
+                  {(data?.basePoints > 0 || data?.streakBonus > 0) && (
+                    <div className="mt-3 pt-3 border-t border-[color-mix(in-srgb,var(--primary)_20%,transparent)] w-full flex flex-col gap-1 text-sm font-medium">
+                      <div className="flex justify-between items-center text-[var(--on-surface-variant)]">
+                        <span>Por completar tarea</span>
+                        <span className="font-bold">+{data?.basePoints || 0}</span>
+                      </div>
+                      {data?.streakBonus > 0 && (
+                        <div className="flex justify-between items-center text-orange-500">
+                          <span className="flex items-center gap-1">🔥 Bono de racha</span>
+                          <span className="font-bold">+{data?.streakBonus}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {data?.isNewStreak && (
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 flex items-center justify-center gap-2 animate-bounce">
+                  <span className="text-2xl">🔥</span>
+                  <span className="text-orange-500 font-bold text-lg uppercase tracking-wider">
+                    ¡Racha de {data?.streakDays} Días!
+                  </span>
+                </div>
+              )}
             </div>
 
             <button 
               onClick={() => window.location.reload()}
-              className="btn-primary mt-8 w-full py-4 text-lg shadow-lg"
+              className="btn-primary mt-2 w-full max-w-sm py-4 text-lg font-bold tracking-widest uppercase shadow-[0_4px_15px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_6px_20px_rgba(var(--primary-rgb),0.4)]"
             >
-              ¡Genial!
+              ¡A seguir así!
             </button>
           </div>
         </Modal>

@@ -114,6 +114,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     let rewardPoints = 0;
     let feedback = "";
+    let basePointsEarned = 0;
+    let streakBonusEarned = 0;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -184,6 +186,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
+      basePoints: basePointsEarned,
+      streakBonus: streakBonusEarned,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays

@@ -5,10 +5,13 @@ import { Clock, Play, Square, Pause, Flame, ListChecks, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 import { ChecklistModal } from "./ChecklistModal";
+import { getLevelInfo } from "@/lib/levelUtils";
+import { useAuthStore } from "@/store/authStore";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 
 export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coResponsables?: CoResponsableMap }) {
+  const user = useAuthStore(state => state.currentUser);
   const pendingTasks = tasks.filter((t) => 
     t.estado !== "Completada" && 
     t.estado !== "Aprobada" && 
@@ -30,20 +33,37 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
           MIS TAREAS
         </h2>
 
-        {totalTodayTasks > 0 && (
-          <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2 min-w-[250px]">
-             <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
-               <span>Progreso Diario</span>
-               <span className="text-[var(--primary)]">{progressPercentage}%</span>
-             </div>
-             <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
-                <div
-                   className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
-                   style={{ width: `${progressPercentage}%` }}
-                />
-             </div>
-          </div>
-        )}
+        <div className="flex flex-col gap-3 min-w-[250px]">
+          {totalTodayTasks > 0 && (
+            <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2">
+               <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+                 <span>Progreso Diario</span>
+                 <span className="text-[var(--primary)]">{progressPercentage}%</span>
+               </div>
+               <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
+                  <div
+                     className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
+                     style={{ width: `${progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          )}
+
+          {user && (
+            <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2" title={`${getLevelInfo(user.puntosAcumulados || 0).pointsToNextLevel} puntos para subir de nivel`}>
+               <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+                 <span>Nivel {getLevelInfo(user.puntosAcumulados || 0).level}</span>
+                 <span className="text-[var(--secondary)] text-xs">{getLevelInfo(user.puntosAcumulados || 0).title}</span>
+               </div>
+               <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden relative">
+                  <div
+                     className="h-full bg-gradient-to-r from-[var(--secondary)] to-[var(--primary)] transition-all duration-1000 ease-out"
+                     style={{ width: `${getLevelInfo(user.puntosAcumulados || 0).progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {pendingTasks.length === 0 ? (
@@ -206,6 +226,8 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
         openModal("TASK_SUCCESS", {
           mensaje: data.mensaje,
           puntos: data.puntos,
+          basePoints: data.basePoints,
+          streakBonus: data.streakBonus,
           isNewStreak: data.isNewStreak,
           streakDays: data.streakDays
         });
