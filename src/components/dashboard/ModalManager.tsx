@@ -2,14 +2,14 @@
 
 import { useModalStore } from "@/store/modalStore";
 import { Modal } from "@/components/ui/Modal";
-import { Clock, CheckCircle2, AlertTriangle, AlertCircle, Save, Info } from "lucide-react";
+import { Clock, CheckCircle2, AlertTriangle, AlertCircle, Save, Info, Trophy } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { getLevelInfo } from "@/lib/levelUtils";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
-import { BadgesDisplay } from "./BadgesDisplay";
+import { getLevelInfo } from "@/lib/levelUtils";
 import { MoodSelector } from "./MoodSelector";
 
 
@@ -331,6 +331,29 @@ function UserStatsPopup({ user }: { user: any }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Nivel y Progreso */}
+      <div className="bg-[var(--surface-container)] p-4 rounded-md border border-[color-mix(in-srgb,var(--primary)_20%,transparent)] relative overflow-hidden">
+         <div className="flex justify-between items-end mb-2 relative z-10">
+           <div>
+             <div className="text-xs font-bold text-[var(--on-surface-variant)] uppercase tracking-wider">Nivel {getLevelInfo(user.puntosAcumulados || 0).level}</div>
+             <div className="text-xl font-headline font-bold text-[var(--primary)]">{getLevelInfo(user.puntosAcumulados || 0).title}</div>
+           </div>
+           <div className="text-right">
+             <div className="text-sm font-bold text-[var(--on-surface)]">{user.puntosAcumulados || 0} pts</div>
+             <div className="text-xs text-[var(--on-surface-variant)]">Faltan {getLevelInfo(user.puntosAcumulados || 0).pointsToNextLevel} pts</div>
+           </div>
+         </div>
+         <div className="w-full h-3 bg-[var(--surface-container-high)] rounded-full overflow-hidden relative z-10" title={`${getLevelInfo(user.puntosAcumulados || 0).progressPercentage}% al siguiente nivel`}>
+            <div
+              className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
+              style={{ width: `${getLevelInfo(user.puntosAcumulados || 0).progressPercentage}%` }}
+            />
+         </div>
+         <div className="absolute -right-4 -bottom-4 opacity-10">
+            <Trophy className="w-24 h-24" />
+         </div>
+      </div>
+
       {/* Puntos y Explicación */}
       <div className="flex justify-between items-center gap-4 bg-[var(--surface-container)] p-4 rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
         <div className="flex flex-col items-center flex-1" title="Puntos disponibles para gastar o que suman a tu ranking.">
@@ -351,15 +374,27 @@ function UserStatsPopup({ user }: { user: any }) {
       <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos e Insignias */}
       <div className="grid grid-cols-2 gap-2 mb-2">
-        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
+        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)] relative group">
           <div className="text-[var(--primary)] font-bold text-2xl">{user.totalTasksCompleted || 0}</div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Tareas de por Vida</div>
+          {user.totalTasksCompleted >= 50 ? (
+            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-300 to-yellow-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">Veterano</div>
+          ) : user.totalTasksCompleted >= 10 ? (
+            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-blue-300 to-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">Aplicado</div>
+          ) : user.totalTasksCompleted >= 1 ? (
+             <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-300 to-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">Primeros Pasos</div>
+          ) : null}
         </div>
-        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--secondary)_20%,transparent)]">
+        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--secondary)_20%,transparent)] relative group">
           <div className="text-orange-500 font-bold text-2xl flex items-center justify-center gap-1">
             🔥 {user.streakDays || 0}
           </div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+           {user.streakDays >= 7 ? (
+            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-red-400 to-orange-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md animate-bounce">Imparable</div>
+          ) : user.streakDays >= 3 ? (
+            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-orange-300 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">En Racha</div>
+          ) : null}
         </div>
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-yellow-500/20">
           <div className="text-yellow-500 font-bold text-2xl flex items-center justify-center gap-1">
@@ -533,7 +568,6 @@ function UserStatsPopup({ user }: { user: any }) {
       </div>
       </div>
     </div>
-    </div>
   );
 }
 
@@ -579,7 +613,7 @@ function RulesPopup() {
             {rules}
          </div>
       )}
-{isAdmin && (
+      {isAdmin && (
          <button onClick={handleSave} disabled={loading} className="btn-primary ml-auto flex items-center gap-2">
             <Save className="w-5 h-5"/> {loading ? "Guardando..." : "Guardar Reglas"}
          </button>
