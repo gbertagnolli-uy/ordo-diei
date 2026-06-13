@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
+import { BadgesDisplay } from "./BadgesDisplay";
 import { MoodSelector } from "./MoodSelector";
 
 export function ModalManager() {
@@ -49,6 +50,33 @@ export function ModalManager() {
         </Modal>
       )}
 
+      {type === "LEVEL_UP" && (
+        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
+          <div className="flex flex-col items-center text-center py-6">
+            <img
+              src="/winners-animate.svg"
+              alt="¡Subiste de Nivel!"
+              className="w-48 h-48 mb-6 drop-shadow-xl animate-bounce"
+            />
+            <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
+              ¡Nivel {data?.level}!
+            </h3>
+            <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
+              Nuevo Rango: <span className="text-[var(--primary)]">{data?.title}</span>
+            </p>
+            <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
+              ¡Tu esfuerzo está dando frutos! Sigue completando tareas para alcanzar el siguiente rango.
+            </p>
+            <button
+              onClick={closeModal}
+              className="btn-primary w-full py-4 text-lg shadow-lg"
+            >
+              ¡A seguir subiendo!
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {type === "TASK_SUCCESS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Misión Cumplida!">
           <div className="flex flex-col items-center text-center py-6">
@@ -72,15 +100,24 @@ export function ModalManager() {
             </p>
 
             {data?.isNewStreak && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-pulse">
                 <span className="text-2xl">🔥</span>
                 <span className="text-orange-500 font-bold text-lg">
                   ¡Racha de {data?.streakDays} Días!
                 </span>
               </div>
             )}
+
+            {data?.awardedStar && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-bounce">
+                <span className="text-2xl">🌟</span>
+                <span className="text-blue-500 font-bold text-lg">
+                  ¡Ganaste una Estrella Especial!
+                </span>
+              </div>
+            )}
             
-            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3">
+            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3 mb-4">
               <span className="text-4xl">⭐</span>
               <div className="text-left">
                 <div className="text-[var(--warning)] font-headline font-bold text-2xl">
@@ -90,13 +127,22 @@ export function ModalManager() {
                   Saldo Bloqueado
                 </div>
               </div>
+
+              {data?.isNewStreak && (
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 flex items-center justify-center gap-2 animate-bounce">
+                  <span className="text-2xl">🔥</span>
+                  <span className="text-orange-500 font-bold text-lg uppercase tracking-wider">
+                    ¡Racha de {data?.streakDays} Días!
+                  </span>
+                </div>
+              )}
             </div>
 
             <button 
               onClick={() => window.location.reload()}
-              className="btn-primary mt-8 w-full py-4 text-lg shadow-lg"
+              className="btn-primary mt-2 w-full max-w-sm py-4 text-lg font-bold tracking-widest uppercase shadow-[0_4px_15px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_6px_20px_rgba(var(--primary-rgb),0.4)]"
             >
-              ¡Genial!
+              ¡A seguir así!
             </button>
           </div>
         </Modal>
@@ -211,7 +257,6 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
       {/* Sección de Logros Resumidos */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_20%,transparent)]">
@@ -223,6 +268,26 @@ function UserStatsPopup({ user }: { user: any }) {
             🔥 {user.streakDays || 0}
           </div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+        </div>
+      </div>
+
+      {/* Logros Desbloqueados (Badges) */}
+      <div className="bg-[var(--surface-container)] rounded-md p-3 border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] mb-2">
+        <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-2">Logros Desbloqueados</div>
+        <div className="flex flex-wrap gap-2">
+          {user.totalTasksCompleted >= 10 && <span className="px-2 py-1 text-xs bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-md font-bold" title="10+ Tareas">🥉 Iniciador</span>}
+          {user.totalTasksCompleted >= 50 && <span className="px-2 py-1 text-xs bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-md font-bold" title="50+ Tareas">🥈 Constante</span>}
+          {user.totalTasksCompleted >= 100 && <span className="px-2 py-1 text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-md font-bold" title="100+ Tareas">🥇 Veterano</span>}
+
+          {user.streakDays >= 3 && <span className="px-2 py-1 text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-md font-bold" title="Racha de 3 días">🔥 En Racha</span>}
+          {user.streakDays >= 7 && <span className="px-2 py-1 text-xs bg-red-500/10 text-red-500 border border-red-500/20 rounded-md font-bold" title="Racha de 7 días">🚀 Imparable</span>}
+
+          {user.stars >= 1 && <span className="px-2 py-1 text-xs bg-[var(--secondary)]/10 text-[var(--secondary)] border border-[var(--secondary)]/20 rounded-md font-bold" title="Tiene Estrellas">🌟 Estrella</span>}
+          {user.completionPercentage >= 90 && user.totalTasksCompleted > 5 && <span className="px-2 py-1 text-xs bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 rounded-md font-bold" title=">90% de Éxito">✅ Perfeccionista</span>}
+
+          {user.totalTasksCompleted < 10 && user.streakDays < 3 && user.stars === 0 && (
+            <span className="text-xs text-[var(--on-surface-variant)] italic">Aún no hay logros. ¡Sigue así!</span>
+          )}
         </div>
       </div>
 

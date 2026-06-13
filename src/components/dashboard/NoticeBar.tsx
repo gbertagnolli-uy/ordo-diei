@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 export function NoticeBar() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | null>(null);
+  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | "happyHour" | null>(null);
 
   useEffect(() => {
     const calculateTime = () => {
@@ -15,8 +15,24 @@ export function NoticeBar() {
 
       const hour = now.getHours();
 
+      // Happy Hour entre 18:00 y 20:00
+      if (hour >= 18 && hour < 20) {
+        setIsVisible(true);
+        setMessageType("happyHour");
+        const happyLimit = new Date();
+        happyLimit.setHours(20, 0, 0, 0);
+        const diff = happyLimit.getTime() - now.getTime();
+
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        setTimeLeft(
+          `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        );
+      }
       // Activar warning solo si son entre las 20:00 y las 22:00
-      if (hour >= 20 && hour < 22) {
+      else if (hour >= 20 && hour < 22) {
         setIsVisible(true);
         setMessageType("warning");
         const diff = limit.getTime() - now.getTime();
@@ -46,6 +62,14 @@ export function NoticeBar() {
   }, []);
 
   if (!isVisible) return null;
+
+  if (messageType === "happyHour") {
+    return (
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary)] text-[var(--on-secondary)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[color-mix(in-srgb,var(--secondary-container)_50%,transparent)]">
+        ✨ ¡Happy Hour! Multiplica tus puntos (x1.5) completando tareas en las próximas [{timeLeft}]
+      </div>
+    );
+  }
 
   if (messageType === "warning") {
     return (
