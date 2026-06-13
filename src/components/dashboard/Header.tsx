@@ -15,6 +15,21 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
   const { openModal } = useModalStore();
 
   useEffect(() => {
+    // Check for Level Up
+    if (currentUser) {
+      const currentLevel = getLevelInfo(currentUser.puntosAcumulados || 0).level;
+      const lastSeenLevel = localStorage.getItem(`lastSeenLevel_${currentUser.id}`);
+
+      if (lastSeenLevel) {
+        if (currentLevel > parseInt(lastSeenLevel)) {
+          openModal("LEVEL_UP", { level: currentLevel, title: getLevelInfo(currentUser.puntosAcumulados || 0).title });
+          localStorage.setItem(`lastSeenLevel_${currentUser.id}`, currentLevel.toString());
+        }
+      } else {
+        localStorage.setItem(`lastSeenLevel_${currentUser.id}`, currentLevel.toString());
+      }
+    }
+
     const updateTime = () => {
       setTime(new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     };
@@ -147,6 +162,16 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                      🔥 {currentUser.streakDays}
                    </span>
                  )}
+                 {currentUser.stars > 0 && (
+                   <span className="text-xs text-yellow-500 font-bold flex items-center gap-1" title="Estrellas">
+                     ⭐ {currentUser.stars}
+                   </span>
+                 )}
+                 {currentUser.surprises > 0 && (
+                   <span className="text-xs text-purple-500 font-bold flex items-center gap-1" title="Sorpresas">
+                     🎁 {currentUser.surprises}
+                   </span>
+                 )}
                </div>
                {/* Progress bar below level */}
                <div className="w-24 h-1.5 bg-[var(--surface-container-high)] rounded-full mt-1 overflow-hidden" title={`${getLevelInfo(currentUser.puntosAcumulados || 0).progressPercentage}% al siguiente nivel`}>
@@ -157,6 +182,10 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                </div>
             </div>
           )}
+
+          <div className="hidden sm:flex flex-col items-end mr-1 cursor-pointer" onClick={handleLogout} title="Cerrar Sesión">
+             <span className="text-xs font-bold text-[var(--primary)] hover:underline">Salir</span>
+          </div>
 
           <div className="relative" onClick={() => openModal("MOOD_SELECTOR", { user: currentUser })}>
             <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden elevation-ambient bg-[var(--surface-container)] hover:ring-2 hover:ring-[var(--primary)] transition-all">
