@@ -75,10 +75,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    let rewardPoints = 0;
-    let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
-
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -156,6 +152,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
+    // Surprise logic
+    let wonSurprise = false;
+    let earnedStars = 0;
+    if (task.isSurpriseEligible && esATiempo) {
+      if (Math.random() < 0.1) { // 10% chance to win a surprise
+        wonSurprise = true;
+        feedback += " 🎉 ¡También encontraste una SORPRESA!";
+      } else if (Math.random() < 0.3) { // 30% chance to win stars if no surprise
+        earnedStars = 1;
+        feedback += " ⭐ ¡Ganaste 1 ESTRELLA por tu esfuerzo!";
+      }
+    }
+
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
       prisma.tarea.update({
@@ -179,7 +188,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           },
           streakDays: newStreakDays,
           lastTaskCompletedDate: now,
-          stars: awardedStar ? { increment: 1 } : undefined
+          surprises: wonSurprise ? { increment: 1 } : undefined,
+          stars: earnedStars > 0 ? { increment: earnedStars } : undefined,
         }
       })
     ]);

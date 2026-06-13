@@ -34,6 +34,14 @@ export function ModalManager() {
         origin: { y: 0.6 }
       });
     }
+    if (isOpen && type === "SURPRISE_AWARD") {
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: ['#FFD700', '#FFA500', '#FF8C00']
+      });
+    }
   }, [isOpen, type]);
 
   return (
@@ -268,6 +276,18 @@ function UserStatsPopup({ user }: { user: any }) {
             🔥 {user.streakDays || 0}
           </div>
           <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Racha Actual</div>
+        </div>
+        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-yellow-500/20">
+          <div className="text-yellow-500 font-bold text-2xl flex items-center justify-center gap-1">
+            ⭐ {user.stars || 0}
+          </div>
+          <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Estrellas</div>
+        </div>
+        <div className="bg-[var(--surface-container)] rounded-md p-3 text-center border border-purple-500/20">
+          <div className="text-purple-500 font-bold text-2xl flex items-center justify-center gap-1">
+            🎁 {user.surprises || 0}
+          </div>
+          <div className="text-xs text-[var(--on-surface-variant)] uppercase font-bold tracking-wider">Sorpresas</div>
         </div>
       </div>
 
