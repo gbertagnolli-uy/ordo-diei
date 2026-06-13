@@ -279,8 +279,7 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
           streakBonus: data.streakBonus,
           isNewStreak: data.isNewStreak,
           streakDays: data.streakDays,
-          bonuses: data.bonuses,
-          surpriseWon: data.surpriseWon
+          isHappyHour: data.isHappyHour
         });
       } else {
         const errData = await res.json().catch(() => ({}));
