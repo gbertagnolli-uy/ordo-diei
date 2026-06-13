@@ -17,6 +17,14 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        if (data.leveledUp) {
+          // Store level up info in sessionStorage so it survives reload
+          sessionStorage.setItem("levelUpNotification", JSON.stringify({
+            userName: data.userName,
+            newLevel: data.newLevel
+          }));
+        }
         window.location.reload();
       } else {
         alert(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);

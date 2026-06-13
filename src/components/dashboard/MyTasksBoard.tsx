@@ -10,6 +10,7 @@ import confetti from "canvas-confetti";
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 
 export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coResponsables?: CoResponsableMap }) {
+  const user = useAuthStore(state => state.currentUser);
   const pendingTasks = tasks.filter((t) => 
     t.estado !== "Completada" && 
     t.estado !== "Aprobada" && 
@@ -57,20 +58,37 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
           MIS TAREAS
         </h2>
 
-        {totalTodayTasks > 0 && (
-          <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2 min-w-[250px]">
-             <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
-               <span>Progreso Diario</span>
-               <span className="text-[var(--primary)]">{progressPercentage}%</span>
-             </div>
-             <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
-                <div
-                   className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
-                   style={{ width: `${progressPercentage}%` }}
-                />
-             </div>
-          </div>
-        )}
+        <div className="flex flex-col gap-3 min-w-[250px]">
+          {totalTodayTasks > 0 && (
+            <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2">
+               <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+                 <span>Progreso Diario</span>
+                 <span className="text-[var(--primary)]">{progressPercentage}%</span>
+               </div>
+               <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
+                  <div
+                     className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
+                     style={{ width: `${progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          )}
+
+          {user && (
+            <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2" title={`${getLevelInfo(user.puntosAcumulados || 0).pointsToNextLevel} puntos para subir de nivel`}>
+               <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+                 <span>Nivel {getLevelInfo(user.puntosAcumulados || 0).level}</span>
+                 <span className="text-[var(--secondary)] text-xs">{getLevelInfo(user.puntosAcumulados || 0).title}</span>
+               </div>
+               <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden relative">
+                  <div
+                     className="h-full bg-gradient-to-r from-[var(--secondary)] to-[var(--primary)] transition-all duration-1000 ease-out"
+                     style={{ width: `${getLevelInfo(user.puntosAcumulados || 0).progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {pendingTasks.length === 0 ? (
@@ -233,8 +251,11 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
         openModal("TASK_SUCCESS", {
           mensaje: data.mensaje,
           puntos: data.puntos,
+          basePoints: data.basePoints,
+          streakBonus: data.streakBonus,
           isNewStreak: data.isNewStreak,
-          streakDays: data.streakDays
+          streakDays: data.streakDays,
+          awardedStar: data.awardedStar
         });
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -315,7 +336,14 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
       <div>
         <div className="flex justify-between items-start mb-2">
            <h3 className="text-xl font-display text-[var(--on-surface)] leading-tight">{task.titulo}</h3>
-           {task.generaPuntosYRecompensa && <div className="text-xs font-bold text-[var(--secondary)] bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] px-2 flex items-center rounded-md mt-1">⭐️ Pts</div>}
+           <div className="flex items-center gap-1">
+              {task.asignado?.streakDays > 0 && task.generaPuntosYRecompensa && (
+                <div className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 flex items-center rounded-md mt-1" title="Bono de puntos por racha activo">
+                  🔥 Bonus
+                </div>
+              )}
+              {task.generaPuntosYRecompensa && <div className="text-xs font-bold text-[var(--secondary)] bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] px-2 flex items-center rounded-md mt-1">⭐️ Pts</div>}
+           </div>
         </div>
 
         {task.descripcion && <p className="text-[var(--on-surface-variant)] text-sm mb-4 leading-relaxed">{task.descripcion}</p>}
