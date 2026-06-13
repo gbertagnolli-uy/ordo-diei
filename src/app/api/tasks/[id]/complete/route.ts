@@ -75,6 +75,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
+    let rewardPoints = 0;
+    let feedback = "";
     const estadoFinal = "Esperando_Aprobacion";
 
     // Lógica de Rachas (Streaks)
@@ -115,16 +117,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         awardedStar = true;
       }
     }
-
-    // Regla de Recompensa y Bonificaciones
-    let rewardPoints = 0;
-    let feedback = "";
-
-    // Breakdown fields for gamification UI
-    let actualBasePoints = 0;
-    let actualStreakBonus = 0;
-    let speedBonus = 0;
-    let checklistBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)

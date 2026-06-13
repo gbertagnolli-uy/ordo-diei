@@ -74,7 +74,7 @@ export function NoticeBar() {
   if (messageType === "warning") {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--error)] text-[var(--on-error)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide">
-        ⚠️ Te quedan [{timeLeft}] para terminar o corregir tus tareas de hoy
+        ⚠️ Te quedan [{timeLeft}] para terminar o corregir tus tareas de hoy y no perder tu racha diaria!
       </div>
     );
   }
