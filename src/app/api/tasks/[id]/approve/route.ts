@@ -50,7 +50,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Recalcular porcentaje de éxito
     await updateUserCompletionPercentage(tarea.asignadoId);
 
-    return NextResponse.json({ ok: true, mensaje: "Tarea aprobada y puntos acreditados" });
+    // Calcular nivel después
+    const nivelDespues = Math.floor(Math.sqrt(((asignado?.puntosAcumulados || 0) + (tarea.puntosGenerados || 0)) / 100)) + 1;
+    const leveledUp = nivelDespues > nivelAntes;
+
+    return NextResponse.json({
+      ok: true,
+      mensaje: "Tarea aprobada y puntos acreditados",
+      leveledUp,
+      newLevel: nivelDespues,
+      userName: asignado?.nombre
+    });
   } catch (error) {
     console.error("Error aprobando tarea:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
