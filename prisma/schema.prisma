@@ -112,6 +112,8 @@ model Tarea {
   asignado                         Usuario         @relation("TareasAsignadas", fields: [asignadoId], references: [id])
   historialAcciones                HistorialAccion[]
 
+  @@index([estado])
+  @@index([asignadoId])
   @@map("Tareas")
 }
 
