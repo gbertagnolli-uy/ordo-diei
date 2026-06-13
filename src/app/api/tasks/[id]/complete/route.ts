@@ -108,11 +108,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
 
-      // Check if user earned a new star (every 7 days of streak)
-      if (isNewStreak && newStreakDays > 0 && newStreakDays % 7 === 0) {
-        awardedStar = true;
-      }
-    }
+    // Regla de Recompensa y Gamificación
+    let rewardPoints = 0;
+    let feedback = "";
+
+    // Bonificaciones
+    const isHappyHour = now.getHours() >= 17 && now.getHours() < 20;
+    const isEarlyBird = now.getHours() < 10;
+    const hasChecklistBonus = task.isChecklist && task.checklistItems.length > 0;
+    const surpriseWon = Math.random() < 0.05; // 5% chance
+
+    let appliedBonuses = [];
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -128,35 +134,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
-      // Happy Hour Bonus (15:00 - 18:00)
-      const currentHour = now.getHours();
-      const isHappyHour = currentHour >= 15 && currentHour < 18;
-      const happyHourMultiplier = isHappyHour ? 1.5 : 1;
-
-      // Fast Finisher Bonus (10% to 80% of estimated time)
-      let fastFinisherBonus = 0;
-      if (task.tiempoEjecucionEstimadoSeg > 0 && cleanElapsed > 0) {
-        const timeRatio = cleanElapsed / task.tiempoEjecucionEstimadoSeg;
-        if (timeRatio >= 0.1 && timeRatio <= 0.8) {
-          fastFinisherBonus = 15;
-        }
-      }
-
-      // Checklist Bonus
-      const checklistBonus = (task.isChecklist && task.checklistItems.length > 0) ? 10 : 0;
+      let multipliers = 1;
+      let flatBonus = 0;
 
       if (esATiempo) {
-        const calculatedBasePoints = Math.floor(basePoints * happyHourMultiplier);
-        rewardPoints = calculatedBasePoints + streakBonus + fastFinisherBonus + checklistBonus;
+        if (isHappyHour) {
+            multipliers *= 1.5;
+            appliedBonuses.push("Happy Hour (1.5x)");
+        }
+        if (isEarlyBird) {
+            multipliers *= 1.2;
+            appliedBonuses.push("Early Bird (1.2x)");
+        }
+        if (hasChecklistBonus) {
+            flatBonus += 10;
+            appliedBonuses.push("Checklist Completo (+10 pts)");
+        }
 
-        const bonusesFeedback = [];
-        if (streakBonus > 0) bonusesFeedback.push(`${streakBonus} pts por racha`);
-        if (isHappyHour) bonusesFeedback.push(`x1.5 por Hora Feliz`);
-        if (fastFinisherBonus > 0) bonusesFeedback.push(`15 pts por ser rápido`);
-        if (checklistBonus > 0) bonusesFeedback.push(`10 pts por checklist`);
+        rewardPoints = Math.floor((basePoints + streakBonus) * multipliers) + flatBonus;
 
-        const bonusStr = bonusesFeedback.length > 0 ? ` (+ ${bonusesFeedback.join(", ")})` : "";
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${calculatedBasePoints} pts base${bonusStr}.`;
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base, ${streakBonus} pts de bono por racha.`;
+        if (appliedBonuses.length > 0) {
+            feedback += ` Bonos: ${appliedBonuses.join(', ')}.`;
+        }
       } else if (estaEnPeriodoGracia) {
         actualBasePoints = Math.floor(basePoints / 2);
         actualStreakBonus = Math.floor(streakBonus / 2);
@@ -212,8 +212,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           },
           streakDays: newStreakDays,
           lastTaskCompletedDate: now,
-          surprises: wonSurprise ? { increment: 1 } : undefined,
-          stars: earnedStars > 0 ? { increment: earnedStars } : undefined,
+          surprises: {
+            increment: surpriseWon ? 1 : 0
+          }
         }
       })
     ]);
@@ -232,9 +233,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
-      isMilestone,
-      milestoneBonus,
-      isHappyHour
+      bonuses: appliedBonuses,
+      surpriseWon
     });
   } catch (error) {
     console.error("Error en finalización de tarea:", error);

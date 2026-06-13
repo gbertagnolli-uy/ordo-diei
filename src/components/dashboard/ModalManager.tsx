@@ -107,8 +107,8 @@ export function ModalManager() {
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
 
-            {data?.isNewStreak && !data?.isMilestone && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse">
+            {data?.isNewStreak && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-2 animate-pulse">
                 <span className="text-2xl">🔥</span>
                 <span className="text-orange-500 font-bold text-lg">
                   ¡Racha de {data?.streakDays} Días!
@@ -116,37 +116,36 @@ export function ModalManager() {
               </div>
             )}
 
-            {data?.isMilestone && (
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md px-4 py-3 flex flex-col items-center gap-2 mb-6 animate-bounce shadow-[0_0_15px_rgba(234,179,8,0.5)]">
-                <span className="text-4xl">🏆</span>
-                <span className="text-yellow-500 font-black text-xl text-center">
-                  ¡SÚPER RACHA DE {data?.streakDays} DÍAS!
-                </span>
-                <span className="text-yellow-600 font-bold text-md text-center">
-                  +{data?.milestoneBonus} Puntos de Bono
-                </span>
+            {data?.bonuses && data.bonuses.length > 0 && (
+              <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] border border-[color-mix(in-srgb,var(--primary)_20%,transparent)] rounded-md px-4 py-2 flex flex-col items-center gap-1 mb-2">
+                <span className="text-[var(--primary)] font-bold text-sm uppercase tracking-wider">Bonos Aplicados</span>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {data.bonuses.map((bono: string, i: number) => (
+                    <span key={i} className="bg-[var(--primary)] text-[var(--on-primary)] text-xs font-bold px-2 py-1 rounded-full">
+                      {bono}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
-            {data?.isHappyHour && (
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                <span className="text-2xl">⚡</span>
-                <span className="text-purple-500 font-bold text-lg text-center">
-                  ¡Bono Happy Hour x1.5 Aplicado!
+            {data?.surpriseWon && (
+              <div className="bg-[color-mix(in-srgb,var(--success)_10%,transparent)] border border-[color-mix(in-srgb,var(--success)_20%,transparent)] rounded-md px-4 py-2 flex items-center gap-2 mb-6 animate-bounce">
+                <span className="text-2xl">🎁</span>
+                <span className="text-[var(--success)] font-bold text-lg">
+                  ¡Encontraste una Sorpresa Misteriosa!
                 </span>
               </div>
             )}
             
-            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 w-full flex flex-col gap-3">
-              <div className="flex items-center gap-3 justify-center border-b border-[color-mix(in-srgb,var(--warning)_20%,transparent)] pb-3">
-                <span className="text-4xl">⭐</span>
-                <div className="text-left">
-                  <div className="text-[var(--warning)] font-headline font-bold text-3xl">
-                    +{data?.puntos || 0} Puntos
-                  </div>
-                  <div className="text-[var(--warning)] opacity-80 text-sm font-title font-bold uppercase tracking-wider">
-                    Saldo Bloqueado
-                  </div>
+            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3 mt-4">
+              <span className="text-4xl">⭐</span>
+              <div className="text-left">
+                <div className="text-[var(--warning)] font-headline font-bold text-2xl">
+                  +{data?.puntos || 0} Puntos
+                </div>
+                <div className="text-[var(--warning)] opacity-80 text-sm font-title font-bold uppercase tracking-wider">
+                  Saldo Bloqueado
                 </div>
               </div>
 
@@ -383,6 +382,36 @@ function UserStatsPopup({ user }: { user: any }) {
             <span className="text-xs text-[var(--on-surface-variant)] italic">Aún no hay insignias. ¡Empieza hoy!</span>
           ) : null}
         </div>
+      </div>
+
+      {/* Logros Desbloqueados (Badges) */}
+      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-1 mt-2">Logros Desbloqueados</div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {(user.totalTasksCompleted >= 1) && (
+          <div className="flex items-center gap-1 bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] px-2 py-1 rounded-full text-xs font-bold text-[var(--primary)]" title="Completaste tu primera tarea">
+            🌱 Primer Paso
+          </div>
+        )}
+        {(user.totalTasksCompleted >= 10) && (
+          <div className="flex items-center gap-1 bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] border border-[color-mix(in-srgb,var(--secondary)_30%,transparent)] px-2 py-1 rounded-full text-xs font-bold text-[var(--secondary)]" title="Completaste 10 tareas">
+            🚀 En Ascenso
+          </div>
+        )}
+        {(user.totalTasksCompleted >= 100) && (
+          <div className="flex items-center gap-1 bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_30%,transparent)] px-2 py-1 rounded-full text-xs font-bold text-[var(--warning)]" title="Completaste 100 tareas">
+            💯 Centurión
+          </div>
+        )}
+        {(user.streakDays >= 7) && (
+          <div className="flex items-center gap-1 bg-orange-500/10 border border-orange-500/30 px-2 py-1 rounded-full text-xs font-bold text-orange-500" title="Mantuvo racha por 7 días seguidos">
+            🔥 Imparable
+          </div>
+        )}
+        {(user.surprises && user.surprises > 0) && (
+          <div className="flex items-center gap-1 bg-[color-mix(in-srgb,var(--success)_10%,transparent)] border border-[color-mix(in-srgb,var(--success)_30%,transparent)] px-2 py-1 rounded-full text-xs font-bold text-[var(--success)]" title={`Encontró ${user.surprises} sorpresas`}>
+            🎁 Afortunado ({user.surprises})
+          </div>
+        )}
       </div>
 
       <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
