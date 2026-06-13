@@ -75,6 +75,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
+    const estadoFinal = "Esperando_Aprobacion";
+
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -109,6 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Regla de Recompensa
+
     let rewardPoints = 0;
     let feedback = "";
     let basePointsEarned = 0;
@@ -116,20 +119,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
-      const basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+      let basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+
+      // Happy Hour Bonus (15:00 - 18:00 local time assumption)
+      const currentHour = new Date().getHours();
+      let isHappyHour = currentHour >= 15 && currentHour < 18;
+      if (isHappyHour) {
+          basePoints = Math.floor(basePoints * 1.5);
+      }
 
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
+      // Checklist Bonus
+      let checklistBonus = 0;
+      if (task.isChecklist && task.checklistItems && task.checklistItems.length > 0) {
+          const completedItems = task.checklistItems.filter(ci => ci.completado).length;
+          checklistBonus = completedItems * 5; // 5 pts por cada item
+      }
+
       if (esATiempo) {
-        basePointsEarned = basePoints;
-        streakBonusEarned = streakBonus;
-        rewardPoints = basePointsEarned + streakBonusEarned;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePointsEarned} pts base y ${streakBonusEarned} pts de bono por racha.`;
+        rewardPoints = basePoints + streakBonus + checklistBonus;
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base ${isHappyHour ? '(Happy Hour x1.5!) ' : ''}y ${streakBonus} pts de bono por racha${checklistBonus > 0 ? ` + ${checklistBonus} pts por checklist` : ''}.`;
       } else if (estaEnPeriodoGracia) {
-        basePointsEarned = Math.floor(basePoints / 2);
-        streakBonusEarned = Math.floor(streakBonus / 2);
-        rewardPoints = basePointsEarned + streakBonusEarned;
+        rewardPoints = Math.floor((basePoints + streakBonus + checklistBonus) / 2);
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;

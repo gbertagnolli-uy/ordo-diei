@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 export function NoticeBar() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | null>(null);
+  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | "happy_hour" | null>(null);
 
   useEffect(() => {
     const calculateTime = () => {
@@ -15,8 +15,13 @@ export function NoticeBar() {
 
       const hour = now.getHours();
 
+      // Activar happy hour de 15:00 a 18:00
+      if (hour >= 15 && hour < 18) {
+        setIsVisible(true);
+        setMessageType("happy_hour");
+      }
       // Activar warning solo si son entre las 20:00 y las 22:00
-      if (hour >= 20 && hour < 22) {
+      else if (hour >= 20 && hour < 22) {
         setIsVisible(true);
         setMessageType("warning");
         const diff = limit.getTime() - now.getTime();
@@ -46,6 +51,14 @@ export function NoticeBar() {
   }, []);
 
   if (!isVisible) return null;
+
+  if (messageType === "happy_hour") {
+    return (
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_80%,transparent)] text-[var(--on-primary)] p-2 font-headline font-bold text-center elevation-ambient shadow-lg animate-pulse tracking-wide border-b border-[color-mix(in-srgb,var(--secondary)_50%,transparent)]">
+        ⭐ ¡HAPPY HOUR! Termina tareas ahora y gana x1.5 puntos ⭐
+      </div>
+    );
+  }
 
   if (messageType === "warning") {
     return (
