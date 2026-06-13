@@ -172,6 +172,16 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                </div>
             </div>
           )}
+          {currentUser && (
+            <div className="hidden sm:flex flex-col items-end mr-1" onClick={handleLogout} title="Cerrar Sesión">
+               <span className="text-xs font-bold text-[var(--primary)] hover:underline">Nivel {getLevelInfo(currentUser.puntosAcumulados || 0).level}</span>
+               {currentUser.streakDays > 0 && (
+                 <span className="text-xs text-orange-500 font-bold flex items-center gap-1">
+                   🔥 {currentUser.streakDays}
+                 </span>
+               )}
+            </div>
+          )}
 
           <button onClick={handleLogout} className="text-xs font-bold text-[var(--primary)] hover:underline mr-1 hidden sm:block" title="Cerrar Sesión">Salir</button>
 

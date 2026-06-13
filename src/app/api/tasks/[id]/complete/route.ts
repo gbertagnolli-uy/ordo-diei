@@ -75,14 +75,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
+    let rewardPoints = 0;
+    let feedback = "";
+    const estadoFinal = "Esperando_Aprobacion";
+
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
     let awardedStar = false;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
 
     if (asignado && task.generaPuntosYRecompensa) {
       const lastDate = asignado.lastTaskCompletedDate;
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const last = new Date(lastDate);
         last.setHours(0, 0, 0, 0);
 
-        const diffTime = Math.abs(today.getTime() - last.getTime());
+        const diffTime = Math.abs(todayDate.getTime() - last.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays === 1) {
@@ -115,11 +119,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Regla de Recompensa
-
-    let rewardPoints = 0;
-    let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
-
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
       let basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
@@ -134,21 +133,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
-      // Speed bonus: +20% if done in less than 80% of estimated time
-      let speedBonus = 0;
-      if (task.tiempoEjecucionEstimadoSeg > 60 && cleanElapsed > 0 && cleanElapsed < (task.tiempoEjecucionEstimadoSeg * 0.8)) {
-        speedBonus = Math.floor(basePoints * 0.2);
-      }
+      // Happy Hour Multiplier: 20% bonus if task is completed between 17:00 and 19:00
+      const currentHour = new Date().getHours();
+      const isHappyHour = currentHour >= 17 && currentHour < 19;
+      const happyHourMultiplier = isHappyHour ? 1.2 : 1.0;
 
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus + speedBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts por racha.`;
-        if (speedBonus > 0) {
-          feedback += ` ¡Bono de velocidad (+${speedBonus} pts)!`;
-        }
+        rewardPoints = Math.floor((basePoints + streakBonus) * happyHourMultiplier);
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.${isHappyHour ? ' ¡Bonus de Happy Hour aplicado (20%)!' : ''}`;
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor(subtotalPoints / 2);
-        feedback = "Tarea completada con retraso (50% puntos).";
+        rewardPoints = Math.floor(((basePoints + streakBonus) / 2) * happyHourMultiplier);
+        feedback = `Tarea completada con retraso (50% puntos).${isHappyHour ? ' ¡Bonus de Happy Hour aplicado (20%)!' : ''}`;
       } else {
         rewardPoints = 0;
         feedback = "Tarea completada fuera del período de gracia. No hay puntos.";

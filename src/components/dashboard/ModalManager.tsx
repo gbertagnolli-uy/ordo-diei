@@ -271,24 +271,28 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      {/* Logros Desbloqueados (Badges) */}
-      <div className="bg-[var(--surface-container)] rounded-md p-3 border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] mb-2">
-        <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-2">Logros Desbloqueados</div>
-        <div className="flex flex-wrap gap-2">
-          {user.totalTasksCompleted >= 10 && <span className="px-2 py-1 text-xs bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-md font-bold" title="10+ Tareas">🥉 Iniciador</span>}
-          {user.totalTasksCompleted >= 50 && <span className="px-2 py-1 text-xs bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-md font-bold" title="50+ Tareas">🥈 Constante</span>}
-          {user.totalTasksCompleted >= 100 && <span className="px-2 py-1 text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-md font-bold" title="100+ Tareas">🥇 Veterano</span>}
-
-          {user.streakDays >= 3 && <span className="px-2 py-1 text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-md font-bold" title="Racha de 3 días">🔥 En Racha</span>}
-          {user.streakDays >= 7 && <span className="px-2 py-1 text-xs bg-red-500/10 text-red-500 border border-red-500/20 rounded-md font-bold" title="Racha de 7 días">🚀 Imparable</span>}
-
-          {user.stars >= 1 && <span className="px-2 py-1 text-xs bg-[var(--secondary)]/10 text-[var(--secondary)] border border-[var(--secondary)]/20 rounded-md font-bold" title="Tiene Estrellas">🌟 Estrella</span>}
-          {user.completionPercentage >= 90 && user.totalTasksCompleted > 5 && <span className="px-2 py-1 text-xs bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 rounded-md font-bold" title=">90% de Éxito">✅ Perfeccionista</span>}
-
-          {user.totalTasksCompleted < 10 && user.streakDays < 3 && user.stars === 0 && (
-            <span className="text-xs text-[var(--on-surface-variant)] italic">Aún no hay logros. ¡Sigue así!</span>
-          )}
-        </div>
+      {/* Badges Dinámicos */}
+      <div className="flex flex-wrap gap-2 mb-4 justify-center">
+        {(user.totalTasksCompleted || 0) >= 1 && (
+          <span className="px-3 py-1 bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] text-[var(--primary)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] flex items-center gap-1">
+             <span className="text-sm">🌱</span> Primer Paso
+          </span>
+        )}
+        {(user.totalTasksCompleted || 0) >= 50 && (
+          <span className="px-3 py-1 bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] text-[var(--secondary)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--secondary)_30%,transparent)] flex items-center gap-1">
+             <span className="text-sm">🛠️</span> Trabajador
+          </span>
+        )}
+        {(user.totalTasksCompleted || 0) >= 200 && (
+          <span className="px-3 py-1 bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] text-[var(--warning)] text-xs font-bold rounded-full border border-[color-mix(in-srgb,var(--warning)_30%,transparent)] flex items-center gap-1">
+             <span className="text-sm">⚙️</span> Máquina
+          </span>
+        )}
+        {(user.streakDays || 0) >= 7 && (
+          <span className="px-3 py-1 bg-orange-500/10 text-orange-500 text-xs font-bold rounded-full border border-orange-500/30 flex items-center gap-1">
+             <span className="text-sm">🔥</span> En Llamas
+          </span>
+        )}
       </div>
 
       <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
