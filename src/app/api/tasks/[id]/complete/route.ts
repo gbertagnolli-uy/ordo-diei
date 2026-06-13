@@ -75,33 +75,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
-
-    if (task.generaPuntosYRecompensa) {
-      if (esATiempo) {
-        rewardPoints = 50;
-        feedback = "¡Buen trabajo! Completaste la tarea a tiempo.";
-      } else if (estaEnPeriodoGracia) {
-        rewardPoints = 25;
-        feedback = "Tarea completada con retraso (50% puntos).";
-      } else {
-        rewardPoints = 0;
-        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
-      }
-    } else {
-      feedback = "Tarea marcada como realizada. No genera puntos.";
-    }
-
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
+    let awardedStar = false;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
 
     if (asignado && task.generaPuntosYRecompensa) {
       const lastDate = asignado.lastTaskCompletedDate;
@@ -112,7 +93,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const last = new Date(lastDate);
         last.setHours(0, 0, 0, 0);
 
-        const diffTime = Math.abs(today.getTime() - last.getTime());
+        const diffTime = Math.abs(todayDate.getTime() - last.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays === 1) {
@@ -126,7 +107,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
-    }
 
     let isHappyHour = false;
     const hour = now.getHours();
@@ -141,6 +121,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
+      let multipliers = 1;
+      let flatBonus = 0;
+
       if (esATiempo) {
         rewardPoints = basePoints + streakBonus;
         if (isHappyHour) {
@@ -150,14 +133,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
         }
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((basePoints + streakBonus) / 2);
+        actualBasePoints = Math.floor(basePoints / 2);
+        actualStreakBonus = Math.floor(streakBonus / 2);
+        speedBonus = 0; // No speed bonus for late tasks
+        checklistBonus = Math.floor(checklistBonus / 2);
+        rewardPoints = actualBasePoints + actualStreakBonus + checklistBonus;
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;
         feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
       }
+
+      if (awardedStar) {
+        feedback += " ¡Ganaste 1 Estrella por tu racha de 7 días!";
+      }
     } else {
       feedback = "Tarea marcada como realizada. No genera puntos.";
+    }
+
+    // Surprise logic
+    let wonSurprise = false;
+    let earnedStars = 0;
+    if (task.isSurpriseEligible && esATiempo) {
+      if (Math.random() < 0.1) { // 10% chance to win a surprise
+        wonSurprise = true;
+        feedback += " 🎉 ¡También encontraste una SORPRESA!";
+      } else if (Math.random() < 0.3) { // 30% chance to win stars if no surprise
+        earnedStars = 1;
+        feedback += " ⭐ ¡Ganaste 1 ESTRELLA por tu esfuerzo!";
+      }
     }
 
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
@@ -182,7 +186,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             increment: rewardPoints
           },
           streakDays: newStreakDays,
-          lastTaskCompletedDate: now
+          lastTaskCompletedDate: now,
+          surprises: {
+            increment: surpriseWon ? 1 : 0
+          }
         }
       })
     ]);
@@ -194,6 +201,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
+      basePoints: actualBasePoints,
+      streakBonus: actualStreakBonus,
+      speedBonus,
+      checklistBonus,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
