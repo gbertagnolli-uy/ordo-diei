@@ -75,6 +75,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
+    const estadoFinal = "Esperando_Aprobacion";
+
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -114,13 +116,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Recalcular Regla de Recompensa final
-    // (Sobrescribe la primera vez que se declaran arriba en el código original)
-    rewardPoints = 0;
-    feedback = "";
-    let isMilestone = false;
-    let milestoneBonus = 0;
-    let isHappyHour = false;
+    // Regla de Recompensa y Bonificaciones
+    let rewardPoints = 0;
+    let feedback = "";
+
+    // Breakdown fields for gamification UI
+    let actualBasePoints = 0;
+    let actualStreakBonus = 0;
+    let speedBonus = 0;
+    let checklistBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -136,28 +140,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
-      // Streak Milestone Bonus: extra 50 points every 7 days
-      if (isNewStreak && newStreakDays > 0 && newStreakDays % 7 === 0) {
-        isMilestone = true;
-        milestoneBonus = 50;
+      // Speed bonus: +10 points if completed between 20% and 80% of estimated time
+      if (task.tiempoEjecucionEstimadoSeg > 0 && cleanElapsed > 0) {
+        const completionRatio = cleanElapsed / task.tiempoEjecucionEstimadoSeg;
+        if (completionRatio >= 0.2 && completionRatio <= 0.8) {
+          speedBonus = 10;
+        }
       }
 
-      // Happy Hour Check: Between 17:00 and 19:00
-      const hour = now.getHours();
-      isHappyHour = hour >= 17 && hour < 19;
-      let happyHourMultiplier = isHappyHour ? 1.5 : 1;
+      // Checklist bonus: +15 points if task has checklist and is completed
+      if (task.isChecklist && task.checklistItems.length > 0) {
+        checklistBonus = 15;
+      }
 
       if (esATiempo) {
-        rewardPoints = Math.round((basePoints + streakBonus + milestoneBonus) * happyHourMultiplier);
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base y ${streakBonus} pts de bono por racha.`;
-        if (isMilestone) {
-          feedback += ` ¡Y un súper bono de ${milestoneBonus} pts por tu racha de ${newStreakDays} días!`;
-        }
-        if (isHappyHour) {
-          feedback += ` ¡Y un multiplicador x1.5 por Happy Hour!`;
-        }
+        actualBasePoints = basePoints;
+        actualStreakBonus = streakBonus;
+        rewardPoints = basePoints + streakBonus + speedBonus + checklistBonus;
+        feedback = `¡Buen trabajo! Completaste la tarea a tiempo.`;
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((basePoints + streakBonus + milestoneBonus) / 2);
+        actualBasePoints = Math.floor(basePoints / 2);
+        actualStreakBonus = Math.floor(streakBonus / 2);
+        speedBonus = 0; // No speed bonus for late tasks
+        checklistBonus = Math.floor(checklistBonus / 2);
+        rewardPoints = actualBasePoints + actualStreakBonus + checklistBonus;
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;
@@ -220,8 +226,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: basePointsEarned,
-      streakBonus: streakBonusEarned,
+      basePoints: actualBasePoints,
+      streakBonus: actualStreakBonus,
+      speedBonus,
+      checklistBonus,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
