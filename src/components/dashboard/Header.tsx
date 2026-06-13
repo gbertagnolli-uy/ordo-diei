@@ -180,6 +180,9 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                    style={{ width: `${getLevelInfo(currentUser.puntosAcumulados || 0).progressPercentage}%` }}
                  />
                </div>
+            <div className="hidden sm:flex flex-col items-end mr-1 ml-2 cursor-pointer" onClick={handleLogout} title="Cerrar Sesión">
+               <span className="text-xs font-bold text-[var(--error)] hover:underline">Salir</span>
+            </div>
             </div>
           )}
 

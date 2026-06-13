@@ -38,20 +38,44 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
   const doneTodayTasks = inReviewTasks.length + completedTasks.length;
   const progressPercentage = totalTodayTasks > 0 ? Math.round((doneTodayTasks / totalTodayTasks) * 100) : 100;
 
+  const [isHappyHour, setIsHappyHour] = useState(false);
+  const [greeting, setGreeting] = useState("¡Hola!");
+
   useEffect(() => {
-    if (totalTodayTasks > 0 && progressPercentage === 100) {
-      // Small local celebration when 100% daily tasks are done
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.8 },
-        colors: ['#4ade80', '#2dd4bf', '#fbbf24']
-      });
-    }
-  }, [progressPercentage, totalTodayTasks]);
+    const checkHappyHourAndGreeting = () => {
+      const hour = new Date().getHours();
+      setIsHappyHour(hour >= 17 && hour < 19);
+
+      if (hour < 12) setGreeting("¡Buenos días, a brillar!");
+      else if (hour < 18) setGreeting("¡Buenas tardes, a darle con todo!");
+      else setGreeting("¡Buenas noches, último esfuerzo!");
+    };
+    checkHappyHourAndGreeting();
+    const interval = setInterval(checkHappyHourAndGreeting, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="mb-12">
+      <div className="mb-6 px-2">
+        <h1 className="text-2xl font-black text-[var(--primary)] opacity-90">
+          {greeting}
+        </h1>
+      </div>
+
+      {isHappyHour && (
+        <div className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg p-4 shadow-lg text-white flex items-center justify-between animate-pulse-slow">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">⚡</span>
+            <div>
+              <h3 className="font-black text-xl tracking-wide uppercase">¡Happy Hour Activa!</h3>
+              <p className="text-sm font-medium opacity-90">Todas las tareas completadas ahora valen 1.5x puntos.</p>
+            </div>
+          </div>
+          <div className="hidden sm:block text-4xl font-black opacity-30">x1.5</div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <h2 className="text-3xl font-display text-[var(--on-surface)] flex items-center gap-3">
           <Flame className="w-8 h-8 text-[var(--secondary)]" />
