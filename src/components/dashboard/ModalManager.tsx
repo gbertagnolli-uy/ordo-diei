@@ -80,34 +80,33 @@ export function ModalManager() {
             <p className="text-[var(--on-surface-variant)] text-lg mb-6 font-body">
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
-            
-            <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
-              <div className="bg-[var(--surface-container-high)] p-5 rounded-xl border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] shadow-[0_4px_20px_rgba(var(--primary-rgb),0.15)] relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] opacity-10"></div>
-                <div className="relative z-10 flex flex-col items-center gap-2">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl">⭐</span>
-                    <div className="text-5xl font-display font-bold text-[var(--warning)] drop-shadow-md">
-                      +{data?.puntos || 0}
-                    </div>
-                  </div>
-                  <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider">Puntos Bloqueados Totales</div>
 
-                  {/* Detailed breakdown */}
-                  {(data?.basePoints > 0 || data?.streakBonus > 0) && (
-                    <div className="mt-3 pt-3 border-t border-[color-mix(in-srgb,var(--primary)_20%,transparent)] w-full flex flex-col gap-1 text-sm font-medium">
-                      <div className="flex justify-between items-center text-[var(--on-surface-variant)]">
-                        <span>Por completar tarea</span>
-                        <span className="font-bold">+{data?.basePoints || 0}</span>
-                      </div>
-                      {data?.streakBonus > 0 && (
-                        <div className="flex justify-between items-center text-orange-500">
-                          <span className="flex items-center gap-1">🔥 Bono de racha</span>
-                          <span className="font-bold">+{data?.streakBonus}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+            {data?.isNewStreak && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-pulse">
+                <span className="text-2xl">🔥</span>
+                <span className="text-orange-500 font-bold text-lg">
+                  ¡Racha de {data?.streakDays} Días!
+                </span>
+              </div>
+            )}
+
+            {data?.awardedStar && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-md px-4 py-2 flex items-center gap-2 mb-4 animate-bounce">
+                <span className="text-2xl">🌟</span>
+                <span className="text-blue-500 font-bold text-lg">
+                  ¡Ganaste una Estrella Especial!
+                </span>
+              </div>
+            )}
+            
+            <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border border-[color-mix(in-srgb,var(--warning)_20%,transparent)] rounded-md px-8 py-4 flex items-center gap-3 mb-4">
+              <span className="text-4xl">⭐</span>
+              <div className="text-left">
+                <div className="text-[var(--warning)] font-headline font-bold text-2xl">
+                  +{data?.puntos || 0} Puntos
+                </div>
+                <div className="text-[var(--warning)] opacity-80 text-sm font-title font-bold uppercase tracking-wider">
+                  Saldo Bloqueado
                 </div>
               </div>
 
@@ -231,31 +230,27 @@ function UserStatsPopup({ user }: { user: any }) {
         </div>
       </div>
 
-      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mt-2 mb-1">Logros Desbloqueados</div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
-        <div className={`p-2 rounded-md border text-center ${user.totalTasksCompleted >= 1 ? 'bg-[color-mix(in-srgb,var(--success)_10%,transparent)] border-[var(--success)] text-[var(--success)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
-          <div className="text-lg">👶</div>
-          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Primeros Pasos</div>
-        </div>
-        <div className={`p-2 rounded-md border text-center ${user.streakDays >= 3 ? 'bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] border-[var(--warning)] text-[var(--warning)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
-          <div className="text-lg">🔥</div>
-          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Racha x3</div>
-        </div>
-        <div className={`p-2 rounded-md border text-center ${user.streakDays >= 7 ? 'bg-[color-mix(in-srgb,var(--error)_10%,transparent)] border-[var(--error)] text-[var(--error)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
-          <div className="text-lg">🚀</div>
-          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Imparable</div>
-        </div>
-        <div className={`p-2 rounded-md border text-center ${user.totalTasksCompleted >= 50 ? 'bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] border-[var(--primary)] text-[var(--primary)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
-          <div className="text-lg">🎖️</div>
-          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Veterano (50)</div>
-        </div>
-        <div className={`p-2 rounded-md border text-center ${user.completionPercentage >= 90 && user.totalTasksCompleted >= 10 ? 'bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] border-[var(--secondary)] text-[var(--secondary)]' : 'bg-[var(--surface-container-low)] border-[var(--outline-variant)] text-[var(--on-surface-variant)] opacity-50'}`}>
-          <div className="text-lg">💎</div>
-          <div className="text-[10px] font-bold uppercase tracking-tighter leading-tight mt-1">Perfeccionista</div>
+      {/* Logros Desbloqueados (Badges) */}
+      <div className="bg-[var(--surface-container)] rounded-md p-3 border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] mb-2">
+        <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-2">Logros Desbloqueados</div>
+        <div className="flex flex-wrap gap-2">
+          {user.totalTasksCompleted >= 10 && <span className="px-2 py-1 text-xs bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-md font-bold" title="10+ Tareas">🥉 Iniciador</span>}
+          {user.totalTasksCompleted >= 50 && <span className="px-2 py-1 text-xs bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-md font-bold" title="50+ Tareas">🥈 Constante</span>}
+          {user.totalTasksCompleted >= 100 && <span className="px-2 py-1 text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-md font-bold" title="100+ Tareas">🥇 Veterano</span>}
+
+          {user.streakDays >= 3 && <span className="px-2 py-1 text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-md font-bold" title="Racha de 3 días">🔥 En Racha</span>}
+          {user.streakDays >= 7 && <span className="px-2 py-1 text-xs bg-red-500/10 text-red-500 border border-red-500/20 rounded-md font-bold" title="Racha de 7 días">🚀 Imparable</span>}
+
+          {user.stars >= 1 && <span className="px-2 py-1 text-xs bg-[var(--secondary)]/10 text-[var(--secondary)] border border-[var(--secondary)]/20 rounded-md font-bold" title="Tiene Estrellas">🌟 Estrella</span>}
+          {user.completionPercentage >= 90 && user.totalTasksCompleted > 5 && <span className="px-2 py-1 text-xs bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 rounded-md font-bold" title=">90% de Éxito">✅ Perfeccionista</span>}
+
+          {user.totalTasksCompleted < 10 && user.streakDays < 3 && user.stars === 0 && (
+            <span className="text-xs text-[var(--on-surface-variant)] italic">Aún no hay logros. ¡Sigue así!</span>
+          )}
         </div>
       </div>
 
-      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mt-2 mb-[-8px]">Tareas Asignadas</div>
+      <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-8px]">Tareas Asignadas</div>
 
       <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
       {tareas.map((t: any) => (

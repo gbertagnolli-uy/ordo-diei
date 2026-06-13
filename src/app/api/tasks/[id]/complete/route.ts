@@ -81,6 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
+    let awardedStar = false;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -108,6 +109,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
+
+      // Check if user earned a new star (every 7 days of streak)
+      if (isNewStreak && newStreakDays > 0 && newStreakDays % 7 === 0) {
+        awardedStar = true;
+      }
     }
 
     // Regla de Recompensa
@@ -116,6 +122,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let feedback = "";
     let basePointsEarned = 0;
     let streakBonusEarned = 0;
+
+    // Happy hour logic: tasks completed between 18:00 and 20:00 get +50% bonus
+    const currentHour = now.getHours();
+    const isHappyHour = currentHour >= 18 && currentHour < 20;
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
@@ -131,22 +141,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
 
-      // Checklist Bonus
-      let checklistBonus = 0;
-      if (task.isChecklist && task.checklistItems && task.checklistItems.length > 0) {
-          const completedItems = task.checklistItems.filter(ci => ci.completado).length;
-          checklistBonus = completedItems * 5; // 5 pts por cada item
+      // Checklist bonus
+      const checklistBonus = (task.isChecklist && task.checklistItems && task.checklistItems.length > 0) ? 5 : 0;
+
+      let subtotalPoints = basePoints + streakBonus + checklistBonus;
+
+      if (isHappyHour) {
+        subtotalPoints = Math.floor(subtotalPoints * 1.5);
       }
 
       if (esATiempo) {
-        rewardPoints = basePoints + streakBonus + checklistBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${basePoints} pts base ${isHappyHour ? '(Happy Hour x1.5!) ' : ''}y ${streakBonus} pts de bono por racha${checklistBonus > 0 ? ` + ${checklistBonus} pts por checklist` : ''}.`;
+        rewardPoints = subtotalPoints;
+        feedback = `¡Buen trabajo! Obtuviste ${basePoints} pts base${streakBonus > 0 ? `, ${streakBonus} pts racha` : ''}${checklistBonus > 0 ? `, ${checklistBonus} pts checklist` : ''}${isHappyHour ? ' y bono Happy Hour (x1.5)' : ''}.`;
       } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((basePoints + streakBonus + checklistBonus) / 2);
+        rewardPoints = Math.floor(subtotalPoints / 2);
         feedback = "Tarea completada con retraso (50% puntos).";
       } else {
         rewardPoints = 0;
         feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
+      }
+
+      if (awardedStar) {
+        feedback += " ¡Ganaste 1 Estrella por tu racha de 7 días!";
       }
     } else {
       feedback = "Tarea marcada como realizada. No genera puntos.";
@@ -174,7 +190,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             increment: rewardPoints
           },
           streakDays: newStreakDays,
-          lastTaskCompletedDate: now
+          lastTaskCompletedDate: now,
+          stars: awardedStar ? { increment: 1 } : undefined
         }
       })
     ]);
@@ -190,7 +207,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       streakBonus: streakBonusEarned,
       estado: "Esperando_Aprobacion",
       isNewStreak,
-      streakDays: newStreakDays
+      streakDays: newStreakDays,
+      awardedStar,
+      isHappyHour
     });
   } catch (error) {
     console.error("Error en finalización de tarea:", error);
