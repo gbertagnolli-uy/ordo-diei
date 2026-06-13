@@ -300,7 +300,14 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
       <div>
         <div className="flex justify-between items-start mb-2">
            <h3 className="text-xl font-display text-[var(--on-surface)] leading-tight">{task.titulo}</h3>
-           {task.generaPuntosYRecompensa && <div className="text-xs font-bold text-[var(--secondary)] bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] px-2 flex items-center rounded-md mt-1">⭐️ Pts</div>}
+           <div className="flex items-center gap-1">
+              {task.asignado?.streakDays > 0 && task.generaPuntosYRecompensa && (
+                <div className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 flex items-center rounded-md mt-1" title="Bono de puntos por racha activo">
+                  🔥 Bonus
+                </div>
+              )}
+              {task.generaPuntosYRecompensa && <div className="text-xs font-bold text-[var(--secondary)] bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] px-2 flex items-center rounded-md mt-1">⭐️ Pts</div>}
+           </div>
         </div>
 
         {task.descripcion && <p className="text-[var(--on-surface-variant)] text-sm mb-4 leading-relaxed">{task.descripcion}</p>}
