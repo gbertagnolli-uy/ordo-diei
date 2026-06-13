@@ -5,15 +5,31 @@ import { Clock, Play, Square, Pause, Flame, ListChecks, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 import { ChecklistModal } from "./ChecklistModal";
+import confetti from "canvas-confetti";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 
 export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coResponsables?: CoResponsableMap }) {
+  const user = useAuthStore(state => state.currentUser);
   const pendingTasks = tasks.filter((t) => 
     t.estado !== "Completada" && 
     t.estado !== "Aprobada" && 
     t.estado !== "Esperando_Aprobacion"
-  );
+  ).sort((a, b) => {
+    // Sort logic: Tasks with a specific execution hour come first, sorted by time
+    // Then tasks with only a date, then tasks with no date.
+    if (a.horaEjecucion && !b.horaEjecucion) return -1;
+    if (!a.horaEjecucion && b.horaEjecucion) return 1;
+    if (a.horaEjecucion && b.horaEjecucion) {
+      return new Date(a.horaEjecucion).getTime() - new Date(b.horaEjecucion).getTime();
+    }
+    if (a.fechaVencimiento && !b.fechaVencimiento) return -1;
+    if (!a.fechaVencimiento && b.fechaVencimiento) return 1;
+    if (a.fechaVencimiento && b.fechaVencimiento) {
+      return new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime();
+    }
+    return 0;
+  });
   
   const inReviewTasks = tasks.filter((t) => t.estado === "Esperando_Aprobacion");
   const completedTasks = tasks.filter((t) => t.estado === "Completada" || t.estado === "Aprobada");
@@ -21,6 +37,18 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
   const totalTodayTasks = pendingTasks.length + inReviewTasks.length + completedTasks.length;
   const doneTodayTasks = inReviewTasks.length + completedTasks.length;
   const progressPercentage = totalTodayTasks > 0 ? Math.round((doneTodayTasks / totalTodayTasks) * 100) : 100;
+
+  useEffect(() => {
+    if (totalTodayTasks > 0 && progressPercentage === 100) {
+      // Small local celebration when 100% daily tasks are done
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.8 },
+        colors: ['#4ade80', '#2dd4bf', '#fbbf24']
+      });
+    }
+  }, [progressPercentage, totalTodayTasks]);
 
   return (
     <div className="mb-12">
@@ -30,20 +58,37 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
           MIS TAREAS
         </h2>
 
-        {totalTodayTasks > 0 && (
-          <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2 min-w-[250px]">
-             <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
-               <span>Progreso Diario</span>
-               <span className="text-[var(--primary)]">{progressPercentage}%</span>
-             </div>
-             <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
-                <div
-                   className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
-                   style={{ width: `${progressPercentage}%` }}
-                />
-             </div>
-          </div>
-        )}
+        <div className="flex flex-col gap-3 min-w-[250px]">
+          {totalTodayTasks > 0 && (
+            <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2">
+               <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+                 <span>Progreso Diario</span>
+                 <span className="text-[var(--primary)]">{progressPercentage}%</span>
+               </div>
+               <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
+                  <div
+                     className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] transition-all duration-1000 ease-out"
+                     style={{ width: `${progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          )}
+
+          {user && (
+            <div className="bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md elevation-ambient ghost-border flex flex-col gap-2" title={`${getLevelInfo(user.puntosAcumulados || 0).pointsToNextLevel} puntos para subir de nivel`}>
+               <div className="flex justify-between items-center text-sm font-title font-bold text-[var(--on-surface)] uppercase tracking-wider">
+                 <span>Nivel {getLevelInfo(user.puntosAcumulados || 0).level}</span>
+                 <span className="text-[var(--secondary)] text-xs">{getLevelInfo(user.puntosAcumulados || 0).title}</span>
+               </div>
+               <div className="w-full h-2 bg-[var(--surface-container)] rounded-full overflow-hidden relative">
+                  <div
+                     className="h-full bg-gradient-to-r from-[var(--secondary)] to-[var(--primary)] transition-all duration-1000 ease-out"
+                     style={{ width: `${getLevelInfo(user.puntosAcumulados || 0).progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {pendingTasks.length === 0 ? (
@@ -206,8 +251,11 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
         openModal("TASK_SUCCESS", {
           mensaje: data.mensaje,
           puntos: data.puntos,
+          basePoints: data.basePoints,
+          streakBonus: data.streakBonus,
           isNewStreak: data.isNewStreak,
-          streakDays: data.streakDays
+          streakDays: data.streakDays,
+          awardedStar: data.awardedStar
         });
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -254,6 +302,17 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
   const remaining = task.tiempoEjecucionEstimadoSeg - elapsed;
   const isOvertime = remaining < 0;
 
+  const isUrgent = () => {
+    if (!task.horaEjecucion && !task.fechaVencimiento) return false;
+    const limit = task.horaEjecucion ? new Date(task.horaEjecucion) : new Date(task.fechaVencimiento);
+    // limit is close if difference is less than 2 hours
+    const isClose = (limit.getTime() - Date.now()) < 2 * 60 * 60 * 1000;
+    const isPast = limit.getTime() < Date.now();
+    return isClose || isPast;
+  };
+
+  const urgentStyles = isUrgent() ? "border-2 border-[var(--warning)] shadow-[0_0_10px_color-mix(in-srgb,var(--warning)_30%,transparent)]" : "";
+
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -269,7 +328,7 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
   };
 
   return (
-    <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient hover:shadow-lg transition-shadow p-6 flex flex-col justify-between relative overflow-hidden group">
+    <div className={`bg-[var(--surface-container-lowest)] rounded-md elevation-ambient hover:shadow-lg transition-shadow p-6 flex flex-col justify-between relative overflow-hidden group ${urgentStyles}`}>
 
       {/* Decorative timer visual */}
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${isPlaying ? 'from-[color-mix(in-srgb,var(--secondary)_30%,transparent)] to-[color-mix(in-srgb,var(--error)_30%,transparent)]' : 'from-[color-mix(in-srgb,var(--primary)_10%,transparent)] to-[color-mix(in-srgb,var(--warning)_20%,transparent)]'} rounded-bl-full opacity-20 transition-colors -z-10`} />
@@ -277,7 +336,14 @@ function TaskCard({ task, coResponsables }: { task: any; coResponsables: { id: n
       <div>
         <div className="flex justify-between items-start mb-2">
            <h3 className="text-xl font-display text-[var(--on-surface)] leading-tight">{task.titulo}</h3>
-           {task.generaPuntosYRecompensa && <div className="text-xs font-bold text-[var(--secondary)] bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] px-2 flex items-center rounded-md mt-1">⭐️ Pts</div>}
+           <div className="flex items-center gap-1">
+              {task.asignado?.streakDays > 0 && task.generaPuntosYRecompensa && (
+                <div className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 flex items-center rounded-md mt-1" title="Bono de puntos por racha activo">
+                  🔥 Bonus
+                </div>
+              )}
+              {task.generaPuntosYRecompensa && <div className="text-xs font-bold text-[var(--secondary)] bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] px-2 flex items-center rounded-md mt-1">⭐️ Pts</div>}
+           </div>
         </div>
 
         {task.descripcion && <p className="text-[var(--on-surface-variant)] text-sm mb-4 leading-relaxed">{task.descripcion}</p>}
