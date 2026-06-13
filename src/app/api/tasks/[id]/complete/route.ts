@@ -117,8 +117,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Regla de Recompensa
+
     let rewardPoints = 0;
     let feedback = "";
+    let basePointsEarned = 0;
+    let streakBonusEarned = 0;
 
     // Happy hour logic: tasks completed between 18:00 and 20:00 get +50% bonus
     const currentHour = now.getHours();
@@ -126,7 +129,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (task.generaPuntosYRecompensa) {
       // Dynamic base points based on estimated time (1 point per minute, minimum 10)
-      const basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+      let basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+
+      // Happy Hour Bonus (15:00 - 18:00 local time assumption)
+      const currentHour = new Date().getHours();
+      let isHappyHour = currentHour >= 15 && currentHour < 18;
+      if (isHappyHour) {
+          basePoints = Math.floor(basePoints * 1.5);
+      }
 
       // Streak bonus: +2 points per streak day, max +20 points
       const streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
@@ -193,6 +203,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
+      basePoints: basePointsEarned,
+      streakBonus: streakBonusEarned,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,

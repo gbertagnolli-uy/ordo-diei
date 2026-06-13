@@ -8,17 +8,19 @@ import { useAuthStore } from "@/store/authStore";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
+import { BadgesDisplay } from "./BadgesDisplay";
 import { MoodSelector } from "./MoodSelector";
 
 export function ModalManager() {
   const { isOpen, type, data, closeModal } = useModalStore();
 
   useEffect(() => {
-    if (isOpen && type === "TASK_SUCCESS") {
+    if (isOpen && (type === "TASK_SUCCESS" || type === "LEVEL_UP")) {
       confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: type === "LEVEL_UP" ? ['#FFD700', '#FFA500', '#FF8C00', '#8A2BE2', '#00CED1'] : undefined
       });
     }
   }, [isOpen, type]);
@@ -37,6 +39,33 @@ export function ModalManager() {
         </Modal>
       )}
 
+      {type === "LEVEL_UP" && (
+        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
+          <div className="flex flex-col items-center text-center py-6">
+            <img
+              src="/winners-animate.svg"
+              alt="¡Subiste de Nivel!"
+              className="w-48 h-48 mb-6 drop-shadow-xl animate-bounce"
+            />
+            <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
+              ¡Nivel {data?.level}!
+            </h3>
+            <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
+              Nuevo Rango: <span className="text-[var(--primary)]">{data?.title}</span>
+            </p>
+            <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
+              ¡Tu esfuerzo está dando frutos! Sigue completando tareas para alcanzar el siguiente rango.
+            </p>
+            <button
+              onClick={closeModal}
+              className="btn-primary w-full py-4 text-lg shadow-lg"
+            >
+              ¡A seguir subiendo!
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {type === "TASK_SUCCESS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Misión Cumplida!">
           <div className="flex flex-col items-center text-center py-6">
@@ -48,7 +77,7 @@ export function ModalManager() {
             <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
               ¡Buen trabajo!
             </h3>
-            <p className="text-[var(--on-surface-variant)] text-lg mb-2 font-body">
+            <p className="text-[var(--on-surface-variant)] text-lg mb-6 font-body">
               {data?.mensaje || "Has completado la tarea con éxito."}
             </p>
 
@@ -80,13 +109,22 @@ export function ModalManager() {
                   Saldo Bloqueado
                 </div>
               </div>
+
+              {data?.isNewStreak && (
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 flex items-center justify-center gap-2 animate-bounce">
+                  <span className="text-2xl">🔥</span>
+                  <span className="text-orange-500 font-bold text-lg uppercase tracking-wider">
+                    ¡Racha de {data?.streakDays} Días!
+                  </span>
+                </div>
+              )}
             </div>
 
             <button 
               onClick={() => window.location.reload()}
-              className="btn-primary mt-8 w-full py-4 text-lg shadow-lg"
+              className="btn-primary mt-2 w-full max-w-sm py-4 text-lg font-bold tracking-widest uppercase shadow-[0_4px_15px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_6px_20px_rgba(var(--primary-rgb),0.4)]"
             >
-              ¡Genial!
+              ¡A seguir así!
             </button>
           </div>
         </Modal>

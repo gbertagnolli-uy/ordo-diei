@@ -15,6 +15,21 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
   const { openModal } = useModalStore();
 
   useEffect(() => {
+    // Check for Level Up
+    if (currentUser) {
+      const currentLevel = getLevelInfo(currentUser.puntosAcumulados || 0).level;
+      const lastSeenLevel = localStorage.getItem(`lastSeenLevel_${currentUser.id}`);
+
+      if (lastSeenLevel) {
+        if (currentLevel > parseInt(lastSeenLevel)) {
+          openModal("LEVEL_UP", { level: currentLevel, title: getLevelInfo(currentUser.puntosAcumulados || 0).title });
+          localStorage.setItem(`lastSeenLevel_${currentUser.id}`, currentLevel.toString());
+        }
+      } else {
+        localStorage.setItem(`lastSeenLevel_${currentUser.id}`, currentLevel.toString());
+      }
+    }
+
     const updateTime = () => {
       setTime(new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     };
@@ -157,6 +172,8 @@ export function Header({ currentUser, allUsers = [] }: { currentUser: any, allUs
                </div>
             </div>
           )}
+
+          <button onClick={handleLogout} className="text-xs font-bold text-[var(--primary)] hover:underline mr-1 hidden sm:block" title="Cerrar Sesión">Salir</button>
 
           <div className="relative" onClick={() => openModal("MOOD_SELECTOR", { user: currentUser })}>
             <div className="w-10 h-10 rounded-full border-2 border-[var(--primary)] overflow-hidden elevation-ambient bg-[var(--surface-container)] hover:ring-2 hover:ring-[var(--primary)] transition-all">
