@@ -26,6 +26,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
     }
 
+    const pointsGained = tarea.puntosGenerados || 0;
+    const bonusStars = Math.floor(pointsGained / 100);
+
     // Transacción: Aprobar tarea y transferir puntos de Locked a Available y subir logros
     await prisma.$transaction([
       prisma.tarea.update({
@@ -35,10 +38,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       prisma.usuario.update({
         where: { id: tarea.asignadoId },
         data: {
-          lockedPoints: { decrement: tarea.puntosGenerados || 0 },
-          availablePoints: { increment: tarea.puntosGenerados || 0 },
-          puntosAcumulados: { increment: tarea.puntosGenerados || 0 },
-          totalTasksCompleted: { increment: 1 }
+          lockedPoints: { decrement: pointsGained },
+          availablePoints: { increment: pointsGained },
+          puntosAcumulados: { increment: pointsGained },
+          totalTasksCompleted: { increment: 1 },
+          stars: { increment: bonusStars }
         }
       })
     ]);
@@ -46,7 +50,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Recalcular porcentaje de éxito
     await updateUserCompletionPercentage(tarea.asignadoId);
 
-    return NextResponse.json({ ok: true, mensaje: "Tarea aprobada y puntos acreditados" });
+    // Calcular nivel después
+    const nivelDespues = Math.floor(Math.sqrt(((asignado?.puntosAcumulados || 0) + (tarea.puntosGenerados || 0)) / 100)) + 1;
+    const leveledUp = nivelDespues > nivelAntes;
+
+    return NextResponse.json({
+      ok: true,
+      mensaje: "Tarea aprobada y puntos acreditados",
+      leveledUp,
+      newLevel: nivelDespues,
+      userName: asignado?.nombre
+    });
   } catch (error) {
     console.error("Error aprobando tarea:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
