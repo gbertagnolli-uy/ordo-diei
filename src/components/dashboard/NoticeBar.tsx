@@ -50,6 +50,9 @@ export function NoticeBar() {
       } else if (hour >= 13 && hour < 15) {
          setIsVisible(true);
          setMessageType("afternoon");
+      } else if (hour >= 15 && hour < 18) {
+         setIsVisible(true);
+         setMessageType("evening");
       } else {
         setIsVisible(false);
         setMessageType(null);
@@ -91,6 +94,14 @@ export function NoticeBar() {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--secondary)]">
         ☀️ ¡Buenas tardes! ¿Cómo vas con tus tareas? Sigue así, ¡tú puedes!
+      </div>
+    );
+  }
+
+  if (messageType === "evening") {
+    return (
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] text-[var(--primary)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--primary)] animate-pulse">
+        ✨ ¡HORA FELIZ ACTIVA! Las tareas completadas ahora mismo valen un 50% extra. ¡Aprovecha! ✨
       </div>
     );
   }
