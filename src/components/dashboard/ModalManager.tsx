@@ -9,7 +9,7 @@ import { getLevelInfo } from "@/lib/levelUtils";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
-import { getLevelInfo } from "@/lib/levelUtils";
+
 import { MoodSelector } from "./MoodSelector";
 
 

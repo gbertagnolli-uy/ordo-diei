@@ -18,7 +18,7 @@ export function NoticeBar() {
       // Activar happyHour si son entre las 17:00 y las 19:00
       if (hour >= 17 && hour < 19) {
         setIsVisible(true);
-        setMessageType("happyHour");
+        setMessageType("happyhour");
         const limitHH = new Date();
         limitHH.setHours(19, 0, 0, 0);
         const diff = limitHH.getTime() - now.getTime();
@@ -69,7 +69,7 @@ export function NoticeBar() {
 
   if (!isVisible) return null;
 
-  if (messageType === "happyHour") {
+  if (messageType === ("happyhour" as any)) {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide shadow-md border-b border-[var(--secondary)]">
         🎉 ¡HAPPY HOUR ACTIVA! Termina tus tareas ahora y gana un 20% más de puntos. Termina en [{timeLeft}]
@@ -101,7 +101,7 @@ export function NoticeBar() {
     );
   }
 
-  if (messageType === "happyhour") {
+  if (messageType === ("happyhour" as any)) {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] text-[var(--primary)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--primary)] animate-pulse">
         🎉 ¡Happy Hour! Completa tareas ahora y obtén +50% de puntos extra.
