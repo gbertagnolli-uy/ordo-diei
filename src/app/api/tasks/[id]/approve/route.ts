@@ -51,7 +51,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await updateUserCompletionPercentage(tarea.asignadoId);
 
     // Calcular nivel después
-    const nivelDespues = Math.floor(Math.sqrt(((asignado?.puntosAcumulados || 0) + (tarea.puntosGenerados || 0)) / 100)) + 1;
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+    const nivelAntes = Math.floor(Math.sqrt(((asignado?.puntosAcumulados || 0) - pointsGained) / 100)) + 1;
+    const nivelDespues = Math.floor(Math.sqrt(((asignado?.puntosAcumulados || 0)) / 100)) + 1;
     const leveledUp = nivelDespues > nivelAntes;
 
     return NextResponse.json({
