@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 import { ChecklistModal } from "./ChecklistModal";
 import confetti from "canvas-confetti";
+import { useAuthStore } from "@/store/authStore";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 
