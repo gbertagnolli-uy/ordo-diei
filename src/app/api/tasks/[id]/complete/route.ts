@@ -81,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
-    let awardedStar = false;
+    const awardedStar = false;
 
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
@@ -109,16 +109,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
-
+    }
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
 
     // Happy Hour check (17:00 - 19:00)
     const currentHour = now.getHours();
     const isHappyHour = currentHour >= 17 && currentHour < 19;
-    let happyHourMultiplier = isHappyHour ? 1.5 : 1;
+    const happyHourMultiplier = isHappyHour ? 1.5 : 1;
 
     // Dynamic base points based on estimated time (1 point per minute, minimum 10)
     if (task.generaPuntosYRecompensa) {
@@ -136,7 +135,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const isHappyHour = currentHour >= 17 && currentHour < 19;
       const timeBonus = (isWeekend || isHappyHour) ? 10 : 0;
 
-      let bonusText = [];
+      const bonusText = [];
       if (streakBonus > 0) bonusText.push(`${streakBonus} pts por racha`);
       if (checklistBonus > 0) bonusText.push(`${checklistBonus} pts por checklist`);
       if (timeBonus > 0) bonusText.push(`${timeBonus} pts por ${isWeekend ? 'fin de semana' : 'Happy Hour'}`);
@@ -199,7 +198,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           streakDays: newStreakDays,
           lastTaskCompletedDate: now,
           surprises: {
-            increment: surpriseWon ? 1 : 0
+            increment: wonSurprise ? 1 : 0
           }
         }
       })
@@ -212,10 +211,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: actualBasePoints,
-      streakBonus: actualStreakBonus,
-      speedBonus,
-      checklistBonus,
+      basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
+      streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
+      speedBonus: 0,
+      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
