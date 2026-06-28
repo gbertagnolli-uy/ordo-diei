@@ -109,11 +109,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
+    }
 
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
+    const estadoFinal2 = "Esperando_Aprobacion";
 
     // Happy Hour check (17:00 - 19:00)
     const currentHour = now.getHours();
@@ -199,7 +200,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           streakDays: newStreakDays,
           lastTaskCompletedDate: now,
           surprises: {
-            increment: surpriseWon ? 1 : 0
+            increment: wonSurprise ? 1 : 0
           }
         }
       })
@@ -212,10 +213,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: actualBasePoints,
-      streakBonus: actualStreakBonus,
-      speedBonus,
-      checklistBonus,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
