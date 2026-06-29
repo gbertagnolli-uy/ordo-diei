@@ -19,7 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const taskId = Number(id);
 
-    const tarea = await prisma.tarea.findUnique({ where: { id: taskId } });
+    const tarea = await prisma.tarea.findUnique({ where: { id: taskId }, include: { asignado: true } });
+    const asignado = tarea?.asignado;
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
     if (!tarea) return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     // Verificamos que la tarea esté en espera
     if (tarea.estado !== "Esperando_Aprobacion") {
