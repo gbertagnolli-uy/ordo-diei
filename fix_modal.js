@@ -1,18 +1,14 @@
 const fs = require('fs');
-let file = 'src/components/dashboard/ModalManager.tsx';
-let content = fs.readFileSync(file, 'utf8');
 
-const searchStr = `        </Modal>
-      )}
+let content = fs.readFileSync('src/components/dashboard/ModalManager.tsx', 'utf8');
+content = content.replace(
+  `import { LeaderboardModal } from "./LeaderboardModal";
+import confetti from "canvas-confetti";
+import { getLevelInfo } from "@/lib/levelUtils";
+import { MoodSelector } from "./MoodSelector";`,
+  `import { LeaderboardModal } from "./LeaderboardModal";
+import confetti from "canvas-confetti";
+import { MoodSelector } from "./MoodSelector";`
+);
 
-      {type === "TASK_SUCCESS" && (`;
-
-const replaceStr = `        </Modal>
-      )}
-
-      {type === "TASK_SUCCESS" && (`;
-
-content = content.replace(searchStr, replaceStr);
-
-fs.writeFileSync(file, content);
-console.log("Fixed modal syntax");
+fs.writeFileSync('src/components/dashboard/ModalManager.tsx', content);
