@@ -19,14 +19,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const taskId = Number(id);
 
-    const tarea = await prisma.tarea.findUnique({ where: { id: taskId } });
+    const tarea = await prisma.tarea.findUnique({
+      where: { id: taskId },
+      include: {
+        asignado: true
+      }
+    });
     if (!tarea) return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     // Verificamos que la tarea esté en espera
     if (tarea.estado !== "Esperando_Aprobacion") {
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
     }
 
+    const asignado = tarea.asignado;
     const pointsGained = tarea.puntosGenerados || 0;
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
     const bonusStars = Math.floor(pointsGained / 100);
 
     // Transacción: Aprobar tarea y transferir puntos de Locked a Available y subir logros
