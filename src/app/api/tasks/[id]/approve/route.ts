@@ -26,6 +26,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
     }
 
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
+
     const pointsGained = tarea.puntosGenerados || 0;
     const bonusStars = Math.floor(pointsGained / 100);
 
