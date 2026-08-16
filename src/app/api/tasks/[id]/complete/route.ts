@@ -69,13 +69,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
+    const currentHour = now.getHours();
+    const isHappyHour = currentHour >= 17 && currentHour < 19;
     const esATiempo = fechaVencimientoReal ? now <= new Date(fechaVencimientoReal) : true;
     const estaEnPeriodoGracia = fechaLimite ? now <= fechaLimite : false;
 
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    const estadoFinal = "Esperando_Aprobacion";
+
 
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
+    let wonSurprise = false;
 
     // Happy Hour check (17:00 - 19:00)
     const currentHour = now.getHours();
@@ -163,6 +165,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Surprise logic
+    }
+    let feedback = "";
+    let rewardPoints = 0;
     let wonSurprise = false;
     let earnedStars = 0;
     if (task.isSurpriseEligible && esATiempo) {
@@ -199,7 +204,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           streakDays: newStreakDays,
           lastTaskCompletedDate: now,
           surprises: {
-            increment: surpriseWon ? 1 : 0
+            increment: wonSurprise ? 1 : 0
           }
         }
       })
@@ -212,10 +217,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: actualBasePoints,
-      streakBonus: actualStreakBonus,
-      speedBonus,
-      checklistBonus,
+      basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
+      streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
+      speedBonus: 0,
+      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
