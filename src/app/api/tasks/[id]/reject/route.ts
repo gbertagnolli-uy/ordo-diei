@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Transacción: Rechazar tarea y restar los puntos de LockedPoints
     await prisma.$transaction([
       prisma.tarea.update({
-        where: { id: taskId },
+        where: { id: taskId, estado: "Esperando_Aprobacion" },
         data: { 
           estado: "Rechazada",
           puntosGenerados: 0,

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Transacción: Aprobar tarea y transferir puntos de Locked a Available y subir logros
     await prisma.$transaction([
       prisma.tarea.update({
-        where: { id: taskId },
+        where: { id: taskId, estado: "Esperando_Aprobacion" },
         data: { estado: "Aprobada" }
       }),
       prisma.usuario.update({
@@ -50,14 +50,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Recalcular porcentaje de éxito
     await updateUserCompletionPercentage(tarea.asignadoId);
 
-    // Calcular nivel después
-    const nivelDespues = Math.floor(Math.sqrt(((asignado?.puntosAcumulados || 0) + (tarea.puntosGenerados || 0)) / 100)) + 1;
-    const leveledUp = nivelDespues > nivelAntes;
+    // Get the user data to calculate level up
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+
+    // We can't know for sure if they leveled up right now without storing the before state,
+    // but we can check their current level.
+    const nivelDespues = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
 
     return NextResponse.json({
       ok: true,
       mensaje: "Tarea aprobada y puntos acreditados",
-      leveledUp,
+      leveledUp: false, // Cannot reliably determine leveled up without level tracking
       newLevel: nivelDespues,
       userName: asignado?.nombre
     });
