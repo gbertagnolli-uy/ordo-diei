@@ -3,13 +3,13 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
 const prismaClientSingleton = () => {
-  const connectionString = process.env.DATABASE_URL
-  if (!connectionString) {
+  const connectionString = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres"
+  if (!process.env.DATABASE_URL) {
     console.error("DATABASE_URL is not defined in environment variables");
+    return new PrismaClient({ adapter: new PrismaPg(new Pool({ connectionString })) });
   }
 
   // Supabase Pooler needs SSL rejectUnauthorized: false when connecting
-  // via postgresql://postgres.[project]:[password]@aws-0-sa-east-1.pooler.supabase.com:6543
   const isSupabase = connectionString?.includes('supabase.com') || connectionString?.includes('pooler.supabase.com');
 
   const pool = new Pool({
