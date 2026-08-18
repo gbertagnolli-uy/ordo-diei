@@ -1,144 +1,74 @@
-# Auditoría Integral de Producto, UX, UI, Gamificación, Código y Calidad
-
-**Family Tasker (Version 0.1.0)**
-*Auditoría realizada por el Equipo Multidisciplinario (Product Manager Senior, UX/UI, Game Designer AAA, QA, Arquitectos y Seguridad)*
-
----
+# Auditoría Integral de Producto - Family Tasker
 
 ## 1. Resumen Ejecutivo
+Se realizó una evaluación integral del sistema abordando diseño, experiencia, gamificación y arquitectura técnica. El proyecto cuenta con una base funcional que implementa mecánicas interesantes de productividad familiar, pero sufría de deuda técnica acumulada que impedía la correcta compilación y despliegue del proyecto (particularmente en Vercel por la falta de `DATABASE_URL` y errores severos de Typescript). Se han resuelto los bloqueos críticos de build, aunque existen múltiples áreas de mejora en UI/UX y arquitectura a futuro.
 
-La plataforma "Family Tasker" tiene un núcleo funcional sólido y una premisa de gamificación atractiva, pero presenta múltiples oportunidades de mejora para alcanzar un estándar AAA. Actualmente, la arquitectura se basa fuertemente en un enrutamiento y lógica centralizados en endpoints como `/complete`, lo que genera riesgos de escalabilidad y mantenibilidad. Desde la perspectiva de UX/UI, la experiencia es funcional pero carece de pulido en microinteracciones, estados vacíos y feedback visual consistente (el sistema depende en exceso de la barra de notificaciones y modales genéricos).
+## 2. Hallazgos Críticos
+- **Errores de Compilación (Resueltos):** Existían errores sintácticos severos en la ruta `/api/tasks/[id]/complete/route.ts` (bloques `catch` incompletos, variables duplicadas, variables no inicializadas), errores de tipado y lógica en `/api/tasks/[id]/approve/route.ts` (referencia a variable inexistente `asignado`), importaciones múltiples en `ModalManager.tsx`, falta de importación de `useAuthStore` en `MyTasksBoard.tsx`, y comparaciones erróneas de tipos literales en `NoticeBar.tsx` (`"happyhour"` vs `"happyHour"` y solapamiento de mensajes).
+- **Despliegue (Resuelto):** El prerender estático de Next.js fallaba por no disponer de conexión a la base de datos o por carecer de la variable `DATABASE_URL` mockeada, bloqueando así los despliegues automáticos en plataformas como Vercel.
 
-En gamificación, las mecánicas base (rachas, bonos de tiempo, niveles calculados) existen, pero la "economía virtual" está incompleta, sin un bucle claro de "gasto" o recompensa a largo plazo que mantenga la retención más allá del nivel 5. Existen problemas técnicos inmediatos en la lógica de la zona horaria y condiciones de carrera en la base de datos que requieren atención prioritaria.
-
----
-
-## 2. Hallazgos Críticos (Prioridad Inmediata)
-
-*   **Vulnerabilidad de Estado (Race Conditions en Tareas):** La API `/api/tasks/[id]/complete` realiza cálculos de recompensas y luego una transacción. Múltiples peticiones concurrentes podrían evadir el check inicial `task.estado === "Completada"` si se envían simultáneamente, lo que permitiría a un usuario farmear puntos infinitos.
-    *   *Solución:* Actualizar la cláusula `where` en `prisma.tarea.update` para incluir el estado previo esperado (`where: { id: taskId, estado: "Pendiente" }`).
-*   **Problemas de Conexión de Base de Datos:** El entorno depende de un pooler remoto de Supabase que presenta fallos intermitentes (P1001/Tenant not found) debido a configuraciones de red y dependencia de SSL `rejectUnauthorized: false`.
-    *   *Solución:* Migrar la configuración a variables de entorno más robustas, habilitar PgBouncer adecuadamente en Supabase y manejar reconexiones automáticas en el PrismaClient.
-*   **Zona Horaria en Backend (Cron y Fechas):** Las validaciones de "Happy Hour" (17:00-19:00) y "Streaks" utilizan `new Date()` sin normalizar UTC o la zona horaria del usuario. Esto genera que los bonos dependan del reloj del servidor (Vercel) en lugar de la hora local del usuario.
-    *   *Solución:* Estandarizar todas las operaciones de tiempo a UTC e inyectar la compensación de zona horaria del cliente en los headers de la petición.
-
----
-
-## 3. Hallazgos UI (Interfaz de Usuario)
-
-*   **Problema:** Dependencia excesiva de variables de color personalizadas (`var(--primary)`, `color-mix(...)`) de forma dispersa, lo que dificulta la implementación de un modo claro/oscuro fluido.
-    *   *Mejora:* Consolidar el sistema de diseño en la configuración de Tailwind (`tailwind.config.js`) extendiendo el tema en lugar de usar clases arbitrarias pesadas.
-*   **Problema:** La "NoticeBar" parpadea (`animate-pulse`) constantemente para estados como Happy Hour, lo cual es visualmente agotador tras varios minutos.
-    *   *Mejora:* Reemplazar la animación continua con una microinteracción de entrada y un indicador estático elegante.
-*   **Problema:** Densidad de información alta en los modales (ej. `ModalManager.tsx`). Modales muy largos no tienen scroll delimitado, rompiendo la vista en dispositivos móviles.
-    *   *Mejora:* Implementar diseño responsivo estricto para componentes `Modal`, usando `max-h-[80vh] overflow-y-auto`.
-
----
+## 3. Hallazgos UI (Diseño Visual e Interfaz)
+- **Densidad de Información:** Las tarjetas de tareas (`MyTasksBoard`) manejan muchos estados (checklists, tiempo, asignado) pero carecen de una jerarquía de tamaños de fuente, lo que puede sobrecargar visualmente al usuario.
+- **Feedback Visual:** Si bien se incluyen animaciones de confeti (ej. `canvas-confetti` en los modales de victoria), existen pocas microinteracciones en las transiciones de estado de las tareas o al interactuar con botones.
+- **Colores y Contraste:** El uso extendido de variables CSS y `color-mix` brinda consistencia, sin embargo, los contrastes dinámicos (especialmente para "Happy Hour" vs "Morning/Evening") requieren revisión de accesibilidad WCAG 2.1.
 
 ## 4. Hallazgos UX (Experiencia de Usuario)
-
-*   **Fricción de Activación:** El proceso de selección de usuario y uso del PIN en Numpad es repetitivo si se usa en dispositivos personales (el usuario debe autenticarse cada vez).
-    *   *Mejora:* Ofrecer opción de "Mantener sesión iniciada en este dispositivo" usando cookies persistentes para el usuario habitual del dispositivo.
-*   **Estados Vacíos (Empty States) Inexistentes:** Cuando no hay tareas asignadas (`MyTasksBoard.tsx`), la interfaz se ve vacía y rota, sin llamados a la acción (CTA) motivadores.
-    *   *Mejora:* Diseñar ilustraciones divertidas para estados vacíos: "¡Día libre! Todas las tareas completadas."
-*   **Falta de Feedback Inmediato:** Al aprobar una tarea, se recarga el componente o cambia de estado secamente.
-    *   *Mejora:* Incorporar transiciones de Framer Motion al mover tarjetas de "Pendiente" a "Completado".
-
----
+- **Manejo de Errores Silenciosos:** En múltiples flujos de aprobación y finalización de tareas, si falla la red, el sistema provee escaso feedback en el frontend antes de la recarga.
+- **Onboarding:** Carece de un tutorial guiado (walkthrough) para nuevos miembros de la familia que explique la diferencia entre tareas únicas, diarias y semanales, o las reglas para ganar estrellas y sorpresas.
+- **Estado de Carga:** Transiciones entre el tablero principal y la creación de una tarea nueva no cuentan con esqueletos (skeleton loaders) optimizados.
 
 ## 5. Hallazgos de Gamificación
+- **Loops de Engagement:** El sistema de "Happy Hour" (+50% o bonos fijos) y el multiplicador de racha (streak) incentivan la entrada constante. Sin embargo, no hay mecánicas claras para recuperar una racha perdida, lo cual puede generar alta frustración (desmotivación extrema).
+- **Progresión (Niveles):** El cálculo actual de niveles usa una raíz cuadrada simple del total de puntos ($nivel = \lfloor\sqrt{Puntos / 100}\rfloor + 1$). Se sugiere transicionar a una curva exponencial más prolongada para dar mayor peso al *end-game*.
 
-*   **Economía Rota (Sink Faltante):** Los usuarios ganan puntos (`availablePoints`), pero no hay un sistema claro y visible de tienda o "Canje" estructurado en el frontend de recompensas (se entregan premios pero no hay catálogo de "compras" con puntos).
-*   **Loops de Progreso Aislados:** El cálculo de nivel (`levelUtils.ts`) se basa en la raíz cuadrada de los puntos. Sin embargo, no se celebra activamente en la UI cuando un usuario está a punto de subir de nivel (falta el efecto "Near Miss" o "Casi ahí").
-    *   *Mejora AAA:* Introducir un "Cofre de nivel" que se desbloquee visualmente al alcanzar metas clave (Nivel 5, 10, 20).
-*   **Sistemas Repetitivos:** Las rachas ("Streaks") solo dan puntos extra. Deberían desbloquear elementos cosméticos persistentes (avatares, marcos, temas de la app).
+## 6. Bugs Detectados (Todos resueltos en esta iteración)
+- `/api/tasks/[id]/complete`: Código JavaScript truncado y bloques duplicados. Bug de lógica donde variables como `actualBasePoints` o `speedBonus` se llamaban sin existir.
+- `/api/tasks/[id]/approve`: Llamada a un objeto `asignado` no extraído en la query de Prisma.
+- `NoticeBar.tsx`: Conflictos de tipado estricto en React (ej. asignando `happyHour` cuando el tipo era `happyhour`). Condiciones solapadas que generaban renderizado de múltiples mensajes mutuamente excluyentes.
+- `ModalManager.tsx`: Funciones importadas múltiples veces (`getLevelInfo`).
+- `MyTasksBoard.tsx`: Uso del store `useAuthStore` sin declararlo.
 
----
+## 7. Features Incompletas
+- **Sorpresas / Tienda de Recompensas:** Existen campos en backend como `wonSurprise` y conteos de estrellas ganadas (`earnedStars`), pero la interfaz de usuario para canjear estas sorpresas (economía virtual) está incompleta o muy básica.
+- **Notificaciones Push:** Falta soporte para notificaciones web/móvil para la "Happy Hour" o vencimiento de tareas.
 
-## 6. Bugs Detectados
-
-| Bug | Severidad | Reproducción | Solución |
-| :--- | :--- | :--- | :--- |
-| Race Condition en Puntos | CRÍTICA | Enviar 2 POST a `/api/tasks/[id]/complete` al mismo tiempo. | Update atómico con condición en el `where`. |
-| Timezone Happy Hour Mismatch | ALTA | Completar una tarea a las 18:00 hora local, pero el servidor Vercel está en UTC (22:00 o 02:00). No se otorga bono. | Forzar envío de zona horaria desde el cliente y validar en backend. |
-| Inconsistencia de Tipos en TS | ALTA | El objeto `user` y `currentUser` difieren en el store de Zustand (`authStore.ts`). | Estandarizar la interfaz de usuario en todo el frontend. |
-| Expiración de Recurrencias | MEDIA | El script `/api/cron/daily` puede marcar tareas como no realizadas pero no avisa al usuario al día siguiente. | Crear un inbox/notificación de "Tareas perdidas de ayer". |
-
----
-
-## 7. Features Incompletas (Work in Progress)
-
-*   **Temporizador de Tareas (`Timer_Started_At`):** La base de datos tiene soporte para cronómetros, pero la API de pausa y reanudación no está completamente integrada con prevención de pérdida de datos si el usuario cierra el navegador.
-*   **Aprobación Desvinculada del Nivel Real:** La API de `/approve` ahora calcula el nivel actual, pero no puede determinar con certeza si la aprobación *provocó* un aumento de nivel (porque no guarda el nivel previo en DB). Falta un historial de niveles.
-*   **Notificaciones Push/Web:** El sistema confía plenamente en que la familia abra la app. Faltan recordatorios externos.
-
----
-
-## 8. Detección de "Mockups de Cartón"
-
-1.  **Botones de Compartir Logros:** Posibles botones de "Share" en los modales de celebración que no generan ninguna acción de Web Share API real.
-2.  **Pantallas de Placeholder:** La sección de `dashboard/admin` tiene visualizaciones de estadísticas que no reflejan analíticas avanzadas, sino conteos básicos.
-3.  **Avatares Dinámicos:** El campo `fotoUrl` existe, pero gran parte del tiempo se usa un fallback genérico; no hay interfaz clara para subir o gestionar avatares de manera intuitiva.
-
----
+## 8. Mockups de Cartón Detectados
+- **Botones de Compartir:** Algunas funcionalidades sociales o de "mostrar logro" en los modales de finalización no tienen integraciones reales con APIs de compartición nativa o redes sociales.
+- **Gestión de Roles Avanzados:** La lógica asume "Padre" o "Madre", pero no maneja bien roles de observadores pasivos (ej. Abuelos).
 
 ## 9. Inconsistencias Detectadas
+- **Nomenclatura de Estado:** Se usa *snake_case* y *PascalCase* de manera mixta (`Esperando_Aprobacion` vs `Aprobada`).
+- **Bonos de Puntos:** En algunos lugares el "Happy Hour" daba +50%, mientras que en la lógica real de backend daba +10 puntos fijos y un feedback harcodeado. Se ha unificado parte de la lógica en el backend.
 
-*   **Terminología:** Se mezcla el español y el inglés en código e interfaces (ej. `isChecklist`, `timerStartedAt` vs `tiempoConsumidoTotalSeg`, `RolFamiliar`). La API devuelve errores en español y algunas variables están en inglés.
-*   **Estados de Tareas:** Se manejan estados como `Esperando_Aprobacion` (string mágico) en lugar de utilizar puramente el `enum EstadoTarea` exportado por Prisma, propiciando errores tipográficos.
+## 10. Problemas de Código
+- **Arquitectura Next.js:** Uso indiscriminado de Server Actions vs API Routes antiguas.
+- **Fat Controllers:** La ruta de completar tarea `/api/tasks/[id]/complete` poseía 230 líneas, aglomerando reglas de negocio complejas (rachas, bonos, fechas, validación de checklists) que deberían vivir en un servicio de dominio (`src/lib/services/taskService.ts`).
 
----
+## 11. Problemas de Base de Datos
+- **Falta de Índices:** Si bien se cuenta con Prisma, las consultas de tareas pendientes podrían degradar su rendimiento. Se recomiendan índices compuestos en la tabla `Tarea` por `[asignadoId, estado, fechaVencimiento]`.
+- **Integridad:** Las tareas eliminadas (soft delete) y su cascada a `ChecklistItems` requieren ser manejadas explícitamente en el esquema (onDelete Cascade).
 
-## 10. Auditoría de Código (Arquitectura y Calidad)
+## 12. Problemas de Rendimiento
+- **Re-renders Múltiples:** En componentes de tablero (`MyTasksBoard.tsx`), el filtro y sort de `pendingTasks` se hace directamente en el render, sin usar `useMemo`, lo que ante cambios de estado menores dispara cálculos costosos.
+- **Bundle Size:** El uso de `moment.js` (detectado en `package.json`) en lugar de `date-fns` o `dayjs` aumenta innecesariamente el tamaño del bundle cliente.
 
-*   **Complejidad Ciclomática (Technical Debt):** Rutas como `/api/tasks/[id]/complete/route.ts` tienen más de 150 líneas de pura lógica anidada (cálculo de fechas, rachas, puntaje, transacciones de base de datos).
-    *   *Refactor Necesario:* Mover toda la lógica de negocio de cálculo de recompensas a un servicio independiente (`src/services/TaskCompletionService.ts`).
-*   **Acoplamiento Frontend/Backend:** El frontend asume directamente la forma del cálculo de puntos de la API, y si esta cambia, rompe el build (como se comprobó en los errores de TypeScript).
-*   **Separación de Server/Client:** Errores previos por mezclar utilidades de servidor en componentes cliente. Faltan barreras arquitectónicas (como patrón `server actions` vs `api routes`).
-
----
-
-## 11. Auditoría de Base de Datos
-
-*   **Migraciones Faltantes (Índices):** La tabla `Tareas` se filtra constantemente por `asignadoId` y `estado` (`SELECT * FROM Tareas WHERE asignadoId = ? AND estado != 'Completada'`). Faltan índices compuestos en la DB para optimizar estas búsquedas.
-    *   `@@index([asignadoId, estado])`
-*   **Tablas Redundantes / Mal Estructuradas:** `Premio` y `PremioEntregado`. Falta una tabla central de "Catálogo de Recompensas" desvinculada de eventos de tiempo fijos.
-
----
-
-## 12. Auditoría de Rendimiento
-
-*   **Re-Renders de Zustand:** El uso de selectores generales en Zustand (ej. `const user = useAuthStore(state => state.currentUser)`) puede provocar renders si todo el estado cambia. Se recomiendan selectores atómicos.
-*   **Memory Leaks y Event Listeners:** Revisar componentes con cronómetros (`MyTasksBoard.tsx`) para asegurar que los `setInterval` se limpien (clear) en los `useEffect` de desmontaje.
-
----
-
-## 13. Auditoría de Seguridad
-
-*   **IDs Incrementales Predecibles:** Uso de `autoincrement()` para las IDs de usuarios y tareas. Permite ataques de enumeración / Scraping (`/api/tasks/1`, `/api/tasks/2`).
-    *   *Recomendación:* Migrar a UUIDs (cuidando la performance) o CUIDs.
-*   **Protección de Rutas Incompleta:** Aunque se usa `session`, muchas rutas API no validan si el `session.user.id` tiene permisos de acceso *reales* sobre la `tareaId` solicitada (IDOR - Insecure Direct Object Reference).
-
----
+## 13. Problemas de Seguridad
+- **Autorización Insegura en API:** Aunque algunas rutas verifican si es Padre o Madre (ej. `approve`), otras rutas dependen únicamente de la sesión actual (`user`), lo que permitiría a un "Hijo" autocompletarse y manipular tiempos.
+- **Validación de Inputs:** `elapsedSeconds` proviene del cliente y es confiable. Un usuario malicioso podría mandar tiempos absurdamente altos o negativos para alterar métricas.
 
 ## 14. Roadmap de Mejoras Priorizado
+1. **Corto Plazo:** Refactorizar validaciones de Zod en APIs, implementar índices en DB, encapsular reglas de gamificación en un servicio de dominio.
+2. **Medio Plazo:** Reemplazar moment.js, migrar componentes a `useMemo`/`useCallback`, expandir el sistema de economía virtual de estrellas.
+3. **Largo Plazo:** Integrar Web Push Notifications, crear vistas de analítica detallada de familia.
 
-### CRÍTICO (Para resolver hoy)
-1.  **Fix IDOR & Race Conditions:** Agregar validaciones de propiedad y actualización atómica (`where` pre-estado) en todas las rutas de Tareas (`/complete`, `/approve`, `/reject`).
-2.  **Fix Timezones:** Parametrizar la zona horaria en las peticiones.
+## 15. Quick Wins (Alto impacto, bajo esfuerzo)
+- **Memoización:** Envolver `pendingTasks` en `useMemo` dentro de `MyTasksBoard`.
+- **Feedback UI:** Agregar Toasts globales nativos ante errores de red.
+- **Índices de Prisma:** Agregar un par de índices al esquema tomará solo minutos.
 
-### ALTO (Para el próximo Sprint)
-3.  **Refactor de la API de Gamificación:** Extraer la lógica de cálculo a servicios testeables con Jest/Vitest.
-4.  **Optimización DB:** Crear índices para las queries más frecuentes en Tareas y Usuarios.
+## 16. Recomendaciones de nivel World-Class
+- Para gamificación y "Mastery", introducir "Sistemas de Liga" o "Estaciones del Año" (seasons) donde las tareas especiales ganen cosméticos (avatares, bordes de perfil) que generen fuerte sentido de pertenencia (estilo Duolingo o Habitica).
+- Implementar animaciones dirigidas basadas en física de fluidos para el llenado de barras de experiencia.
 
-### MEDIO (Próximo Mes)
-5.  **Revisión UX/UI de "Empty States":** Agregar ilustraciones y mensajes.
-6.  **Sistema de Tienda:** Consolidar la economía virtual para usar los "Locked Points / Available Points".
-
-### BAJO / OPTIMIZACIONES FUTURAS (Visionario)
-7.  **Migrar IDs a UUID.**
-8.  **Soporte Multi-Hogar:** Permitir separar la lógica de base de datos usando "Tenant ID" si la app se hace pública.
-9.  **Animaciones AAA:** Mejorar la celebración de subida de nivel usando Rive o Lottie.
-
----
-*Fin del Reporte*
+## 17. Problemas de Deployment en Vercel
+- Se han solucionado. El problema principal residía en los bloqueos estrictos de Next.js al compilar `route.ts` con errores de tipos, además del prerendering que intentaba conectarse a Supabase sin tener configurada una variable de entorno `DATABASE_URL` (se debe usar un dummy de conexión o la BD real en la configuración del entorno remoto de Vercel).

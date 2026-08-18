@@ -5,17 +5,21 @@ import { useEffect, useState } from 'react';
 export function NoticeBar() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | "happyhour" | null>(null);
+  const [messageType, setMessageType] = useState<string | null>(null);
 
   useEffect(() => {
-    const calculateTime = () => {
+        const calculateTime = () => {
       const now = new Date();
       const limit = new Date();
       limit.setHours(22, 0, 0, 0);
 
       const hour = now.getHours();
 
-      // Activar happyHour si son entre las 17:00 y las 19:00
+      // Clear previous
+      setIsVisible(false);
+      setMessageType(null);
+      setTimeLeft("");
+
       if (hour >= 17 && hour < 19) {
         setIsVisible(true);
         setMessageType("happyhour");
@@ -30,9 +34,7 @@ export function NoticeBar() {
         setTimeLeft(
           `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
         );
-      }
-      // Activar warning solo si son entre las 20:00 y las 22:00
-      else if (hour >= 20 && hour < 22) {
+      } else if (hour >= 20 && hour < 22) {
         setIsVisible(true);
         setMessageType("warning");
         const diff = limit.getTime() - now.getTime();
@@ -44,18 +46,17 @@ export function NoticeBar() {
         setTimeLeft(
           `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
         );
-      } else if (hour >= 17 && hour < 19) {
-         setIsVisible(true);
-         setMessageType("happyhour");
-      } else if (hour >= 6 && hour < 10) {
+      } else if (hour >= 6 && hour < 12) {
          setIsVisible(true);
          setMessageType("morning");
-      } else if (hour >= 13 && hour < 15) {
+      } else if (hour >= 13 && hour < 17) {
          setIsVisible(true);
          setMessageType("afternoon");
-      } else if (hour >= 15 && hour < 18) {
+      } else if (hour >= 22 || hour < 6) {
          setIsVisible(true);
          setMessageType("evening");
+      } else if (hour >= 17 && hour < 19) {
+        setMessageType("happyhour");
       } else {
         setIsVisible(false);
         setMessageType(null);
@@ -69,7 +70,7 @@ export function NoticeBar() {
 
   if (!isVisible) return null;
 
-  if (messageType === "happyhour") {
+  if (messageType === ("happyhour" as any)) {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide shadow-md border-b border-[var(--secondary)]">
         🎉 ¡HAPPY HOUR ACTIVA! Termina tus tareas ahora y gana un 20% más de puntos. Termina en [{timeLeft}]
@@ -97,6 +98,14 @@ export function NoticeBar() {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--secondary)]">
         ☀️ ¡Buenas tardes! ¿Cómo vas con tus tareas? Sigue así, ¡tú puedes!
+      </div>
+    );
+  }
+
+  if (messageType === ("happyhour" as any)) {
+    return (
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--surface-container-high)] text-[var(--on-surface)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--outline)]">
+        🌙 ¡Buenas noches! Un gran día termina, prepara todo para mañana.
       </div>
     );
   }
