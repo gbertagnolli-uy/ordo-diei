@@ -75,8 +75,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
 
-    const estadoFinal = "Esperando_Aprobacion";
-
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
@@ -115,6 +113,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
+    const estadoFinal = "Esperando_Aprobacion";
     let basePoints = 0;
     let streakBonus = 0;
     let checklistBonus = 0;
