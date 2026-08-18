@@ -8,14 +8,18 @@ export function NoticeBar() {
   const [messageType, setMessageType] = useState<string | null>(null);
 
   useEffect(() => {
-    const calculateTime = () => {
+        const calculateTime = () => {
       const now = new Date();
       const limit = new Date();
       limit.setHours(22, 0, 0, 0);
 
       const hour = now.getHours();
 
-      // Activar happyHour si son entre las 17:00 y las 19:00
+      // Clear previous
+      setIsVisible(false);
+      setMessageType(null);
+      setTimeLeft("");
+
       if (hour >= 17 && hour < 19) {
         setIsVisible(true);
         setMessageType("happyhour");
@@ -30,9 +34,7 @@ export function NoticeBar() {
         setTimeLeft(
           `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
         );
-      }
-      // Activar warning solo si son entre las 20:00 y las 22:00
-      else if (hour >= 20 && hour < 22) {
+      } else if (hour >= 20 && hour < 22) {
         setIsVisible(true);
         setMessageType("warning");
         const diff = limit.getTime() - now.getTime();
@@ -44,16 +46,13 @@ export function NoticeBar() {
         setTimeLeft(
           `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
         );
-      } else if (hour >= 17 && hour < 19) {
-         setIsVisible(true);
-         setMessageType("happyhour");
-      } else if (hour >= 6 && hour < 10) {
+      } else if (hour >= 6 && hour < 12) {
          setIsVisible(true);
          setMessageType("morning");
-      } else if (hour >= 13 && hour < 15) {
+      } else if (hour >= 13 && hour < 17) {
          setIsVisible(true);
          setMessageType("afternoon");
-      } else if (hour >= 15 && hour < 18) {
+      } else if (hour >= 22 || hour < 6) {
          setIsVisible(true);
          setMessageType("evening");
       } else if (hour >= 17 && hour < 19) {

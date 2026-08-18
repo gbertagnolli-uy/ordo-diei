@@ -69,6 +69,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
+    const currentHour = now.getHours();
+    const isHappyHour = currentHour >= 17 && currentHour < 19;
     const esATiempo = fechaVencimientoReal ? now <= new Date(fechaVencimientoReal) : true;
     const estaEnPeriodoGracia = fechaLimite ? now <= fechaLimite : false;
 
@@ -181,6 +183,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Surprise logic
+    }
+    let feedback = "";
+    let rewardPoints = 0;
+    let wonSurprise = false;
     let earnedStars = 0;
     // task does not have isSurpriseEligible
 
@@ -221,10 +227,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: basePoints || 0,
-      streakBonus: streakBonus || 0,
-      speedBonus: timeBonus || 0,
-      checklistBonus: checklistBonus || 0,
+      basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
+      streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
+      speedBonus: 0,
+      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
