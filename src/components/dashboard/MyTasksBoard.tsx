@@ -10,6 +10,8 @@ import confetti from "canvas-confetti";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 
+import { useAuthStore } from "@/store/authStore";
+
 export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coResponsables?: CoResponsableMap }) {
   const user = useAuthStore(state => state.currentUser);
   const pendingTasks = tasks.filter((t) => 

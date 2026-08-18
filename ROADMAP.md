@@ -1,34 +1,37 @@
-# Family Tasker - Implementation Roadmap
+# Roadmap de Mejoras: Family Tasker
 
-Este documento contiene el plan de acción derivado de la auditoría integral (ver `README_audit.md`). El propósito es dar seguimiento a las mejoras necesarias para llevar la aplicación a un nivel AAA.
+## PRIORIDAD CRÍTICA (Resolver inmediatamente)
+1. **Seguridad y Consistencia de Datos (Transacciones concurrentes)**:
+   - Implementar control de concurrencia optimista (`version` col) o bloqueos en `prisma.tarea.update` para evitar el "double-spending" al completar tareas simultáneamente.
+2. **Validación de Roles y Permisos Segura**:
+   - Asegurar que en `/api/tasks/[id]/approve` y `/complete` no puedan ser llamados por scripts maliciosos. Limitar llamadas y validar correctamente `asignadoId` y `creadorId`.
+3. **Manejo de Husos Horarios (Timezones)**:
+   - Migrar cálculos de rachas (streaks) y deadlines a horas UTC o guardar el timezone del usuario para evitar rotura de rachas injustas.
 
-## FASE 1: Corrección de Bugs y Estabilidad (MVP) - [Completado]
-- [x] Arreglar API `/api/tasks/[id]/approve` (error con variable `asignado`).
-- [x] Arreglar API `/api/tasks/[id]/complete` (errores de compilación, lógica de variables faltantes).
-- [x] Arreglar compilación del frontend en `ModalManager.tsx` (múltiples definiciones de función).
-- [x] Arreglar importaciones faltantes en `MyTasksBoard.tsx` (`useAuthStore`).
-- [x] Arreglar NoticeBar.tsx (tipado estricto para `messageType`, fix de superposición de estados de la barra "happyhour" vs "evening").
-- [x] Asegurar que el comando `npm run build` pase sin errores.
+## PRIORIDAD ALTA (Mejoras de experiencia o estabilidad)
+1. **Refactorización Arquitectónica de API**:
+   - Extraer la lógica de gamificación pesada de los archivos `route.ts` hacia una capa de servicios (`src/services/TaskService.ts`, `src/services/GamificationService.ts`).
+2. **Crear Índices de Base de Datos**:
+   - Añadir `@@index([estado])`, `@@index([asignadoId])`, `@@index([fechaVencimiento])` en el esquema de Prisma.
+3. **Gestión de UI / UX Centralizada**:
+   - Reemplazar alertas nativas (`alert()`) por un sistema de Toasts en un contexto global usando `Zustand` o bibliotecas como `sonner`.
 
-## FASE 2: UI / UX y Animaciones - [Pendiente]
-- [ ] Aplicar transiciones de Framer Motion a todos los modales (Fade-in, slide-up).
-- [ ] Implementar un componente de "Onboarding" interactivo para nuevos usuarios (especialmente para niños).
-- [ ] Mejorar la jerarquía visual de `MyTasksBoard.tsx` (diferenciar visualmente tareas urgentes/vencidas).
-- [ ] Simplificar el proceso de check del "Checklist" a un solo paso, eliminando clics innecesarios.
+## PRIORIDAD MEDIA (Mejoras recomendadas)
+1. **Sistema de Logros Real**:
+   - Crear una entidad `Logro` en Prisma en lugar de calcular insignias hardcodeadas en `ModalManager.tsx`.
+2. **Mejorar UI de Tareas (`MyTasksBoard.tsx`)**:
+   - Dividir la vista en secciones colapsables ("Vencidas", "Hoy", "Próximamente") en lugar de una lista única densa.
+   - Refinar el uso del espacio y remover colores Tailwind estándar por variables CSS del sistema de diseño ya definido.
+3. **Optimización de Performance Client-Side**:
+   - Mover la lógica del `setInterval` de los timers fuera del árbol principal de renderizado (por ejemplo, usando referencias o componentes aislados) para evitar re-renders en `NoticeBar.tsx`.
 
-## FASE 3: Gamificación AAA - [Pendiente]
-- [x] Funcionalidad base: Happy Hour Bonus (x1.5 puntos).
-- [x] Funcionalidad base: Surprise Box (chance de drop aleatorio al completar tareas).
-- [x] Funcionalidad base: Checklist Bonus (puntos extra por subtareas).
-- [ ] Frontend: Recompensar visualmente el "Surprise" con animaciones o confeti.
-- [ ] Crear la página/flujo de **Tienda de Recompensas (Rewards Shop)** para canjear "puntos" o "estrellas" por premios reales (vinculado a `/api/premios`).
-- [ ] Reemplazar avatares estáticos por íconos o insignias de nivel dinámicos en el Header/Leaderboard.
+## PRIORIDAD BAJA (Optimizaciones futuras)
+1. **Soporte Offline PWA**:
+   - Habilitar completado de tareas sin conexión y sincronización en segundo plano.
+2. **Mecánicas AAA de Gamificación**:
+   - Diseñar curvas de nivel logarítmicas complejas, árbol de habilidades, clanes/equipos familiares, y animaciones de unboxing con `Framer Motion` y WebGL (Three.js/Canvas).
+3. **Internacionalización (i18n)**:
+   - Limpiar el espanglish de la base de datos y proveer soporte para múltiples idiomas.
 
-## FASE 4: Arquitectura de Base de Datos y Código - [Completado]
-- [x] Actualizar `schema.prisma` agregando `@@index` a `estado` y `asignadoId` en la tabla `Tarea`.
-- [x] Ejecutar `npx prisma generate` y crear migraciones.
-- [ ] Refactorización de código: Modularizar endpoints gigantes como `route.ts` de 'complete' en servicios (Ej: `services/taskCompletion.ts`).
-- [ ] Optimizar re-renders en `MyTasksBoard` implementando `React.memo` o selectores más finos en Zustand.
-
-## FASE 5: Seguridad - [Pendiente]
-- [ ] Validar en TODAS las llamadas de API si `user.id === tarea.asignadoId` o si `user.rolFamiliar` es Padre/Madre para prevenir que usuarios manipulen tareas de otros por fuerza bruta.
+---
+**Nota:** Todos estos cambios están enmarcados para su implementación progresiva en la rama `dev`.

@@ -116,6 +116,7 @@ model Tarea {
 
   @@index([estado])
   @@index([asignadoId])
+  @@index([fechaVencimiento])
   @@map("Tareas")
 }
 
