@@ -79,7 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
-    let awardedStar = false;
+    const awardedStar = false;
 
     const todayDate = new Date();
     todayDate.setUTCHours(0, 0, 0, 0);
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Happy Hour check (17:00 - 19:00)
     const currentHour = now.getUTCHours();
     const isHappyHour = currentHour >= 17 && currentHour < 19;
-    let happyHourMultiplier = isHappyHour ? 1.5 : 1;
+    const happyHourMultiplier = isHappyHour ? 1.5 : 1;
 
     // Dynamic base points based on estimated time (1 point per minute, minimum 10)
     let basePoints = 0;
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const isHappyHour = currentHour >= 17 && currentHour < 19;
       timeBonus = (isWeekend || isHappyHour) ? 10 : 0;
 
-      let bonusText = [];
+      const bonusText = [];
       if (streakBonus > 0) bonusText.push(`${streakBonus} pts por racha`);
       if (checklistBonus > 0) bonusText.push(`${checklistBonus} pts por checklist`);
       if (timeBonus > 0) bonusText.push(`${timeBonus} pts por ${isWeekend ? 'fin de semana' : 'Happy Hour'}`);
@@ -218,10 +218,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: typeof basePoints !== 'undefined' ? basePoints : 0,
-      streakBonus: typeof streakBonus !== 'undefined' ? streakBonus : 0,
-      speedBonus: typeof timeBonus !== 'undefined' ? timeBonus : 0,
-      checklistBonus: typeof checklistBonus !== 'undefined' ? checklistBonus : 0,
+      basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
+      streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
+      speedBonus: 0,
+      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
