@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    const currentHour = now.getHours();
+    const currentHour = now.getUTCHours();
     const isHappyHour = currentHour >= 17 && currentHour < 19;
     const esATiempo = fechaVencimientoReal ? now <= new Date(fechaVencimientoReal) : true;
     const estaEnPeriodoGracia = fechaLimite ? now <= fechaLimite : false;
@@ -108,47 +108,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           isNewStreak = true;
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
-    }
       }
     }
 
-    }
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
-    const estadoFinal = "Esperando_Aprobacion";
-    let basePoints = 0;
-    let streakBonus = 0;
-    let checklistBonus = 0;
-    let timeBonus = 0;
-
-    // Happy Hour check (17:00 - 19:00)
-    const currentHour = now.getUTCHours();
-    const isHappyHour = currentHour >= 17 && currentHour < 19;
-    const happyHourMultiplier = isHappyHour ? 1.5 : 1;
-
-    let basePoints = 0;
-    let streakBonus = 0;
-    let checklistBonus = 0;
-    let timeBonus = 0;
 
     // Gamification state tracking
     let actualBasePoints = 0;
     let actualStreakBonus = 0;
     let speedBonus = 0;
-    let checklistBonus = 0;
-
-    // Dynamic base points based on estimated time (1 point per minute, minimum 10)
-    let actualBasePoints = 0;
-    let actualStreakBonus = 0;
     let actualChecklistBonus = 0;
     let timeBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
-      let basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
-
-      // Streak bonus: +2 points per streak day, max +20 points
-      let streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
       actualBasePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
 
       // Streak bonus: +2 points per streak day, max +20 points
@@ -159,7 +133,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       // Happy Hour / Weekend Bonus
       const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-      const isHappyHour = currentHour >= 17 && currentHour < 19;
       timeBonus = (isWeekend || isHappyHour) ? 10 : 0;
 
       let bonusText = [];
@@ -189,13 +162,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
-    // Surprise logic
-    }
-    let feedback = "";
-    let rewardPoints = 0;
+
     let wonSurprise = false;
     let earnedStars = 0;
-    // task does not have isSurpriseEligible
 
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
@@ -234,10 +203,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
-      streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
+      basePoints: actualBasePoints,
+      streakBonus: actualStreakBonus,
       speedBonus: 0,
-      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
+      checklistBonus: actualChecklistBonus,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
