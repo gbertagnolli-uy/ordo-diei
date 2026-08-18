@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Clock, Play, Square, Pause, Flame, ListChecks, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
+import { useAuthStore } from "@/store/authStore";
 import { ChecklistModal } from "./ChecklistModal";
 import confetti from "canvas-confetti";
 

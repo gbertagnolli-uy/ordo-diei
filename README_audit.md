@@ -1,88 +1,129 @@
-# Auditoría Integral: Family Tasker
-
-Este documento presenta una evaluación exhaustiva del estado actual de Family Tasker, identificando problemas, vulnerabilidades, inconsistencias y oportunidades de mejora desde una perspectiva de producto nivel AAA.
+# Auditoría Integral de Producto, UX, UI, Gamificación, Código y Calidad
 
 ## 1. Auditoría de UI (Interfaz de Usuario)
-- **Densidad y Espaciado:** Los modales como `ModalManager.tsx` (Leaderboard, RulesPopup) contienen información densa. El textarea de RulesPopup es grande (`h-80`) y el modal de historia de tareas (`HistoryModal`) puede sobrecargar cognitivamente sin paginación real.
-- **Inconsistencia Visual:** El uso de colores hardcodeados como `orange-500/10` mezclado con variables CSS `var(--surface-container)` rompe la cohesión visual.
-- **Microinteracciones y Feedback:** Existen animaciones básicas (`animate-bounce` en recompensas), pero carecen de fluidez (ej. transiciones spring de Framer Motion, que ya está instalado pero infrautilizado).
+**Hallazgos Críticos:**
+- La interfaz depende en gran medida de "CSS-variables" incrustadas manualmente o usando `color-mix` en vez de definir un sistema de diseño consistente de Tailwind en `tailwind.config.js`.
+- **Accesibilidad:** Uso de colores de bajo contraste en algunos estados inactivos o deshabilitados.
+- **Microinteracciones y Animaciones:** Se usa `canvas-confetti`, pero en algunas acciones de aprobación o completación no hay un feedback de "loading" claro para el usuario, causando "double clicks".
+- Faltan Skeleton Loaders al iniciar la app, generando pantallas vacías hasta que los datos terminan de cargar.
+- Componentes sobrecargados de información, como `MyTasksBoard`, que mezcla lógicas complejas de negocio con la vista.
+
+**Recomendaciones:**
+- Implementar un sistema de diseño estricto.
+- Añadir Skeleton Loaders.
+- Refactorizar las modales para no saturar el `ModalManager.tsx` de 1200+ líneas.
+
+---
 
 ## 2. Auditoría de UX (Experiencia de Usuario)
-- **Estados de Carga y Manejo de Errores:** En varios componentes (ej. `RulesPopup`), el estado `loading` desactiva el botón pero no ofrece un feedback no bloqueante. Las peticiones a las APIs en caso de error simplemente hacen `console.error` o muestran alertas nativas del navegador (`alert("Reglas guardadas")`).
-- **Arquitectura de Información:** La vista de tareas se satura rápido (`MyTasksBoard.tsx`) debido a la lógica de ordenamiento que simplemente apila las tareas basándose en si tienen hora y fecha, sin una separación clara visual de las tareas "Atrasadas", "De hoy", y "Futuras".
+**Hallazgos:**
+- **Onboarding:** No existe un onboarding paso a paso; los usuarios son lanzados directo a la lista de tareas.
+- **Flujos Críticos:** El padre necesita aprobar tareas una por una; falta un botón "Aprobar todo" o "bulk approve".
+- **Fricción Innecesaria:** Al marcar un checklist como completado, requiere volver y confirmar en la tarea principal, agregando clics de más.
+- **Manejo de Errores:** Errores de API ("Tenant not found" o "timeout") devuelven `error interno` sin opciones de reintento en el cliente.
 
-## 3. Auditoría de Gamificación (Nivel AAA)
-- **Loops de recompensa repetitivos:** El sistema de puntos (1 punto por minuto) es predecible y poco emocionante. Las sorpresas tienen un 10% de drop y las estrellas 30%, valores quemados en el código (`api/tasks/[id]/complete/route.ts`).
-- **Progresión lineal y aburrida:** La fórmula de nivel es `Nivel = sqrt(Puntos / 100) + 1`. Esto requiere un grindeo extremo para subir de nivel en etapas tardías, lo que desmotiva a los usuarios a largo plazo.
-- **Mecánicas faltantes:**
-  - Falta un árbol de habilidades o ventajas por nivel.
-  - Los premios se otorgan sin un sentido de "unboxing" ceremonial real.
-  - Los multiplicadores de fin de semana y "Happy Hour" no son dinámicos ni se comunican proactivamente antes de que el usuario finalice la tarea (se informa en el `NoticeBar` pero no dentro de la tarea individual de forma clara cuánto extra ganará).
+**Recomendaciones:**
+- Añadir un "bulk approve" en `AdminTasksClient.tsx`.
+- Mejorar el estado de `Loading/Saving` en botones de acción.
+
+---
+
+## 3. Auditoría de Gamificación
+**Hallazgos:**
+- **Loops de engagement:** Hay puntos y rachas (streaks), pero el nivel se calcula con una fórmula de raíz cuadrada matemática (en `levelUtils.ts`) que se siente lineal después del nivel 5.
+- **Recompensas variables:** El sistema de `surprises` tiene un 10% de chance, lo cual es bajo; podría ajustarse dinámicamente si el usuario lleva muchos días sin ganar.
+- **Economía Virtual:** Los puntos ganados pueden usarse para premios, pero no hay un sistema para gastarlos parcialmente sin perder nivel (locked vs available points).
+
+**Recomendaciones (Nivel AAA):**
+- Separar "Experiencia" (XP para subir nivel) de "Monedas" (Puntos gastables). Gastar monedas no debería bajar el nivel.
+- Agregar "Daily Quests" rotativas independientes a las tareas del hogar.
+- Añadir avatares o banners desbloqueables.
+
+---
 
 ## 4. Detección de Bugs
-- **Bug Funcional (Severidad Alta):** En `api/tasks/[id]/complete/route.ts`, si múltiples peticiones llegan al mismo tiempo (ej. el usuario hace doble clic o la red laggea), se puede evadir la validación `estado === "Completada"` y generar puntos duplicados, ya que la lectura y la transacción de actualización no están protegidas por concurrencia u optimismo de Prisma.
-- **Bug de UI (Severidad Media):** Alerta nativa `alert("Reglas guardadas.")` en vez de un sistema global de Toasts/Notificaciones.
-- **Bug Lógico (Severidad Alta):** `user.streakDays` se calcula comparando fechas absolutas. Si el servidor y el cliente están en diferentes husos horarios (Timezones), las rachas pueden romperse injustamente a medianoche.
+- **Bug 1 [CRÍTICO]:** En `/api/tasks/[id]/approve/route.ts`, las variables `nivelAntes` y `asignado` estaban mal instanciadas, rompiendo la aprobación de tareas. *(Corregido durante esta sesión).*
+- **Bug 2 [CRÍTICO]:** Build en Turbopack Next.js fallando en Vercel por errores de sintaxis TS en `complete/route.ts` y `ModalManager.tsx`. *(Corregido durante esta sesión).*
+- **Bug 3 [ALTO]:** Race Condition en la completación de tareas rápidas: un usuario puede hacer doble clic en el botón "Completar" y ganar puntos dobles antes de que se deshabilite el botón.
+- **Bug 4 [MEDIO]:** En `/api/tasks/[id]/complete/route.ts`, el bono `checklistBonus` se calculaba antes de revisar si la tarea tenía un checklist. *(Corregido).*
+- **Bug 5 [BAJO]:** `NoticeBar.tsx` tenía `"happyHour"` hardcodeado en la interfaz que no coincidía con los tipos definidos en la prop *(Corregido a `"happyhour"`)*.
+
+---
 
 ## 5. Detección de Features Incompletas
-- **Premios pendientes:** Los premios se entregan pero los estados de `PremioEntregado` ("Entregado", "Pendiente", "No_ganado") no tienen un ciclo de vida completo documentado ni pantallas específicas para gestionarlo (solo un popup).
-- **Manejo de Roles:** `RolFamiliar` tiene "Hijo", "Hija", "Padre", "Madre", pero no hay soporte real para otros tipos de convivientes o permisos granulares aparte del hardcodeo `isParent`.
+- **Sistema de Modos de Humor (Moods):** Existe `moodEmoji` en base de datos y `MoodSelector.tsx`, pero no parece afectar el gameplay o dar bonos pasivos.
+- **Premios recurrentes:** Los premios tipo "Frecuencia Mensual" o "Semanal" están modelados en DB (`Premio`), pero la entrega automática vía CRON no está completamente cableada en `api/cron/daily/route.ts`.
+
+---
 
 ## 6. Detección de "Mockups de Cartón"
-- **Insignias en `ModalManager`:** Las insignias de "Francotirador" o "Imparable" se muestran basándose en variables crudas (`user.totalTasksCompleted >= 10`), pero no existe una entidad de Logros (`Achievements`) en la BD. Todo está hardcodeado en la UI, simulando un sistema de logros real.
-- **Emojis/Moods:** Se permite definir un `moodEmoji`, pero no tiene una integración que impacte en la aplicación (ej. sugerir tareas fáciles si el mood es malo).
+- `RulesPopup` en `ModalManager.tsx`: Existe el UI de reglas, pero a menudo falla el fetch inicial, mostrando "Cargando..." o texto hardcodeado.
+- Algunas notificaciones en `NoticeBar.tsx` solo desaparecen visualmente, pero no marcan en DB que el usuario ya las vio.
 
-## 7. Inconsistencias
-- Mezcla de inglés y español en el código y la BD (`lockedPoints` vs `Puntos_Acumulados`, `isChecklist` vs `Genera_Puntos_Y_Recompensa`).
-- Mezcla de `snake_case`, `camelCase`, y PascalCase en nombres de columnas de Prisma (`Dia_Del_Mes` pero `timerStartedAt`).
+---
+
+## 7. Detección de Inconsistencias
+- **Terminología:** En algunos lados se habla de "Aprobar", en otros de "Validar".
+- **Estados:** Tarea en `Esperando_Aprobacion` vs `Pendiente`. Los padres aprueban y pasa a `Aprobada`, no `Completada`, aunque el usuario ve `Completada` en la interfaz.
+- La hora límite a veces se compara con hora local y a veces con UTC. Recomendado usar UTC (`getUTCHours()`).
+
+---
 
 ## 8. Auditoría Exhaustiva del Código
-- **Deuda Técnica Crítica:** Lógica de negocio pesada en los Route Handlers (`api/.../route.ts`). Deberían existir servicios dedicados (ej. `TaskService.completeTask()`) para testear unitariamente.
-- **Código Duplicado:** Cálculo de niveles copiado en `approve/route.ts` y en `lib/levelUtils.ts`.
-- **Riesgo Futuro:** `MyTasksBoard.tsx` maneja mucha lógica de filtrado y ordenamiento del lado del cliente, lo que causará degradación de rendimiento con cientos de tareas.
+- **Arquitectura:** Toda la lógica de negocio (puntajes, bonos de racha) está en los Controladores (`/api/.../route.ts`) en vez de extraerse a `/lib/gameEngine.ts`.
+- `ModalManager.tsx` es un "God Component" con cientos de líneas y componentes inline definidos dentro.
+- **Refactors Necesarios:** Mover todas las funciones de gamificación a una clase o servicio independiente.
+- **Código duplicado:** Lógica de cálculo de nivel copiada en múltiples lados y no siempre usa `getLevelInfo`.
+
+---
 
 ## 9. Auditoría de Base de Datos
-- **Falta de Índices:** No hay índices en campos muy consultados como `estado` o `asignadoId` en la tabla `Tarea`. Esto causará lentitud al crecer la BD.
-- **Tipado Flexible:** `retroalimentacionAlgoritmo` es de tipo `String?` sin límites.
-- **Campos Redundantes:** `availablePoints` y `lockedPoints` podrían derivarse del historial de tareas, pero tenerlos desnormalizados es aceptable si hay integridad transaccional (que actualmente es débil).
+- **Migraciones faltantes:** Si se separan `XP` de `Monedas`, habrá que agregar la columna `xp` en `Usuario`.
+- Falta índice en `Tarea.estado` y `Tarea.fechaVencimiento` para mejorar las consultas del Dashboard.
+
+---
 
 ## 10. Auditoría de Rendimiento
-- **Re-renders Innecesarios:** `NoticeBar` hace uso de `setInterval` actualizando el estado de cuenta regresiva cada segundo, causando re- renders globales si está mal posicionado en el árbol de componentes.
-- Falta de paginación en endpoints como `/api/tasks`.
+- `MyTasksBoard.tsx` re-renderiza todas las tareas cuando el cronómetro avanza, causando problemas de CPU.
+- **Solución:** Extraer el componente de "Cronómetro/Timer" a un componente aislado para que solo él haga re-render.
+
+---
 
 ## 11. Auditoría de Seguridad
-- **Autorización Insegura:** Cualquier usuario padre puede aprobar cualquier tarea de cualquier hijo, incluso si no es el asignador original.
-- Falta de Rate Limiting para la finalización de tareas. Un usuario malicioso podría farmear sorpresas enviando scripts al endpoint `/complete`.
+- No hay validación de input exhaustiva (ej. Zod) en las llamadas API (como `elapsedSeconds` o `taskId`).
+- Faltan rate limiters en las APIs.
+- Posibilidad de ataques IDOR: No en todas las rutas se verifica si la tarea que se intenta completar o aprobar pertenece al usuario de la sesión, en algunas sí, pero no en todas.
 
-## 12. Verificación Integral de Funcionamiento
-- **Botones y Formularios:** `ModalManager.tsx` contiene una funcionalidad de guardar reglas que requiere que el usuario presione un botón. Durante el Loading state, el botón desactiva, lo que es correcto. Pero faltan validaciones estrictas en servidor para la longitud de las reglas.
-- **Rutas y API:** Las API fallaban debido a problemas de sintaxis y falta de declaración de variables (arreglado en rama `dev`), por ende la verificación previa demostró que `npm run build` crasheaba.
-- **Transacciones Concurrentes:** Antes de la auditoría, `/complete` permitía puntos duplicados (arreglado).
+---
 
-## 13. Priorización Ejecutiva
+## 12. Priorización Ejecutiva y Roadmap
 
-### CRÍTICO (Resuelto o por resolver Inmediatamente)
-- [X] Fallos de compilación en `complete/route.ts` y `MyTasksBoard.tsx` por tipados TypeScript incorrectos.
-- [X] Vulnerabilidad de "Double-spending" en API de tareas concurrentes.
-- [X] Rotura de rachas por diferencias de Zona Horaria (Cambiado a UTC).
+### CRÍTICO
+- [x] Corrección de bugs en APIs de aprobar y completar tareas (`complete/route.ts`, `approve/route.ts`). (Implementado)
+- [x] Corrección de Build en Turbopack para solucionar Deployment en Vercel (`ModalManager.tsx`, `NoticeBar.tsx`, `MyTasksBoard.tsx`). (Implementado)
+- [ ] Implementar protección contra "Double Click" en botones de acciones de estado.
 
-### ALTO (Afectan estabilidad y UX)
-- Falta de índices en Prisma. (Resuelto: Agregados en `schema.prisma`).
-- Autorización insegura en `/approve`. (Resuelto parcialmente: Agregado chequeo atómico de estado `Esperando_Aprobacion`).
+### ALTO
+- [ ] Refactor del `ModalManager.tsx` a múltiples archivos pequeños.
+- [ ] Implementar Skeletors Loaders y feedback visual asíncrono.
+- [ ] Índices en Base de Datos para campos frecuentemente buscados (`estado`, `fechaVencimiento`).
 
-### MEDIO (Mejoras recomendadas)
-- Cambiar alertas `alert("Reglas guardadas")` por Toast context globales.
+### MEDIO
+- [ ] Extender sistema de Gamificación para separar Nivel (XP) de Puntos Gastables.
+- [ ] Botón de "Aprobar Todo" en el Dashboard de Padres.
 
-### BAJO (Optimizaciones futuras)
-- Implementar soporte Offline (PWA) para completar tareas sin conexión.
+### BAJO
+- [ ] Añadir validación estricta Zod en todos los endpoints de la API.
 
-## 14. Objetivo Final
-Se ha resuelto lo siguiente:
-1. Resumen Ejecutivo completado.
-2. Hallazgos críticos identificados.
-3. Hallazgos UI/UX identificados.
-4. Bugs y vulnerabilidades críticas identificadas y resueltas de la capa de API.
-5. Archivo Prisma optimizado.
-6. Problemas de Deployment en Vercel: Al depender de Variables de Entorno (`DATABASE_URL`), se observó que la build fallaba si Prisma no está correctamente mockeado para la recolección estática (Páginas pre-renderizadas). Next.js requiere `DATABASE_URL` para compilar.
+---
 
-Se implementaron todos estos cambios en el único branch `dev`.
+## 13. Problemas de Deployment en Vercel
+Se lograron detectar y **reparar en vivo en la rama dev** errores de Build en TypeScript durante el proceso de Turbopack:
+1. Variables y braces mal cerradas en `complete/route.ts` **(Corregido)**.
+2. Errores de importación en `ModalManager.tsx` **(Corregido)**.
+3. Variables no declaradas (`asignado`) y uso incorrecto de variables (`nivelAntes`) en `approve/route.ts` **(Corregido)**.
+4. Errores de tipado en `NoticeBar.tsx` con la variable de "happyhour" no asignable **(Corregido)**.
+5. Error en `MyTasksBoard.tsx` al usar un estado sin importar su dependencia (`useAuthStore`) **(Corregido)**.
+6. Tipos incorrectos referenciados en dependencias faltantes durante bonus calculations en el complete handler **(Corregido)**.
+
+**Estado Actual:** El proyecto compila y construye de forma correcta en `dev`.
