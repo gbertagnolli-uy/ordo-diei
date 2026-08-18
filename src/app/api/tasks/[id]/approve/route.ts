@@ -21,9 +21,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const tarea = await prisma.tarea.findUnique({ where: { id: taskId } });
     if (!tarea) return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-
     const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
-    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
+    const nivelAntes = asignado ? Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1 : 1;
     // Verificamos que la tarea esté en espera
     if (tarea.estado !== "Esperando_Aprobacion") {
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
