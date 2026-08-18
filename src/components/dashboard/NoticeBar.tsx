@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 export function NoticeBar() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | "happyhour" | null>(null);
+  const [messageType, setMessageType] = useState<string | null>(null);
 
   useEffect(() => {
         const calculateTime = () => {
@@ -55,6 +55,11 @@ export function NoticeBar() {
       } else if (hour >= 22 || hour < 6) {
          setIsVisible(true);
          setMessageType("evening");
+      } else if (hour >= 17 && hour < 19) {
+        setMessageType("happyhour");
+      } else {
+        setIsVisible(false);
+        setMessageType(null);
       }
     };
 
@@ -65,7 +70,7 @@ export function NoticeBar() {
 
   if (!isVisible) return null;
 
-  if (messageType === "happyhour") {
+  if (messageType === ("happyhour" as any)) {
     return (
       <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide shadow-md border-b border-[var(--secondary)]">
         🎉 ¡HAPPY HOUR ACTIVA! Termina tus tareas ahora y gana un 20% más de puntos. Termina en [{timeLeft}]
@@ -97,10 +102,10 @@ export function NoticeBar() {
     );
   }
 
-  if (messageType === "evening") {
+  if (messageType === ("happyhour" as any)) {
     return (
-      <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] text-[var(--on-surface)] text-center py-2 text-sm font-medium animate-in fade-in slide-in-from-top-2">
-        🌙 ¡Buenas noches!
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--surface-container-high)] text-[var(--on-surface)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--outline)]">
+        🌙 ¡Buenas noches! Un gran día termina, prepara todo para mañana.
       </div>
     );
   }
