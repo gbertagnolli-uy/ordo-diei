@@ -32,6 +32,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const pointsGained = tarea.puntosGenerados || 0;
     const bonusStars = Math.floor(pointsGained / 100);
 
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+    if (!asignado) return NextResponse.json({ error: "Usuario asignado no encontrado" }, { status: 404 });
+
+    const nivelAntes = Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1;
     // Transacción: Aprobar tarea y transferir puntos de Locked a Available y subir logros
     await prisma.$transaction([
       prisma.tarea.update({

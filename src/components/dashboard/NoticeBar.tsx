@@ -101,10 +101,10 @@ export function NoticeBar() {
     );
   }
 
-  if (messageType === "happyhour") {
+  if (messageType === "evening") {
     return (
-      <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] text-[var(--primary)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--primary)] animate-pulse">
-        🎉 ¡Happy Hour! Completa tareas ahora y obtén +50% de puntos extra.
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--surface-container-high)] text-[var(--on-surface)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--outline)]">
+        🌙 ¡Buenas noches! Un gran día termina, prepara todo para mañana.
       </div>
     );
   }
