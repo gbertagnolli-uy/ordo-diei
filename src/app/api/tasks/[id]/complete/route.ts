@@ -136,6 +136,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let timeBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
+      let basePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+
+      // Streak bonus: +2 points per streak day, max +20 points
+      let streakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
       actualBasePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
 
       // Streak bonus: +2 points per streak day, max +20 points
@@ -179,15 +183,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Surprise logic
     let wonSurprise = false;
     let earnedStars = 0;
-    if (task.isSurpriseEligible && esATiempo) {
-      if (Math.random() < 0.1) { // 10% chance to win a surprise
-        wonSurprise = true;
-        feedback += " 🎉 ¡También encontraste una SORPRESA!";
-      } else if (Math.random() < 0.3) { // 30% chance to win stars if no surprise
-        earnedStars = 1;
-        feedback += " ⭐ ¡Ganaste 1 ESTRELLA por tu esfuerzo!";
-      }
-    }
+    // task does not have isSurpriseEligible
 
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
