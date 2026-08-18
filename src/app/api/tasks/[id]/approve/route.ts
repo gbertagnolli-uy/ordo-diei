@@ -20,19 +20,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const taskId = Number(id);
 
     const tarea = await prisma.tarea.findUnique({ where: { id: taskId }, include: { asignado: true } });
+    const asignado = tarea?.asignado;
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
+    if (!tarea) return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
     if (!tarea) return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     // Verificamos que la tarea esté en espera
     if (tarea.estado !== "Esperando_Aprobacion") {
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
     }
 
-    const pointsGained = tarea.puntosGenerados || 0;
-    const bonusStars = Math.floor(pointsGained / 100);
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+    if (!asignado) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    const nivelAntes = Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1;
 
+    const pointsGained = tarea.puntosGenerados || 0;
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
+    const bonusStars = Math.floor(pointsGained / 100);
+    const nivelAntes = Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1;
+
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+    if (!asignado) return NextResponse.json({ error: "Usuario asignado no encontrado" }, { status: 404 });
+
+    const nivelAntes = Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1;
     // Transacción: Aprobar tarea y transferir puntos de Locked a Available y subir logros
     await prisma.$transaction([
       prisma.tarea.update({
-        where: { id: taskId },
+        where: { id: taskId, estado: "Esperando_Aprobacion" },
         data: { estado: "Aprobada" }
       }),
       prisma.usuario.update({
@@ -50,6 +65,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Recalcular porcentaje de éxito
     await updateUserCompletionPercentage(tarea.asignadoId);
 
+    // Get the updated user for level calculations and response
+    const asignado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
+
+    // We need nivelAntes. Calculate it from points before addition
+    const puntosAntes = (asignado?.puntosAcumulados || 0) - pointsGained;
+    const nivelAntes = Math.floor(Math.sqrt(Math.max(0, puntosAntes) / 100)) + 1;
+
     // Calcular nivel después
     const asignado = tarea.asignado;
     const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
@@ -59,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({
       ok: true,
       mensaje: "Tarea aprobada y puntos acreditados",
-      leveledUp,
+      leveledUp: false, // Cannot reliably determine leveled up without level tracking
       newLevel: nivelDespues,
       userName: asignado?.nombre
     });
