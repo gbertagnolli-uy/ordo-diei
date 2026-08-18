@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const todayDate = new Date();
     todayDate.setUTCHours(0, 0, 0, 0);
 
-    if (asignado && task.generaPuntosYRecompensa) {
+    if (asignado) {
       const lastDate = asignado.lastTaskCompletedDate;
       if (!lastDate) {
         newStreakDays = 1;
@@ -222,8 +222,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       puntos: rewardPoints,
       basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
       streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
-      speedBonus: 0,
-      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
+
+      checklistBonus: task.generaPuntosYRecompensa && task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
