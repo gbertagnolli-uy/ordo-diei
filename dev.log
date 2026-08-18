@@ -2,8 +2,33 @@
 > family-tasker@0.1.0 dev
 > next dev
 
-⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
 ▲ Next.js 16.2.1 (Turbopack)
-- Local:         http://localhost:3001
-- Network:       http://192.168.0.2:3001
-✓ Ready in 623ms
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Environments: .env
+✓ Ready in 525ms
+
+○ Compiling / ...
+Error cargando usuarios Error [PrismaClientKnownRequestError]:
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"].usuario.findMany()` invocation in
+/app/.next/dev/server/chunks/ssr/[root-of-the-server]__0ssj_5r._.js:132:168
+
+  129 // Lógica de DB y reglas de negocio del Backend
+  130 let users = [];
+  131 try {
+→ 132     const rawUsers = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"].usuario.findMany(
+
+    at <unknown> (src/app/page.tsx:10:43)
+    at async Home (src/app/page.tsx:10:22)
+   8 |   let users: any[] = [];
+   9 |   try {
+> 10 |     const rawUsers = await prisma.usuario.findMany();
+     |                                           ^
+  11 |
+  12 |     // Regla: Orden estricto (Padres primero, Hijos luego ordenados por edad)
+  13 |     users = rawUsers.sort((a, b) => { {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'Usuario' },
+  clientVersion: '7.6.0'
+}
+ HEAD / 200 in 5.0s (next.js: 4.3s, application-code: 660ms)
