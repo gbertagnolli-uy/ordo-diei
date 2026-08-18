@@ -1,0 +1,35 @@
+name: Merge All Open PRs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Merge all open PRs into main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr list \
+            --repo "$REPO" \
+            --base main \
+            --state open \
+            --limit 100 \
+            --json number \
+            --jq '.[].number' |
+          while read -r PR; do
+            echo "Merging PR #$PR"
+
+            gh pr merge "$PR" \
+              --repo "$REPO" \
+              --squash \
+              --delete-branch \
+              --admin
+          done
