@@ -35,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const nivelAntes = Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1;
 
     const pointsGained = tarea.puntosGenerados || 0;
+    const nivelAntes = Math.floor(Math.sqrt((asignado?.puntosAcumulados || 0) / 100)) + 1;
     const bonusStars = Math.floor(pointsGained / 100);
     const nivelAntes = Math.floor(Math.sqrt((asignado.puntosAcumulados || 0) / 100)) + 1;
 
