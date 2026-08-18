@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 export function NoticeBar() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [messageType, setMessageType] = useState<"morning" | "afternoon" | "evening" | "warning" | "happyhour" | null>(null);
+  const [messageType, setMessageType] = useState<string | null>(null);
 
   useEffect(() => {
     const calculateTime = () => {
@@ -103,8 +103,8 @@ export function NoticeBar() {
 
   if (messageType === ("happyhour" as any)) {
     return (
-      <div className="fixed top-0 left-0 w-full z-[100] bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] text-[var(--primary)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--primary)] animate-pulse">
-        🎉 ¡Happy Hour! Completa tareas ahora y obtén +50% de puntos extra.
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[var(--surface-container-high)] text-[var(--on-surface)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--outline)]">
+        🌙 ¡Buenas noches! Un gran día termina, prepara todo para mañana.
       </div>
     );
   }

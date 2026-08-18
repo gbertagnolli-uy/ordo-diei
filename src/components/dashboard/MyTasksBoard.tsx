@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useAuthStore } from "@/store/authStore";
 import { Clock, Play, Square, Pause, Flame, ListChecks, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
@@ -9,6 +10,8 @@ import { ChecklistModal } from "./ChecklistModal";
 import confetti from "canvas-confetti";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
+
+import { useAuthStore } from "@/store/authStore";
 
 export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coResponsables?: CoResponsableMap }) {
   const user = useAuthStore(state => state.currentUser);
