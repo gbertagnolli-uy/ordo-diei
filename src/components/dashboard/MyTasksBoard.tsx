@@ -9,6 +9,7 @@ import { useModalStore } from "@/store/modalStore";
 import { useAuthStore } from "@/store/authStore";
 import { ChecklistModal } from "./ChecklistModal";
 import confetti from "canvas-confetti";
+import { useAuthStore } from "@/store/authStore";
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
 

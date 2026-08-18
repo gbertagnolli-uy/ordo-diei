@@ -109,6 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
         // Si diffDays === 0, ya hizo algo hoy, la racha se mantiene igual
       }
+    }
 
     }
     // Regla de Recompensa
