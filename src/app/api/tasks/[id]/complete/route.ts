@@ -181,7 +181,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Surprise logic
-    let wonSurprise = false;
     let earnedStars = 0;
     // task does not have isSurpriseEligible
 
