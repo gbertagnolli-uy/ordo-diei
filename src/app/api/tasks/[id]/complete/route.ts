@@ -111,10 +111,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
 
     }
-
     // Regla de Recompensa
     let rewardPoints = 0;
     let feedback = "";
+    let basePoints = 0;
+    let streakBonus = 0;
+    let checklistBonus = 0;
+    let timeBonus = 0;
+
     // Happy Hour check (17:00 - 19:00)
     const currentHour = now.getUTCHours();
     const isHappyHour = currentHour >= 17 && currentHour < 19;
@@ -135,7 +139,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       // Happy Hour / Weekend Bonus
       const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-      const timeBonus = (isWeekend || isHappyHour) ? 10 : 0;
+      const isHappyHour = currentHour >= 17 && currentHour < 19;
+      timeBonus = (isWeekend || isHappyHour) ? 10 : 0;
 
       let bonusText = [];
       if (streakBonus > 0) bonusText.push(`${streakBonus} pts por racha`);
@@ -213,10 +218,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true, 
       mensaje: feedback, 
       puntos: rewardPoints,
-      basePoints: task.generaPuntosYRecompensa ? Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60)) : 0,
-      streakBonus: task.generaPuntosYRecompensa ? Math.max(0, Math.min(20, (newStreakDays - 1) * 2)) : 0,
-
-      checklistBonus: task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0,
+      basePoints: typeof basePoints !== 'undefined' ? basePoints : 0,
+      streakBonus: typeof streakBonus !== 'undefined' ? streakBonus : 0,
+      speedBonus: typeof timeBonus !== 'undefined' ? timeBonus : 0,
+      checklistBonus: typeof checklistBonus !== 'undefined' ? checklistBonus : 0,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
