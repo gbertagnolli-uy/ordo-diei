@@ -56,6 +56,8 @@ export function NoticeBar() {
       } else if (hour >= 15 && hour < 18) {
          setIsVisible(true);
          setMessageType("evening");
+      } else if (hour >= 17 && hour < 19) {
+        setMessageType("happyhour");
       } else {
         setIsVisible(false);
         setMessageType(null);
