@@ -1,5 +1,7 @@
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -112,6 +114,8 @@ model Tarea {
   asignado                         Usuario         @relation("TareasAsignadas", fields: [asignadoId], references: [id])
   historialAcciones                HistorialAccion[]
 
+  @@index([estado])
+  @@index([asignadoId])
   @@map("Tareas")
 }
 
