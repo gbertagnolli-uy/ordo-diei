@@ -81,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({
       ok: true,
       mensaje: "Tarea aprobada y puntos acreditados",
-      leveledUp,
+      leveledUp: false, // Cannot reliably determine leveled up without level tracking
       newLevel: nivelDespues,
       userName: asignado?.nombre
     });

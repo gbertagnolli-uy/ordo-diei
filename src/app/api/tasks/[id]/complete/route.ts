@@ -131,6 +131,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let checklistBonus = 0;
     let timeBonus = 0;
 
+    // Gamification state tracking
+    let actualBasePoints = 0;
+    let actualStreakBonus = 0;
+    let speedBonus = 0;
+    let checklistBonus = 0;
+
     // Dynamic base points based on estimated time (1 point per minute, minimum 10)
     let actualBasePoints = 0;
     let actualStreakBonus = 0;
