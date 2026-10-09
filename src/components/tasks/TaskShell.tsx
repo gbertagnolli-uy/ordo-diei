@@ -17,9 +17,9 @@ import {
   Plus,
   Timer,
   History,
-  XCircle,
   List,
   Columns3,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLevelInfo } from "@/lib/levelUtils";
@@ -28,6 +28,7 @@ import { FamilyTree } from "@/components/dashboard/FamilyTree";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { SchedulePanel } from "./SchedulePanel";
 import { TaskBoard } from "./TaskBoard";
+import { UserCalendarTable } from "@/components/dashboard/UserCalendarTable";
 import { Avatar, CountBadge, StatusBadge } from "./primitives";
 import {
   CoResponsableMap,
@@ -35,6 +36,8 @@ import {
   checklistProgress,
   formatDue,
   formatDuration,
+  isActionable,
+  isUrgent,
   pointsLabel,
   isDueToday,
   isLate,
@@ -45,9 +48,9 @@ import {
 
 type Section = TaskGroup | "today" | "late" | "history" | "family";
 type Filter = "all" | "points" | "checklist";
-type Layout = "list" | "board";
+type Layout = "list" | "board" | "calendar";
 
-const GROUP_SECTIONS: Section[] = ["todo", "progress", "review", "done", "archived"];
+const GROUP_SECTIONS: Section[] = ["todo", "progress", "review", "done"];
 
 const NAV: { heading: string; items: { id: Section; label: string; icon: React.ElementType }[] }[] = [
   {
@@ -57,7 +60,6 @@ const NAV: { heading: string; items: { id: Section; label: string; icon: React.E
       { id: "progress", label: "En curso", icon: Timer },
       { id: "review", label: "En revisión", icon: Hourglass },
       { id: "done", label: "Completadas", icon: CheckCircle2 },
-      { id: "archived", label: "No realizadas", icon: XCircle },
     ],
   },
   {
@@ -115,9 +117,11 @@ export function TaskShell({
   const togglePanel = () => setPanelPref(!(panelPref ?? isWide()));
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { todo: 0, progress: 0, review: 0, done: 0, archived: 0, today: 0, late: 0 };
+    const c: Record<string, number> = { todo: 0, progress: 0, review: 0, done: 0, today: 0, late: 0 };
     for (const t of tasks) {
-      c[taskGroup(t)]++;
+      const g = taskGroup(t);
+      c[g]++;
+      if (g === "progress") c.todo++; // "Por hacer" incluye las que están en curso
       if (isDueToday(t)) c.today++;
       if (isLate(t)) c.late++;
     }
@@ -132,11 +136,14 @@ export function TaskShell({
     if (!isTaskSection) return [];
     // En el tablero cada estado es una columna: solo aplican los atajos y los filtros
     let list = tasks.filter((t) =>
-      section === "today" ? isDueToday(t) : section === "late" ? isLate(t) : isBoard || taskGroup(t) === section
+      section === "today" ? isDueToday(t)
+        : section === "late" ? isLate(t)
+        : section === "todo" && !isBoard ? isActionable(t)
+        : isBoard || taskGroup(t) === section
     );
     if (filter === "points") list = list.filter((t) => t.generaPuntosYRecompensa);
     if (filter === "checklist") list = list.filter((t) => t.isChecklist);
-    return sortTasks(list, section === "done" || section === "archived" ? section : null);
+    return sortTasks(list, section === "done" ? "done" : null);
   }, [tasks, section, filter, isTaskSection, isBoard]);
 
   const selected = tasks.find((t) => t.id === selectedId) ?? null;
@@ -158,7 +165,8 @@ export function TaskShell({
   };
 
   const level = getLevelInfo(currentUser?.puntosAcumulados || 0);
-  const totalToday = counts.todo + counts.progress + counts.review + counts.done;
+  const greeting = useGreeting();
+  const totalToday = counts.todo + counts.review + counts.done;
   const doneToday = counts.review + counts.done;
 
   const sidebar = (
@@ -215,14 +223,14 @@ export function TaskShell({
             </p>
           </div>
         </div>
-        {totalToday > 0 && (
+        {(
           <div className="mt-3 px-1" title="Tareas entregadas sobre el total">
             <div className="flex justify-between text-[11px] text-[var(--on-surface-variant)] mb-1">
               <span>Progreso</span>
               <span className="tabular-nums">{doneToday}/{totalToday}</span>
             </div>
             <div className="h-1 rounded-full bg-[var(--surface-container-high)] overflow-hidden">
-              <div className="h-full bg-[var(--success)] transition-all duration-500" style={{ width: `${Math.round((doneToday / totalToday) * 100)}%` }} />
+              <div className="h-full bg-[var(--success)] transition-all duration-500" style={{ width: `${totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 100}%` }} />
             </div>
           </div>
         )}
@@ -271,14 +279,15 @@ export function TaskShell({
                 </li>
                 <li className="min-w-0">
                   <h1 aria-current="page" className="font-display text-base text-[var(--on-surface)] truncate">
-                    {isBoard && GROUP_SECTIONS.includes(section) ? "Tablero" : navItem.label}
+                    {isBoard && GROUP_SECTIONS.includes(section) ? "Tablero" : layout === "calendar" && isTaskSection ? "Calendario" : navItem.label}
                   </h1>
                 </li>
+                <li className="hidden lg:block text-xs text-[var(--on-surface-variant)] pl-2 truncate">{greeting}</li>
               </ol>
             </nav>
             {isTaskSection && (
               <div role="group" aria-label="Vista" className="flex p-0.5 rounded-lg bg-[var(--surface-container)]">
-                {([["list", "Lista", List], ["board", "Tablero", Columns3]] as const).map(([id, label, Icon]) => (
+                {([["list", "Lista", List], ["board", "Tablero", Columns3], ...(isAdmin ? [] : [["calendar", "Calendario", CalendarDays]] as const)] as const).map(([id, label, Icon]) => (
                   <button
                     key={id}
                     type="button"
@@ -349,7 +358,9 @@ export function TaskShell({
               </div>
 
               <main className={cn("relative flex-1 min-h-0", isBoard ? "overflow-hidden" : "overflow-y-auto")}>
-                {isBoard ? (
+                {layout === "calendar" && !isAdmin ? (
+                  <div className="p-4"><UserCalendarTable tasks={tasks} /></div>
+                ) : isBoard ? (
                   <TaskBoard tasks={visible} coResponsables={coResponsables} selectedId={selectedId} onSelect={selectTask} />
                 ) : visible.length === 0 ? (
                   <EmptyState section={section} />
@@ -392,6 +403,14 @@ export function TaskShell({
   );
 }
 
+// Saludo según la hora, como en el MyTasksBoard original
+function useGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "¡Buenos días, a brillar!";
+  if (hour < 18) return "¡Buenas tardes, a darle con todo!";
+  return "¡Buenas noches, último esfuerzo!";
+}
+
 function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selectedId: number | null; onSelect: (t: any) => void }) {
   return (
     <>
@@ -429,7 +448,10 @@ function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selectedId: 
                   )}
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-[var(--on-surface-variant)] hidden xl:table-cell">{formatDuration(task.tiempoEjecucionEstimadoSeg || 0)}</td>
-                <td className="px-3 py-3"><StatusBadge label={status.label} color={status.color} /></td>
+                <td className="px-3 py-3">
+                  <StatusBadge label={status.label} color={status.color} />
+                  {isUrgent(task) && !isLate(task) && <span className="ml-2 text-[11px] font-semibold text-[var(--warning)]">Urgente</span>}
+                </td>
                 <td className={cn("px-3 py-3 whitespace-nowrap tabular-nums", isLate(task) ? "text-[var(--error)] font-medium" : "text-[var(--on-surface-variant)]")}>
                   {formatDue(task) ?? <span aria-label="Sin fecha">—</span>}
                 </td>
