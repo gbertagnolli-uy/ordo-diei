@@ -3,16 +3,15 @@ export const dynamic = 'force-dynamic';
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { TaskShell } from "@/components/tasks/TaskShell";
+import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+export default async function DashboardPage() {
   const session = await getSession();
   if (!session?.user) redirect("/");
 
   const isCurrentUserAdmin = isParent(session.user.rolFamiliar);
-  const { view } = await searchParams;
 
   // Para no-admins, solo traer sus propias tareas (seguridad a nivel de query).
   const allUsersRaw = await prisma.usuario.findMany({
@@ -58,17 +57,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     coResponsableMap[task.id] = Array.from(new Map(siblings.map((s: any) => [s.usuario.id, s.usuario])).values()) as any;
   }
 
-  const section = view === "history" || view === "family" ? view : "todo";
-
   return (
-    <TaskShell
-      key={section}
+    <TaskWorkspace
       tasks={myTasks}
       coResponsables={coResponsableMap}
-      currentUser={myUser ?? session.user}
       isAdmin={isCurrentUserAdmin}
       family={{ parents, children }}
-      initialSection={section}
     />
   );
 }

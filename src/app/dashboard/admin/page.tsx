@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import prisma from "@/lib/prisma";
+import { PageHeader } from "@/components/app/PageHeader";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { AdminTasksClient } from "./AdminTasksClient";
@@ -31,8 +32,8 @@ export default async function AdminTasksPage() {
 
   return (
     <div className="flex flex-col">
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8 flex flex-col">
-        <h1 className="text-3xl font-display font-bold text-[var(--primary)] mb-8">Administración Global de Tareas</h1>
+      <PageHeader group="Administración" title="Agenda master" />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col">
         <AdminTasksClient tasks={tareasSerialized} users={usuarios} />
       </main>
     </div>

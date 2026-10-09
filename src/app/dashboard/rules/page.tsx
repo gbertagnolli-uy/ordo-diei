@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/app/PageHeader";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -27,5 +28,10 @@ export default async function RulesServerPage() {
     });
   }
 
-  return <ClientRulesPage isAdmin={isParent} initialRules={regla.textoEstricto} />;
+  return (
+    <>
+      <PageHeader group="Hogar" title="Reglas del hogar" />
+      <ClientRulesPage isAdmin={isParent} initialRules={regla.textoEstricto} />
+    </>
+  );
 }
