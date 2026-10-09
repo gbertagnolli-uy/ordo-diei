@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { CalendarDays, Columns3, List, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,15 @@ type Filter = "all" | "points" | "checklist";
 type Layout = "list" | "board" | "calendar";
 
 const GROUP_SECTIONS: SectionId[] = ["todo", "progress", "review", "done"];
+
+const WIDE = "(min-width: 1024px)";
+function useIsWide() {
+  return useSyncExternalStore(
+    (cb) => { const m = window.matchMedia(WIDE); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb); },
+    () => window.matchMedia(WIDE).matches,
+    () => true
+  );
+}
 
 // Saludo según la hora, como en el MyTasksBoard original
 function greeting() {
@@ -78,9 +87,10 @@ export function TaskWorkspace({
   const item = group.items.find((i) => i.id === section)!;
   const spreadTitle = GROUP_SECTIONS.includes(section) && (isBoard ? "Tablero" : isCalendar ? "Calendario" : null);
 
-  const isWide = () => window.matchMedia("(min-width: 1024px)").matches;
-  const panelInline = panelPref ?? true;
-  const panelSheet = panelPref ?? false;
+  const isWide = useIsWide();
+  // Escritorio: panel fijo a la derecha (abierto por defecto). Móvil: Sheet (cerrado por defecto).
+  const panelInline = isWide && (panelPref ?? true);
+  const panelSheet = !isWide && (panelPref ?? false);
 
   const selectTask = (task: any) => {
     setSelectedId(task.id);
@@ -101,7 +111,7 @@ export function TaskWorkspace({
 
   return (
     <>
-      <PageHeader group={group.heading} title={spreadTitle || item.label} subtitle={greeting()}>
+      <PageHeader group={group.heading} title={spreadTitle || item.label} subtitle={isTaskSection ? greeting() : undefined}>
         {isTaskSection && (
           <>
             <ToggleGroup type="single" variant="outline" size="sm" value={layout} onValueChange={(v) => v && setLayout(v as Layout)} aria-label="Vista">
@@ -118,9 +128,9 @@ export function TaskWorkspace({
                   variant="ghost"
                   size="icon-sm"
                   aria-label="Panel de agenda"
-                  aria-pressed={panelInline}
-                  onClick={() => setPanelPref(!(panelPref ?? isWide()))}
-                  className={cn(panelInline && "lg:bg-muted lg:text-primary", panelSheet && "max-lg:bg-muted max-lg:text-primary")}
+                  aria-pressed={panelInline || panelSheet}
+                  onClick={() => setPanelPref(!(panelInline || panelSheet))}
+                  className={cn((panelInline || panelSheet) && "bg-muted text-primary")}
                 >
                   <PanelRight />
                 </Button>
@@ -168,7 +178,7 @@ export function TaskWorkspace({
             <div className="h-full w-80">{panelInline && panel}</div>
           </aside>
           <Sheet open={panelSheet} onOpenChange={(open) => setPanelPref(open)}>
-            <SheetContent side="right" className="w-full p-0 sm:max-w-sm lg:hidden" showCloseButton={false}>
+            <SheetContent side="right" className="w-full p-0 sm:max-w-sm" showCloseButton={false}>
               <SheetTitle className="sr-only">{selected ? "Detalle de la tarea" : "Agenda"}</SheetTitle>
               {panel}
             </SheetContent>

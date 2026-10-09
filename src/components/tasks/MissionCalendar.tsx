@@ -50,6 +50,7 @@ export function MissionCalendar({ tasks, onSelect }: { tasks: any[]; onSelect: (
         onView={setView}
         date={date}
         onNavigate={setDate}
+        scrollToTime={new Date(1970, 0, 1, 7)}
         onSelectEvent={(e: any) => onSelect(e.resource)}
         eventPropGetter={eventPropGetter}
         messages={{
