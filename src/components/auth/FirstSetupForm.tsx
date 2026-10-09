@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 export function FirstSetupForm() {
   const [loading, setLoading] = useState(false);
@@ -48,43 +53,43 @@ export function FirstSetupForm() {
   }
 
   return (
-    <div className="bg-[var(--surface-container-highest)] p-8 rounded-md backdrop-blur-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] w-full max-w-md elevation-ambient">
-      <h2 className="text-2xl font-headline font-bold text-[var(--on-surface)] mb-2">Crear Administrador</h2>
-      <p className="text-[var(--on-surface-variant)] mb-6 text-sm font-body">Parece que no hay perfiles. Crea el primer Padre/Madre.</p>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="text-[var(--on-surface)] text-sm mb-1 block font-title font-bold">Nombre</label>
-          <input required name="nombre" type="text" className="inkpot" placeholder="Ej: Carlos" />
-        </div>
-
-        <div>
-          <label className="text-[var(--on-surface)] text-sm mb-1 block font-title font-bold">Rol Familiar</label>
-          <select required name="rol" className="inkpot">
-            <option value="Padre">Padre</option>
-            <option value="Madre">Madre</option>
-          </select>
-        </div>
-
-        <div>
-           <label className="text-[var(--on-surface)] text-sm mb-1 block font-title font-bold">Fecha de Nacimiento</label>
-           <input required name="fecha" type="date" className="inkpot" />
-        </div>
-
-        <div>
-           <label className="text-[var(--on-surface)] text-sm mb-1 block font-title font-bold">PIN Secreto (Ej: 1234)</label>
-           <input required name="pin" type="text" maxLength={4} pattern="[0-9]{4}" className="inkpot" placeholder="----" />
-        </div>
-
-        <div>
-           <label className="text-[var(--on-surface)] text-sm mb-1 block font-title font-bold">Sube una Foto (Opcional)</label>
-           <input name="foto" type="file" accept="image/*" className="inkpot p-0 file:mr-4 file:py-3 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-title file:font-bold file:bg-[var(--surface-container)] file:text-[var(--on-surface)] hover:file:bg-[var(--surface-container-high)] cursor-pointer" />
-        </div>
-
-        <button disabled={loading} type="submit" className="btn-primary mt-4 w-full py-4 shadow-lg text-lg">
-          {loading ? "Creando..." : "Crear Perfil"}
-        </button>
-      </form>
-    </div>
+    <Card className="w-full max-w-md border-white/10 bg-card/70 backdrop-blur-xl">
+      <CardHeader>
+        <CardTitle className="font-heading text-2xl">Crear Administrador</CardTitle>
+        <CardDescription>Parece que no hay perfiles. Crea el primer Padre/Madre.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="setup-nombre">Nombre</FieldLabel>
+              <Input id="setup-nombre" required name="nombre" type="text" placeholder="Ej: Carlos" />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="setup-rol">Rol Familiar</FieldLabel>
+              <NativeSelect id="setup-rol" required name="rol" className="w-full">
+                <NativeSelectOption value="Padre">Padre</NativeSelectOption>
+                <NativeSelectOption value="Madre">Madre</NativeSelectOption>
+              </NativeSelect>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="setup-fecha">Fecha de Nacimiento</FieldLabel>
+              <Input id="setup-fecha" required name="fecha" type="date" />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="setup-pin">PIN Secreto (Ej: 1234)</FieldLabel>
+              <Input id="setup-pin" required name="pin" type="text" maxLength={4} pattern="[0-9]{4}" placeholder="----" />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="setup-foto">Sube una Foto (Opcional)</FieldLabel>
+              <Input id="setup-foto" name="foto" type="file" accept="image/*" />
+            </Field>
+            <Button disabled={loading} type="submit" size="lg" className="w-full">
+              {loading ? "Creando..." : "Crear Perfil"}
+            </Button>
+          </FieldGroup>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
