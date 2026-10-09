@@ -4,12 +4,14 @@ import { useAuthStore } from "@/store/authStore";
 
 import { useState, useEffect, useRef } from "react";
 
-import { Clock, Play, Square, Pause, Flame, ListChecks, X } from "lucide-react";
+import { Clock, Play, Square, Pause, Flame, ListChecks, X, LayoutGrid, List } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 
 import { ChecklistModal } from "./ChecklistModal";
 import confetti from "canvas-confetti";
+import { AppShellTaskList } from "./AppShellTaskList";
+import { cn } from "@/lib/utils";
 
 
 type CoResponsableMap = Record<number, { id: number; nombre: string; fotoUrl: string | null }[]>;
@@ -47,6 +49,7 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
 
   const [isHappyHour, setIsHappyHour] = useState(false);
   const [greeting, setGreeting] = useState("¡Hola!");
+  const [viewMode, setViewMode] = useState<"app-shell" | "grid">("app-shell");
 
   useEffect(() => {
     const checkHappyHourAndGreeting = () => {
@@ -102,9 +105,45 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
             <span className="text-xs font-bold text-[var(--success)]">{progressPercentage}%</span>
           </div>
         </div>
+
+        {/* Selector de vistas */}
+        <div className="flex items-center gap-1 p-1 bg-[var(--surface-container-high)] rounded-xl border border-[color-mix(in-srgb,var(--outline-variant)_20%,transparent)] shrink-0 self-start md:self-auto">
+          <button
+            onClick={() => setViewMode("app-shell")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+              viewMode === "app-shell"
+                ? "bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-sm"
+                : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+            )}
+            title="Vista Lista — App Shell 4 (React Bits Pro)"
+          >
+            <List className="w-4 h-4" />
+            <span>Lista (App Shell)</span>
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+              viewMode === "grid"
+                ? "bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-sm"
+                : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+            )}
+            title="Vista Cuadrícula Clásica"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>Cuadrícula</span>
+          </button>
+        </div>
       </div>
 
-      {pendingTasks.length === 0 ? (
+      {viewMode === "app-shell" ? (
+        <AppShellTaskList
+          tasks={tasks}
+          coResponsables={coResponsables}
+          onTaskCompleted={() => window.location.reload()}
+        />
+      ) : pendingTasks.length === 0 ? (
         <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient p-10 text-center flex flex-col items-center">
           <img src="/relaxing.svg" alt="Relax" className="w-64 h-64 mb-6 drop-shadow-lg opacity-80" onError={(e) => { e.currentTarget.src = "/winners-animate.svg" }} />
           <h3 className="text-3xl font-display text-[var(--primary)] mb-2">¡Día libre!</h3>
