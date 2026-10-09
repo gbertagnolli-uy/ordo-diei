@@ -64,10 +64,10 @@ La lógica de negocio de `TaskCard` (timer persistente, completar, no realizada,
 
 Secuenciales; cada una se mergea a `dev` al terminar (`--no-ff`) y la siguiente sale de `dev` actualizado.
 
-- [ ] **Lane 5 · `task/lane-5-app-chrome-dock`** — `dashboard/layout.tsx` compartido; `TopBar` reemplaza a `Header` sin duplicados; Dock en todas las páginas del dashboard; fix import de `floating-dock`; páginas sin Header/ModalManager propios.
-- [ ] **Lane 6 · `task/lane-6-confetti-unify`** — un solo `<Confetti manualstart>` global disparado por ref en éxito de tarea, subida de nivel y premio sorpresa; quitar llamadas directas a `canvas-confetti`, `ConfettiDemo` y el re-export.
-- [ ] **Lane 7 · `task/lane-7-app-shell-4`** — `TaskShell` (réplica App Shell 4) + `useTaskActions` + `TaskDetailPanel` + `SchedulePanel`; reemplaza `MyTasksBoard`, `AppShellTaskList`, `UserCalendarTable`, tarjeta de ánimo; historial y familia como vistas del shell.
-- [ ] **Lane 8 · `task/lane-8-kanban-4`** — vista Tablero dentro del shell con detalle en el panel lateral; elimina `KanbanBoard.tsx`.
+- [x] **Lane 5 · `task/lane-5-app-chrome-dock`** — `dashboard/layout.tsx` compartido; `TopBar` reemplaza a `Header` sin duplicados; Dock en todas las páginas del dashboard; fix import de `floating-dock`; páginas sin Header/ModalManager propios.
+- [x] **Lane 6 · `task/lane-6-confetti-unify`** — un solo `<Confetti manualstart>` global disparado por ref en éxito de tarea, subida de nivel y premio sorpresa; quitar llamadas directas a `canvas-confetti`, `ConfettiDemo` y el re-export.
+- [x] **Lane 7 · `task/lane-7-app-shell-4`** — `TaskShell` (réplica App Shell 4) + `useTaskActions` + `TaskDetailPanel` + `SchedulePanel`; reemplaza `MyTasksBoard`, `AppShellTaskList`, `UserCalendarTable`, tarjeta de ánimo; historial y familia como vistas del shell.
+- [x] **Lane 8 · `task/lane-8-kanban-4`** — vista Tablero dentro del shell con detalle en el panel lateral; elimina `KanbanBoard.tsx`.
 
 ## 6. Criterios de aceptación
 
@@ -82,7 +82,12 @@ Secuenciales; cada una se mergea a `dev` al terminar (`--no-ff`) y la siguiente 
 
 | Lane | Commit merge | Notas |
 |---|---|---|
-| 5 | | |
-| 6 | | |
-| 7 | | |
-| 8 | | |
+| 5 | `fd760a3` | Layout compartido. También: NoticeBar dentro del flujo (tapaba contenido) y usuarios sin `PIN_Secreto`. |
+| 6 | `d9333f6` | Además se eliminó un `LEVEL_UP` duplicado que abría dos modales. |
+| 7 | `2240d82` | "Historial" sale del Dock (vive en la barra lateral). Las tareas Expirada/No_Realizada pasan a "No realizadas" (antes reaparecían como pendientes). El dashboard ya no envía `PIN_Secreto` al cliente. |
+| 8 | `343b4c3` | Sin drag & drop: los cambios de estado pasan por timer/confirmación/aprobación, así que se hacen desde el panel de detalle. Fix: ícono activo del Dock invisible. |
+
+### Pendiente / fuera de alcance
+- Si se consigue licencia de React Bits Pro: instalar los bloques oficiales (§2).
+- Las páginas internas (admin, premios, reglas, nueva tarea, nuevo miembro) tienen Dock y TopBar, pero su contenido conserva el diseño anterior.
+- `dev.log` está versionado en git; conviene sacarlo del repo y agregarlo a `.gitignore`.
