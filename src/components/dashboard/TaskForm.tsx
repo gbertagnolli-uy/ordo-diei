@@ -151,7 +151,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
         {/* CREATE: Global toggle */}
         {!isEdit && (
-          <div className="sm:col-span-2 flex items-center gap-4 p-4 bg-[color-mix(in-srgb,var(--primary)_6%,transparent)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
+          <div className="sm:col-span-2 flex items-center gap-4 p-4 bg-[color-mix(in_srgb,var(--primary)_6%,transparent)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">
             <Globe className="w-6 h-6 text-[var(--primary)] shrink-0" />
             <div className="flex-1">
               <label className="font-title text-[var(--on-surface)] block">Tarea Global</label>
@@ -183,8 +183,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
                     onClick={() => toggleUser(u.id)}
                     className={`flex items-center gap-3 p-3 rounded-md border transition-all ${
                       isSelected
-                        ? 'border-[var(--primary)] bg-[color-mix(in-srgb,var(--primary)_6%,transparent)] elevation-ambient'
-                        : 'border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)] hover:border-[var(--outline)]'
+                        ? 'border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_6%,transparent)] elevation-ambient'
+                        : 'border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)] hover:border-[var(--outline)]'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 transition-all ${isSelected ? 'ring-[var(--primary)]' : 'ring-transparent'}`}>
@@ -216,7 +216,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         )}
 
         {/* Recurrence */}
-        <div className="sm:col-span-2 p-4 bg-[color-mix(in-srgb,var(--primary)_6%,transparent)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] flex items-start gap-4">
+        <div className="sm:col-span-2 p-4 bg-[color-mix(in_srgb,var(--primary)_6%,transparent)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] flex items-start gap-4">
           <RefreshCw className="w-6 h-6 text-[var(--primary)] shrink-0 mt-1" />
           <div className="w-full">
             <label className="font-title text-[var(--on-surface)] mb-1 block">Recurrencia (Auto-Regeneración)</label>
@@ -308,7 +308,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
 
         {/* Checklist */}
-        <div className="sm:col-span-2 p-4 bg-[color-mix(in-srgb,var(--success)_6%,transparent)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] flex items-start gap-4">
+        <div className="sm:col-span-2 p-4 bg-[color-mix(in_srgb,var(--success)_6%,transparent)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] flex items-start gap-4">
           <ListChecks className="w-6 h-6 text-[var(--success)] shrink-0 mt-1" />
           <div className="w-full">
             <div className="flex items-center justify-between mb-2">
@@ -366,7 +366,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         </div>
 
         {/* Surprise toggle */}
-        <div className="sm:col-span-2 flex items-center gap-4 p-4 bg-[color-mix(in-srgb,var(--secondary)_6%,transparent)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] cursor-pointer hover:bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] transition-colors">
+        <div className="sm:col-span-2 flex items-center gap-4 p-4 bg-[color-mix(in_srgb,var(--secondary)_6%,transparent)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] cursor-pointer hover:bg-[color-mix(in_srgb,var(--secondary)_10%,transparent)] transition-colors">
           <input type="checkbox" name="isSurpriseEligible" id={`recompensa_${isEdit ? 'edit' : 'new'}`} defaultChecked={isEdit ? task.isSurpriseEligible : false} className="w-6 h-6 rounded border-[var(--outline)] text-[var(--secondary)] focus:ring-[var(--secondary)]" />
           <label htmlFor={`recompensa_${isEdit ? 'edit' : 'new'}`} className="flex items-center gap-2 cursor-pointer font-title text-[var(--secondary)] select-none w-full">
             <Gift className="w-5 h-5" /> ¿Genera recompensas sorpresa al completarse?

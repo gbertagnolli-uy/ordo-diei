@@ -58,7 +58,7 @@ const FloatingDockMobile = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 bottom-full mb-3 flex flex-col gap-2 p-3 rounded-2xl bg-[var(--surface-container-lowest)]/95 backdrop-blur-xl border border-[color-mix(in-srgb,var(--outline-variant)_25%,transparent)] shadow-2xl z-50 min-w-[200px]"
+            className="absolute right-0 bottom-full mb-3 flex flex-col gap-2 p-3 rounded-2xl bg-[var(--surface-container-lowest)]/95 backdrop-blur-xl border border-[color-mix(in_srgb,var(--outline-variant)_25%,transparent)] shadow-2xl z-50 min-w-[200px]"
           >
             {items.map((item) => {
               const content = (
@@ -67,7 +67,7 @@ const FloatingDockMobile = ({
                     "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors w-full",
                     item.active
                       ? "bg-[var(--primary)] text-[var(--on-primary)] [&_svg]:!text-[var(--on-primary)]"
-                      : "text-[var(--on-surface)] hover:bg-[color-mix(in-srgb,var(--primary)_8%,transparent)]"
+                      : "text-[var(--on-surface)] hover:bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]"
                   )}
                 >
                   <div className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -113,7 +113,7 @@ const FloatingDockMobile = ({
       </AnimatePresence>
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-container-lowest)] text-[var(--on-surface)] shadow-lg border border-[color-mix(in-srgb,var(--outline-variant)_20%,transparent)] hover:scale-105 active:scale-95 transition-transform"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-container-lowest)] text-[var(--on-surface)] shadow-lg border border-[color-mix(in_srgb,var(--outline-variant)_20%,transparent)] hover:scale-105 active:scale-95 transition-transform"
         aria-label="Abrir menú dock"
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -136,7 +136,7 @@ const FloatingDockDesktop = ({
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
       className={cn(
-        "mx-auto hidden h-16 items-center gap-3 rounded-2xl bg-[var(--surface-container-lowest)]/85 px-4 backdrop-blur-xl border border-[color-mix(in-srgb,var(--outline-variant)_20%,transparent)] shadow-[0_12px_40px_rgba(0,0,0,0.15)] md:flex z-50",
+        "mx-auto hidden h-16 items-center gap-3 rounded-2xl bg-[var(--surface-container-lowest)]/85 px-4 backdrop-blur-xl border border-[color-mix(in_srgb,var(--outline-variant)_20%,transparent)] shadow-[0_12px_40px_rgba(0,0,0,0.15)] md:flex z-50",
         className
       )}
     >
@@ -202,7 +202,7 @@ function DockIconContainer({
         "relative flex aspect-square items-center justify-center rounded-xl transition-colors cursor-pointer select-none",
         active
           ? "bg-[var(--primary)] text-[var(--on-primary)] shadow-md [&_svg]:!text-[var(--on-primary)]"
-          : "bg-[var(--surface-container)] text-[var(--on-surface)] hover:bg-[color-mix(in-srgb,var(--primary)_15%,transparent)] hover:text-[var(--primary)]"
+          : "bg-[var(--surface-container)] text-[var(--on-surface)] hover:bg-[color-mix(in_srgb,var(--primary)_15%,transparent)] hover:text-[var(--primary)]"
       )}
     >
       <AnimatePresence>
@@ -212,7 +212,7 @@ function DockIconContainer({
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 4, x: "-50%" }}
             transition={{ duration: 0.15 }}
-            className="absolute -top-10 left-1/2 -translate-x-1/2 w-max px-2.5 py-1 rounded-md bg-[var(--surface-container-high)] text-[var(--on-surface)] border border-[color-mix(in-srgb,var(--outline-variant)_25%,transparent)] text-xs font-semibold shadow-lg pointer-events-none z-50 whitespace-nowrap"
+            className="absolute -top-10 left-1/2 -translate-x-1/2 w-max px-2.5 py-1 rounded-md bg-[var(--surface-container-high)] text-[var(--on-surface)] border border-[color-mix(in_srgb,var(--outline-variant)_25%,transparent)] text-xs font-semibold shadow-lg pointer-events-none z-50 whitespace-nowrap"
           >
             {title}
           </motion.div>

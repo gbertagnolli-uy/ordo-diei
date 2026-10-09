@@ -124,9 +124,9 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
     <div className="flex flex-col flex-1">
       <ParentReviewPanel tasks={tasks} />
 
-      <div className="flex flex-col flex-1 bg-[var(--surface-container-lowest)] rounded-md elevation-ambient border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] overflow-hidden">
+      <div className="flex flex-col flex-1 bg-[var(--surface-container-lowest)] rounded-md elevation-ambient border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] overflow-hidden">
       {/* TOOLBAR */}
-      <div className="bg-[var(--surface-container-low)] p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] flex justify-between items-center sm:px-8">
+      <div className="bg-[var(--surface-container-low)] p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] flex justify-between items-center sm:px-8">
         <h2 className="font-headline text-2xl text-[var(--on-surface)]">Centro de Operaciones</h2>
         <div className="flex bg-[var(--surface-container)] p-1 rounded-md">
           <button
@@ -192,23 +192,23 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
         )}
 
         {viewMode === "table" && (
-          <div className="overflow-x-auto w-full custom-scrollbar pb-6 rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
+          <div className="overflow-x-auto w-full custom-scrollbar pb-6 rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[var(--surface-container-low)] text-[var(--on-surface-variant)] text-sm tracking-wider uppercase font-title font-bold">
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">ID</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Tarea</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Asignado(s)</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Estado</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Recurrencia</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Ejecución Real</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Pts Reales</th>
-                  <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Acciones</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">ID</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Tarea</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Asignado(s)</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Estado</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Recurrencia</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Ejecución Real</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Pts Reales</th>
+                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Acciones</th>
                 </tr>
               </thead>
               <tbody className="text-[var(--on-surface)] font-body bg-[var(--surface-container-lowest)]">
                 {groupedTasks.map(t => (
-                  <tr key={t.id} onClick={() => setSelectedTask(t)} className="cursor-pointer border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] hover:bg-[var(--surface-container-low)] transition-colors">
+                  <tr key={t.id} onClick={() => setSelectedTask(t)} className="cursor-pointer border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] hover:bg-[var(--surface-container-low)] transition-colors">
                     <td className="p-4 text-[var(--on-surface-variant)] text-sm">
                       #{t.id}
                       {t._isGrouped && <span className="ml-1 text-xs text-[var(--warning)] font-bold" title="Tarea grupal">👥</span>}
@@ -225,7 +225,7 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
                           <div key={a.id || i} className="flex items-center gap-1" title={a.nombre}>
                             {a.fotoUrl ?
                               <img src={a.fotoUrl} className="w-6 h-6 rounded-full object-cover ghost-border" /> :
-                              <div className="w-6 h-6 rounded-full bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] text-[var(--primary)] text-xs flex items-center justify-center font-bold font-title">{a.nombre?.charAt(0)}</div>
+                              <div className="w-6 h-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] text-[var(--primary)] text-xs flex items-center justify-center font-bold font-title">{a.nombre?.charAt(0)}</div>
                             }
                           </div>
                         ))}
@@ -235,10 +235,10 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-md text-xs font-bold whitespace-nowrap ${
-                        t.estado === "Completada" || t.estado === "Aprobada" ? "bg-[color-mix(in-srgb,var(--success)_10%,transparent)] text-[var(--success)]" : 
-                        t.estado === "Vencida" || t.estado === "Expirada" ? "bg-[color-mix(in-srgb,var(--error)_10%,transparent)] text-[var(--error)]" : 
-                        t.estado === "Esperando_Aprobacion" ? "bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)] text-[var(--secondary)]" :
-                        "bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] text-[var(--primary)]"
+                        t.estado === "Completada" || t.estado === "Aprobada" ? "bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]" : 
+                        t.estado === "Vencida" || t.estado === "Expirada" ? "bg-[color-mix(in_srgb,var(--error)_10%,transparent)] text-[var(--error)]" : 
+                        t.estado === "Esperando_Aprobacion" ? "bg-[color-mix(in_srgb,var(--secondary)_10%,transparent)] text-[var(--secondary)]" :
+                        "bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] text-[var(--primary)]"
                       }`}>
                         {t.estado.replace("_", " ")}
                       </span>
@@ -262,7 +262,7 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
                       <button
                         disabled={deletingId !== null}
                         onClick={() => handleDelete(t.id, t.grupoTareaId)}
-                        className="text-[var(--error)] hover:opacity-80 text-xs font-bold px-3 py-1.5 border border-[color-mix(in-srgb,var(--error)_30%,transparent)] rounded-md hover:bg-[color-mix(in-srgb,var(--error)_5%,transparent)] transition-colors disabled:opacity-50"
+                        className="text-[var(--error)] hover:opacity-80 text-xs font-bold px-3 py-1.5 border border-[color-mix(in_srgb,var(--error)_30%,transparent)] rounded-md hover:bg-[color-mix(in_srgb,var(--error)_5%,transparent)] transition-colors disabled:opacity-50"
                       >
                         {deletingId === t.id ? "..." : "Eliminar"}
                       </button>
