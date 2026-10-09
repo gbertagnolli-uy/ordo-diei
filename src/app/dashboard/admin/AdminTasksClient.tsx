@@ -9,6 +9,14 @@ import { Table as TableIcon, Calendar as CalendarIcon, Repeat, Clock, HelpCircle
 import { Modal } from "@/components/ui/Modal";
 import { ParentReviewPanel } from "@/components/dashboard/ParentReviewPanel";
 import TaskForm from "@/components/dashboard/TaskForm";
+import "@/components/tasks/mission-calendar.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -120,178 +128,159 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
     }
   };
 
+  const statusVariant = (estado: string) =>
+    estado === "Completada" || estado === "Aprobada" ? "var(--success)"
+      : estado === "Vencida" || estado === "Expirada" ? "var(--error)"
+      : estado === "Esperando_Aprobacion" ? "var(--secondary)"
+      : "var(--primary)";
+
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-1 flex-col">
       <ParentReviewPanel tasks={tasks} />
 
-      <div className="flex flex-col flex-1 bg-[var(--surface-container-lowest)] rounded-md elevation-ambient border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] overflow-hidden">
-      {/* TOOLBAR */}
-      <div className="bg-[var(--surface-container-low)] p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] flex justify-between items-center sm:px-8">
-        <h2 className="font-headline text-2xl text-[var(--on-surface)]">Centro de Operaciones</h2>
-        <div className="flex bg-[var(--surface-container)] p-1 rounded-md">
-          <button
-            onClick={() => setViewMode("calendar")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${viewMode === "calendar" ? "bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-[0_1px_2px_rgba(80,35,0,0.06)]" : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"}`}
-          >
-            <CalendarIcon className="w-4 h-4" /> <span className="hidden sm:inline">Calendario</span>
-          </button>
-          <button
-            onClick={() => setViewMode("table")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${viewMode === "table" ? "bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-[0_1px_2px_rgba(80,35,0,0.06)]" : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"}`}
-          >
-            <TableIcon className="w-4 h-4" /> <span className="hidden sm:inline">Tabla Detalles</span>
-          </button>
-        </div>
-      </div>
+      <Card className="flex-1 gap-0 py-0">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-4">
+          <CardTitle className="text-base">Centro de Operaciones</CardTitle>
+          <ToggleGroup type="single" variant="outline" size="sm" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)} aria-label="Vista">
+            <ToggleGroupItem value="calendar" className="gap-1.5 px-2.5"><CalendarIcon /> <span className="hidden sm:inline">Calendario</span></ToggleGroupItem>
+            <ToggleGroupItem value="table" className="gap-1.5 px-2.5"><TableIcon /> <span className="hidden sm:inline">Tabla Detalles</span></ToggleGroupItem>
+          </ToggleGroup>
+        </CardHeader>
 
-      <div className="flex-1 p-6 relative">
-        {viewMode === "calendar" && (
-          <div className="h-[650px] font-sans text-[var(--on-surface)]">
-            <style dangerouslySetInnerHTML={{__html: `
-              .rbc-calendar { border: none !important; }
-              .rbc-header { padding: 10px 0; font-family: var(--newsreader), serif; font-weight: 700; color: var(--on-surface-variant); border-bottom: 1px solid var(--outline) !important; }
-              .rbc-month-view, .rbc-time-view, .rbc-agenda-view { border: 1px solid var(--outline); border-radius: 6px; overflow: hidden; background-color: var(--surface-container-lowest); }
-              .rbc-today { background-color: var(--surface-container-low); }
-              .rbc-event { padding: 2px 4px !important; cursor: pointer; }
-              .rbc-btn-group button { color: var(--on-surface-variant); border-color: var(--outline); font-family: var(--noto-serif), serif; }
-              .rbc-btn-group button.rbc-active { background-color: var(--primary); color: var(--on-primary); border-color: var(--primary); box-shadow: none !important; }
-              .dark .rbc-header { color: var(--on-surface-variant); border-color: var(--outline) !important; }
-              .dark .rbc-month-view, .dark .rbc-time-view, .dark .rbc-agenda-view { border-color: var(--outline); }
-              .dark .rbc-today { background-color: var(--surface-container-low); }
-              .dark .rbc-btn-group button { color: var(--on-surface-variant); border-color: var(--outline); }
-            `}} />
-            <Calendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              views={['month', 'week', 'agenda']}
-              view={calendarView}
-              onView={(cv: any) => setCalendarView(cv)}
-              date={currentDate}
-              onNavigate={(d: any) => setCurrentDate(d)}
-              onSelectEvent={(event) => setSelectedTask(event.resource)}
-              components={{ event: CustomEvent }}
-              eventPropGetter={eventPropGetter}
-              messages={{
-                allDay: 'Todo el día',
-                previous: 'Anterior',
-                next: 'Siguiente',
-                today: 'Hoy',
-                month: 'Mensual',
-                week: 'Semanal',
-                day: 'Diaria',
-                agenda: 'Agenda',
-                date: 'Fecha',
-                time: 'Hora',
-                event: 'Misión',
-                noEventsInRange: 'No hay misiones programadas en esta franja.'
-              }}
+        <CardContent className="relative flex-1 p-4 sm:p-6">
+          {viewMode === "calendar" && (
+            <div className="mission-calendar h-[650px]">
+              <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                views={['month', 'week', 'agenda']}
+                view={calendarView}
+                onView={(cv: any) => setCalendarView(cv)}
+                date={currentDate}
+                onNavigate={(d: any) => setCurrentDate(d)}
+                onSelectEvent={(event) => setSelectedTask(event.resource)}
+                components={{ event: CustomEvent }}
+                eventPropGetter={eventPropGetter}
+                messages={{
+                  allDay: 'Todo el día',
+                  previous: 'Anterior',
+                  next: 'Siguiente',
+                  today: 'Hoy',
+                  month: 'Mensual',
+                  week: 'Semanal',
+                  day: 'Diaria',
+                  agenda: 'Agenda',
+                  date: 'Fecha',
+                  time: 'Hora',
+                  event: 'Misión',
+                  noEventsInRange: 'No hay misiones programadas en esta franja.'
+                }}
+              />
+            </div>
+          )}
+
+          {viewMode === "table" && (
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="pl-4">ID</TableHead>
+                    <TableHead>Tarea</TableHead>
+                    <TableHead>Asignado(s)</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Recurrencia</TableHead>
+                    <TableHead>Ejecución Real</TableHead>
+                    <TableHead>Pts Reales</TableHead>
+                    <TableHead className="pr-4 text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupedTasks.map(t => (
+                    <TableRow key={t.id} onClick={() => setSelectedTask(t)} className="cursor-pointer">
+                      <TableCell className="pl-4 text-muted-foreground tabular-nums">
+                        #{t.id}
+                        {t._isGrouped && <span className="ml-1" title="Tarea grupal">👥</span>}
+                      </TableCell>
+                      <TableCell className="max-w-72">
+                        <div className="truncate font-medium">{t.titulo}</div>
+                        <div className="truncate text-xs text-muted-foreground">{t.descripcion || "Sin descripción"}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <AvatarGroup>
+                            {t._assignees.map((a: any, i: number) => (
+                              <Avatar key={a.id || i} className="size-6" title={a.nombre}>
+                                <AvatarImage src={a.fotoUrl ?? undefined} alt={a.nombre} className="object-cover" />
+                                <AvatarFallback className="bg-primary/10 text-xs text-primary">{a.nombre?.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                            ))}
+                          </AvatarGroup>
+                          {t._assignees.length === 1 && <span className="text-sm whitespace-nowrap">{t._assignees[0]?.nombre || "N/A"}</span>}
+                          {t._assignees.length > 1 && <span className="text-xs font-medium text-primary">({t._assignees.length})</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="gap-1.5">
+                          <span className="size-1.5 rounded-full" style={{ background: statusVariant(t.estado) }} />
+                          {t.estado.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {t.tipoRecurrencia === "Unica" ? <span className="text-muted-foreground">Única</span> : <span className="flex items-center gap-1 font-medium text-primary"><Repeat className="size-3" /> {t.tipoRecurrencia}</span>}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {t.tiempoRealEjecucionSeg !== null ? (
+                          <span className="flex items-center gap-1 text-secondary tabular-nums"><Clock className="size-3.5" /> {t.tiempoRealEjecucionSeg}s</span>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell className="text-sm tabular-nums">
+                        {t.puntosGanadosPerdidos !== null ? (
+                          <span className={t.puntosGanadosPerdidos > 0 ? "font-medium text-[var(--success)]" : "font-medium text-destructive"}>
+                            {t.puntosGanadosPerdidos > 0 ? "+" : ""}{t.puntosGanadosPerdidos}
+                          </span>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell className="pr-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={deletingId !== null}
+                          onClick={() => handleDelete(t.id, t.grupoTareaId)}
+                          className="text-destructive hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          {deletingId === t.id ? "..." : "Eliminar"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {tasks.length === 0 && (
+                <Empty className="py-16">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon"><HelpCircle /></EmptyMedia>
+                    <EmptyTitle>No hay tareas registradas en el sistema global.</EmptyTitle>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </div>
+          )}
+        </CardContent>
+
+        {/* EDIT TASK MODAL — uses unified TaskForm */}
+        {selectedTask && (
+          <Modal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} title="Editar Misión">
+            <TaskForm
+              users={users}
+              task={selectedTask}
+              isModal={true}
+              onSuccess={() => window.location.reload()}
             />
-          </div>
+          </Modal>
         )}
-
-        {viewMode === "table" && (
-          <div className="overflow-x-auto w-full custom-scrollbar pb-6 rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[var(--surface-container-low)] text-[var(--on-surface-variant)] text-sm tracking-wider uppercase font-title font-bold">
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">ID</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Tarea</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Asignado(s)</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Estado</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Recurrencia</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Ejecución Real</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Pts Reales</th>
-                  <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="text-[var(--on-surface)] font-body bg-[var(--surface-container-lowest)]">
-                {groupedTasks.map(t => (
-                  <tr key={t.id} onClick={() => setSelectedTask(t)} className="cursor-pointer border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] hover:bg-[var(--surface-container-low)] transition-colors">
-                    <td className="p-4 text-[var(--on-surface-variant)] text-sm">
-                      #{t.id}
-                      {t._isGrouped && <span className="ml-1 text-xs text-[var(--warning)] font-bold" title="Tarea grupal">👥</span>}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col">
-                        <span className="font-title text-[var(--on-surface)]">{t.titulo}</span>
-                        <span className="text-xs text-[var(--on-surface-variant)] line-clamp-1 mt-0.5">{t.descripcion || "Sin descripción"}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1">
-                        {t._assignees.map((a: any, i: number) => (
-                          <div key={a.id || i} className="flex items-center gap-1" title={a.nombre}>
-                            {a.fotoUrl ?
-                              <img src={a.fotoUrl} className="w-6 h-6 rounded-full object-cover ghost-border" /> :
-                              <div className="w-6 h-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] text-[var(--primary)] text-xs flex items-center justify-center font-bold font-title">{a.nombre?.charAt(0)}</div>
-                            }
-                          </div>
-                        ))}
-                        {t._assignees.length === 1 && <span className="whitespace-nowrap ml-1 text-sm font-title mt-0.5">{t._assignees[0]?.nombre || "N/A"}</span>}
-                        {t._assignees.length > 1 && <span className="text-xs text-[var(--primary)] font-bold ml-1">({t._assignees.length})</span>}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-md text-xs font-bold whitespace-nowrap ${
-                        t.estado === "Completada" || t.estado === "Aprobada" ? "bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]" : 
-                        t.estado === "Vencida" || t.estado === "Expirada" ? "bg-[color-mix(in_srgb,var(--error)_10%,transparent)] text-[var(--error)]" : 
-                        t.estado === "Esperando_Aprobacion" ? "bg-[color-mix(in_srgb,var(--secondary)_10%,transparent)] text-[var(--secondary)]" :
-                        "bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] text-[var(--primary)]"
-                      }`}>
-                        {t.estado.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm font-title">
-                      {t.tipoRecurrencia === "Unica" ? <span className="text-[var(--on-surface-variant)]">Única</span> : <span className="flex items-center gap-1 text-[var(--primary)] font-bold"><Repeat className="w-3 h-3"/> {t.tipoRecurrencia}</span>}
-                    </td>
-                    <td className="p-4 text-sm">
-                      {t.tiempoRealEjecucionSeg !== null ? (
-                        <span className="flex items-center gap-1 text-[var(--secondary)]"><Clock className="w-4 h-4"/> {t.tiempoRealEjecucionSeg}s</span>
-                      ) : "-"}
-                    </td>
-                    <td className="p-4 text-sm">
-                      {t.puntosGanadosPerdidos !== null ? (
-                        <span className={t.puntosGanadosPerdidos > 0 ? "text-[var(--success)] font-bold" : "text-[var(--error)] font-bold"}>
-                          {t.puntosGanadosPerdidos > 0 ? "+" : ""}{t.puntosGanadosPerdidos}
-                        </span>
-                      ) : "-"}
-                    </td>
-                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        disabled={deletingId !== null}
-                        onClick={() => handleDelete(t.id, t.grupoTareaId)}
-                        className="text-[var(--error)] hover:opacity-80 text-xs font-bold px-3 py-1.5 border border-[color-mix(in_srgb,var(--error)_30%,transparent)] rounded-md hover:bg-[color-mix(in_srgb,var(--error)_5%,transparent)] transition-colors disabled:opacity-50"
-                      >
-                        {deletingId === t.id ? "..." : "Eliminar"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {tasks.length === 0 && (
-              <div className="p-16 text-center text-[var(--on-surface-variant)] flex flex-col items-center gap-2 font-bold font-title text-lg">
-                <HelpCircle className="w-12 h-12 text-[var(--outline)]" /> No hay tareas registradas en el sistema global.
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* EDIT TASK MODAL — uses unified TaskForm */}
-      {selectedTask && (
-        <Modal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} title="Editar Misión">
-          <TaskForm
-            users={users}
-            task={selectedTask}
-            isModal={true}
-            onSuccess={() => window.location.reload()}
-          />
-        </Modal>
-      )}
-      </div>
+      </Card>
     </div>
   );
 }
