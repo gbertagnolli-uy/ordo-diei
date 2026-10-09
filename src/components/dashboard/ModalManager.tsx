@@ -9,6 +9,7 @@ import { getLevelInfo } from "@/lib/levelUtils";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import confetti from "canvas-confetti";
+import { Confetti } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 
 
@@ -120,11 +121,12 @@ export function ModalManager() {
 
       {type === "TASK_SUCCESS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Misión Cumplida!">
-          <div className="flex flex-col items-center text-center py-6">
+          <div className="relative flex flex-col items-center text-center py-6 overflow-hidden">
+            <Confetti className="absolute inset-0 z-0 pointer-events-none w-full h-full" />
             <img 
               src="/done-animate.svg" 
               alt="¡Buen trabajo!" 
-              className="w-48 h-48 mb-6 drop-shadow-xl"
+              className="w-48 h-48 mb-6 drop-shadow-xl relative z-10"
             />
             <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
               ¡Buen trabajo!
