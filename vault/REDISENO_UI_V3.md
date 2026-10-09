@@ -53,10 +53,14 @@ Tipografía: UI en sans (Geist) y títulos en Newsreader, con la paleta "The Nob
 
 ## 4. Lanes
 
-- [ ] **Lane 9 · `task/lane-9-behavior-parity`** — restaurar §2 sobre el código actual.
-- [ ] **Lane 10 · `task/lane-10-shadcn-foundation`** — `shadcn init`, tokens del tema, fuentes, componentes de §3, `Modal` sobre `dialog`.
-- [ ] **Lane 11 · `task/lane-11-sidebar-layout`** — `AppSidebar` en el layout (marca, secciones con contadores, menú de usuario); se elimina el TopBar; Dock sin duplicados.
-- [ ] **Lane 12 · `task/lane-12-shell-shadcn`** — lista, panel, tablero y calendario de hijos con shadcn.
+- [x] **Lane 9 · `task/lane-9-behavior-parity`** — restaurar §2 sobre el código actual.
+- [x] **Lane 10 · `task/lane-10-shadcn-foundation`** — `shadcn init`, tokens del tema, fuentes, componentes de §3, `Modal` sobre `dialog`.
+- [x] **Lane 11 · `task/lane-11-sidebar-layout`** — `AppSidebar` en el layout (marca, secciones con contadores, menú de usuario); se elimina el TopBar; Dock sin duplicados.
+- [x] **Lane 12 · `task/lane-12-shell-shadcn`** — lista, panel, tablero y calendario de hijos con shadcn.
+- [ ] **Lane 13 · `task/lane-13-login`** — pantalla de ingreso (selector de usuario, teclado de PIN, primer uso) con shadcn.
+- [ ] **Lane 14 · `task/lane-14-views-modals`** — Historial, Jerarquía familiar, Ranking, ánimo, checklist y popups del ModalManager.
+- [ ] **Lane 15 · `task/lane-15-admin`** — Agenda master (revisión de padres) y Premios.
+- [ ] **Lane 16 · `task/lane-16-forms`** — formularios de nueva tarea, nuevo miembro y reglas con shadcn `field`/`input`/`select`/`switch`/`textarea`.
 
 ## 5. Criterios de aceptación
 
@@ -69,7 +73,11 @@ Tipografía: UI en sans (Geist) y títulos en Newsreader, con la paleta "The Nob
 
 | Lane | Merge | Notas |
 |---|---|---|
-| 9 | | |
-| 10 | | |
-| 11 | | |
-| 12 | | |
+| 9 | `30ef122` | |
+| 10 | `40f5e11` | El CLI pisó `--primary/--secondary` con grises e importó `cn` desde un paquete npm: corregido. |
+| 11 | `5406e85` | |
+| 12 | `902559c` | |
+| 13 | | |
+| 14 | | |
+| 15 | | |
+| 16 | | |
