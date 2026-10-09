@@ -383,3 +383,7 @@ body {
     padding-right: 1.5rem;
   }
 }
+
+/* Scroll horizontal sin barra visible (filtros del App Shell) */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

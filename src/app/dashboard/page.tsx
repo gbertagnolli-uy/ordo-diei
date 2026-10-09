@@ -1,44 +1,31 @@
 export const dynamic = 'force-dynamic';
 
 import prisma from "@/lib/prisma";
-import { FamilyTree } from "@/components/dashboard/FamilyTree";
-import { MyTasksBoard } from "@/components/dashboard/MyTasksBoard";
-import { UserCalendarTable } from "@/components/dashboard/UserCalendarTable";
-import { MoodSelector } from "@/components/dashboard/MoodSelector";
-import { HistoryView } from "@/components/dashboard/HistoryView";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { decrypt } from "@/lib/session";
+import { getSession } from "@/lib/session";
+import { TaskShell } from "@/components/tasks/TaskShell";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<any> }) {
-  const cookieStore = await cookies();
-  const sessionValue = cookieStore.get("session")?.value;
+const isParent = (role: string) => role === "Padre" || role === "Madre";
 
-  if (!sessionValue) {
-    redirect("/");
-  }
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const session = await getSession();
+  if (!session?.user) redirect("/");
 
-  const session = await decrypt(sessionValue);
-  const isCurrentUserAdmin = session.user.rolFamiliar === "Padre" || session.user.rolFamiliar === "Madre";
+  const isCurrentUserAdmin = isParent(session.user.rolFamiliar);
+  const { view } = await searchParams;
 
-  const resolvedParams = await searchParams;
-  const isHistoryView = resolvedParams.view === "history";
+  // Para no-admins, solo traer sus propias tareas (seguridad a nivel de query).
+  const allUsersRaw = await prisma.usuario.findMany({
+    omit: { pinSecretoHash: true },
+    include: {
+      tareasAsignadas: {
+        where: isCurrentUserAdmin ? undefined : { asignadoId: session.user.id },
+        include: { checklistItems: true },
+      },
+    },
+  });
 
-  // Recolectar usuarios. Para no-admins, solo traer sus propias tareas (seguridad a nivel de query).
-  const allUsersRaw = isCurrentUserAdmin
-    ? await prisma.usuario.findMany({
-        include: { tareasAsignadas: { include: { checklistItems: true } } }
-      })
-    : await prisma.usuario.findMany({
-        include: {
-          tareasAsignadas: {
-            where: { asignadoId: session.user.id },
-            include: { checklistItems: true }
-          }
-        }
-      });
-
-  // Convertir Fechas a Strings para los Child Components
+  // Fechas a string para los componentes cliente
   const allUsers = allUsersRaw.map((u) => ({
     ...u,
     fechaNacimiento: u.fechaNacimiento ? u.fechaNacimiento.toISOString() : null,
@@ -47,14 +34,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       fechaVencimiento: t.fechaVencimiento ? t.fechaVencimiento.toISOString() : null,
       horaEjecucion: t.horaEjecucion ? t.horaEjecucion.toISOString() : null,
       timerStartedAt: t.timerStartedAt ? t.timerStartedAt.toISOString() : null,
-    }))
+    })),
   }));
 
-  // Dividir para el Árbol
-  const isParent = (role: string) => role === "Padre" || role === "Madre";
-
-  const parents = allUsers.filter(u => isParent(u.rolFamiliar));
-  const children = allUsers.filter(u => !isParent(u.rolFamiliar)).sort((a, b) => {
+  const parents = allUsers.filter((u) => isParent(u.rolFamiliar));
+  const children = allUsers.filter((u) => !isParent(u.rolFamiliar)).sort((a, b) => {
     const diff1 = (b.completionPercentage || 0) - (a.completionPercentage || 0);
     if (diff1 !== 0) return diff1;
     const diff2 = (b.stars || 0) - (a.stars || 0);
@@ -62,57 +46,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     return (b.puntosAcumulados || 0) - (a.puntosAcumulados || 0);
   });
 
-
-  const myUser = allUsers.find(u => u.id === session.user.id);
+  const myUser = allUsers.find((u) => u.id === session.user.id);
   const myTasks = myUser?.tareasAsignadas || [];
 
-  // Build co-responsable map: for each task with a grupoTareaId, find other users assigned
+  // Co-responsables: otros usuarios con tareas del mismo grupoTareaId
   const coResponsableMap: Record<number, { id: number; nombre: string; fotoUrl: string | null }[]> = {};
-
-  const groupedTasks = myTasks.filter((t: any) => t.grupoTareaId);
-  for (const task of groupedTasks) {
-    // Find all tasks with same grupoTareaId from all users
+  for (const task of myTasks.filter((t: any) => t.grupoTareaId)) {
     const siblings = allUsers
-      .flatMap(u => u.tareasAsignadas.map((t: any) => ({ ...t, usuario: { id: u.id, nombre: u.nombre, fotoUrl: u.fotoUrl } })))
+      .flatMap((u) => u.tareasAsignadas.map((t: any) => ({ ...t, usuario: { id: u.id, nombre: u.nombre, fotoUrl: u.fotoUrl } })))
       .filter((t: any) => t.grupoTareaId === (task as any).grupoTareaId && t.asignadoId !== session.user.id);
-
-    const uniqueUsers = Array.from(new Map(siblings.map((s: any) => [s.usuario.id, s.usuario])).values());
-    coResponsableMap[task.id] = uniqueUsers as any;
+    coResponsableMap[task.id] = Array.from(new Map(siblings.map((s: any) => [s.usuario.id, s.usuario])).values()) as any;
   }
 
+  const section = view === "history" || view === "family" ? view : "todo";
+
   return (
-    <div className="flex flex-col">
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
-
-        {isHistoryView ? (
-          <HistoryView />
-        ) : (
-          <>
-            {/* Mis Tareas - Panel Gamificado */}
-            <MyTasksBoard tasks={myTasks} coResponsables={coResponsableMap} />
-
-            {/* Mood Tracker */}
-            <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient p-6 mb-8 transition-colors">
-              <MoodSelector 
-                currentMood={myUser?.moodEmoji} 
-                isOwnProfile={true} 
-              />
-            </div>
-
-            {/* Vista de Calendario/Tabla para Hijos si no son admins */}
-            {!isParent(session.user.rolFamiliar) && (
-              <UserCalendarTable tasks={myTasks} />
-            )}
-          </>
-        )}
-
-        <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient p-8 sm:p-12 min-h-[600px] relative mt-16 transition-colors">
-          <h2 className="font-display text-3xl text-[var(--on-surface)] mb-12 text-center">Jerarquía Familiar</h2>
-
-          {/* Componente del Árbol Genealógico */}
-          <FamilyTree parents={parents as any} children={children as any} />
-        </div>
-      </main>
-    </div>
+    <TaskShell
+      key={section}
+      tasks={myTasks}
+      coResponsables={coResponsableMap}
+      currentUser={myUser ?? session.user}
+      isAdmin={isCurrentUserAdmin}
+      family={{ parents, children }}
+      initialSection={section}
+    />
   );
 }

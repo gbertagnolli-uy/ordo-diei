@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, Clock, Star, Gift, Loader2, ArrowLeft, History } from "lucide-react";
+import { CheckCircle2, Clock, Star, Gift, Loader2, History } from "lucide-react";
 import Link from "next/link";
 
 export function HistoryView() {
@@ -37,24 +37,6 @@ export function HistoryView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-headline font-bold text-[var(--on-surface)] flex items-center gap-3">
-             <History className="w-8 h-8 text-[var(--primary)]" />
-             HISTORIAL DE MISIONES
-          </h2>
-          <p className="text-[var(--on-surface-variant)] mt-1 font-body">Revisa tus logros y recompensas obtenidas.</p>
-        </div>
-        
-        <Link 
-          href="/dashboard"
-          className="btn-secondary flex items-center gap-2 w-fit px-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          VOLVER AL PANEL
-        </Link>
-      </div>
-
       {/* Stats summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-[color-mix(in-srgb,var(--warning)_5%,transparent)] rounded-md p-6 text-center border border-[color-mix(in-srgb,var(--warning)_15%,transparent)] elevation-ambient transition-transform hover:scale-[1.02]">
