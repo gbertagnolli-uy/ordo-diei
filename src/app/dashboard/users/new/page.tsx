@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/app/PageHeader";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ClientPage from "./ClientPage";
@@ -16,5 +17,10 @@ export default async function NewUserServerPage() {
     redirect("/dashboard");
   }
 
-  return <ClientPage />;
+  return (
+    <>
+      <PageHeader group="Administración" title="Nuevo miembro" />
+      <ClientPage />
+    </>
+  );
 }

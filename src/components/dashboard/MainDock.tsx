@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Home,
   Plus,
   Calendar,
   Sunset,
@@ -13,7 +12,6 @@ import {
   Trophy,
   Sun,
   Moon,
-  Smile,
   LogOut,
 } from "lucide-react";
 import { FloatingDock, DockItem } from "@/components/ui/floating-dock";
@@ -59,12 +57,6 @@ export function MainDock({
   };
 
   const dockItems: DockItem[] = [
-    {
-      title: "Inicio / Dashboard",
-      icon: <Home className="w-5 h-5" />,
-      href: "/dashboard",
-      active: pathname === "/dashboard",
-    },
     ...(isAdmin
       ? [
           {
@@ -108,11 +100,6 @@ export function MainDock({
       icon: <FileText className="w-5 h-5" />,
       href: "/dashboard/rules",
       active: pathname === "/dashboard/rules",
-    },
-    {
-      title: "Estado de Ánimo",
-      icon: <Smile className="w-5 h-5" />,
-      onClick: () => openModal("MOOD_SELECTOR", { user: currentUser }),
     },
     {
       title: darkMode ? "Modo Claro" : "Modo Oscuro",

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BookOpen, Save } from "lucide-react";
-import Link from "next/link";
+import { Save } from "lucide-react";
 
 export default function ClientRulesPage({
   isAdmin,
@@ -42,16 +41,7 @@ export default function ClientRulesPage({
 
   return (
     <div className="p-4 sm:p-8 flex flex-col items-center transition-colors">
-      <div className="w-full max-w-3xl bg-[var(--surface-container-lowest)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] overflow-hidden mt-10 elevation-ambient ghost-border">
-        <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] p-8 flex items-center justify-between border-b border-[color-mix(in-srgb,var(--primary)_15%,transparent)]">
-          <h2 className="text-3xl font-display font-bold text-[var(--primary)] flex items-center gap-3">
-            <BookOpen className="w-8 h-8" />
-            Reglas del Hogar
-          </h2>
-          <Link href="/dashboard" className="text-[var(--primary)] hover:bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] p-2 rounded-md transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-        </div>
+      <div className="w-full max-w-3xl bg-[var(--surface-container-lowest)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] overflow-hidden mt-2 elevation-ambient ghost-border">
 
         <div className="p-6 sm:p-10 flex flex-col gap-6">
           <p className="text-[var(--on-surface-variant)] text-lg font-body">
