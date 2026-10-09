@@ -2,6 +2,8 @@
 
 Este documento define la hoja de ruta integral para modernizar y potenciar la interfaz de usuario de Ordo Diei, implementando componentes de **React Bits Pro**, **Aceternity UI** y **MagicUI**.
 
+> ⚠️ **Superado por [[REDISENO_UI_V2]]**: las lanes 1–4 agregaron los componentes encima del diseño viejo en vez de reemplazarlo. Ver diagnóstico allí.
+
 ---
 
 ## 🎯 Objetivos Principales
