@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
+import { Item, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 
 interface ChecklistItem {
   id: number;
@@ -65,59 +69,54 @@ export function ChecklistModal({ isOpen, onClose, taskId, taskTitle, onComplete 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Checklist: ${taskTitle}`}>
       <div className="flex flex-col gap-4">
-        {/* Progress bar */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 bg-[var(--surface-container-high)] h-3 rounded-sm overflow-hidden ghost-border">
-            <div 
-              className={`h-full transition-all duration-500 ${percentage >= 100 ? 'bg-[var(--success)]' : 'bg-[var(--primary)]'}`}
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-          <span className={`text-sm font-title font-bold ${percentage >= 100 ? 'text-[var(--success)]' : 'text-[var(--on-surface-variant)]'}`}>
+          <Progress value={percentage} className={`h-2 flex-1 ${percentage >= 100 ? "[&>[data-slot=progress-indicator]]:bg-[var(--success)]" : ""}`} />
+          <span className={`text-sm font-medium tabular-nums ${percentage >= 100 ? 'text-[var(--success)]' : 'text-muted-foreground'}`}>
             {completedCount}/{totalCount} ({percentage}%)
           </span>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-[var(--primary)]" />
+            <Spinner className="size-6 text-primary" />
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-8 text-[var(--on-surface-variant)] font-body">
-            No hay items en este checklist.
-          </div>
+          <Empty className="py-8">
+            <EmptyHeader>
+              <EmptyDescription>No hay items en este checklist.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
-          <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
+          <ItemGroup className="max-h-[50vh] gap-2 overflow-y-auto">
             {items.map(item => (
-              <button
+              <Item
                 key={item.id}
-                onClick={() => toggleItem(item.id, item.completado)}
-                disabled={toggling === item.id}
-                className={`flex items-center gap-3 p-3 rounded-md border-2 text-left transition-all ${
-                  item.completado 
-                    ? 'border-[color-mix(in-srgb,var(--success)_20%,transparent)] bg-[color-mix(in-srgb,var(--success)_5%,transparent)]' 
-                    : 'border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-low)] hover:border-[color-mix(in-srgb,var(--primary)_30%,transparent)]'
-                }`}
+                asChild
+                variant="outline"
+                size="sm"
+                className={item.completado ? "border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[color-mix(in_srgb,var(--success)_6%,transparent)]" : "hover:border-primary/40"}
               >
-                {toggling === item.id ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-[var(--primary)] shrink-0" />
-                ) : item.completado ? (
-                  <CheckCircle2 className="w-5 h-5 text-[var(--success)] shrink-0" />
-                ) : (
-                  <Circle className="w-5 h-5 text-[var(--outline)] shrink-0" />
-                )}
-                <span className={`flex-1 text-sm font-body font-medium ${item.completado ? 'line-through text-[var(--on-surface-variant)]' : 'text-[var(--on-surface)]'}`}>
-                  {item.texto}
-                </span>
-              </button>
+                <button onClick={() => toggleItem(item.id, item.completado)} disabled={toggling === item.id} className="text-left">
+                  <ItemMedia>
+                    {toggling === item.id ? (
+                      <Spinner className="size-4 text-primary" />
+                    ) : (
+                      <Checkbox checked={item.completado} tabIndex={-1} className="pointer-events-none data-[state=checked]:border-[var(--success)] data-[state=checked]:bg-[var(--success)]" />
+                    )}
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle className={item.completado ? "text-muted-foreground line-through" : ""}>{item.texto}</ItemTitle>
+                  </ItemContent>
+                </button>
+              </Item>
             ))}
-          </div>
+          </ItemGroup>
         )}
 
         {percentage >= 100 && (
-          <div className="bg-[color-mix(in-srgb,var(--success)_5%,transparent)] border border-[color-mix(in-srgb,var(--success)_15%,transparent)] rounded-md p-4 text-center">
+          <div className="rounded-lg border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,transparent)] p-4 text-center">
             <span className="text-2xl">🎉</span>
-            <p className="text-[var(--success)] font-headline font-bold mt-1">¡Checklist completado! Ya podés finalizar la tarea.</p>
+            <p className="mt-1 font-medium text-[var(--success)]">¡Checklist completado! Ya podés finalizar la tarea.</p>
           </div>
         )}
       </div>

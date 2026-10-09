@@ -37,8 +37,8 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
   };
 
   return (
-    <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] overflow-hidden mb-8 ghost-border">
-      <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] px-6 py-4 flex items-center justify-between border-b border-[color-mix(in-srgb,var(--primary)_15%,transparent)]">
+    <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient border border-[color-mix(in_srgb,var(--primary)_30%,transparent)] overflow-hidden mb-8 ghost-border">
+      <div className="bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] px-6 py-4 flex items-center justify-between border-b border-[color-mix(in_srgb,var(--primary)_15%,transparent)]">
         <h3 className="text-[var(--primary)] font-headline font-bold text-lg flex items-center gap-2">
           <Clock className="w-5 h-5" /> Tareas Pendientes de Revisión ({waitingTasks.length})
         </h3>
@@ -47,11 +47,11 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
         </span>
       </div>
       
-      <div className="divide-y divide-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
+      <div className="divide-y divide-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">
         {waitingTasks.map((task) => (
           <div key={task.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--surface-container-low)] transition-colors">
             <div className="flex gap-4">
-              <div className="w-12 h-12 rounded-md bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-md bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] flex items-center justify-center flex-shrink-0">
                 {task.asignado?.fotoUrl ? (
                   <img src={task.asignado.fotoUrl} alt={task.asignado.nombre} className="w-full h-full object-cover rounded-md" />
                 ) : (
@@ -83,7 +83,7 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
               <button
                 disabled={loadingId !== null}
                 onClick={() => handleAction(task.id, "reject")}
-                className="flex items-center gap-2 px-4 py-2 bg-[color-mix(in-srgb,var(--error)_5%,transparent)] text-[var(--error)] hover:bg-[color-mix(in-srgb,var(--error)_10%,transparent)] font-title font-bold rounded-md transition-all active:scale-95 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-[color-mix(in_srgb,var(--error)_5%,transparent)] text-[var(--error)] hover:bg-[color-mix(in_srgb,var(--error)_10%,transparent)] font-title font-bold rounded-md transition-all active:scale-95 disabled:opacity-50"
               >
                 <X className="w-5 h-5" /> {loadingId === task.id ? "..." : "Rechazar"}
               </button>

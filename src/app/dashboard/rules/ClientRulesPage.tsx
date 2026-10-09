@@ -41,14 +41,14 @@ export default function ClientRulesPage({
 
   return (
     <div className="p-4 sm:p-8 flex flex-col items-center transition-colors">
-      <div className="w-full max-w-3xl bg-[var(--surface-container-lowest)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] overflow-hidden mt-2 elevation-ambient ghost-border">
+      <div className="w-full max-w-3xl bg-[var(--surface-container-lowest)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] overflow-hidden mt-2 elevation-ambient ghost-border">
 
         <div className="p-6 sm:p-10 flex flex-col gap-6">
           <p className="text-[var(--on-surface-variant)] text-lg font-body">
             Las reglas son para vivir juntos y felices.
           </p>
 
-          <div className="bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] p-6 elevation-ambient relative">
+          <div className="bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] p-6 elevation-ambient relative">
             {isAdmin ? (
               <textarea
                 value={rules}

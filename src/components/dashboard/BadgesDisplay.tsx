@@ -30,7 +30,7 @@ export function BadgesDisplay({ totalTasksCompleted, streakDays, stars, completi
 
   if (badges.length === 0) {
     return (
-      <div className="text-center py-4 text-xs font-title tracking-wider uppercase text-[var(--on-surface-variant)] border border-dashed border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] rounded-md opacity-70">
+      <div className="text-center py-4 text-xs font-title tracking-wider uppercase text-[var(--on-surface-variant)] border border-dashed border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] rounded-md opacity-70">
         Completa más tareas para desbloquear medallas
       </div>
     );
@@ -41,7 +41,7 @@ export function BadgesDisplay({ totalTasksCompleted, streakDays, stars, completi
       <div className="text-sm font-bold text-[var(--on-surface)] uppercase tracking-wider mb-[-4px]">Medallas Desbloqueadas ({badges.length})</div>
       <div className="flex flex-wrap gap-2">
         {badges.map(b => (
-          <div key={b.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${b.bg} border border-[color-mix(in-srgb,currentColor_20%,transparent)]`}>
+          <div key={b.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${b.bg} border border-[color-mix(in_srgb,currentColor_20%,transparent)]`}>
             <span className={b.color}>{b.icon}</span>
             <span className={`text-xs font-bold ${b.color}`}>{b.title}</span>
           </div>

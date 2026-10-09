@@ -40,17 +40,17 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
           {/* Stats summary */}
           {data.stats && (
             <div className="grid grid-cols-3 gap-3 mb-2">
-              <div className="bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--warning)_15%,transparent)]">
+              <div className="bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] rounded-md p-3 text-center border border-[color-mix(in_srgb,var(--warning)_15%,transparent)]">
                 <Star className="w-5 h-5 text-[var(--warning)] mx-auto mb-1" />
                 <div className="text-lg font-headline font-bold text-[var(--warning)]">{data.stats.stars || 0}</div>
                 <div className="text-xs text-[var(--warning)] font-title font-bold uppercase tracking-wider">Estrellas</div>
               </div>
-              <div className="bg-[color-mix(in-srgb,var(--success)_10%,transparent)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--success)_15%,transparent)]">
+              <div className="bg-[color-mix(in_srgb,var(--success)_10%,transparent)] rounded-md p-3 text-center border border-[color-mix(in_srgb,var(--success)_15%,transparent)]">
                 <CheckCircle2 className="w-5 h-5 text-[var(--success)] mx-auto mb-1" />
                 <div className="text-lg font-headline font-bold text-[var(--success)]">{data.stats.availablePoints || 0}</div>
                 <div className="text-xs text-[var(--success)] font-title font-bold uppercase tracking-wider">Pts Disponibles</div>
               </div>
-              <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] rounded-md p-3 text-center border border-[color-mix(in-srgb,var(--primary)_15%,transparent)]">
+              <div className="bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] rounded-md p-3 text-center border border-[color-mix(in_srgb,var(--primary)_15%,transparent)]">
                 <Gift className="w-5 h-5 text-[var(--primary)] mx-auto mb-1" />
                 <div className="text-lg font-headline font-bold text-[var(--primary)]">{data.stats.surprises || 0}</div>
                 <div className="text-xs text-[var(--primary)] font-title font-bold uppercase tracking-wider">Sorpresas</div>
@@ -79,7 +79,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
             {tab === "tasks" && (
               data.completedTasks?.length > 0 ? (
                 data.completedTasks.map((t: any) => (
-                  <div key={t.id} className="flex items-center gap-3 p-3 bg-[var(--surface-container-lowest)] border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] rounded-md ghost-border">
+                  <div key={t.id} className="flex items-center gap-3 p-3 bg-[var(--surface-container-lowest)] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] rounded-md ghost-border">
                     <CheckCircle2 className={`w-5 h-5 shrink-0 ${t.estado === "Aprobada" ? "text-[var(--success)]" : "text-[var(--warning)]"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="font-headline font-bold text-[var(--on-surface)] truncate">{t.titulo}</div>
@@ -89,7 +89,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
                       </div>
                     </div>
                     {t.puntosGenerados > 0 && (
-                      <span className="text-xs font-title font-bold text-[var(--warning)] bg-[color-mix(in-srgb,var(--warning)_5%,transparent)] border border-[color-mix(in-srgb,var(--warning)_15%,transparent)] px-2 py-1 rounded-md">
+                      <span className="text-xs font-title font-bold text-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_5%,transparent)] border border-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-2 py-1 rounded-md">
                         +{t.puntosGenerados} pts
                       </span>
                     )}
@@ -103,7 +103,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
             {tab === "rewards" && (
               data.historial?.length > 0 ? (
                 data.historial.map((h: any) => (
-                  <div key={h.id} className="flex items-center gap-3 p-3 bg-[var(--surface-container-lowest)] border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] rounded-md ghost-border">
+                  <div key={h.id} className="flex items-center gap-3 p-3 bg-[var(--surface-container-lowest)] border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] rounded-md ghost-border">
                     <Clock className="w-5 h-5 text-[var(--outline)] shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="font-headline font-bold text-[var(--on-surface)] truncate">{h.tarea?.titulo || "Tarea"}</div>

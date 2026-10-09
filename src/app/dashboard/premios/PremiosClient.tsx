@@ -101,11 +101,11 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
   const getStatusBadge = (estado: string) => {
     switch (estado) {
       case "Entregado":
-        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in-srgb,var(--success)_10%,transparent)] text-[var(--success)]"><CheckCircle className="w-3 h-3"/> Entregado</span>;
+        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]"><CheckCircle className="w-3 h-3"/> Entregado</span>;
       case "Pendiente":
-        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] text-[var(--warning)]"><Clock className="w-3 h-3"/> Pendiente</span>;
+        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] text-[var(--warning)]"><Clock className="w-3 h-3"/> Pendiente</span>;
       case "No_ganado":
-        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in-srgb,var(--error)_10%,transparent)] text-[var(--error)]"><XCircle className="w-3 h-3"/> No ganado</span>;
+        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in_srgb,var(--error)_10%,transparent)] text-[var(--error)]"><XCircle className="w-3 h-3"/> No ganado</span>;
       default:
         return <span className="px-2 py-1 rounded-md text-xs font-bold bg-[var(--surface-container-low)] text-[var(--on-surface-variant)]">{estado}</span>;
     }
@@ -142,20 +142,20 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         </button>
       </div>
 
-      <div className="overflow-x-auto w-full custom-scrollbar rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)]">
+      <div className="overflow-x-auto w-full custom-scrollbar rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)]">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[var(--surface-container-low)] text-[var(--on-surface-variant)] text-sm tracking-wider uppercase font-title font-bold">
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Premio</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Frecuencia</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Tareas Requeridas</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Entregas</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Acciones</th>
+              <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Premio</th>
+              <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Frecuencia</th>
+              <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Tareas Requeridas</th>
+              <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Entregas</th>
+              <th className="p-4 border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)]">Acciones</th>
             </tr>
           </thead>
           <tbody className="text-[var(--on-surface)] font-body">
             {premios.map(premio => (
-              <tr key={premio.id} className="border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] hover:bg-[var(--surface-container-low)] transition-colors">
+              <tr key={premio.id} className="border-b border-[color-mix(in_srgb,var(--outline-variant)_15%,transparent)] hover:bg-[var(--surface-container-low)] transition-colors">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[var(--primary-container)] flex items-center justify-center">
@@ -240,7 +240,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
               type="text"
               value={formData.titulo}
               onChange={e => setFormData({ ...formData, titulo: e.target.value })}
-              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
+              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
               placeholder="ej. Monedas de Oro"
               required
             />
@@ -252,7 +252,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
               type="number"
               value={formData.cantidad}
               onChange={e => setFormData({ ...formData, cantidad: parseInt(e.target.value) || 0 })}
-              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
+              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
               min="1"
               required
             />
@@ -263,7 +263,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
             <select
               value={formData.tipoFrecuencia}
               onChange={e => setFormData({ ...formData, tipoFrecuencia: e.target.value })}
-              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
+              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
             >
               <option value="Semanal">Semanal</option>
               <option value="Mensual">Mensual</option>
@@ -276,7 +276,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
               <select
                 value={formData.diaEntregaSemana}
                 onChange={e => setFormData({ ...formData, diaEntregaSemana: parseInt(e.target.value) })}
-                className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
+                className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
               >
                 <option value={1}>Lunes</option>
                 <option value={2}>Martes</option>
@@ -295,7 +295,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
               <select
                 value={formData.diaDelMes}
                 onChange={e => setFormData({ ...formData, diaDelMes: parseInt(e.target.value) })}
-                className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
+                className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
               >
                 {Array.from({ length: 28 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -306,7 +306,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
 
           <div>
             <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Tareas Requeridas (selecciona múltiples)</label>
-            <div className="max-h-40 overflow-y-auto bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3">
+            <div className="max-h-40 overflow-y-auto bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in_srgb,var(--outline-variant)_30%,transparent)] p-3">
               {tareas.map(tarea => (
                 <label key={tarea.id} className="flex items-center gap-2 py-1 cursor-pointer">
                   <input
