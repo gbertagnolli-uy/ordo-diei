@@ -66,7 +66,7 @@ const FloatingDockMobile = ({
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors w-full",
                     item.active
-                      ? "bg-[var(--primary)] text-[var(--on-primary)]"
+                      ? "bg-[var(--primary)] text-[var(--on-primary)] [&_svg]:!text-[var(--on-primary)]"
                       : "text-[var(--on-surface)] hover:bg-[color-mix(in-srgb,var(--primary)_8%,transparent)]"
                   )}
                 >
@@ -201,7 +201,7 @@ function DockIconContainer({
       className={cn(
         "relative flex aspect-square items-center justify-center rounded-xl transition-colors cursor-pointer select-none",
         active
-          ? "bg-[var(--primary)] text-[var(--on-primary)] shadow-md"
+          ? "bg-[var(--primary)] text-[var(--on-primary)] shadow-md [&_svg]:!text-[var(--on-primary)]"
           : "bg-[var(--surface-container)] text-[var(--on-surface)] hover:bg-[color-mix(in-srgb,var(--primary)_15%,transparent)] hover:text-[var(--primary)]"
       )}
     >
