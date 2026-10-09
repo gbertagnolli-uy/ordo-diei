@@ -57,10 +57,10 @@ Tipografía: UI en sans (Geist) y títulos en Newsreader, con la paleta "The Nob
 - [x] **Lane 10 · `task/lane-10-shadcn-foundation`** — `shadcn init`, tokens del tema, fuentes, componentes de §3, `Modal` sobre `dialog`.
 - [x] **Lane 11 · `task/lane-11-sidebar-layout`** — `AppSidebar` en el layout (marca, secciones con contadores, menú de usuario); se elimina el TopBar; Dock sin duplicados.
 - [x] **Lane 12 · `task/lane-12-shell-shadcn`** — lista, panel, tablero y calendario de hijos con shadcn.
-- [ ] **Lane 13 · `task/lane-13-login`** — pantalla de ingreso (selector de usuario, teclado de PIN, primer uso) con shadcn.
-- [ ] **Lane 14 · `task/lane-14-views-modals`** — Historial, Jerarquía familiar, Ranking, ánimo, checklist y popups del ModalManager.
-- [ ] **Lane 15 · `task/lane-15-admin`** — Agenda master (revisión de padres) y Premios.
-- [ ] **Lane 16 · `task/lane-16-forms`** — formularios de nueva tarea, nuevo miembro y reglas con shadcn `field`/`input`/`select`/`switch`/`textarea`.
+- [x] **Lane 13 · `task/lane-13-login`** — pantalla de ingreso (selector de usuario, teclado de PIN, primer uso) con shadcn.
+- [x] **Lane 14 · `task/lane-14-views-modals`** — Historial, Jerarquía familiar, Ranking, ánimo, checklist y popups del ModalManager.
+- [x] **Lane 15 · `task/lane-15-admin`** — Agenda master (revisión de padres) y Premios.
+- [x] **Lane 16 · `task/lane-16-forms`** — formularios de nueva tarea, nuevo miembro y reglas con shadcn `field`/`input`/`select`/`switch`/`textarea`.
 
 ## 5. Criterios de aceptación
 
@@ -77,7 +77,14 @@ Tipografía: UI en sans (Geist) y títulos en Newsreader, con la paleta "The Nob
 | 10 | `40f5e11` | El CLI pisó `--primary/--secondary` con grises e importó `cn` desde un paquete npm: corregido. |
 | 11 | `5406e85` | |
 | 12 | `902559c` | |
-| 13 | | |
-| 14 | | |
-| 15 | | |
-| 16 | | |
+| 13 | `81c0990` | Fix: los títulos usaban `var(--newsreader)` (inexistente); Newsreader nunca se aplicaba. |
+| 14 | `fd606d9` | Se elimina el segundo modal LEVEL_UP. Fix global: `color-mix(in-srgb,…)` era CSS inválido (bordes/fondos tintados no se aplicaban). |
+| 15 | `0321253` | |
+| 16 | `8a22bb4` | Los formularios conservan `name`/`defaultValue`; el envío por FormData no cambia. |
+
+### Verificación final
+- `tsc` y `next build` OK; `next start` sin errores de consola en las 10 pantallas.
+- En `next dev` puede aparecer un aviso de hidratación en el Dock: caché vieja de Turbopack (el SSR servía la versión anterior de `floating-dock.tsx`). Se resuelve reiniciando `npm run dev`.
+
+### Notas
+- El CLI de shadcn agrega el paquete npm `cn` e importa `cn` desde ahí en cada `add`: después de cada `npx shadcn add`, correr `npm uninstall cn` y reemplazar `from "cn"` por `from "@/lib/utils"`.
