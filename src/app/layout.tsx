@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
-import { Newsreader, Noto_Serif, Geist_Mono } from "next/font/google";
+import { Newsreader, Noto_Serif, Geist_Mono, Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const newsreader = Newsreader({
   variable: "--font-newsreader",
@@ -32,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${newsreader.variable} ${notoSerif.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", newsreader.variable, notoSerif.variable, geistMono.variable, "font-sans", geist.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
@@ -48,7 +52,9 @@ export default function RootLayout({
             } catch(e) { document.documentElement.classList.remove('dark'); }
           })();
         `}} />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,51 +11,24 @@ interface ModalProps {
   width?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
+const widthClasses = {
+  sm: "sm:max-w-md",
+  md: "sm:max-w-xl",
+  lg: "sm:max-w-3xl",
+  xl: "sm:max-w-5xl",
+  full: "sm:max-w-7xl",
+};
+
+// API histórica de la app sobre el Dialog de shadcn/ui
 export function Modal({ isOpen, onClose, title, children, width = "md" }: ModalProps) {
-  const widthClasses = {
-    sm: "max-w-md",
-    md: "max-w-xl",
-    lg: "max-w-3xl",
-    xl: "max-w-5xl",
-    full: "max-w-7xl"
-  };
-
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-[color-mix(in-srgb,var(--tertiary)_40%,transparent)] backdrop-blur-sm z-50 flex justify-center items-center p-4 overflow-y-auto"
-          />
-          <div className="fixed inset-0 z-50 pointer-events-none flex justify-center items-center p-4 overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`bg-[var(--surface-container-lowest)] rounded-md elevation-ambient w-full ${widthClasses[width]} overflow-hidden pointer-events-auto flex flex-col max-h-[90vh]`}
-            >
-              <div className="flex justify-between items-center p-6 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] sticky top-0 vellum-glass z-10">
-                {title && <h2 className="font-display text-2xl text-[var(--on-surface)]">{title}</h2>}
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-full hover:bg-[color-mix(in-srgb,var(--primary)_5%,transparent)] text-[var(--on-surface-variant)] transition-colors ml-auto"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                {children}
-              </div>
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className={cn("max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden", widthClasses[width])}>
+        <DialogHeader className="px-6 pt-5 pb-4 border-b">
+          <DialogTitle className={cn("font-headline text-xl pr-8", !title && "sr-only")}>{title ?? "Diálogo"}</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
+      </DialogContent>
+    </Dialog>
   );
 }
