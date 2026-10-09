@@ -41,7 +41,7 @@ export default function ClientRulesPage({
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface)] p-4 sm:p-8 flex flex-col items-center transition-colors">
+    <div className="p-4 sm:p-8 flex flex-col items-center transition-colors">
       <div className="w-full max-w-3xl bg-[var(--surface-container-lowest)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] overflow-hidden mt-10 elevation-ambient ghost-border">
         <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] p-8 flex items-center justify-between border-b border-[color-mix(in-srgb,var(--primary)_15%,transparent)]">
           <h2 className="text-3xl font-display font-bold text-[var(--primary)] flex items-center gap-3">
