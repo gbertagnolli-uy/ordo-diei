@@ -9,7 +9,6 @@ import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 
 import { ChecklistModal } from "./ChecklistModal";
-import confetti from "canvas-confetti";
 import { AppShellTaskList } from "./AppShellTaskList";
 import { KanbanBoard } from "./KanbanBoard";
 import { cn } from "@/lib/utils";
