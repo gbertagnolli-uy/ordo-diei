@@ -25,10 +25,10 @@ export function TopBar({ currentUser }: { currentUser: any }) {
     }
 
     const updateTime = () => {
-      setTime(new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }));
+      setTime(new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     };
     updateTime();
-    const inv = setInterval(updateTime, 15000);
+    const inv = setInterval(updateTime, 1000);
     return () => clearInterval(inv);
   }, []);
 

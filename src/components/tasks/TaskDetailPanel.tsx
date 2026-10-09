@@ -185,6 +185,7 @@ export function TaskDetailPanel({
 
       <Modal isOpen={confirm === "notDone"} onClose={() => setConfirm(null)} title="¿No la hiciste?">
         <div className="flex flex-col items-center gap-4 text-center">
+          <img src="/cross-animate.svg" alt="Cancel" className="w-32 h-32 opacity-80 mb-2" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <p className="text-[var(--on-surface-variant)] font-medium text-lg leading-relaxed">
             Si marcas la tarea como &quot;No Realizada&quot;, esta se archivará sin otorgarte puntos. <br />¿Estás seguro?
           </p>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, PanelRightClose } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { dueDate, formatDue, isActionable, isSameDay, sortTasks, statusInfo, taskGroup } from "./taskUtils";
+import { dueDate, formatDue, isActionable, isSameDay, sortTasks, statusInfo } from "./taskUtils";
 
 const WEEKDAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const monthFmt = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
@@ -23,7 +23,7 @@ export function SchedulePanel({
   const [month, setMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  const scheduled = useMemo(() => tasks.filter((t) => dueDate(t) && taskGroup(t) !== "archived"), [tasks]);
+  const scheduled = useMemo(() => tasks.filter((t) => dueDate(t)), [tasks]);
 
   // Semanas de lunes a domingo que cubren el mes visible
   const weeks = useMemo(() => {
