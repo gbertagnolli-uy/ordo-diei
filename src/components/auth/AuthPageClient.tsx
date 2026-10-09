@@ -8,6 +8,10 @@ import { useAuthStore } from "@/store/authStore";
 import { useModalStore } from "@/store/modalStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
   const router = useRouter();
@@ -56,11 +60,14 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
   };
 
   return (
-    <div className="z-10 w-full max-w-4xl px-4 flex flex-col items-center">
-      <h1 className="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#C4956A] to-[#C9A84C] mb-2 text-center">
+    <div className="relative z-10 flex w-full max-w-4xl flex-col items-center px-4 py-12">
+      <span className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-primary font-heading text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
+        OD
+      </span>
+      <h1 className="bg-gradient-to-b from-[#F3E3CC] to-[#C4956A] bg-clip-text text-center font-heading text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
         Ordo Diei
       </h1>
-      <p className="text-[#E8D8C8]/80 text-center max-w-2xl text-lg mb-12 italic font-serif leading-relaxed px-4">
+      <p className="mt-3 mb-12 max-w-xl px-4 text-center font-heading text-base leading-relaxed text-muted-foreground italic">
         Sancta rutina diei ad animam fovendam et Deum laudandum. Omnis dies incipit cum oratione et finitur cum examine conscientiae.
       </p>
 
@@ -72,12 +79,15 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className="w-full flex flex-col items-center gap-6"
+            className="flex w-full flex-col items-center gap-6"
           >
             {initialUsers.length === 0 ? (
               <FirstSetupForm />
             ) : (
-              <UserSelector users={initialUsers} onSelect={handleSelectUser} />
+              <>
+                <p className="text-sm font-medium text-muted-foreground">¿Quién eres?</p>
+                <UserSelector users={initialUsers} onSelect={handleSelectUser} />
+              </>
             )}
           </motion.div>
         ) : (
@@ -87,33 +97,28 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3 }}
-            className="flex flex-col items-center gap-6"
           >
-            <div className="flex items-center gap-4 bg-black/40 p-3 pr-6 rounded-2xl border border-white/10 backdrop-blur-md shadow-lg">
-               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#C4956A] shadow-[0_0_15px_rgba(196,149,106,0.5)] bg-gradient-to-br from-[#C4956A] to-[#703607] flex items-center justify-center text-xl text-white font-bold">
-                {selectedUser.fotoUrl ? (
-                   <img src={selectedUser.fotoUrl} alt={selectedUser.nombre} className="w-full h-full object-cover" />
-                ) : (
-                  selectedUser.nombre.charAt(0).toUpperCase()
-                )}
+            <Card className="w-[22rem] max-w-full items-center gap-6 border-white/10 bg-card/70 py-8 backdrop-blur-xl">
+              <div className="flex flex-col items-center gap-3">
+                <Avatar className="size-16 ring-2 ring-primary ring-offset-4 ring-offset-card">
+                  <AvatarImage src={selectedUser.fotoUrl ?? undefined} alt={selectedUser.nombre} className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-[#C4956A] to-[#703607] text-xl font-semibold text-white">
+                    {selectedUser.nombre.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-lg font-semibold">Hola, {selectedUser.nombre}</span>
               </div>
-              <span className="text-white text-xl font-medium">Hola, {selectedUser.nombre}</span>
-            </div>
-            
-            <div className={errorPin ? "animate-shake" : ""}>
-               <Numpad onComplete={handlePinComplete} />
-            </div>
 
-            {errorPin && (
-              <p className="text-red-400 font-medium bg-red-500/10 px-4 py-1 rounded-md">PIN incorrecto.</p>
-            )}
+              <div className={errorPin ? "animate-shake" : ""}>
+                <Numpad onComplete={handlePinComplete} />
+              </div>
 
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="mt-4 px-6 py-2 rounded-md text-[#E8D8C8]/60 hover:text-white hover:bg-white/5 transition-colors"
-            >
-              Cambiar de usuario
-            </button>
+              <p role="alert" className={cn("h-5 text-sm font-medium text-destructive", !errorPin && "invisible")}>PIN incorrecto.</p>
+
+              <Button variant="link" className="text-muted-foreground" onClick={() => setSelectedUser(null)}>
+                Cambiar de usuario
+              </Button>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>

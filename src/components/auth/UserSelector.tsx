@@ -1,4 +1,5 @@
 import React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export interface User {
   id: number;
@@ -14,25 +15,20 @@ interface Props {
 
 export function UserSelector({ users, onSelect }: Props) {
   return (
-    <div className="flex flex-wrap gap-8 justify-center items-center">
+    <div className="flex flex-wrap items-start justify-center gap-x-6 gap-y-8">
       {users.map(user => (
         <button
           key={user.id}
           onClick={() => onSelect(user)}
-          className="group flex flex-col items-center gap-3 transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+          className="group flex w-28 flex-col items-center gap-3 rounded-2xl p-2 outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
         >
-          <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/20 group-hover:border-white/60 shadow-[0_0_20px_rgba(255,255,255,0.15)] group-hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-300 relative bg-[#352216]">
-            {user.fotoUrl ? (
-               <img src={user.fotoUrl} alt={user.nombre} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#C4956A] to-[#703607] flex items-center justify-center text-4xl text-white font-bold">
-                {user.nombre.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="text-white text-lg font-medium bg-black/40 backdrop-blur-md px-5 py-1.5 rounded-full border border-white/10 group-hover:bg-black/60 transition-colors shadow-lg drop-shadow-md">
-            {user.nombre}
-          </div>
+          <Avatar className="size-24 ring-2 ring-white/10 ring-offset-4 ring-offset-transparent transition-all duration-300 group-hover:ring-primary group-hover:shadow-[0_0_32px_-4px] group-hover:shadow-primary/60">
+            <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
+            <AvatarFallback className="bg-gradient-to-br from-[#C4956A] to-[#703607] text-3xl font-semibold text-white">
+              {user.nombre.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-medium text-foreground/80 transition-colors group-hover:text-foreground">{user.nombre}</span>
         </button>
       ))}
     </div>

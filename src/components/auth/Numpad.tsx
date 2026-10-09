@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Delete } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface NumpadProps {
   onComplete: (pin: string) => void;
@@ -8,7 +10,7 @@ interface NumpadProps {
 
 export function Numpad({ onComplete, title = "Ingresa tu PIN" }: NumpadProps) {
   const [pin, setPin] = useState("");
-  
+
   const handlePress = (num: string) => {
     setPin(prev => {
       if (prev.length >= 4) return prev;
@@ -36,44 +38,34 @@ export function Numpad({ onComplete, title = "Ingresa tu PIN" }: NumpadProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  return (
-    <div className="flex flex-col items-center justify-center p-6 bg-black/50 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl w-80">
-      <h2 className="font-bold text-2xl mb-6 text-white">{title}</h2>
-      
-      {/* PIN Dots */}
-      <div className="flex gap-4 mb-8">
-        {[...Array(4)].map((_, i) => (
-          <div 
-            key={i} 
-            className={`w-4 h-4 rounded-full transition-all duration-300 ${i < pin.length ? 'bg-white scale-110 shadow-[0_0_12px_rgba(255,255,255,0.8)]' : 'bg-white/20 border border-white/30'}`}
-          />
-        ))}
-      </div>
+  const key = "h-14 rounded-full text-xl font-medium";
 
-      {/* Number Pad */}
-      <div className="grid grid-cols-3 gap-4 w-full">
+  return (
+    <div className="flex w-72 flex-col items-center">
+      <p className="mb-4 text-sm font-medium text-muted-foreground">{title}</p>
+
+      {/* El PIN se escribe con el teclado (pantalla o físico); el campo solo lo muestra */}
+      <InputOTP maxLength={4} value={"•".repeat(pin.length)} readOnly tabIndex={-1} containerClassName="pointer-events-none mb-8" aria-label="PIN">
+        <InputOTPGroup className="gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <InputOTPSlot key={i} index={i} className="size-12 rounded-xl border text-2xl first:rounded-xl last:rounded-xl [&>div]:hidden" />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+
+      <div className="grid w-full grid-cols-3 gap-3">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-          <button
-            key={num}
-            onClick={() => handlePress(num)}
-            className="h-16 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-2xl font-medium text-white transition-all transform hover:scale-105 active:scale-95 border border-white/5"
-          >
+          <Button key={num} variant="outline" className={key} onClick={() => handlePress(num)}>
             {num}
-          </button>
+          </Button>
         ))}
-        <div className="h-16"></div> {/* Empty space */}
-        <button
-          onClick={() => handlePress('0')}
-          className="h-16 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-2xl font-medium text-white transition-all transform hover:scale-105 active:scale-95 border border-white/5"
-        >
+        <div />
+        <Button variant="outline" className={key} onClick={() => handlePress('0')}>
           0
-        </button>
-        <button
-          onClick={handleBackspace}
-          className="h-16 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 border border-white/5"
-        >
-          <Delete size={28} />
-        </button>
+        </Button>
+        <Button variant="ghost" className={key} onClick={handleBackspace} aria-label="Borrar">
+          <Delete className="size-6" />
+        </Button>
       </div>
     </div>
   );

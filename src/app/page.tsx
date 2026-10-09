@@ -1,5 +1,6 @@
 import { AuthPageClient } from "@/components/auth/AuthPageClient";
 import prisma from "@/lib/prisma";
+import { Particles } from "@/components/ui/particles";
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +22,8 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#1A1410] via-[#352216] to-[#0A0604] text-[var(--on-surface)] flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#C4956A] rounded-full mix-blend-screen filter blur-[128px] opacity-20 animate-pulse-slow"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-[#8B5E3C] rounded-full mix-blend-screen filter blur-[128px] opacity-15 animate-pulse-slow"></div>
-
+    <main className="dark relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_top,#352216_0%,#1A1410_55%,#0A0604_100%)] text-foreground">
+      <Particles className="absolute inset-0" quantity={90} ease={80} color="#C9A84C" refresh />
       <AuthPageClient initialUsers={users} />
     </main>
   );
