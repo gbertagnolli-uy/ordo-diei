@@ -4,13 +4,14 @@ import { useAuthStore } from "@/store/authStore";
 
 import { useState, useEffect, useRef } from "react";
 
-import { Clock, Play, Square, Pause, Flame, ListChecks, X, LayoutGrid, List } from "lucide-react";
+import { Clock, Play, Square, Pause, Flame, ListChecks, X, LayoutGrid, List, Kanban } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModalStore } from "@/store/modalStore";
 
 import { ChecklistModal } from "./ChecklistModal";
 import confetti from "canvas-confetti";
 import { AppShellTaskList } from "./AppShellTaskList";
+import { KanbanBoard } from "./KanbanBoard";
 import { cn } from "@/lib/utils";
 
 
@@ -49,7 +50,7 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
 
   const [isHappyHour, setIsHappyHour] = useState(false);
   const [greeting, setGreeting] = useState("¡Hola!");
-  const [viewMode, setViewMode] = useState<"app-shell" | "grid">("app-shell");
+  const [viewMode, setViewMode] = useState<"app-shell" | "kanban" | "grid">("app-shell");
 
   useEffect(() => {
     const checkHappyHourAndGreeting = () => {
@@ -119,7 +120,20 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
             title="Vista Lista — App Shell 4 (React Bits Pro)"
           >
             <List className="w-4 h-4" />
-            <span>Lista (App Shell)</span>
+            <span>Lista</span>
+          </button>
+          <button
+            onClick={() => setViewMode("kanban")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+              viewMode === "kanban"
+                ? "bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-sm"
+                : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+            )}
+            title="Vista Tablero — Kanban 4 (React Bits Pro)"
+          >
+            <Kanban className="w-4 h-4" />
+            <span>Kanban</span>
           </button>
           <button
             onClick={() => setViewMode("grid")}
@@ -137,24 +151,36 @@ export function MyTasksBoard({ tasks, coResponsables = {} }: { tasks: any[]; coR
         </div>
       </div>
 
-      {viewMode === "app-shell" ? (
+      {viewMode === "app-shell" && (
         <AppShellTaskList
           tasks={tasks}
           coResponsables={coResponsables}
           onTaskCompleted={() => window.location.reload()}
         />
-      ) : pendingTasks.length === 0 ? (
-        <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient p-10 text-center flex flex-col items-center">
-          <img src="/relaxing.svg" alt="Relax" className="w-64 h-64 mb-6 drop-shadow-lg opacity-80" onError={(e) => { e.currentTarget.src = "/winners-animate.svg" }} />
-          <h3 className="text-3xl font-display text-[var(--primary)] mb-2">¡Día libre!</h3>
-          <p className="text-lg text-[var(--on-surface-variant)] font-medium">No tienes tareas pendientes o las has terminado todas. ¡Excelente trabajo!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pendingTasks.map((task) => (
-            <TaskCard key={task.id} task={task} coResponsables={coResponsables[task.id] || []} />
-          ))}
-        </div>
+      )}
+
+      {viewMode === "kanban" && (
+        <KanbanBoard
+          tasks={tasks}
+          coResponsables={coResponsables}
+          onTaskCompleted={() => window.location.reload()}
+        />
+      )}
+
+      {viewMode === "grid" && (
+        pendingTasks.length === 0 ? (
+          <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient p-10 text-center flex flex-col items-center">
+            <img src="/relaxing.svg" alt="Relax" className="w-64 h-64 mb-6 drop-shadow-lg opacity-80" onError={(e) => { e.currentTarget.src = "/winners-animate.svg" }} />
+            <h3 className="text-3xl font-display text-[var(--primary)] mb-2">¡Día libre!</h3>
+            <p className="text-lg text-[var(--on-surface-variant)] font-medium">No tienes tareas pendientes o las has terminado todas. ¡Excelente trabajo!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pendingTasks.map((task) => (
+              <TaskCard key={task.id} task={task} coResponsables={coResponsables[task.id] || []} />
+            ))}
+          </div>
+        )
       )}
 
       {inReviewTasks.length > 0 && (
