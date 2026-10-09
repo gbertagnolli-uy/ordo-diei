@@ -3,50 +3,25 @@
 import { useModalStore } from "@/store/modalStore";
 import { Modal } from "@/components/ui/Modal";
 import { Clock, CheckCircle2, AlertTriangle, AlertCircle, Save, Info, Trophy } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { getLevelInfo } from "@/lib/levelUtils";
 import { HistoryModal } from "./HistoryModal";
 import { LeaderboardModal } from "./LeaderboardModal";
-import confetti from "canvas-confetti";
-import { Confetti } from "@/registry/magicui/confetti";
+import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 
 
-function LevelUpPopup({ data, onClose }: { data: any; onClose: () => void }) {
-  useEffect(() => {
-    confetti({
-      particleCount: 150,
-      spread: 100,
-      origin: { y: 0.5 },
-      colors: ['#FFD700', '#FFA500', '#FF8C00']
-    });
-  }, []);
-
-  return (
-    <div className="flex flex-col items-center text-center py-6">
-      <div className="text-6xl mb-4 animate-bounce">🌟</div>
-      <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
-        ¡Nivel {data?.level}!
-      </h3>
-      <p className="text-2xl font-display font-bold text-[var(--warning)] mb-4">
-        {data?.title}
-      </p>
-      <p className="text-[var(--on-surface-variant)] text-lg mb-6 font-body">
-        ¡Increíble trabajo! Has acumulado suficientes puntos para subir de nivel.
-      </p>
-      <button
-        onClick={onClose}
-        className="btn-primary w-full py-4 text-lg shadow-lg"
-      >
-        ¡Genial!
-      </button>
-    </div>
-  );
-}
+// Único confeti de la app (MagicUI). Los popups lo disparan vía contexto.
+const GOLD = ['#FFD700', '#FFA500', '#FF8C00'];
+const CelebrateContext = createContext<(opts?: Parameters<ConfettiRef["fire"]>[0]) => void>(() => {});
 
 export function ModalManager() {
   const { isOpen, type, data, closeModal, openModal } = useModalStore();
+  const confettiRef = useRef<ConfettiRef>(null);
+  const celebrate = useCallback((opts?: Parameters<ConfettiRef["fire"]>[0]) => {
+    confettiRef.current?.fire(opts);
+  }, []);
 
   useEffect(() => {
     // Check for level up notification from previous page load
@@ -61,25 +36,16 @@ export function ModalManager() {
   }, [openModal]);
 
   useEffect(() => {
-    if (isOpen && (type === "TASK_SUCCESS" || type === "LEVEL_UP")) {
-      confetti({
-        particleCount: type === "LEVEL_UP" ? 200 : 100,
-        spread: type === "LEVEL_UP" ? 100 : 70,
-        origin: { y: 0.6 }
-      });
-    }
-    if (isOpen && type === "SURPRISE_AWARD") {
-      confetti({
-        particleCount: 150,
-        spread: 100,
-        origin: { y: 0.5 },
-        colors: ['#FFD700', '#FFA500', '#FF8C00']
-      });
-    }
-  }, [isOpen, type]);
+    if (!isOpen) return;
+    if (type === "TASK_SUCCESS") celebrate({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    if (type === "LEVEL_UP") celebrate({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: GOLD });
+    if (type === "SURPRISE_AWARD") celebrate({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: GOLD });
+  }, [isOpen, type, celebrate]);
 
   return (
-    <>
+    <CelebrateContext.Provider value={celebrate}>
+      <Confetti ref={confettiRef} manualstart className="fixed inset-0 z-[60] size-full pointer-events-none" />
+
       {type === "USER_STATS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title={`Estatus de ${data?.nombre}`}>
           <UserStatsPopup user={data} />
@@ -121,12 +87,11 @@ export function ModalManager() {
 
       {type === "TASK_SUCCESS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Misión Cumplida!">
-          <div className="relative flex flex-col items-center text-center py-6 overflow-hidden">
-            <Confetti className="absolute inset-0 z-0 pointer-events-none w-full h-full" />
+          <div className="flex flex-col items-center text-center py-6">
             <img 
               src="/done-animate.svg" 
               alt="¡Buen trabajo!" 
-              className="w-48 h-48 mb-6 drop-shadow-xl relative z-10"
+              className="w-48 h-48 mb-6 drop-shadow-xl"
             />
             <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
               ¡Buen trabajo!
@@ -275,12 +240,6 @@ export function ModalManager() {
         </Modal>
       )}
 
-      {type === "LEVEL_UP" && (
-        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!" width="md">
-          <LevelUpPopup data={data} onClose={closeModal} />
-        </Modal>
-      )}
-
       {type === "MOOD_SELECTOR" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="¿Cómo te sientes hoy?">
           <div className="py-4">
@@ -296,7 +255,7 @@ export function ModalManager() {
           </div>
         </Modal>
       )}
-    </>
+    </CelebrateContext.Provider>
   );
 }
 
@@ -644,16 +603,10 @@ function SurpriseAwardPopup({ data, onClose }: { data: any; onClose: () => void 
     }
   }, [data?.entregaId]);
 
+  const celebrate = useContext(CelebrateContext);
   useEffect(() => {
-    if (showReward) {
-      confetti({
-        particleCount: 150,
-        spread: 100,
-        origin: { y: 0.5 },
-        colors: ['#FFD700', '#FFA500', '#FF8C00']
-      });
-    }
-  }, [showReward]);
+    if (showReward) celebrate({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: GOLD });
+  }, [showReward, celebrate]);
 
   if (showReward) {
     return (
