@@ -18,6 +18,8 @@ import {
   Timer,
   History,
   XCircle,
+  List,
+  Columns3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLevelInfo } from "@/lib/levelUtils";
@@ -25,6 +27,7 @@ import { HistoryView } from "@/components/dashboard/HistoryView";
 import { FamilyTree } from "@/components/dashboard/FamilyTree";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { SchedulePanel } from "./SchedulePanel";
+import { TaskBoard } from "./TaskBoard";
 import { Avatar, CountBadge, StatusBadge } from "./primitives";
 import {
   CoResponsableMap,
@@ -42,6 +45,9 @@ import {
 
 type Section = TaskGroup | "today" | "late" | "history" | "family";
 type Filter = "all" | "points" | "checklist";
+type Layout = "list" | "board";
+
+const GROUP_SECTIONS: Section[] = ["todo", "progress", "review", "done", "archived"];
 
 const NAV: { heading: string; items: { id: Section; label: string; icon: React.ElementType }[] }[] = [
   {
@@ -97,6 +103,7 @@ export function TaskShell({
   const router = useRouter();
   const [section, setSection] = useState<Section>(initialSection);
   const [filter, setFilter] = useState<Filter>("all");
+  const [layout, setLayout] = useState<Layout>("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   // null = valor por defecto según pantalla: abierto en escritorio, cerrado (drawer) en móvil
   const [panelPref, setPanelPref] = useState<boolean | null>(null);
@@ -119,15 +126,18 @@ export function TaskShell({
 
   const isTaskSection = section !== "history" && section !== "family";
 
+  const isBoard = layout === "board" && isTaskSection;
+
   const visible = useMemo(() => {
     if (!isTaskSection) return [];
+    // En el tablero cada estado es una columna: solo aplican los atajos y los filtros
     let list = tasks.filter((t) =>
-      section === "today" ? isDueToday(t) : section === "late" ? isLate(t) : taskGroup(t) === section
+      section === "today" ? isDueToday(t) : section === "late" ? isLate(t) : isBoard || taskGroup(t) === section
     );
     if (filter === "points") list = list.filter((t) => t.generaPuntosYRecompensa);
     if (filter === "checklist") list = list.filter((t) => t.isChecklist);
     return sortTasks(list, section === "done" || section === "archived" ? section : null);
-  }, [tasks, section, filter, isTaskSection]);
+  }, [tasks, section, filter, isTaskSection, isBoard]);
 
   const selected = tasks.find((t) => t.id === selectedId) ?? null;
   const navGroup = NAV.find((g) => g.items.some((i) => i.id === section))!;
@@ -135,6 +145,8 @@ export function TaskShell({
 
   const goTo = (id: Section) => {
     setSection(id);
+    // Un estado concreto se ve como lista; los atajos se pueden ver en ambos modos
+    if (GROUP_SECTIONS.includes(id)) setLayout("list");
     setNavOpen(false);
     // Mantener ?view= para que historial/familia se puedan enlazar desde el Dock
     router.replace(id === "history" || id === "family" ? `/dashboard?view=${id}` : "/dashboard", { scroll: false });
@@ -165,7 +177,7 @@ export function TaskShell({
             <p className="px-2 mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">{group.heading}</p>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
-                const active = item.id === section;
+                const active = item.id === section && !(isBoard && GROUP_SECTIONS.includes(item.id));
                 const Icon = item.icon;
                 const count = counts[item.id];
                 return (
@@ -258,10 +270,31 @@ export function TaskShell({
                   <ChevronRight className="w-3.5 h-3.5" />
                 </li>
                 <li className="min-w-0">
-                  <h1 aria-current="page" className="font-display text-base text-[var(--on-surface)] truncate">{navItem.label}</h1>
+                  <h1 aria-current="page" className="font-display text-base text-[var(--on-surface)] truncate">
+                    {isBoard && GROUP_SECTIONS.includes(section) ? "Tablero" : navItem.label}
+                  </h1>
                 </li>
               </ol>
             </nav>
+            {isTaskSection && (
+              <div role="group" aria-label="Vista" className="flex p-0.5 rounded-lg bg-[var(--surface-container)]">
+                {([["list", "Lista", List], ["board", "Tablero", Columns3]] as const).map(([id, label, Icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={layout === id}
+                    onClick={() => setLayout(id)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors",
+                      layout === id ? "bg-[var(--surface-container-lowest)] text-[var(--on-surface)] shadow-sm" : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {isTaskSection && (
               <button
                 type="button"
@@ -270,7 +303,9 @@ export function TaskShell({
                 aria-pressed={panelInline}
                 className={cn(
                   "p-1.5 rounded-md transition-colors",
-                  panelInline ? "bg-[var(--surface-container)] text-[var(--primary)]" : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]"
+                  "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]",
+                  panelInline && "lg:bg-[var(--surface-container)] lg:text-[var(--primary)]",
+                  panelDrawer && "max-lg:bg-[var(--surface-container)] max-lg:text-[var(--primary)]"
                 )}
               >
                 <PanelRight className="w-5 h-5" />
@@ -313,8 +348,10 @@ export function TaskShell({
                 )}
               </div>
 
-              <main className="relative flex-1 min-h-0 overflow-y-auto">
-                {visible.length === 0 ? (
+              <main className={cn("relative flex-1 min-h-0", isBoard ? "overflow-hidden" : "overflow-y-auto")}>
+                {isBoard ? (
+                  <TaskBoard tasks={visible} coResponsables={coResponsables} selectedId={selectedId} onSelect={selectTask} />
+                ) : visible.length === 0 ? (
                   <EmptyState section={section} />
                 ) : (
                   <TaskTable tasks={visible} selectedId={selectedId} onSelect={selectTask} />
