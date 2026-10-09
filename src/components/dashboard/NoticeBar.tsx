@@ -68,11 +68,17 @@ export function NoticeBar() {
     return () => clearInterval(timer);
   }, []);
 
+  // Altura visible de la barra, para que el App Shell se ajuste y no quede bajo el Dock
+  useEffect(() => {
+    const el = document.getElementById("notice-bar");
+    document.documentElement.style.setProperty("--notice-h", el ? `${el.offsetHeight}px` : "0px");
+  });
+
   if (!isVisible) return null;
 
   if (messageType === ("happyhour" as any)) {
     return (
-      <div className="sticky top-14 w-full z-40 bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide shadow-md border-b border-[var(--secondary)]">
+      <div id="notice-bar" className="sticky top-14 w-full z-40 bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide shadow-md border-b border-[var(--secondary)]">
         🎉 ¡HAPPY HOUR ACTIVA! Termina tus tareas ahora y gana un 20% más de puntos. Termina en [{timeLeft}]
       </div>
     );
@@ -80,7 +86,7 @@ export function NoticeBar() {
 
   if (messageType === "warning") {
     return (
-      <div className="sticky top-14 w-full z-40 bg-[var(--error)] text-[var(--on-error)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide">
+      <div id="notice-bar" className="sticky top-14 w-full z-40 bg-[var(--error)] text-[var(--on-error)] p-2 font-headline font-bold text-center elevation-ambient animate-pulse tracking-wide">
         ⚠️ Te quedan [{timeLeft}] para terminar o corregir tus tareas de hoy y no perder tu racha diaria!
       </div>
     );
@@ -88,7 +94,7 @@ export function NoticeBar() {
 
   if (messageType === "morning") {
     return (
-      <div className="sticky top-14 w-full z-40 bg-[var(--success-container)] text-[var(--on-success-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--success)]">
+      <div id="notice-bar" className="sticky top-14 w-full z-40 bg-[var(--success-container)] text-[var(--on-success-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--success)]">
         🌅 ¡Buenos días! Un nuevo día para brillar y ganar puntos. ¡A por todas!
       </div>
     );
@@ -96,7 +102,7 @@ export function NoticeBar() {
 
   if (messageType === "afternoon") {
     return (
-      <div className="sticky top-14 w-full z-40 bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--secondary)]">
+      <div id="notice-bar" className="sticky top-14 w-full z-40 bg-[var(--secondary-container)] text-[var(--on-secondary-container)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--secondary)]">
         ☀️ ¡Buenas tardes! ¿Cómo vas con tus tareas? Sigue así, ¡tú puedes!
       </div>
     );
@@ -104,7 +110,7 @@ export function NoticeBar() {
 
   if (messageType === ("happyhour" as any)) {
     return (
-      <div className="sticky top-14 w-full z-40 bg-[var(--surface-container-high)] text-[var(--on-surface)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--outline)]">
+      <div id="notice-bar" className="sticky top-14 w-full z-40 bg-[var(--surface-container-high)] text-[var(--on-surface)] p-2 font-headline font-bold text-center elevation-ambient shadow-md border-b border-[var(--outline)]">
         🌙 ¡Buenas noches! Un gran día termina, prepara todo para mañana.
       </div>
     );

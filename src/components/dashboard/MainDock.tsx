@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
   Plus,
@@ -10,7 +10,6 @@ import {
   UserPlus,
   Gift,
   FileText,
-  History,
   Trophy,
   Sun,
   Moon,
@@ -31,8 +30,6 @@ export function MainDock({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const isHistory = searchParams?.get("view") === "history";
 
   const logoutState = useAuthStore((s) => s.logout);
   const { darkMode, toggleDarkMode } = useThemeStore();
@@ -66,7 +63,7 @@ export function MainDock({
       title: "Inicio / Dashboard",
       icon: <Home className="w-5 h-5" />,
       href: "/dashboard",
-      active: pathname === "/dashboard" && !isHistory,
+      active: pathname === "/dashboard",
     },
     ...(isAdmin
       ? [
@@ -101,12 +98,6 @@ export function MainDock({
           },
         ]
       : []),
-    {
-      title: "Historial",
-      icon: <History className="w-5 h-5" />,
-      href: isHistory ? "/dashboard" : "/dashboard?view=history",
-      active: isHistory,
-    },
     {
       title: "Tabla de Líderes",
       icon: <Trophy className="w-5 h-5 text-[var(--secondary)]" />,
