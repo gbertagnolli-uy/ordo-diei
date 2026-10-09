@@ -1,12 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import prisma from "@/lib/prisma";
-import { Header } from "@/components/dashboard/Header";
-import { MainDock } from "@/components/dashboard/MainDock";
 import { FamilyTree } from "@/components/dashboard/FamilyTree";
 import { MyTasksBoard } from "@/components/dashboard/MyTasksBoard";
-import { ModalManager } from "@/components/dashboard/ModalManager";
-import { NoticeBar } from "@/components/dashboard/NoticeBar";
 import { UserCalendarTable } from "@/components/dashboard/UserCalendarTable";
 import { MoodSelector } from "@/components/dashboard/MoodSelector";
 import { HistoryView } from "@/components/dashboard/HistoryView";
@@ -85,12 +81,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface)] flex flex-col pt-20 pb-28 transition-colors">
-      <NoticeBar />
-      <ModalManager />
-      <Header currentUser={myUser} allUsers={allUsers as any} />
-      <MainDock currentUser={myUser} allUsers={allUsers as any} />
-
+    <div className="flex flex-col">
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
 
         {isHistoryView ? (

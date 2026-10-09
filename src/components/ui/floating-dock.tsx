@@ -10,7 +10,7 @@ import {
   useTransform,
 } from "framer-motion";
 import React, { useRef, useState } from "react";
-import Link from "next/navigation";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
 export interface DockItem {
@@ -84,14 +84,14 @@ const FloatingDockMobile = ({
 
               if (item.href) {
                 return (
-                  <a
+                  <Link
                     key={item.title}
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className="block"
                   >
                     {content}
-                  </a>
+                  </Link>
                 );
               }
 
@@ -228,11 +228,11 @@ function DockIconContainer({
   );
 
   if (href) {
-    return <a href={href}>{content}</a>;
+    return <Link href={href} aria-label={title}>{content}</Link>;
   }
 
   return (
-    <button type="button" onClick={onClick} className="focus:outline-none">
+    <button type="button" onClick={onClick} aria-label={title} className="focus:outline-none">
       {content}
     </button>
   );
