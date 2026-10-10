@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Layers,
   Search,
@@ -10,6 +11,7 @@ import {
   Flame,
   Award,
   Filter,
+  ShoppingBag,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -25,8 +27,11 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { CartaVista } from "@/components/cartas/CartaVista";
+import { TiendaCartasView } from "@/components/cartas/TiendaCartasView";
+import { ModalAperturaSobre, type ResultadoCompraSobre, type CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { ContenidoCartaVisible } from "@/lib/cartas/revelado";
+import type { GradoCarta } from "@/lib/cartas/economia";
 
 interface ColeccionViewProps {
   inicial: {
@@ -39,14 +44,52 @@ interface ColeccionViewProps {
 }
 
 export function ColeccionView({ inicial }: ColeccionViewProps) {
-  const [tab, setTab] = useState<string>("coleccion");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab");
+  const tabInicial = tabParam === "tienda" || tabParam === "album" ? tabParam : "coleccion";
+
+  const [tab, setTab] = useState<string>(tabInicial);
   const [busqueda, setBusqueda] = useState<string>("");
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("Todas");
   const [rarezaFiltro, setRarezaFiltro] = useState<string>("Todas");
   const [gradoFiltro, setGradoFiltro] = useState<string>("Todos");
 
-  const cartas = inicial.cartas;
-  const usuario = inicial.usuario;
+  const [cartas, setCartas] = useState<ContenidoCartaVisible[]>(inicial.cartas);
+  const [usuario, setUsuario] = useState(inicial.usuario);
+  const [modalAperturaOpen, setModalAperturaOpen] = useState<boolean>(false);
+  const [resultadoApertura, setResultadoApertura] = useState<ResultadoCompraSobre | null>(null);
+
+  const handleCompraExitosa = (resultado: ResultadoCompraSobre) => {
+    setResultadoApertura(resultado);
+    setModalAperturaOpen(true);
+
+    if (resultado.cartasAfectadas && Array.isArray(resultado.cartasAfectadas)) {
+      setCartas((prev) =>
+        prev.map((c) => {
+          const afectada = resultado.cartasAfectadas.find(
+            (a: CartaAfectadaCompra) => a.cartaId === c.id || a.cartaClave === c.clave
+          );
+          if (afectada) {
+            return {
+              ...c,
+              fragmentos: afectada.fragmentosDespues,
+              desbloqueada: Boolean(afectada.desbloquea || c.desbloqueada),
+              grado: afectada.gradoDespues as GradoCarta,
+              porcentaje: Math.floor((afectada.fragmentosDespues / c.fragmentosRequeridos) * 100),
+            };
+          }
+          return c;
+        })
+      );
+    }
+  };
+
+  const handleActualizarSaldo = (nuevoPuntos: number, nuevoIncienso: number) => {
+    setUsuario({
+      availablePoints: nuevoPuntos,
+      incienso: nuevoIncienso,
+    });
+  };
 
   // Estadísticas generales
   const totalCartas = cartas.length;
@@ -150,7 +193,7 @@ export function ColeccionView({ inicial }: ColeccionViewProps) {
       {/* Selector de Pestañas */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <TabsList className="grid w-full sm:w-auto grid-cols-2">
+          <TabsList className="grid w-full sm:w-auto grid-cols-3">
             <TabsTrigger value="coleccion" className="flex items-center gap-2">
               <span>Mi colección</span>
               <Badge variant="secondary" className="px-1.5 py-0 text-xs tabular-nums">
@@ -158,10 +201,14 @@ export function ColeccionView({ inicial }: ColeccionViewProps) {
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="album" className="flex items-center gap-2">
-              <span>Álbum completo</span>
+              <span>Álbum</span>
               <Badge variant="outline" className="px-1.5 py-0 text-xs tabular-nums">
                 {totalDesbloqueadas}/{totalCartas}
               </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="tienda" className="flex items-center gap-2">
+              <ShoppingBag className="size-3.5" />
+              <span>Tienda</span>
             </TabsTrigger>
           </TabsList>
 
@@ -454,7 +501,34 @@ export function ColeccionView({ inicial }: ColeccionViewProps) {
             </div>
           )}
         </TabsContent>
+
+        {/* ============================================================ */}
+        {/* PESTAÑA: TIENDA                                              */}
+        {/* ============================================================ */}
+        <TabsContent value="tienda" className="mt-6">
+          <TiendaCartasView
+            cartas={cartas}
+            usuario={usuario}
+            onCompraExitosa={handleCompraExitosa}
+            onActualizarSaldo={handleActualizarSaldo}
+          />
+        </TabsContent>
       </Tabs>
+
+      {/* Modal de Apertura Animado en 3 Etapas con Confeti */}
+      <ModalAperturaSobre
+        open={modalAperturaOpen}
+        onOpenChange={setModalAperturaOpen}
+        resultado={resultadoApertura}
+        onAbrirOtro={() => {
+          setModalAperturaOpen(false);
+          setTab("tienda");
+        }}
+        onVerColeccion={() => {
+          setModalAperturaOpen(false);
+          setTab("coleccion");
+        }}
+      />
     </div>
   );
 }

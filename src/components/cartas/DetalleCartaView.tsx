@@ -121,7 +121,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
 
           <div className="w-full max-w-[340px] flex flex-col gap-2 pt-2">
             <Button asChild variant="outline" className="w-full gap-2">
-              <Link href="/dashboard/cartas">
+              <Link href="/dashboard/cartas?tab=tienda">
                 <ShoppingBag className="size-4" />
                 <span>Ir a la Tienda de Cartas</span>
               </Link>
