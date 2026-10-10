@@ -11,6 +11,12 @@ export function useRegistrarOracion(inicial: EstadoOracion) {
   const router = useRouter();
   const openModal = useModalStore((s) => s.openModal);
   const [estado, setEstado] = useState(inicial);
+  // Si el servidor trae datos nuevos (router.refresh, p. ej. "Rezamos juntos"), se adoptan
+  const [previo, setPrevio] = useState(inicial);
+  if (inicial !== previo) {
+    setPrevio(inicial);
+    setEstado(inicial);
+  }
   const [pendiente, setPendiente] = useState<HabitoId | "plan" | null>(null);
 
   const enviar = async (url: string, method: string, body: object, clave: HabitoId | "plan") => {
