@@ -186,4 +186,10 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
 - Worktrees `ordo-diei-lanes/lane-21..23` y ramas `task/lane-21..23` borrados tras verificar que estaban mergeados y sin cambios.
 - Error `Cannot read properties of undefined (reading 'upsert')` en `asegurarCatalogo`: el `next dev` del puerto 3000 se había levantado antes de que se regenerara el cliente de Prisma (modelos `Habito*`), y el singleton de `src/lib/prisma.ts` lo conserva en memoria. Se resolvió reiniciando el servidor; no era un bug del código. **Tras un `prisma db push`/`generate`, reiniciar `next dev`.**
 - En `dev`: `npm test` 42/42 y `tsc` OK; `/dashboard/habitos`, `/dashboard/perfil` y `/api/habitos` responden 200.
-- **Pendiente de la lane 22 (paso 5, no hecho):** siguen `src/lib/oracion`, `src/components/oracion`, `src/app/api/oracion`, los modelos `PlanOracion`/`RegistroOracion` y sus tablas.
+- ~~Pendiente de la lane 22 (paso 5)~~ → hecho en la **lane 22b · `task/lane-22b-limpieza-oracion`** (ver abajo).
+
+### Lane 22b · limpieza del Camino viejo (orquestador)
+- Las tablas viejas **no estaban vacías**: Gabriel había comenzado el Camino hoy (`Planes_Oracion` 1 fila) y marcado el Completorium (`Registros_Oracion` 1 fila). Antes de borrar se migró a las tablas nuevas: la adopción de Completorium ya existía; el registro de hoy pasó a `Registros_Habito` como `hecho` con 10 XP (`Experiencia_Habitos` +10). No se adoptó el Rosario: ahora cada uno elige.
+- Borrados `src/lib/oracion`, `src/components/oracion`, `src/app/api/oracion`, los modelos y enums de oración y sus back-relations. `/dashboard/oracion` queda como redirección a `/dashboard/habitos`.
+- `db push --accept-data-loss` solo borró `Planes_Oracion` y `Registros_Oracion` (más sus 2 enums), verificado antes sin el flag. Copia de las 2 filas guardada fuera del repo antes de borrar.
+- `tsc` OK, `npm test` 28/28 (salen los 14 tests del motor viejo), `next build` OK.

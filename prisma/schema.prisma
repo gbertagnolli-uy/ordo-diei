@@ -63,10 +63,6 @@ model Usuario {
   historialAcciones         HistorialAccion[]
   premiosEntregados        PremioEntregado[]
 
-  planOracion               PlanOracion?
-  registrosOracion          RegistroOracion[] @relation("RegistrosOracion")
-  registrosOracionHechos    RegistroOracion[] @relation("RegistrosOracionHechos")
-
   experienciaHabitos        Int               @default(0) @map("Experiencia_Habitos")
   habitosCreados            Habito[]          @relation("HabitosCreados")
   habitosUsuario            HabitoUsuario[]
@@ -206,47 +202,6 @@ model PremioEntregado {
 
   @@unique([premioId, usuarioId])
   @@map("Premios_Entregados")
-}
-
-// Camino de oración (vault/CAMINO_DE_ORACION.md): el estado se recalcula desde el plan y los registros
-enum HabitoOracion {
-  completorium
-  rosario
-  matutinum
-}
-
-enum MarcaOracion {
-  hecho
-  justificado
-}
-
-model PlanOracion {
-  id              Int       @id @default(autoincrement())
-  usuarioId       Int       @unique @map("Usuario_ID")
-  inicio          DateTime  @db.Date @map("Inicio")
-  matutinumDesde  DateTime? @db.Date @map("Matutinum_Desde")
-  createdAt       DateTime  @default(now()) @map("Created_At")
-
-  usuario         Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  @@map("Planes_Oracion")
-}
-
-model RegistroOracion {
-  id               Int           @id @default(autoincrement())
-  usuarioId        Int           @map("Usuario_ID")
-  habito           HabitoOracion @map("Habito")
-  fecha            DateTime      @db.Date @map("Fecha")
-  marca            MarcaOracion  @map("Marca")
-  motivo           String?       @map("Motivo")
-  registradoPorId  Int           @map("Registrado_Por_ID")
-  createdAt        DateTime      @default(now()) @map("Created_At")
-
-  usuario          Usuario       @relation("RegistrosOracion", fields: [usuarioId], references: [id], onDelete: Cascade)
-  registradoPor    Usuario       @relation("RegistrosOracionHechos", fields: [registradoPorId], references: [id])
-
-  @@unique([usuarioId, habito, fecha])
-  @@map("Registros_Oracion")
 }
 
 // Hábitos generales (vault/HABITOS_Y_NIVELES.md)
