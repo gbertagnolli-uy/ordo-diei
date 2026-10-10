@@ -2,7 +2,7 @@
 
 > Pedido (2026-10-10): revisar si el Camino de oración cumple **todas** las especificaciones del informe "Motores Open Source para Formación Adaptativa de Micro-Hábitos", y diseñar una pantalla **muy práctica, de solo 2 pasos**, para crear un hábito nuevo, definiendo **dónde se muestran** los hábitos a practicar.
 
-Estado: **diseño**. No hay nada implementado todavía; las lanes 21–24 quedan propuestas.
+Estado: **diseño**. La auditoría (§1) sigue vigente; el plan de lanes (§3) quedó **reemplazado** por [HABITOS_Y_NIVELES.md](HABITOS_Y_NIVELES.md) (2026-10-10).
 
 ---
 
