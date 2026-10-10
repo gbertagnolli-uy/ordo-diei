@@ -102,7 +102,7 @@ El estado **no se guarda**: se recalcula desde el plan y los registros en cada l
 
 ## 5. Lanes
 
-- [ ] **Lane 17 · `task/lane-17-motor-oracion`** — motor puro (`engine.ts`) + tests.
+- [x] **Lane 17 · `task/lane-17-motor-oracion`** — motor puro (`engine.ts`) + tests.
 - [ ] **Lane 18 · `task/lane-18-datos-oracion`** — modelos Prisma, `db push`, `server.ts`, rutas API.
 - [ ] **Lane 19 · `task/lane-19-ui-oracion`** — página Oración: inicio del camino, oraciones de hoy (1 toque), escalera del Rosario, trayectoria (shadcn chart), recaída compasiva (shadcn alert), confeti al subir de paso, entrada en la barra lateral.
 - [ ] **Lane 20 · `task/lane-20-oracion-familia`** — vista de padres: camino de cada miembro, "Rezamos juntos" (Completorium para varios, hoy o días recientes), iniciar el camino y habilitar la mañana para un miembro.
@@ -119,3 +119,4 @@ El estado **no se guarda**: se recalcula desde el plan y los registros en cada l
 
 | Lane | Merge | Notas |
 |---|---|---|
+| 17 | `810c255` | `src/lib/oracion/engine.ts` (XState 5.33.2 + date-fns) y 14 tests (`npm test`). `tsconfig` excluye `*.test.ts` (importan con extensión `.ts` para Node). Rama y worktree borrados. |
