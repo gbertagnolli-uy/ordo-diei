@@ -58,6 +58,20 @@ export async function sembrarCartas(directorioCatalogo?: string) {
         cartaData.fragmentosRequeridos ??
         CONFIG_RAREZAS[cartaData.rareza].fragmentosRequeridos;
 
+      const resolverImagen = (ruta?: string): string | null => {
+        if (!ruta) return null;
+        if (ruta.startsWith("http://") || ruta.startsWith("https://") || ruta.startsWith("data:")) {
+          return ruta;
+        }
+        const rutaEnDisco = path.join(process.cwd(), "public", ruta.replace(/^\//, ""));
+        return fs.existsSync(rutaEnDisco) ? ruta : null;
+      };
+
+      const img1 = resolverImagen(cartaData.imagenes["1"]) ?? cartaData.imagenes["1"];
+      const img2 = resolverImagen(cartaData.imagenes["2"]);
+      const img3 = resolverImagen(cartaData.imagenes["3"]);
+      const img4 = resolverImagen(cartaData.imagenes["4"]);
+
       const existente = await prisma.carta.findUnique({
         where: { clave: cartaData.clave },
       });
@@ -76,10 +90,10 @@ export async function sembrarCartas(directorioCatalogo?: string) {
             frase: cartaData.frase,
             fraseAutor: cartaData.fraseAutor ?? null,
             datasheet: cartaData.datasheet,
-            imagenUrl: cartaData.imagenes["1"],
-            imagenGrado2Url: cartaData.imagenes["2"] ?? null,
-            imagenGrado3Url: cartaData.imagenes["3"] ?? null,
-            imagenGrado4Url: cartaData.imagenes["4"] ?? null,
+            imagenUrl: img1,
+            imagenGrado2Url: img2,
+            imagenGrado3Url: img3,
+            imagenGrado4Url: img4,
             creditoImagen: cartaData.creditoImagen ?? null,
             fragmentosRequeridos: fragmentosReq,
             origen: "Sistema",
@@ -106,10 +120,10 @@ export async function sembrarCartas(directorioCatalogo?: string) {
             frase: cartaData.frase,
             fraseAutor: cartaData.fraseAutor ?? null,
             datasheet: cartaData.datasheet,
-            imagenUrl: cartaData.imagenes["1"],
-            imagenGrado2Url: cartaData.imagenes["2"] ?? null,
-            imagenGrado3Url: cartaData.imagenes["3"] ?? null,
-            imagenGrado4Url: cartaData.imagenes["4"] ?? null,
+            imagenUrl: img1,
+            imagenGrado2Url: img2,
+            imagenGrado3Url: img3,
+            imagenGrado4Url: img4,
             creditoImagen: cartaData.creditoImagen ?? null,
             fragmentosRequeridos: fragmentosReq,
             origen: "Sistema",

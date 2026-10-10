@@ -1,0 +1,445 @@
+[
+  {
+    "clave": "misterio-anunciacion",
+    "nombre": "La Anunciación",
+    "subtitulo": "I Misterio Gozoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "El Arcángel San Gabriel fue enviado por Dios a Nazaret para anunciar a la Virgen María que sería la Madre del Redentor por obra del Espíritu Santo. María respondió con humilde entrega: «He aquí la esclava del Señor; hágase en mí según tu palabra». En ese instante el Verbo se encarnó en su seno purísimo.",
+    "oracion": "Te rogamos, Señor, que infundas tu gracia en nuestras almas; para que habiendo conocido por el anuncio del Ángel la Encarnación de Jesucristo, por su Pasión y Cruz seamos llevados a la gloria de su Resurrección.",
+    "frase": "He aquí la esclava del Señor; hágase en mí según tu palabra.",
+    "fraseAutor": "Santa María Virgen (Lc 1, 38)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Humildad y obediencia de fe" },
+      { "etiqueta": "Lugar bíblico", "valor": "Nazaret de Galilea" },
+      { "etiqueta": "Mensajero divino", "valor": "Arcángel San Gabriel" },
+      { "etiqueta": "Día tradicional de rezo", "valor": "Lunes y Sábados" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-anunciacion/1.webp",
+      "2": "/cartas/misterio-anunciacion/2.webp",
+      "3": "/cartas/misterio-anunciacion/3.webp",
+      "4": "/cartas/misterio-anunciacion/4.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-visitacion",
+    "nombre": "La Visitación",
+    "subtitulo": "II Misterio Gozoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "María partió con prontitud a la región montañosa de Judea para servir a su prima Isabel, que esperaba a San Juan Bautista. Al escuchar el saludo de la Virgen, la criatura saltó de gozo en el seno de Isabel, quien proclamó llena del Espíritu Santo: «¡Bendita tú entre las mujeres y bendito el fruto de tu vientre!». María entonó entonces el Magníficat, alabando la grandeza de Dios.",
+    "oracion": "Señor Dios todopoderoso, concédenos que a imitación de la Santísima Virgen sepamos llevar con prontitud y caridad el amor de Cristo a nuestros prójimos.",
+    "frase": "Proclama mi alma la grandeza del Señor, y se alegra mi espíritu en Dios mi Salvador.",
+    "fraseAutor": "Cántico del Magníficat (Lc 1, 46-47)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Amor fraterno y caridad servicial" },
+      { "etiqueta": "Lugar bíblico", "valor": "Ain Karim, Judea" },
+      { "etiqueta": "Personajes bíblicos", "valor": "Santa Isabel y San Juan Bautista" },
+      { "etiqueta": "Fruto espiritual", "valor": "El gozo del Espíritu Santo" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-visitacion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-nacimiento",
+    "nombre": "El Nacimiento de Jesús",
+    "subtitulo": "III Misterio Gozoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "En un humilde pesebre de Belén, en medio del silencio de la noche, nació Jesucristo, el Salvador del mundo. María lo envolvió en pañales y lo recostó con ternura junto a San José. Los coros celestiales de ángeles cantaron la gloria de Dios en las alturas y los sencillos pastores acudieron presurosos a adorar al Rey de reyes en la extrema pobreza.",
+    "oracion": "Oh Niño Jesús, concede a nuestras familias la santa pobreza de espíritu y la pureza de corazón para adorarte siempre con sincero amor.",
+    "frase": "Gloria a Dios en las alturas, y en la tierra paz a los hombres de buena voluntad.",
+    "fraseAutor": "Coro de los Santos Ángeles (Lc 2, 14)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Pobreza de espíritu y desprendimiento" },
+      { "etiqueta": "Lugar bíblico", "valor": "Gruta de Belén de Judá" },
+      { "etiqueta": "Testigos primeros", "valor": "Los pastores y San José" },
+      { "etiqueta": "Signo supremo", "valor": "El Verbo hecho carne en un pesebre" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-nacimiento/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-presentacion",
+    "nombre": "La Presentación en el Templo",
+    "subtitulo": "IV Misterio Gozoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Cumplidos los días de la purificación según la Ley de Moisés, María y José llevaron al Niño Jesús a Jerusalén para presentarlo al Señor. El anciano Simeón lo tomó en sus brazos alabando a Dios como luz para iluminar a las naciones, y profetizó a María que una espada de dolor atravesaría su propia alma.",
+    "oracion": "Dios nuestro, luz indeficiente, concédenos acoger a Cristo con fe viva para ser santificados por su verdad inmutable.",
+    "frase": "Ahora, Señor, según tu promesa, puedes dejar a tu siervo irse en paz.",
+    "fraseAutor": "Cántico del anciano Simeón (Lc 2, 29)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Pureza y religiosa obediencia" },
+      { "etiqueta": "Lugar bíblico", "valor": "Templo de Jerusalén" },
+      { "etiqueta": "Testigos santos", "valor": "El anciano Simeón y la profetisa Ana" },
+      { "etiqueta": "Profecía mariana", "valor": "La espada que atraviesa el alma" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-presentacion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-nino-perdido",
+    "nombre": "El Niño Jesús Perdido y Hallado",
+    "subtitulo": "V Misterio Gozoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "A los doce años Jesús subió con sus padres a Jerusalén para la Pascua. Al regresar la comitiva, el Niño permaneció en el Templo sin que lo advirtieran. Tras tres días de angustiosa búsqueda, María y José lo encontraron entre los doctores de la Ley, escuchándolos y haciéndoles preguntas con sabiduría asombrosa.",
+    "oracion": "Señor Jesús, concédenos buscarte siempre con corazón fiel y perseverante en medio de las pruebas de la vida terrena.",
+    "frase": "¿Por qué me buscaban? ¿No sabían que debo ocuparme de las cosas de mi Padre?",
+    "fraseAutor": "Jesucristo Nuestro Señor (Lc 2, 49)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Piedad filial y búsqueda de Dios" },
+      { "etiqueta": "Lugar bíblico", "valor": "El Templo de Jerusalén" },
+      { "etiqueta": "Tiempo de búsqueda", "valor": "Tres días de dolor y perseverancia" },
+      { "etiqueta": "Enseñanza divina", "valor": "La primacía de la voluntad del Padre" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-nino-perdido/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-bautismo-jesus",
+    "nombre": "El Bautismo en el Jordán",
+    "subtitulo": "I Misterio Luminoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Jesús acudió a las orillas del río Jordán para ser bautizado por San Juan Bautista, santificando las aguas de regeneración. Al salir del agua, los cielos se abrieron, el Espíritu Santo descendió en forma de paloma y se oyó la voz del Padre eterno: «Este es mi Hijo amado, en quien me complazco».",
+    "oracion": "Padre celestial, renueva en nosotros la gracia del santo Bautismo para vivir fielmente como verdaderos hijos de la luz.",
+    "frase": "Este es mi Hijo muy amado, en quien tengo mi complacencia.",
+    "fraseAutor": "La voz del Padre Eterno (Mt 3, 17)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Fidelidad a las promesas bautismales" },
+      { "etiqueta": "Lugar bíblico", "valor": "Río Jordán" },
+      { "etiqueta": "Manifestación trinitaria", "valor": "Padre, Hijo y Espíritu Santo" },
+      { "etiqueta": "Día tradicional de rezo", "valor": "Jueves" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-bautismo-jesus/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-bodas-cana",
+    "nombre": "La Autorrevelación en Caná",
+    "subtitulo": "II Misterio Luminoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "En las bodas de Caná de Galilea, al faltar el vino para la fiesta, la Virgen María intercedió maternalmente ante Jesús diciendo a los servidores: «Hagan lo que Él les diga». Jesús transformó el agua de seis tinajas en el mejor vino, manifestando por primera vez su gloria e infundiendo la fe en sus discípulos.",
+    "oracion": "Madre del Socorro, alcánzanos la gracia de obedecer siempre la palabra de tu Hijo Jesucristo.",
+    "frase": "Hagan todo lo que Él les diga.",
+    "fraseAutor": "Santa María Virgen (Jn 2, 5)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Confianza filial e intercesión mariana" },
+      { "etiqueta": "Lugar bíblico", "valor": "Caná de Galilea" },
+      { "etiqueta": "Primer milagro", "valor": "Transformación del agua en vino" },
+      { "etiqueta": "Fruto espiritual", "valor": "Santificación del matrimonio cristiano" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-bodas-cana/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-anuncio-reino",
+    "nombre": "El Anuncio del Reino de Dios",
+    "subtitulo": "III Misterio Luminoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Jesús recorrió todas las ciudades y aldeas predicando el Evangelio del Reino, sanando a los enfermos y perdonando los pecados a cuantos acudían a Él con fe. Con paciencia infinita llamó a la conversión interior y prometió el consuelo y la salvación eterna a los sencillos de corazón.",
+    "oracion": "Señor Jesucristo, concédenos un espíritu de continua conversión y hambre santa de tu justicia.",
+    "frase": "El tiempo se ha cumplido y el Reino de Dios está cerca; conviértanse y crean en el Evangelio.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Mc 1, 15)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Conversión y anhelo de santidad" },
+      { "etiqueta": "Llamado principal", "valor": "Fe y penitencia sincera" },
+      { "etiqueta": "Contenido del anuncio", "valor": "Las Bienaventuranzas celestiales" },
+      { "etiqueta": "Sacramento asociado", "valor": "Reconciliación y Penitencia" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-anuncio-reino/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-transfiguracion",
+    "nombre": "La Transfiguración",
+    "subtitulo": "IV Misterio Luminoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Jesús subió a una montaña elevada junto a Pedro, Santiago y Juan para orar. Mientras rezaba, su rostro brilló como el sol y sus vestiduras se volvieron de una blancura deslumbrante, apareciendo Moisés y Elías en gloria para hablar de su Pascua. Una nube luminosa los cubrió y la voz del Padre invitó a escuchar al Hijo.",
+    "oracion": "Dios todopoderoso, concédenos contemplar la gloria de tu Hijo para no vacilar jamás ante la cruz.",
+    "frase": "Señor, ¡qué bueno es que estemos aquí!",
+    "fraseAutor": "San Pedro Apóstol (Mt 17, 4)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Deseo del Cielo y contemplación mística" },
+      { "etiqueta": "Lugar bíblico", "valor": "Monte Tabor" },
+      { "etiqueta": "Testigos del Antiguo Testamento", "valor": "Moisés y Elías" },
+      { "etiqueta": "Apóstoles presentes", "valor": "Pedro, Santiago y Juan" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-transfiguracion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-institucion-eucaristia",
+    "nombre": "La Institución de la Eucaristía",
+    "subtitulo": "V Misterio Luminoso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "En la víspera de su Pasión, reunido en el Cenáculo con los doce apóstoles, Jesús tomó el pan, dio gracias, lo partió y se lo dio diciendo: «Tomen y coman; esto es mi Cuerpo». Luego tomó el cáliz de vino y dijo: «Esta es mi Sangre de la alianza eterna, derramada por muchos para el perdón de los pecados. Hagan esto en memoria mía».",
+    "oracion": "Alabado sea el Santísimo Sacramento del Altar, en el Cielo, en la tierra y en todo lugar.",
+    "frase": "Esto es mi Cuerpo, que es entregado por ustedes; hagan esto en memoria mía.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Lc 22, 19)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Devoción eucarística y adoración" },
+      { "etiqueta": "Lugar bíblico", "valor": "El Cenáculo de Jerusalén" },
+      { "etiqueta": "Don supremo", "valor": "La Santa Misa y el Sacerdocio Católico" },
+      { "etiqueta": "Fruto perenne", "valor": "Unión íntima y real con Cristo" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-institucion-eucaristia/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-oracion-huerto",
+    "nombre": "La Oración en el Huerto",
+    "subtitulo": "I Misterio Doloroso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "En el huerto de Getsemaní, abrumado por el peso de todos los pecados de la humanidad y la inminencia de su suplicio, Jesús cayó rostro en tierra en angustiosa agonía, sudando gotas de sangre. En medio de la soledad y la tentación, oró con infinita entrega: «Padre mío, si es posible, aparta de mí este cáliz; pero no se haga mi voluntad, sino la tuya».",
+    "oracion": "Señor Jesucristo, concédenos fortaleza para velar y orar en las horas de angustia y prueba.",
+    "frase": "Padre mío, si no es posible que este cáliz pase sin que yo lo beba, hágase tu voluntad.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Mt 26, 42)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Conformidad con la voluntad divina" },
+      { "etiqueta": "Lugar bíblico", "valor": "Huerto de Getsemaní" },
+      { "etiqueta": "Signo de agonía", "valor": "Sudor de sangre redentor" },
+      { "etiqueta": "Día tradicional de rezo", "valor": "Martes y Viernes" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-oracion-huerto/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-flagelacion",
+    "nombre": "La Flagelación del Señor",
+    "subtitulo": "II Misterio Doloroso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Condenado injustamente por Poncio Pilato, Jesús fue atado a una columna de piedra y azotado cruelmente por los soldados romanos. Su carne sagrada fue desgarrada sin compasión para reparar nuestras impurezas y rebeliones, cumpliéndose la profecía de Isaías: «Por sus llagas fuimos sanados».",
+    "oracion": "Por los dolores de tu flagelación santísima, purifica, Señor, nuestros cuerpos y sentidos de todo pecado.",
+    "frase": "Él fue traspasado por nuestras rebeliones y triturado por nuestros crímenes.",
+    "fraseAutor": "Profeta Isaías (Is 53, 5)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Mortificación de los sentidos y pureza" },
+      { "etiqueta": "Lugar bíblico", "valor": "Pretorio de Pilato, Jerusalén" },
+      { "etiqueta": "Instrumento del martirio", "valor": "Columna y azotes romanos" },
+      { "etiqueta": "Fruto reparador", "valor": "Sanación de las culpas carnales" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-flagelacion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-coronacion-espinas",
+    "nombre": "La Coronación de Espinas",
+    "subtitulo": "III Misterio Doloroso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Los soldados vistieron a Jesús con un manto púrpura, tejieron una corona de espinas puntiagudas y la clavaron en su divina cabeza, poniéndole una caña en la mano derecha. Arrodillándose ante Él para burlarse, le escupían y le golpeaban diciendo con desprecio: «¡Salve, Rey de los judíos!». Con mansedumbre heroica, el Rey del Cielo soportó el ultraje.",
+    "oracion": "Rey coronado de espinas, concédenos humildad de pensamiento y desprecio de las vanidades del mundo.",
+    "frase": "¡Aquí tienen al hombre!",
+    "fraseAutor": "Poncio Pilato (Jn 19, 5)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Humildad interior y paciencia en la injuria" },
+      { "etiqueta": "Signos de burla", "valor": "Corona de espinas, caña y manto púrpura" },
+      { "etiqueta": "Lugar bíblico", "valor": "Pretorio romano" },
+      { "etiqueta": "Reparación sagrada", "valor": "Expiación de los pecados de soberbia" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-coronacion-espinas/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-cruz-a-cuestas",
+    "nombre": "Jesús Carga con la Cruz",
+    "subtitulo": "IV Misterio Doloroso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Cargando el pesado madero de la Cruz sobre sus hombros llagados, Jesús emprendió la dolorosa marcha por la Vía Dolorosa hacia el Calvario. Exhausto y sangrante, cayó tres veces en tierra bajo el peso abrumador, recibiendo la ayuda forzada de Simón de Cirene y consolando con compasión a las santas mujeres que lloraban a su paso.",
+    "oracion": "Señor Jesús, concédenos la paciencia para abrazar cada día nuestra propia cruz y seguirte con perseverancia.",
+    "frase": "El que no toma su cruz y me sigue, no es digno de mí.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Mt 10, 38)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Paciencia y resignación cristiana" },
+      { "etiqueta": "Camino sagrado", "valor": "Vía Dolorosa hacia el Gólgota" },
+      { "etiqueta": "Ayudante del camino", "valor": "San Simón de Cirene" },
+      { "etiqueta": "Fruto moral", "valor": "Fortaleza en las tribulaciones diarias" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-cruz-a-cuestas/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-crucifixion",
+    "nombre": "La Crucifixión y Muerte",
+    "subtitulo": "V Misterio Doloroso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Llegados al Gólgota, clavaron a Jesús en la Cruz entre dos ladrones. Durante tres horas de agonía salvadora perdonó a sus verdugos, prometió el Paraíso al buen ladrón y entregó a María como Madre del apóstol Juan y de toda la Iglesia. Clamando «Todo está consumado», inclinó la cabeza y expiró por nuestra redención.",
+    "oracion": "Cristo crucificado, por los méritos de tu santa agonía, perdónanos y ten misericordia de nosotros y del mundo entero.",
+    "frase": "Padre, en tus manos encomiendo mi espíritu.",
+    "fraseAutor": "Jesucristo en la Cruz (Lc 23, 46)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Amor supremo y perdón de los enemigos" },
+      { "etiqueta": "Lugar bíblico", "valor": "Monte Calvario (Gólgota)" },
+      { "etiqueta": "Regalo mariano", "valor": "Maternidad espiritual de María" },
+      { "etiqueta": "Fruto eterno", "valor": "La Redención del género humano" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-crucifixion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-resurreccion",
+    "nombre": "La Resurrección",
+    "subtitulo": "I Misterio Glorioso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Al amanecer del tercer día, la tierra tembló y un ángel del Señor bajó del Cielo removiendo la piedra del sepulcro. Jesucristo, vencedor invicto del pecado y de la muerte, resucitó en gloria inmortal, disipando las tinieblas y apareciéndose a María Magdalena y a los apóstoles para confirmar la verdad de su promesa.",
+    "oracion": "Señor resucitado, acrecienta en nosotros la virtud de la fe y el gozo de la vida eterna.",
+    "frase": "¿Por qué buscan entre los muertos al que está vivo? No está aquí, ha resucitado.",
+    "fraseAutor": "Los Ángeles en el sepulcro (Lc 24, 5-6)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Fe viva y victoria sobre la muerte" },
+      { "etiqueta": "Lugar bíblico", "valor": "Santo Sepulcro de Jerusalén" },
+      { "etiqueta": "Primera testigo", "valor": "Santa María Magdalena" },
+      { "etiqueta": "Día tradicional de rezo", "valor": "Miércoles y Domingos" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-resurreccion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-ascension",
+    "nombre": "La Ascensión al Cielo",
+    "subtitulo": "II Misterio Glorioso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Cuarenta días después de su Resurrección, tras bendecir a sus discípulos en el Monte de los Olivos y ordenarles bautizar a todas las naciones, Jesús ascendió a los Cielos a la vista de todos ellos hasta que una nube lo ocultó. Subió para sentarse a la derecha del Padre, donde intercede eternamente por nosotros.",
+    "oracion": "Señor Jesús, que con tu gloriosa Ascensión abriste las puertas del Paraíso, atrae nuestros corazones hacia los bienes del Cielo.",
+    "frase": "Miren que yo estoy con ustedes todos los días, hasta el fin del mundo.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Mt 28, 20)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Esperanza y anhelo de la patria celestial" },
+      { "etiqueta": "Lugar bíblico", "valor": "Monte de los Olivos" },
+      { "etiqueta": "Mandato misionero", "valor": "Id y haced discípulos a todas las naciones" },
+      { "etiqueta": "Destino eterno", "valor": "A la diestra de Dios Padre" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-ascension/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-pentecostes",
+    "nombre": "La Venida del Espíritu Santo",
+    "subtitulo": "III Misterio Glorioso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Reunidos los apóstoles en oración perseverante en el Cenáculo junto a la Virgen María, se oyó de repente un ruido como de viento impetuoso y aparecieron lenguas de fuego que se posaron sobre cada uno. Llenos del Espíritu Santo, comenzaron a proclamar con valentía las maravillas de Dios en todas las lenguas.",
+    "oracion": "Ven, Espíritu Santo, llena los corazones de tus fieles y enciende en ellos el fuego de tu amor.",
+    "frase": "Todos quedaron llenos del Espíritu Santo y comenzaron a hablar en otras lenguas.",
+    "fraseAutor": "Hechos de los Apóstoles (Hch 2, 4)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Celo apostólico y amor a la verdad" },
+      { "etiqueta": "Lugar bíblico", "valor": "El Cenáculo de Jerusalén" },
+      { "etiqueta": "Presencia materna", "valor": "María Madre de la Iglesia" },
+      { "etiqueta": "Dones celestiales", "valor": "Los siete dones del Espíritu Santo" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-pentecostes/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-asuncion",
+    "nombre": "La Asunción de la Virgen María",
+    "subtitulo": "IV Misterio Glorioso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Completado el curso de su vida terrena, la Inmaculada Madre de Dios, preservada de toda mancha de pecado original, fue asunta en cuerpo y alma a la gloria celestial por el poder de Dios. Rodeada de coros de ángeles, María fue elevada a contemplar cara a cara la infinita majestad de la Santísima Trinidad.",
+    "oracion": "Dios todopoderoso, concédenos dirigir siempre nuestros anhelos hacia las cosas celestiales para gozar de la misma gloria de María.",
+    "frase": "Una gran señal apareció en el cielo: una mujer vestida del sol, con la luna bajo sus pies.",
+    "fraseAutor": "Libro del Apocalipsis (Ap 12, 1)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Gracia de una santa y feliz muerte" },
+      { "etiqueta": "Dogma católico", "valor": "Proclamado por Pío XII (Munificentissimus Deus)" },
+      { "etiqueta": "Privilegio mariano", "valor": "Cuerpo y alma en la gloria divina" },
+      { "etiqueta": "Destino final", "valor": "Primicia de la resurrección de los fieles" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-asuncion/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "misterio-coronacion-maria",
+    "nombre": "La Coronación de María",
+    "subtitulo": "V Misterio Glorioso",
+    "categoria": "Misterio",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "En el esplendor del Paraíso, la Santísima Trinidad coronó a la Virgen María como Reina de los cielos y de la tierra, de los ángeles y de los santos. Desde su trono celestial, la Madre de Misericordia vela con amor incansable por todos los hombres, distribuyendo los tesoros de la redención conseguidos por su divino Hijo.",
+    "oracion": "Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra; Dios te salve.",
+    "frase": "Una corona de doce estrellas coronaba su cabeza.",
+    "fraseAutor": "Libro del Apocalipsis (Ap 12, 1)",
+    "datasheet": [
+      { "etiqueta": "Virtud evangélica", "valor": "Perseverancia final y confianza en María" },
+      { "etiqueta": "Título regio", "valor": "Reina de Cielos y Tierra" },
+      { "etiqueta": "Corona celestial", "valor": "Doce estrellas en representación de la Iglesia" },
+      { "etiqueta": "Oficio perenne", "valor": "Abogada y Medianera de todas las gracias" }
+    ],
+    "imagenes": {
+      "1": "/cartas/misterio-coronacion-maria/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  }
+]

@@ -1,0 +1,596 @@
+[
+  {
+    "clave": "santa-maria-madre-de-dios",
+    "nombre": "Santa María, Madre de Dios",
+    "subtitulo": "Reina de los Cielos y Madre de la Iglesia",
+    "categoria": "Santo",
+    "rareza": "Celestial",
+    "celebracion": "01-01",
+    "historia": "La Santísima Virgen María es la excelsa Madre de Jesucristo, verdadero Dios y verdadero Hombre, preservada de toda mancha de pecado original desde el primer instante de su concepción purísima y asunta en cuerpo y alma a la gloria del Cielo.\n\nElegida por la Santísima Trinidad para ser el sagrario del Redentor, respondió con generoso asentimiento al anuncio del Ángel y acompañó a su divino Hijo desde el pesebre de Belén hasta la cumbre del Calvario. Al pie de la Cruz, Cristo nos la entregó como Madre de toda la humanidad en la persona del apóstol Juan.",
+    "oracion": "Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra; Dios te salve. A ti clamamos los desterrados hijos de Eva; a ti suspiramos, gimiendo y llorando, en este valle de lágrimas. Ea, pues, Señora, abogada nuestra, vuelve a nosotros esos tus ojos misericordiosos.",
+    "frase": "Hagan todo lo que Él les diga.",
+    "fraseAutor": "Santa María Virgen (Jn 2, 5)",
+    "datasheet": [
+      { "etiqueta": "Dignidad eminente", "valor": "Madre de Dios (Theotokos) y Reina de los Santos" },
+      { "etiqueta": "Dogmas marianos", "valor": "Maternidad Divina, Inmaculada Concepción, Virginidad Perpetua y Asunción" },
+      { "etiqueta": "Virtud suprema", "valor": "Humildad perfecta, docilidad a la gracia y caridad materna" },
+      { "etiqueta": "Patronazgo universal", "valor": "Toda la Iglesia Católica y la humanidad entera" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-maria-madre-de-dios/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte mariano tradicional"
+  },
+  {
+    "clave": "san-jose",
+    "nombre": "San José, Esposo de María",
+    "subtitulo": "Patrono Universal de la Iglesia Católica",
+    "categoria": "Santo",
+    "rareza": "Celestial",
+    "celebracion": "03-19",
+    "historia": "Hombre justo y silencioso de la descendencia del rey David, San José fue elegido por Dios Padre para ser el castísimo esposo de la Virgen María y el padre nutricio del Verbo Encarnado en la tierra.\n\nCon fe inquebrantable acogió a su esposa, protegió con valentía al Niño Jesús de la persecución de Herodes huyendo a Egipto y enseñó al Salvador el digno oficio del trabajo manual en el humilde taller de Nazaret. Murió en los brazos santísimos de Jesús y de María.",
+    "oracion": "Acuérdate, oh castísimo esposo de la Virgen María, San José, que jamás se ha oído decir que ninguno de los que han acudido a tu protección haya quedado sin consuelo. Confiando en tu poder, me pongo bajo tu amparo paternal.",
+    "frase": "José hizo como el ángel del Señor le había mandado y recibió a su esposa.",
+    "fraseAutor": "Evangelio según San Mateo (Mt 1, 24)",
+    "datasheet": [
+      { "etiqueta": "Linaje bíblico", "valor": "Casa y familia del rey David" },
+      { "etiqueta": "Virtud eminente", "valor": "Justicia evangélica, silencio humilde y obediencia pronta" },
+      { "etiqueta": "Títulos solemnes", "valor": "Custodio del Redentor y Terror de los demonios" },
+      { "etiqueta": "Patronazgo universal", "valor": "La Iglesia Católica, los padres de familia, los trabajadores y la buena muerte" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-jose/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro tradicional"
+  },
+  {
+    "clave": "san-juan-bautista",
+    "nombre": "San Juan Bautista",
+    "subtitulo": "El Precursor del Señor y la Voz en el Desierto",
+    "categoria": "Santo",
+    "rareza": "Perfecta",
+    "celebracion": "06-24",
+    "historia": "San Juan Bautista, hijo del sacerdote Zacarías y de Santa Isabel, fue santificado en el seno materno cuando la Virgen María visitó a su prima. Vivió en la austeridad del desierto de Judea, vistiendo piel de camello y alimentándose de langostas y miel silvestre, preparando los caminos del Mesías con un bautismo de conversión.\n\nEn las aguas del río Jordán tuvo la gracia suprema de bautizar al Cordero de Dios. Dio valiente testimonio de la verdad y de la santidad del matrimonio ante el rey Herodes Antipas, consumando su misión evangélica con la palma del martirio al ser decapitado.",
+    "oracion": "Dios todopoderoso, que enviaste a San Juan Bautista a preparar el camino a Cristo el Señor, concede a tu pueblo el gozo del Espíritu Santo y guía nuestros pasos hacia la paz y la verdad.",
+    "frase": "Es necesario que Él crezca y que yo disminuya.",
+    "fraseAutor": "San Juan Bautista (Jn 3, 30)",
+    "datasheet": [
+      { "etiqueta": "Lugar de ministerio", "valor": "Desierto de Judea y riberas del río Jordán" },
+      { "etiqueta": "Misión profética", "valor": "Señalar al Cordero de Dios y predicar la conversión" },
+      { "etiqueta": "Corona martirial", "valor": "Decapitación por defender la verdad moral ante Herodes" },
+      { "etiqueta": "Elogio de Cristo", "valor": "«Entre los nacidos de mujer no ha surgido nadie mayor que Juan» (Mt 11, 11)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-juan-bautista/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional"
+  },
+  {
+    "clave": "san-pedro-apostol",
+    "nombre": "San Pedro Apóstol",
+    "subtitulo": "Príncipe de los Apóstoles y Roca de la Iglesia",
+    "categoria": "Santo",
+    "rareza": "Perfecta",
+    "celebracion": "06-29",
+    "historia": "Simón, pescador de Betsaida en el mar de Galilea, fue llamado por Jesús junto a su hermano Andrés para ser pescador de hombres. Tras su solemne profesión de fe en Cesarea de Filipo («Tú eres el Cristo, el Hijo de Dios vivo»), el Señor le impuso el nombre de Pedro y le confirió las llaves del Reino de los Cielos.\n\nA pesar de sus fragilidades y de las tres negaciones en la noche de la Pasión, Pedro lloró amargamente y profesó su triple amor ante Cristo resucitado. Presidió con firmeza apostólica la Iglesia naciente y coronó su vida en Roma siendo crucificado cabeza abajo bajo Nerón.",
+    "oracion": "Señor Jesucristo, que sobre la confesión de Pedro edificaste tu Santa Iglesia, concédenos perseverar firmes en la doctrina apostólica y unidos al sucesor de San Pedro.",
+    "frase": "Señor, ¿a quién iremos? Tú tienes palabras de vida eterna.",
+    "fraseAutor": "San Pedro Apóstol (Jn 6, 68)",
+    "datasheet": [
+      { "etiqueta": "Oficio sagrado", "valor": "Primer Papa y cabeza visible del Colegio Apostólico" },
+      { "etiqueta": "Lugar de origen", "valor": "Betsaida, orillas del Mar de Galilea" },
+      { "etiqueta": "Símbolos tradicionales", "valor": "Las dos llaves del Reino y la cruz invertida" },
+      { "etiqueta": "Martirio", "valor": "Crucifixión en la colina vaticana de Roma (circa 64-67 d.C.)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-pedro-apostol/1.webp"
+    },
+    "creditoImagen": "Dominio público / Mosaicos romanos y basílicas"
+  },
+  {
+    "clave": "san-pablo-apostol",
+    "nombre": "San Pablo Apóstol",
+    "subtitulo": "El Apóstol de las Gentes y Vaso de Elección",
+    "categoria": "Santo",
+    "rareza": "Perfecta",
+    "celebracion": "06-29",
+    "historia": "Saulo de Tarso, judío celoso y fariseo intachable, perseguía con furor a las primeras comunidades cristianas hasta que de camino a Damasco una luz deslumbrante del cielo lo derribó, escuchando la voz de Cristo: «Saulo, Saulo, ¿por qué me persigues?». Convertido y bautizado, se transformó en el Apóstol de las Gentes.\n\nRecorrió el Mediterráneo entero proclamando a Cristo crucificado y resucitado, fundando comunidades en Asia Menor y Grecia, y escribiendo catorce epístolas que fundamentan la teología cristiana. Sufrió cárceles, naufragios y azotes, y fue decapitado en Roma como ciudadano romano.",
+    "oracion": "Oh Dios, que instruiste a las naciones con la predicación del Apóstol San Pablo, concédenos caminar a la luz de sus enseñanzas y ser testigos ardientes del Evangelio.",
+    "frase": "Ya no vivo yo, sino que es Cristo quien vive en mí.",
+    "fraseAutor": "San Pablo Apóstol (Gál 2, 20)",
+    "datasheet": [
+      { "etiqueta": "Lugar de nacimiento", "valor": "Tarso de Cilicia (actual Turquía)" },
+      { "etiqueta": "Misión apostólica", "valor": "Evangelización de las naciones gentiles y cartas del Nuevo Testamento" },
+      { "etiqueta": "Atributos iconográficos", "valor": "Espada de la Palabra y libro de las epístolas" },
+      { "etiqueta": "Tránsito glorioso", "valor": "Decapitación en Tre Fontane, Roma (circa 67 d.C.)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-pablo-apostol/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro apostólico"
+  },
+  {
+    "clave": "san-juan-evangelista",
+    "nombre": "San Juan Evangelista",
+    "subtitulo": "El Discípulo Amado y Águila de Patmos",
+    "categoria": "Santo",
+    "rareza": "Perfecta",
+    "celebracion": "12-27",
+    "historia": "San Juan, hijo de Zebedeo y hermano de Santiago el Mayor, fue el más joven de los doce apóstoles y el discípulo predilecto a quien Jesús amaba. En la Última Cena reclinó su cabeza sobre el pecho del Salvador, y fue el único de los apóstoles que permaneció de pie junto a la Cruz, recibiendo a María como madre.\n\nAutor del cuarto Evangelio, de tres epístolas universales y del libro del Apocalipsis escrito en su destierro de la isla de Patmos, Juan profundizó como ningún otro en la teología de la caridad y la divinidad del Verbo hecho carne. Sobrevivió a los tormentos y murió en ancianidad en Éfeso.",
+    "oracion": "Dios todopoderoso, que por medio del bienaventurado apóstol Juan nos revelaste los arcanos de tu Verbo, concédenos comprender con inteligencia y amar con rectitud lo que él proclamó.",
+    "frase": "Queridos hermanos, amémonos unos a otros, porque el amor es de Dios, y todo el que ama ha nacido de Dios y conoce a Dios.",
+    "fraseAutor": "San Juan Evangelista (1 Jn 4, 7)",
+    "datasheet": [
+      { "etiqueta": "Título bíblico", "valor": "El discípulo a quien Jesús amaba" },
+      { "etiqueta": "Símbolo de los Evangelistas", "valor": "El Águila (por la altísima elevación teológica de su prólogo)" },
+      { "etiqueta": "Escritos sagrados", "valor": "Cuarto Evangelio, tres Epístolas y el Apocalipsis" },
+      { "etiqueta": "Lugar de descanso", "valor": "Éfeso, Asia Menor" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-juan-evangelista/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte clásico evangélico"
+  },
+  {
+    "clave": "san-juan-pablo-ii",
+    "nombre": "San Juan Pablo II",
+    "subtitulo": "El Papa Peregrino y Defensor de la Esperanza",
+    "categoria": "Santo",
+    "rareza": "Perfecta",
+    "celebracion": "10-22",
+    "historia": "Karol Wojtyła nació en Wadowice, Polonia, en 1920. Habiendo experimentado de joven la tragedia de la ocupación nazi y la posterior tiranía comunista, ingresó al seminario clandestino y fue ordenado sacerdote en 1946, llegando a ser arzobispo de Cracovia y padre conciliar en el Vaticano II.\n\nElegido Papa en 1978, llevó el Evangelio a más de 120 países en 104 viajes apostólicos a lo largo de un pontificado de casi 27 años. Instituyó la Jornada Mundial de la Juventud, consagró la Iglesia a la Divina Misericordia y defendió incansablemente a la familia y la vida humana frente a la cultura de la muerte.",
+    "oracion": "Oh San Juan Pablo, desde la ventana del Cielo derrama tu bendición apostólica sobre las familias y los jóvenes, y alcánzanos la gracia de abrir de par en par nuestras puertas al Redentor.",
+    "frase": "¡No teman! ¡Abran de par en par las puertas a Cristo!",
+    "fraseAutor": "San Juan Pablo II (Inicio de su Pontificado, 1978)",
+    "datasheet": [
+      { "etiqueta": "Lugar de nacimiento", "valor": "Wadowice, Polonia (18 de mayo de 1920)" },
+      { "etiqueta": "Pontificado histórico", "valor": "264.° Sucesor de Pedro (16 de octubre de 1978 – 2 de abril de 2005)" },
+      { "etiqueta": "Lema episcopal y papal", "valor": "Totus Tuus («Completamente tuyo, María»)" },
+      { "etiqueta": "Legado pastoral", "valor": "Catecismo de la Iglesia Católica y Jornadas Mundiales de la Juventud" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-juan-pablo-ii/1.webp"
+    },
+    "creditoImagen": "Vatican Media / Dominio público"
+  },
+  {
+    "clave": "san-francisco-de-asis",
+    "nombre": "San Francisco de Asís",
+    "subtitulo": "El Poverello de Dios y Heraldo de la Paz",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "10-04",
+    "historia": "Nacido en Asís en 1181, hijo de un acaudalado comerciante, Francisco renunció a todas las posesiones terrenas ante el obispo para desposar a la Dama Pobreza y seguir con radical sencillez a Jesucristo crucificado. Ante el crucifijo de San Damián escuchó el mandato divino: «Francisco, ve y repara mi Iglesia».\n\nFundó la Orden de los Frailes Menores, redactó una regla basada estrictamente en el Evangelio y compuso el Cántico de las Criaturas alabando a Dios por el sol, las estrellas y la tierra. En el monte Alvernia recibió en su propio cuerpo los santos estigmas de la Pasión del Señor, partiendo a la eternidad en 1226.",
+    "oracion": "Señor, hazme un instrumento de tu paz: donde haya odio, siembre yo amor; donde haya ofensa, perdón; donde haya discordia, unión; donde haya error, verdad; donde haya duda, fe; donde haya desesperación, esperanza.",
+    "frase": "Comiencen haciendo lo necesario, luego lo que es posible y de pronto estarán haciendo lo imposible.",
+    "fraseAutor": "San Francisco de Asís",
+    "datasheet": [
+      { "etiqueta": "Lugar de origen", "valor": "Asís, región de Umbría, Italia (1181-1226)" },
+      { "etiqueta": "Fundaciones religiosas", "valor": "Orden de Frailes Menores (Franciscanos) y Clarisas (junto a Santa Clara)" },
+      { "etiqueta": "Gracia mística", "valor": "Impresión de los sagrados estigmas en el monte Alvernia" },
+      { "etiqueta": "Patronazgo", "valor": "Ecología, los animales, la paz y la patria italiana" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-francisco-de-asis/1.webp"
+    },
+    "creditoImagen": "Dominio público / Frescos de Giotto en Asís"
+  },
+  {
+    "clave": "santo-tomas-de-aquino",
+    "nombre": "Santo Tomás de Aquino",
+    "subtitulo": "El Doctor Angélico y Lumbrera de la Sabiduría",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "01-28",
+    "historia": "Nacido en Roccasecca en 1225 en el seno de la nobleza condal, Tomás ingresó con firmeza en la recién fundada Orden de Predicadores (Dominicos), venciendo la cerrada oposición de su familia. Discípulo predilecto de San Alberto Magno en París y Colonia, consagró su genial intelecto a la armonía entre la fe y la razón.\n\nSu obra cumbre, la Summa Theologiae, constituye la cumbre de la síntesis teológica y filosófica cristiana. Ante el crucifijo de Nápoles que le habló diciéndole «Bien has escrito de mí, Tomás; ¿qué premio deseas?», el santo respondió con santa humildad: «Nada más que a Ti, Señor». Murió en 1274 camino del Concilio de Lyon.",
+    "oracion": "Creador inefable, que de los tesoros de tu sabiduría dispusiste el orden del universo, infunde sobre las tinieblas de mi inteligencia un rayo de tu claridad para disipar la ignorancia y el pecado.",
+    "frase": "La fe no destruye la razón, sino que la perfecciona y la eleva.",
+    "fraseAutor": "Santo Tomás de Aquino (Summa Theologiae)",
+    "datasheet": [
+      { "etiqueta": "Orden religiosa", "valor": "Orden de Predicadores (Frailes Dominicos)" },
+      { "etiqueta": "Título eclesial", "valor": "Doctor Angélico y Doctor Común de la Iglesia" },
+      { "etiqueta": "Obras cumbres", "valor": "Summa Theologiae y los himnos eucarísticos de Corpus Christi (Pange Lingua)" },
+      { "etiqueta": "Patronazgo", "valor": "Universidades, estudiantes, profesores y teólogos" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santo-tomas-de-aquino/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte renacentista dominico"
+  },
+  {
+    "clave": "san-agustin-de-hipona",
+    "nombre": "San Agustín de Hipona",
+    "subtitulo": "El Doctor de la Gracia y Pastor de las Almas",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "08-28",
+    "historia": "Nacido en Tagaste, en el norte de África en 354, Agustín buscó con inquietud incansable la verdad a través de las filosofías y los placeres mundanos, sostenido en silencio por las lágrimas y oraciones incesantes de su santa madre Mónica. En Milán, guiado por la predicación de San Ambrosio, escuchó la voz del niño que cantaba «Toma y lee», abriendo la epístola de San Pablo que selló su conversión.\n\nBautizado en 387, regresó a África, fundó una comunidad monástica y fue consagrado obispo de Hipona, donde pastoreó a su pueblo con ardiente celo durante 35 años. Sus Confesiones y La Ciudad de Dios marcaron para siempre la historia y el pensamiento de la Iglesia de Occidente.",
+    "oracion": "¡Tarde te amé, hermosura tan antigua y tan nueva, tarde te amé! Tú estabas dentro de mí y yo fuera, y por fuera te buscaba... Me llamaste y clamaste, y rompiste mi sordera; brillaste y resplandeciste, y fugaste mi ceguera.",
+    "frase": "Nos hiciste, Señor, para Ti, y nuestro corazón está inquieto hasta que descanse en Ti.",
+    "fraseAutor": "San Agustín de Hipona (Confesiones, Libro I)",
+    "datasheet": [
+      { "etiqueta": "Lugar de nacimiento", "valor": "Tagaste, Numidia (actual Argelia, 354-430)" },
+      { "etiqueta": "Sede episcopal", "valor": "Obispo de Hipona durante 35 años" },
+      { "etiqueta": "Título de honor", "valor": "Doctor de la Gracia y Padre de la Iglesia latina" },
+      { "etiqueta": "Obras maestras", "valor": "Las Confesiones, La Ciudad de Dios y Sobre la Trinidad" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-agustin-de-hipona/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte cristiano patristico"
+  },
+  {
+    "clave": "santa-teresita-del-nino-jesus",
+    "nombre": "Santa Teresita del Niño Jesús",
+    "subtitulo": "Doctora de la Iglesia y Maestra del Caminito",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "10-01",
+    "historia": "María Francisca Teresa Martin nació en Alençon, Francia, en 1873, en el seno de un hogar profundamente cristiano. Con apenas quince años y tras haber solicitado dispensa papal en Roma, ingresó en el Carmelo descalzo de Lisieux, adoptando el nombre de Teresa del Niño Jesús y de la Santa Faz.\n\nEn la clausura oculta del convento descubrió su vocación específica: ser el amor en el corazón de la Iglesia. Desarrolló su célebre «caminito de la infancia espiritual», fundamentado en la absoluta confianza filial en la misericordia de Dios. Falleció de tuberculosis en 1897 a los veinticuatro años, prometiendo pasar su Cielo haciendo el bien en la tierra.",
+    "oracion": "Oh Jesús, no puedo comprender cómo un alma tan pequeña como la mía pueda amar tanto. Concede a mi pequeñez la gracia de descansar en tus brazos misericordiosos y derrama sobre la tierra una lluvia de rosas celestiales.",
+    "frase": "En el corazón de la Iglesia, que es mi Madre, yo seré el amor.",
+    "fraseAutor": "Santa Teresita del Niño Jesús (Historia de un alma)",
+    "datasheet": [
+      { "etiqueta": "Monasterio de clausura", "valor": "Carmelo Descalzo de Lisieux, Normandía, Francia" },
+      { "etiqueta": "Doctrina espiritual", "valor": "El caminito de la confianza y la entrega filial a Dios" },
+      { "etiqueta": "Distinción papal", "valor": "Proclamada Doctora de la Iglesia por San Juan Pablo II en 1997" },
+      { "etiqueta": "Patronazgo universal", "valor": "Patrona universal de las Misiones (junto a San Francisco Javier)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-teresita-del-nino-jesus/1.webp"
+    },
+    "creditoImagen": "Dominio público / Archivos del Carmelo de Lisieux"
+  },
+  {
+    "clave": "san-pio-de-pietrelcina",
+    "nombre": "San Pío de Pietrelcina",
+    "subtitulo": "El Padre Pío y Místico de San Giovanni Rotondo",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "09-23",
+    "historia": "Francesco Forgione nació en Pietrelcina, Italia, en 1887. Ingresó a la Orden de los Frailes Menores Capuchinos a los quince años, recibiendo la ordenación sacerdotal en 1910. En 1916 fue destinado al convento de San Giovanni Rotondo en el monte Gargano, donde residió hasta su muerte.\n\nEn 1918 recibió en su cuerpo los estigmas visibles de la Pasión de Cristo, que llevó con humildad heroica durante cincuenta años exactos. Pasaba hasta dieciséis horas diarias en el confesionario reconciliando a pecadores de todo el mundo, fundó la Casa Alivio del Sufrimiento y promovió los Grupos de Oración para combatir el mal con el Santo Rosario.",
+    "oracion": "Quédate conmigo, Señor, porque necesito tenerte presente para no olvidarte. Tú sabes con cuánta facilidad te abandono. Quédate conmigo, Jesús, porque eres mi luz, y sin Ti estoy en tinieblas.",
+    "frase": "Reza, ten fe y no te preocupes; la preocupación no sirve para nada, Dios es misericordioso y escuchará tu oración.",
+    "fraseAutor": "San Pío de Pietrelcina",
+    "datasheet": [
+      { "etiqueta": "Orden religiosa", "valor": "Orden de Frailes Menores Capuchinos (OFMCap)" },
+      { "etiqueta": "Lugar de santuario", "valor": "San Giovanni Rotondo, Foggia, Italia" },
+      { "etiqueta": "Signos extraordinarios", "valor": "Estigmas de la Pasión durante 50 años, bilocación y discernimiento de almas" },
+      { "etiqueta": "Obra hospitalaria", "valor": "Fundador del hospital Casa Alivio del Sufrimiento" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-pio-de-pietrelcina/1.webp"
+    },
+    "creditoImagen": "Dominio público / San Giovanni Rotondo"
+  },
+  {
+    "clave": "san-juan-bosco",
+    "nombre": "San Juan Bosco",
+    "subtitulo": "Padre y Maestro de la Juventud",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "01-31",
+    "historia": "Nacido en Castelnuovo de Asti en 1815 en una humilde familia campesina, Juan perdió a su padre a temprana edad, siendo educado en la fe y el sacrificio por su santa madre Margarita. Guiado por sueños proféticos desde su niñez, fue ordenado sacerdote en Turín en 1841.\n\nConmovido por la miseria y el abandono moral de los jóvenes obreros en la Italia industrial, fundó el Oratorio de San Francisco de Sales, creando el Sistema Preventivo basado en la razón, la religión y el amor fraterno. Fundó la congregación Salesiana y las Hijas de María Auxiliadora, extendiendo colegios y misiones por el mundo.",
+    "oracion": "San Juan Bosco, padre y maestro de la juventud, dócil a los dones del Espíritu y abierto a las realidades de tu tiempo, fuiste para los jóvenes guía e inspiración; enséñanos a amar a Jesús Sacramentado y a confiar en María Auxiliadora.",
+    "frase": "Basta que sean jóvenes para que los ame con todo mi corazón.",
+    "fraseAutor": "San Juan Bosco",
+    "datasheet": [
+      { "etiqueta": "Lugar y época", "valor": "Turín, Piamonte, Italia (1815-1888)" },
+      { "etiqueta": "Familia religiosa", "valor": "Fundador de la Sociedad de San Francisco de Sales (Salesianos)" },
+      { "etiqueta": "Método pedagógico", "valor": "El Sistema Preventivo (Razón, Religión y Amor sincero)" },
+      { "etiqueta": "Devoción primordial", "valor": "Jesús en la Eucaristía y María Auxiliadora de los Cristianos" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-juan-bosco/1.webp"
+    },
+    "creditoImagen": "Dominio público / Archivo Histórico Salesiano"
+  },
+  {
+    "clave": "san-carlos-acutis",
+    "nombre": "San Carlos Acutis",
+    "subtitulo": "El Ciberapóstol de la Eucaristía y la Juventud",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "10-12",
+    "historia": "Carlos Acutis nació en Londres en 1991 y creció en Milán, Italia. Desde temprana edad mostró un amor apasionado hacia Jesucristo presente en el Santísimo Sacramento, recibiendo la Primera Comunión a los siete años y comprometiéndose a comulgar diariamente y a rezar el Santo Rosario con fidelidad inquebrantable.\n\nDotado de extraordinario talento para la informática, diseñó páginas web y exposiciones virtuales sobre los milagros eucarísticos en el mundo para acercar a sus contemporáneos a la fe. En 2006 ofreció sus intensos dolores por el Papa y por la Iglesia al diagnosticársele leucemia fulminante, descansando en Asís a los quince años.",
+    "oracion": "Dios Padre misericordioso, que diste al joven Carlos Acutis un celo ardiente por la Santa Eucaristía, concédenos poner a Cristo en el centro de nuestras vidas y no malgastar el tiempo en lo pasajero.",
+    "frase": "La Eucaristía es mi autopista hacia el Cielo.",
+    "fraseAutor": "San Carlos Acutis",
+    "datasheet": [
+      { "etiqueta": "Lugar y años", "valor": "Londres y Milán (1991-2006)" },
+      { "etiqueta": "Sepulcro solemne", "valor": "Santuario de la Expoliación en Asís, Italia" },
+      { "etiqueta": "Apostolado digital", "valor": "Creador de la exposición documental sobre los Milagros Eucarísticos" },
+      { "etiqueta": "Patronazgo moderno", "valor": "Internet, programadores, estudiantes y jóvenes del siglo XXI" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-carlos-acutis/1.webp"
+    },
+    "creditoImagen": "Dominio público / Familia Acutis y Diócesis de Asís"
+  },
+  {
+    "clave": "san-antonio-de-padua",
+    "nombre": "San Antonio de Padua",
+    "subtitulo": "El Doctor Evangélico y Martillo de Herejes",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "06-13",
+    "historia": "Fernando Martins de Bulhões nació en Lisboa en 1195. Tras ingresar inicialmente con los Canónigos Regulares de San Agustín, el testimonio de los primeros mártires franciscanos en Marruecos encendió en él un deseo vehemente del martirio y de la pobreza radical, pasando a la Orden de Frailes Menores con el nombre de Antonio.\n\nDotado de una erudición escriturística asombrosa y de una elocuencia ardiente, predicó incansablemente por Italia y Francia combatiendo los errores doctrinales y convirtiendo a multitudes de pecadores. Obró incontables milagros en favor de los pobres, falleciendo en Padua en 1231 a los treinta y seis años.",
+    "oracion": "Dios todopoderoso y eterno, que diste a tu pueblo en la persona de San Antonio de Padua un predicador insigne y un protector eficaz en las necesidades, concédenos seguir sus enseñanzas de vida cristiana.",
+    "frase": "La predicación es vana si la palabra no va acompañada de las obras.",
+    "fraseAutor": "San Antonio de Padua (Sermones)",
+    "datasheet": [
+      { "etiqueta": "Lugar de nacimiento", "valor": "Lisboa, Portugal (1195) y tránsito en Padua, Italia (1231)" },
+      { "etiqueta": "Título eclesial", "valor": "Doctor Evangélico de la Iglesia" },
+      { "etiqueta": "Atributos iconográficos", "valor": "El Niño Jesús en brazos, vara de azucenas y el libro sagrado" },
+      { "etiqueta": "Patronazgo", "valor": "Objetos perdidos, causas difíciles, pobres y matrimonios" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-antonio-de-padua/1.webp"
+    },
+    "creditoImagen": "Dominio público / Basílica del Santo en Padua"
+  },
+  {
+    "clave": "san-benito-de-nursia",
+    "nombre": "San Benito de Nursia",
+    "subtitulo": "Patriarca del Monaquismo Occidental y Patrono de Europa",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "07-11",
+    "historia": "Nacido en Nursia hacia el año 480, Benito abandonó los estudios mundanos en Roma para entregarse a la soledad y la oración en la cueva de Subiaco. Su fama de santidad atrajo a numerosos discípulos, fundando doce monasterios y estableciendo finalmente en la cima de Montecassino la cuna de la vida monástica occidental.\n\nRedactó la célebre Regla de San Benito, compendio de sabiduría humana y sobrenatural estructurado en torno al lema Ora et Labora («Reza y Trabaja»). Sus monjes preservaron la fe, la cultura clásica y la agricultura durante los siglos oscuros, evangelizando el continente entero.",
+    "oracion": "Señor, que constituiste al santo abad Benito como maestro insigne de la vida monástica, concédenos no anteponer nada al amor de Cristo y avanzar con corazón generoso por el camino de tus mandamientos.",
+    "frase": "No antepongan absolutamente nada al amor de Cristo.",
+    "fraseAutor": "San Benito de Nursia (Regla Benedictina, Capítulo 72)",
+    "datasheet": [
+      { "etiqueta": "Lugar fundacional", "valor": "Abadía de Montecassino, Italia (circa 529)" },
+      { "etiqueta": "Lema monástico", "valor": "Ora et Labora (Oración y Trabajo cotidiano)" },
+      { "etiqueta": "Sacramental célebre", "valor": "La Medalla-Crucifijo de San Benito con fórmulas de exorcismo" },
+      { "etiqueta": "Patronazgo solemne", "valor": "Patrono principal de Europa (proclamado por Pablo VI)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-benito-de-nursia/1.webp"
+    },
+    "creditoImagen": "Dominio público / Monasterio de Subiaco"
+  },
+  {
+    "clave": "santa-teresa-de-jesus",
+    "nombre": "Santa Teresa de Jesús",
+    "subtitulo": "La Gran Teresa de Ávila y Maestra de la Oración",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "10-15",
+    "historia": "Teresa de Cepeda y Ahumada nació en Ávila, España, en 1515. Ingresó en el convento carmelita de la Encarnación y, tras años de tibieza espiritual y dura enfermedad, experimentó ante una imagen de Cristo muy llagado una profunda conversión que transformó su vida interior en una continua unión mística con Dios.\n\nImpulsó la reforma del Carmelo Descalzo, fundando dieciséis monasterios por toda España en medio de indecibles fatigas y persecuciones, en estrecha colaboración con San Juan de la Cruz. Escribió obras cumbres de la literatura mística universal como El Castillo Interior y Camino de Perfección, siendo la primera mujer proclamada Doctora de la Iglesia.",
+    "oracion": "Nada te turbe, nada te espante, todo se pasa, Dios no se muda; la paciencia todo lo alcanza; quien a Dios tiene nada le falta: solo Dios basta.",
+    "frase": "Vivir de tal manera que no se tenga miedo a la muerte.",
+    "fraseAutor": "Santa Teresa de Jesús",
+    "datasheet": [
+      { "etiqueta": "Lugar de nacimiento", "valor": "Ávila, Castilla, España (1515-1582)" },
+      { "etiqueta": "Reforma religiosa", "valor": "Restauradora de la Orden de los Carmelitas Descalzos" },
+      { "etiqueta": "Hito histórico", "valor": "Primera mujer proclamada Doctora de la Iglesia (por Pablo VI en 1970)" },
+      { "etiqueta": "Tratado supremo", "valor": "Las Moradas o El Castillo Interior" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-teresa-de-jesus/1.webp"
+    },
+    "creditoImagen": "Dominio público / Retratos carmelitanos históricos"
+  },
+  {
+    "clave": "san-ignacio-de-loyola",
+    "nombre": "San Ignacio de Loyola",
+    "subtitulo": "Fundador de la Compañía de Jesús y Soldado de Cristo",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "07-31",
+    "historia": "Íñigo López de Loyola nació en 1491 en el castillo de Loyola, en Guipúzcoa. Caballero entregado a las glorias del mundo y las armas, cayó gravemente herido en la defensa de Pamplona en 1521. Durante su convalecencia, la lectura de vidas de santos lo llevó a una radical conversión, cambiando sus vestiduras de noble por el sayal del peregrino en Montserrat.\n\nEn la soledad de la cueva de Manresa vivió intensas experiencias místicas y redactó los Ejercicios Espirituales, método insigne de discernimiento interior. En París reunió a sus primeros compañeros —entre ellos San Francisco Javier— y fundó en Roma la Compañía de Jesús, puesta a entera disposición del Romano Pontífice.",
+    "oracion": "Toma, Señor, y recibe toda mi libertad, mi memoria, mi entendimiento y toda mi voluntad; todo mi haber y mi poseer; Tú me lo diste, a Ti, Señor, lo torno; todo es tuyo, dispón a toda tu voluntad. Dame tu amor y gracia, que esta me basta. Amén.",
+    "frase": "En todo amar y servir a la mayor gloria de Dios.",
+    "fraseAutor": "San Ignacio de Loyola (Ejercicios Espirituales)",
+    "datasheet": [
+      { "etiqueta": "Lugar de origen", "valor": "Loyola, País Vasco, España (1491) y tránsito en Roma (1556)" },
+      { "etiqueta": "Orden fundada", "valor": "La Compañía de Jesús (Padres Jesuitas)" },
+      { "etiqueta": "Lema sagrado", "valor": "Ad Maiorem Dei Gloriam (AMDG, «A la Mayor Gloria de Dios»)" },
+      { "etiqueta": "Método espiritual", "valor": "Los Ejercicios Espirituales y el discernimiento de espíritus" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-ignacio-de-loyola/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iglesia del Gesù en Roma"
+  },
+  {
+    "clave": "santa-faustina-kowalska",
+    "nombre": "Santa Faustina Kowalska",
+    "subtitulo": "Secretaria de la Divina Misericordia",
+    "categoria": "Santo",
+    "rareza": "Buena",
+    "celebracion": "10-05",
+    "historia": "Helena Kowalska nació en Głogowiec, Polonia, en 1905, en una familia campesina pobre y devota. Ingresó a la congregación de las Hermanas de Nuestra Señora de la Misericordia en Varsovia en 1925, realizando las tareas más humildes de cocinera, portera y jardinera bajo el nombre de María Faustina del Santísimo Sacramento.\n\nEn su celda conventual recibió revelaciones extraordinarias de Cristo Misericordioso, quien le ordenó pintar la imagen con los rayos rojo y pálido, difundir la Coronilla y solicitar la institución universal de la Fiesta de la Misericordia. Escribió su Diario de seiscientas páginas proclamando el amor de Dios antes de fallecer en 1938 a los treinta y tres años.",
+    "oracion": "Oh Jesús, haz que mis ojos sean misericordiosos para que jamás sospeche ni juzgue según las apariencias; haz que mis oídos sean misericordiosos para que atiendan las necesidades del prójimo; y que mi corazón sea compasivo como el tuyo.",
+    "frase": "La humanidad no encontrará paz hasta que no se vuelva con confianza a mi misericordia.",
+    "fraseAutor": "Santa Faustina Kowalska (Palabras de Jesús en su Diario)",
+    "datasheet": [
+      { "etiqueta": "Lugar y años", "valor": "Polonia (1905-1938, Santuario de Lagiewniki en Cracovia)" },
+      { "etiqueta": "Misión mística", "valor": "Secretaria y apóstol del mensaje de la Divina Misericordia" },
+      { "etiqueta": "Obra escrita", "valor": "Diario: La divina misericordia en mi alma" },
+      { "etiqueta": "Canonización histórica", "valor": "Primera santa canonizada en el Gran Jubileo del año 2000 por San Juan Pablo II" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-faustina-kowalska/1.webp"
+    },
+    "creditoImagen": "Dominio público / Congregación de las Hermanas de la Misericordia"
+  },
+  {
+    "clave": "san-martin-de-porres",
+    "nombre": "San Martín de Porres",
+    "subtitulo": "Fray Escoba y Apóstol de la Caridad Universal",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "11-03",
+    "historia": "Hijo de un noble caballero español y de una mujer liberta de origen africano, Martín nació en Lima, Virreinato del Perú, en 1579. Sufrió el desprecio social por su condición mestiza, pero su alma noble se refugió en la oración y el servicio humilde a los necesitados, ingresando como hermano donado en el convento de Santo Domingo.\n\nEjerció el oficio de enfermero, barbero y portero con una caridad desbordante. Cuidaba a los enfermos sin distinción de razas ni clases sociales, alimentaba a cientos de menesterosos al día y mostraba un amor singular hacia los animales, viviendo en continua penitencia y oración contemplativa hasta su muerte en 1639.",
+    "oracion": "San Martín de Porres, humilde siervo de Cristo, que con amor heroico socorriste a los pobres y enfermos, alcánzanos un corazón compasivo para servir con generosidad a quienes sufren a nuestro alrededor.",
+    "frase": "Yo te curo, Dios te sana.",
+    "fraseAutor": "San Martín de Porres a los enfermos que asistía",
+    "datasheet": [
+      { "etiqueta": "Lugar de vida", "valor": "Lima, Virreinato del Perú (1579-1639)" },
+      { "etiqueta": "Condición religiosa", "valor": "Hermano lego terciario de la Orden de Santo Domingo" },
+      { "etiqueta": "Virtud eminente", "valor": "Caridad fraterna, humildad heroica y compasión con la creación" },
+      { "etiqueta": "Patronazgo", "valor": "Justicia social, los enfermos, barberos y los peluqueros" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-martin-de-porres/1.webp"
+    },
+    "creditoImagen": "Dominio público / Convento de Santo Domingo de Lima"
+  },
+  {
+    "clave": "santa-rosa-de-lima",
+    "nombre": "Santa Rosa de Lima",
+    "subtitulo": "Primera Flor de Santidad de América",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "08-23",
+    "historia": "Isabel Flores de Oliva nació en Lima en 1586. Dotada de notable gracia y hermosura, fue llamada «Rosa» por su madre y confirmada con ese nombre por Santo Toribio de Mogrovejo. Consagró su virginidad a Cristo desde niña, haciendo voto de castidad perpetua e ingresando en la Tercera Orden de Santo Domingo a imitación de Santa Catalina de Siena.\n\nConstruyó una pequeña ermita en el huerto de la casa de sus padres para entregarse a la oración continua y a severas penitencias por la conversión de los pecadores y la salvación de las almas nativas. Cuidaba con maternal ternura a los indígenas enfermos, falleciendo en 1617 a los treinta y un años.",
+    "oracion": "Señor Dios nuestro, que hiciste florecer en el Nuevo Mundo a Santa Rosa de Lima con el perfume de su inocencia y penitencia, concédenos seguir sus ejemplos de amor generoso a Cristo y al prójimo.",
+    "frase": "Fuera de la Cruz no hay otra escalera por donde subir al Cielo.",
+    "fraseAutor": "Santa Rosa de Lima",
+    "datasheet": [
+      { "etiqueta": "Lugar y época", "valor": "Lima, Perú (1586-1617)" },
+      { "etiqueta": "Consagración", "valor": "Terciaria seglar de la Orden de Predicadores" },
+      { "etiqueta": "Distinción histórica", "valor": "Primera persona canonizada nacida en el continente americano (1671)" },
+      { "etiqueta": "Patronazgo universal", "valor": "América, las Filipinas y las Indias Orientales" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-rosa-de-lima/1.webp"
+    },
+    "creditoImagen": "Dominio público / Basílica y Santuario de Santa Rosa en Lima"
+  },
+  {
+    "clave": "san-nicolas-de-bari",
+    "nombre": "San Nicolás de Bari",
+    "subtitulo": "Obispo de Mira y Amparo de los Pobres y Huérfanos",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "12-06",
+    "historia": "Nacido en Patara en el siglo III, Nicolás repartió su rica herencia entre los necesitados y fue elegido obispo de Mira, en la actual Turquía. Con celo apostólico defendió la fe católica en el Concilio de Nicea contra la herejía arriana y sufrió persecución y cárcel bajo el emperador Diocleciano.\n\nSu caridad legendaria dio origen a numerosas tradiciones cristianas: arrojaba bolsas de oro en secreto durante la noche para dotar a doncellas pobres, liberó a marineros de naufragios y rescató a inocentes condenados a muerte. Sus reliquias fueron trasladadas a Bari, Italia, en 1087, donde son veneradas.",
+    "oracion": "Señor Dios todopoderoso, por intercesión del santo obispo Nicolás, líbranos de todos los peligros espirituales y materiales para que avancemos con alegría por el camino de la salvación.",
+    "frase": "La bondad silenciosa ante Dios es el mayor tesoro que un cristiano puede acumular.",
+    "fraseAutor": "Tradición patrística de San Nicolás",
+    "datasheet": [
+      { "etiqueta": "Sede episcopal", "valor": "Obispo de Mira, Asia Menor (siglo IV)" },
+      { "etiqueta": "Santuario mayor", "valor": "Basílica de San Nicolás en Bari, Italia (traslado de reliquias en 1087)" },
+      { "etiqueta": "Defensa dogmática", "valor": "Participante en el Concilio de Nicea (325) en defensa de la divinidad de Cristo" },
+      { "etiqueta": "Patronazgo tradicional", "valor": "Los niños, los huérfanos, marineros y cautivos" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-nicolas-de-bari/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía bizantina e italiana"
+  },
+  {
+    "clave": "san-jorge-martir",
+    "nombre": "San Jorge Mártir",
+    "subtitulo": "El Santo Megalomártir y Defensor de la Fe",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "04-23",
+    "historia": "San Jorge fue un intrépido soldado y tribuno militar de Capadocia al servicio del imperio romano durante el reinado de Diocleciano. Al promulgarse los crueles edictos persecutorios contra los seguidores de Jesucristo, Jorge confesó con audacia su fe católica en presencia del emperador y repartió sus bienes entre los pobres.\n\nSometido a crueles tormentos para forzarlo a apostatar y adorar a los ídolos paganos, perseveró firme en la fidelidad a Cristo hasta ser decapitado en Nicomedia en el año 303. La tradición cristiana lo representó a caballo derrotando al dragón, signo supremo de la victoria del mártir sobre el demonio.",
+    "oracion": "Dios todopoderoso, concédenos por la intercesión del bienaventurado mártir San Jorge la fortaleza necesaria para vencer las asechanzas del maligno y permanecer firmes en el combate de la fe.",
+    "frase": "Sirvo a Cristo, Rey celestial; nada ni nadie en este mundo podrá separarme jamás de su amor.",
+    "fraseAutor": "Actas del martirio de San Jorge (siglo IV)",
+    "datasheet": [
+      { "etiqueta": "Lugar de origen", "valor": "Capadocia y Palestina (siglo III - 303 d.C.)" },
+      { "etiqueta": "Oficio", "valor": "Tribuno del ejército romano" },
+      { "etiqueta": "Símbolo iconográfico", "valor": "El caballero a caballo atravesando al dragón con la lanza" },
+      { "etiqueta": "Patronazgo", "valor": "Soldados, jinetes, scouts y los que combaten el mal" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-jorge-martir/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional oriental y occidental"
+  },
+  {
+    "clave": "santa-ines-virgen-y-martir",
+    "nombre": "Santa Inés, Virgen y Mártir",
+    "subtitulo": "Pureza Heroica y Esposa Inmaculada de Cristo",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "01-21",
+    "historia": "Nacida en Roma en el seno de una ilustre familia cristiana en el siglo III, Inés consagró su doncellez al Señor a la edad de doce años. Pretendida por los jóvenes más acaudalados de la nobleza pagana, rechazó todas las propuestas declarando que su corazón pertenecía exclusivamente a su Esposo celestial Jesucristo.\n\nAcusada de ser cristiana, fue expuesta a la infamia y amenazada con la hoguera. Mantuvo una serenidad inalterable y oró por sus perseguidores antes de recibir con santo gozo la corona del martirio al ser degollada hacia el año 304, siendo recordada como símbolo perpetuo de pureza virginal.",
+    "oracion": "Dios todopoderoso y eterno, que eliges lo débil del mundo para confundir a los soberbios, concédenos a quienes celebramos el triunfo de Santa Inés perseverar en la pureza y en la fortaleza de la fe.",
+    "frase": "Él me ha coronado de joyas preciosas y no admito a otro amante más que a mi Señor Jesucristo.",
+    "fraseAutor": "Santa Inés ante el tribunal romano (siglo IV)",
+    "datasheet": [
+      { "etiqueta": "Lugar y fecha", "valor": "Roma imperial (martirizada hacia el 304 d.C.)" },
+      { "etiqueta": "Edad del martirio", "valor": "Doce o trece años de edad" },
+      { "etiqueta": "Atributos sagrados", "valor": "El cordero blanco (Agnus) y la palma del martirio" },
+      { "etiqueta": "Patronazgo", "valor": "Las jóvenes doncellas, la pureza y las Hijas de María" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-ines-virgen-y-martir/1.webp"
+    },
+    "creditoImagen": "Dominio público / Catacumbas y basílicas romanas"
+  },
+  {
+    "clave": "san-vicente-de-paul",
+    "nombre": "San Vicente de Paúl",
+    "subtitulo": "Apóstol de la Caridad y Padre de los Desvalidos",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "09-27",
+    "historia": "Nacido en Pouy, Gascuña, en 1581, Vicente se ordenó sacerdote a los diecinueve años. Tras diversas pruebas y una profunda maduración pastoral, descubrió la angustiosa miseria material y espiritual en que vivían los campesinos y galeotes de la Francia del siglo XVII.\n\nFundó la Congregación de la Misión (Padres Paulistas o Vicentinos) para la evangelización de los pobres del campo y la formación santa del clero, y junto a Santa Luisa de Marillac creó las Hijas de la Caridad, enviándolas a los hospitales, cárceles y campos de batalla, revolucionando la caridad cristiana organizada.",
+    "oracion": "Dios nuestro, que llenaste a San Vicente de Paúl de virtudes apostólicas para socorrer a los pobres y formar al clero, haz que, animados por su mismo espíritu, amemos lo que él amó y practiquemos lo que enseñó.",
+    "frase": "Los pobres son nuestros amos y señores; en ellos servimos al mismo Jesucristo.",
+    "fraseAutor": "San Vicente de Paúl",
+    "datasheet": [
+      { "etiqueta": "Lugar y época", "valor": "Francia (1581-1660)" },
+      { "etiqueta": "Fundaciones célebres", "valor": "Congregación de la Misión e Hijas de la Caridad (con Santa Luisa de Marillac)" },
+      { "etiqueta": "Carisma primordial", "valor": "Evangelización de los pobres y reforma espiritual del clero" },
+      { "etiqueta": "Patronazgo universal", "valor": "Todas las asociaciones de caridad cristiana" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-vicente-de-paul/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro vicentino"
+  },
+  {
+    "clave": "santa-clara-de-asis",
+    "nombre": "Santa Clara de Asís",
+    "subtitulo": "Luz Serenísima y Esposa de la Santa Pobreza",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "08-11",
+    "historia": "Nacida en Asís en 1194 en el seno de la nobleza, Clara huyó secretamente en la noche del Domingo de Ramos de 1212 para consagrarse a Dios ante San Francisco en la iglesita de la Porciúncula, renunciando a títulos y riquezas para revestirse del hábito de la penitencia y la pobreza evangélica.\n\nFundó la Orden de las Hermanas Pobres (Damas Clarisas) en el monasterio de San Damián, gobernando a sus hermanas con amor maternal durante más de cuarenta años. Escribió la primera regla monástica redactada por una mujer y defendió a su convento de los invasores sarracenos alzando la Santa Custodia con el Santísimo Sacramento.",
+    "oracion": "Dios todopoderoso y misericordioso, que guiaste a Santa Clara de Asís hacia el amor de la santa pobreza, concédenos por su intercesión caminar tras las huellas de Cristo y contemplar tu gloria en el Reino de los Cielos.",
+    "frase": "Miren a Cristo, consideren a Cristo, contemplen a Cristo con el deseo ardiente de imitarlo.",
+    "fraseAutor": "Santa Clara de Asís (Cartas a Santa Inés de Praga)",
+    "datasheet": [
+      { "etiqueta": "Lugar y años", "valor": "Asís, Umbría, Italia (1194-1253)" },
+      { "etiqueta": "Familia monástica", "valor": "Segunda Orden Franciscana (Hermanas Clarisas)" },
+      { "etiqueta": "Privilegio obtenido", "valor": "El «Privilegio de la Pobreza» concedido por el Papa Inocencio III" },
+      { "etiqueta": "Atributo sagrado", "valor": "La Custodia eucarística con la que puso en fuga a los invasores" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-clara-de-asis/1.webp"
+    },
+    "creditoImagen": "Dominio público / Frescos de la Basílica de Santa Clara en Asís"
+  },
+  {
+    "clave": "san-luis-gonzaga",
+    "nombre": "San Luis Gonzaga",
+    "subtitulo": "Modelo de Pureza y Penitencia Angélica",
+    "categoria": "Santo",
+    "rareza": "Comun",
+    "celebracion": "06-21",
+    "historia": "Primogénito del marqués de Castiglione delle Stiviere, Luis nació en 1568 destinado por su noble padre a la carrera militar y a las cortes principescas de Europa. Desde los nueve años consagró su virginidad a la Virgen María y, venciendo una enconada resistencia familiar, renunció solemnemente al marquesado para entrar en la Compañía de Jesús en Roma.\n\nEn el noviciado jesuita destacó por su vida penitente, su modestia ejemplar y su caridad hacia los apestados. Al estallar una epidemia de peste en Roma en 1591, cargó a los enfermos desvalidos sobre sus propios hombros para llevarlos al hospital, contrayendo la enfermedad y falleciendo a los veintitrés años con el Nombre de Jesús en sus labios.",
+    "oracion": "Oh Dios, dispensador de los dones celestiales, que en el joven San Luis Gonzaga uniste una admirable inocencia de vida con una no menor penitencia, concédenos a quienes no le imitamos inocente imitarle penitente.",
+    "frase": "¿De qué me sirve esto para la eternidad? (Quid hoc ad aeternitatem?)",
+    "fraseAutor": "San Luis Gonzaga",
+    "datasheet": [
+      { "etiqueta": "Lugar y años", "valor": "Castiglione y Roma (1568-1591)" },
+      { "etiqueta": "Renuncia heroica", "valor": "Cesión voluntaria del marquesado principesco de Castiglione a su hermano" },
+      { "etiqueta": "Muerte santa", "valor": "Cuidando a los enfermos de peste en los hospitales de Roma a los 23 años" },
+      { "etiqueta": "Patronazgo universal", "valor": "Patrono de la juventud católica y de los estudiantes (proclamado por Benedicto XIII)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-luis-gonzaga/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iglesia de San Ignacio en Roma"
+  }
+]
