@@ -3,10 +3,8 @@
 import React from "react";
 import HoloCard from "@/components/HoloCard";
 import { Lock, Sparkles } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
-  CONFIG_RAREZAS,
   type GradoCarta,
   type RarezaCarta,
 } from "@/lib/cartas/economia";
@@ -91,13 +89,11 @@ export function CartaVista({
   carta,
   modo = "plana",
   grado = 1,
-  fragmentos = 0,
   ancho = 280,
   className,
   onClick,
 }: CartaVistaProps) {
   const estilo = ESTILOS_RAREZA[carta.rareza];
-  const req = carta.fragmentosRequeridos || CONFIG_RAREZAS[carta.rareza].fragmentosRequeridos;
   const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
   const esGloriosa = grado === 4;
   const esVenerada = grado >= 2;
@@ -106,72 +102,32 @@ export function CartaVista({
   const factorGrado = grado === 3 ? 1.3 : grado === 4 ? 1.4 : grado === 2 ? 1.15 : 1.0;
   const intensidadHolo = Math.min(1.0, estilo.intensidadBase * factorGrado);
 
-  // Modo BLOQUEADA
+  // Modo BLOQUEADA: solo el arte en blanco y negro con el candado encima.
+  // Llena el contenedor (que ya fija la proporción 63:88); nombre y progreso
+  // los muestra cada vista afuera de la carta.
   if (modo === "bloqueada") {
-    const porcentajeProgreso = Math.min(100, Math.floor((fragmentos / req) * 100));
-
     return (
       <div
-        role="group"
+        role="img"
         aria-label={`${carta.nombre} (Bloqueada)`}
         onClick={onClick}
         className={cn(
-          "relative flex flex-col items-center overflow-hidden rounded-xl border border-stone-800 bg-stone-950/90 p-3 shadow-md transition-all select-none",
-          onClick && "cursor-pointer hover:border-stone-700",
+          "relative aspect-[63/88] w-full overflow-hidden rounded-xl bg-stone-900 select-none",
+          onClick && "cursor-pointer",
           className
         )}
-        style={{ width: `${ancho}px` }}
+        style={{ maxWidth: `${ancho}px` }}
       >
-        {/* Contenedor imagen en B/N */}
-        <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg bg-stone-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={urlArte(carta.imagenUrl)}
-            alt={carta.nombre}
-            className="size-full object-cover grayscale opacity-50 contrast-125 transition-all duration-300"
-            draggable={false}
-          />
-
-          {/* Superposición candado y rareza */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px] p-4 text-center">
-            <div className="mb-2 rounded-full border border-stone-600 bg-stone-900/90 p-3 text-stone-300 shadow-lg">
-              <Lock className="size-6 text-stone-300" />
-            </div>
-            <span className="text-xs font-serif font-medium uppercase tracking-widest text-stone-300">
-              Bloqueada
-            </span>
-          </div>
-
-          <div className="absolute top-2 right-2">
-            <span
-              className={cn(
-                "rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm",
-                estilo.badgeBg,
-                estilo.textoBadge
-              )}
-            >
-              {TEXTOS_CARTAS.rarezas[carta.rareza]}
-            </span>
-          </div>
-        </div>
-
-        {/* Nombre y barra de progreso */}
-        <div className="mt-3 w-full text-center">
-          <h4 className="font-serif text-sm font-semibold text-stone-200 line-clamp-1">
-            {carta.nombre}
-          </h4>
-          {carta.subtitulo && (
-            <p className="text-[11px] text-stone-400 line-clamp-1 italic font-serif">
-              {carta.subtitulo}
-            </p>
-          )}
-
-          <div className="mt-2.5 w-full space-y-1">
-            <div className="flex justify-between text-[11px] font-mono text-stone-400">
-              <span>{fragmentos} / {req}</span>
-              <span>{porcentajeProgreso}%</span>
-            </div>
-            <Progress value={porcentajeProgreso} className="h-1.5 bg-stone-800" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={urlArte(carta.imagenUrl)}
+          alt=""
+          className="size-full object-cover grayscale"
+          draggable={false}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="rounded-full bg-black/50 p-3 text-stone-100 shadow-lg">
+            <Lock className="size-6" />
           </div>
         </div>
       </div>
