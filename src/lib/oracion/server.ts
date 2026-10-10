@@ -1,26 +1,9 @@
-// Acceso a datos del Camino de oración: traduce Prisma ⇄ motor y fija "hoy" en la zona horaria de la familia.
-import { addDays, format, parseISO } from "date-fns";
-import { tz } from "@date-fns/tz";
 import prisma from "@/lib/prisma";
 import { calcularPlan, type EstadoPlan, type HabitoId, type Marca } from "./engine";
+import { APP_TZ, DIAS_EDITABLES, hoyEnFamilia, fechaEditable, aClave, aFecha } from "@/lib/habitos/server";
 
-export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
-/** Días hacia atrás que se pueden registrar o corregir */
-export const DIAS_EDITABLES = 7;
+export { APP_TZ, DIAS_EDITABLES, hoyEnFamilia, fechaEditable };
 export const HABITOS_VALIDOS: HabitoId[] = ["completorium", "rosario", "matutinum"];
-
-export const hoyEnFamilia = () => format(new Date(), "yyyy-MM-dd", { in: tz(APP_TZ) });
-
-// Columnas @db.Date: medianoche UTC ⇄ clave yyyy-MM-dd
-const aFecha = (clave: string) => new Date(`${clave}T00:00:00.000Z`);
-const aClave = (fecha: Date) => fecha.toISOString().slice(0, 10);
-
-/** La fecha es hoy o uno de los últimos DIAS_EDITABLES días */
-export function fechaEditable(clave: string, hoy = hoyEnFamilia()) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(clave)) return false;
-  const limite = format(addDays(parseISO(hoy), -DIAS_EDITABLES), "yyyy-MM-dd");
-  return clave <= hoy && clave >= limite;
-}
 
 export type EstadoOracion = { usuarioId: number; plan: EstadoPlan | null };
 
