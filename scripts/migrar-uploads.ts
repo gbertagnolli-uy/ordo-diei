@@ -37,7 +37,7 @@ for (const { modelo, tabla, campos } of CAMPOS) {
           faltantes.push(`${tabla}#${fila.id}.${campo} → ${antes}`);
           continue;
         }
-        despues = await guardarImagen(fs.readFileSync(archivo), { nombreOrigen: path.basename(antes) });
+        despues = (await guardarImagen(fs.readFileSync(archivo), { nombreOrigen: path.basename(antes) })).url;
         yaMigrados.set(antes, despues);
       }
       data[campo] = despues;

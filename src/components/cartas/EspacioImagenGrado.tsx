@@ -29,6 +29,7 @@ export function EspacioImagenGrado({
   const [subiendo, setSubiendo] = useState<boolean>(false);
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
   const [avisoPeso, setAvisoPeso] = useState<string | null>(null);
+  const [infoOptimizada, setInfoOptimizada] = useState<string | null>(null);
   const [avisoRatio, setAvisoRatio] = useState<string | null>(null);
   const [modoUrlManual, setModoUrlManual] = useState<boolean>(false);
   const [urlInput, setUrlInput] = useState<string>(urlActual || "");
@@ -42,21 +43,19 @@ export function EspacioImagenGrado({
 
     setErrorValidacion(null);
     setAvisoPeso(null);
+    setInfoOptimizada(null);
     setAvisoRatio(null);
 
-    // 1. Validar tipo (.webp, .png, .jpg)
+    // 1. Validar tipo (.webp, .png, .jpg, .avif)
     const extension = file.name.split(".").pop()?.toLowerCase();
-    const tiposPermitidos = ["webp", "png", "jpg", "jpeg"];
+    const tiposPermitidos = ["webp", "png", "jpg", "jpeg", "avif"];
     if (!extension || !tiposPermitidos.includes(extension)) {
-      setErrorValidacion("Formato no admitido. Se requiere .webp, .png o .jpg");
+      setErrorValidacion("Formato no admitido. Se requiere .webp, .png, .jpg o .avif");
       return;
     }
 
-    // 2. Validar peso (≤ 300 KB con advertencia si excede)
-    const pesoKb = Math.round(file.size / 1024);
-    if (file.size > 300 * 1024) {
-      setAvisoPeso(`El archivo pesa ${pesoKb} KB (supera los 300 KB recomendados).`);
-    }
+    // 2. El peso no se valida acá: la imagen se optimiza al subir (perfil "carta": 1200 px, ≤ 300 KB)
+    const pesoOriginalKb = Math.round(file.size / 1024);
 
     // 3. Validar proporción retrato 63:88 (~0.716)
     const objectUrl = URL.createObjectURL(file);
@@ -73,10 +72,17 @@ export function EspacioImagenGrado({
       // 4. Subir vía /api/upload
       try {
         setSubiendo(true);
-        const data = await subirImagen(file);
+        const data = await subirImagen(file, "/api/upload", "carta");
         if (data.url) {
           onImagenCambiada(data.url);
           setUrlInput(data.url);
+          const finalKb = Math.round(data.bytes / 1024);
+          // Aviso solo si aun optimizada supera los 300 KB; si no, informa cuánto se achicó
+          if (finalKb > 300) {
+            setAvisoPeso(`Aun optimizada pesa ${finalKb} KB (supera los 300 KB recomendados).`);
+          } else {
+            setInfoOptimizada(`Optimizada: ${pesoOriginalKb} KB → ${finalKb} KB (${data.ancho}×${data.alto}).`);
+          }
         }
       } catch (err) {
         console.error("Error al subir imagen:", err);
@@ -100,6 +106,7 @@ export function EspacioImagenGrado({
     setUrlInput("");
     setErrorValidacion(null);
     setAvisoPeso(null);
+    setInfoOptimizada(null);
     setAvisoRatio(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -244,6 +251,13 @@ export function EspacioImagenGrado({
             <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
               <AlertTriangle className="h-3 w-3 shrink-0" />
               {errorValidacion}
+            </p>
+          )}
+
+          {infoOptimizada && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              {infoOptimizada}
             </p>
           )}
 
