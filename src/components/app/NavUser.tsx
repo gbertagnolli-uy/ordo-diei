@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChevronsUpDown, Flame, Gift, Smile, Star } from "lucide-react";
+import Link from "next/link";
+import { ChevronsUpDown, Flame, Gift, Smile, Star, UserRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,26 +16,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useModalStore } from "@/store/modalStore";
-import { getLevelInfo } from "@/lib/levelUtils";
+import { nivelDe, xpTotal } from "@/lib/niveles";
 import { taskGroup } from "@/components/tasks/taskUtils";
 
 const ROLE_LABEL: Record<string, string> = { Padre: "Padre", Madre: "Madre", Hijo: "Hijo", Hija: "Hija" };
 
 // Menú del usuario: identidad, nivel, racha, progreso diario y estado de ánimo (antes en el Header).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
   const { isMobile } = useSidebar();
   const { openModal } = useModalStore();
-  const level = getLevelInfo(user?.puntosAcumulados || 0);
+  const level = nivelDe(xpTotal(user));
   const prevLevelRef = useRef(0);
 
   // Subida de nivel desde la última visita (lógica original del Header)
   useEffect(() => {
     if (!user) return;
-    const currentLevel = getLevelInfo(user.puntosAcumulados || 0).level;
+    const current = nivelDe(xpTotal(user));
+    const currentLevel = current.level;
     const lastSeenLevel = localStorage.getItem(`lastSeenLevel_${user.id}`);
     if (lastSeenLevel) {
       if (currentLevel > parseInt(lastSeenLevel)) {
-        openModal("LEVEL_UP", { level: currentLevel, title: getLevelInfo(user.puntosAcumulados || 0).title });
+        openModal("LEVEL_UP", { level: currentLevel, title: current.title });
         localStorage.setItem(`lastSeenLevel_${user.id}`, currentLevel.toString());
       }
     } else {
@@ -44,13 +47,14 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
   }, []);
 
   useEffect(() => {
-    if (user?.puntosAcumulados === undefined) return;
-    const currentLevel = getLevelInfo(user.puntosAcumulados).level;
+    if (!user) return;
+    const current = nivelDe(xpTotal(user));
+    const currentLevel = current.level;
     if (prevLevelRef.current !== 0 && currentLevel > prevLevelRef.current) {
-      openModal("LEVEL_UP", { level: currentLevel, title: getLevelInfo(user.puntosAcumulados).title });
+      openModal("LEVEL_UP", { level: currentLevel, title: current.title });
     }
     prevLevelRef.current = currentLevel;
-  }, [user?.puntosAcumulados, openModal]);
+  }, [user, openModal]);
 
   // Progreso diario (MyTasksBoard original): entregadas / total, 100 % si no hay tareas
   const done = tasks.filter((t) => taskGroup(t) === "review" || taskGroup(t) === "done").length;
@@ -76,7 +80,7 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
               <span className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.nombre}</span>
                 <span className="truncate text-xs text-sidebar-foreground/60">
-                  Nivel {level.level} · {ROLE_LABEL[user.rolFamiliar] ?? ""}
+                  Nivel {level.level} · {user.rolFamiliar ? (ROLE_LABEL[user.rolFamiliar] ?? "") : ""}
                 </span>
               </span>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -107,6 +111,11 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/perfil">
+                  <UserRound /> Mi perfil
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openModal("MOOD_SELECTOR", { user })}>
                 <Smile /> Estado de ánimo
                 {user.moodEmoji && <span className="ml-auto">{user.moodEmoji}</span>}
