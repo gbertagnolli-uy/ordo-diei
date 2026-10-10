@@ -52,6 +52,10 @@ Props: `image`, `backImage` (click/Enter la da vuelta), `alt`, `preset` (`bursts
 >
 > "Además quiero sumar otras features al sistema, como **niveles de cartas**, y otras features que detallo acá en este informe:" → informe completo y sin cambios en [`cartas/ref/INFORME_SISTEMAS_CARTAS.md`](cartas/ref/INFORME_SISTEMAS_CARTAS.md) (Pokémon TCG, fragmentos y duplicados en Clash Royale / Asphalt 9 / Summoners War, niveles de personaje, y su aplicación: Testimonios, Grados de Veneración, Sobres de Meditación y Revelación, Granos de Incienso, bono de festividad, campos del admin).
 
+> **3ª entrega (2026-10-10), textual:** "Solo un detalle, quiero que **al evolucionar la carta, se use otra imagen**. Yo proporcionaré imágenes para cada carta, y también quiero proporcionar la imagen para las cartas evolucionadas. Por eso debe haber, como ya pedí, una página para agregar cartas. En esa página se debería poder ingresar todos los datos, historia, oraciones, frases, y **las imágenes de cada nivel de la carta**."
+>
+> Consecuencia: cada carta tiene **una imagen por grado** (I a IV), las aporta el usuario y se cargan en el panel de alta/edición (lane 36). Ver D9, D14 y D19.
+
 Esta ampliación **reemplaza** la decisión D7 anterior ("el texto de las cartas bloqueadas se muestra siempre") y ajusta D2–D6; ver §3.
 
 ---
@@ -115,7 +119,7 @@ Lógica propia, solo lo que no existe: el sorteo por bandas (idea de la referenc
 | Sobres Meditación / Revelación | **Se adopta** (D2) en lugar del "sobre devoto" propuesto antes |
 | Bono de festividad en sobres (+50 % de esa carta) | **Se adopta** además del regalo reclamable pedido por el usuario (D5, D17); apagable con una constante |
 | Nombrar "Reliquias" o "Testimonios" | **"Reliquias" NO**: en el derecho canónico las reliquias no se venden (simonía) y venderlas por puntos es irreverente. Queda **"fragmentos"** (palabra del usuario). "Testimonios" es una alternativa; el rótulo vive en una constante de textos (D18) |
-| Tabla de grados I–IV del informe (Conocimiento 0–49 %, etc.) | **Reemplazada** por los tramos de revelación que pidió el usuario (D13). Del grado "Iluminado" se toma lo de arte alternativo y halo, pero **no** esconder la oración: el usuario la desbloquea al principio |
+| Tabla de grados I–IV del informe (Conocimiento 0–49 %, etc.) | **Reemplazada** por los tramos de revelación que pidió el usuario (D13). Del grado "Iluminado" se toma la imagen propia de cada grado (D19) y el halo, pero **no** esconder la oración: el usuario la desbloquea al principio |
 | Campos de admin `fragmentos_para_iluminacion`, `contenido_bloqueado…` | Se adaptan al modelo nuevo (§4 y lane 36); el contenido bloqueado es siempre "???" (D13) |
 | Graduación tipo PSA, "mano caliente", mercado secundario, utilidad competitiva, Evo Shards por misiones | **No se adopta:** valor financiero, presión de compra y competencia contradicen una app familiar. Idea futura sin lane: sobres como premio de hábitos/racha |
 
@@ -167,12 +171,16 @@ Números de partida; la lane 30 simula la economía (días hasta la primera Com�
 
 | Grado | Con | Lo que gana la carta (cosmético) |
 |---|---|---|
-| I · Desbloqueada | 100 % | Imagen a color y marco de su rareza |
-| II · Venerada | 150 % | Marco ornamental dorado y sello en la grilla |
-| III · Iluminada | 200 % | Holo más intenso + **arte alternativo** si la carta lo tiene |
-| IV · Gloriosa | 300 % (tope) | Halo animado en la carta y título "Gloriosa" |
+| I · Desbloqueada | 100 % | **Imagen del grado I** a color y marco de su rareza |
+| II · Venerada | 150 % | **Imagen del grado II** y marco ornamental dorado |
+| III · Iluminada | 200 % | **Imagen del grado III** y holo más intenso |
+| IV · Gloriosa | 300 % (tope) | **Imagen del grado IV**, halo animado y título "Gloriosa" |
+
+Al cambiar de grado la carta **cambia de imagen** (D19). Antes de desbloquear (0 a 99 %) se usa la imagen del grado I en blanco y negro.
 
 Los umbrales son constantes en `economia.ts`. El grado se calcula de los fragmentos (no se guarda).
+
+**D19 · Una imagen por grado, aportadas por el usuario.** Cada carta tiene hasta 4 imágenes: `imagenUrl` (grado I, obligatoria), `imagenGrado2Url`, `imagenGrado3Url`, `imagenGrado4Url`. Si falta la de un grado, se usa la del grado anterior más alto cargado. Las imágenes se cargan en el panel de alta/edición (lane 36); el catálogo inicial (lane 33) trae un **arte provisional** por categoría y la convención `public/cartas/<clave>/1.webp … 4.webp` por si el usuario prefiere copiar archivos. **Sin spoilers:** la API y la ruta de imagen solo entregan la imagen del grado actual del usuario (o la del grado I en blanco y negro si está bloqueada); las de grados superiores no se envían. El administrador sí las ve en su vista previa. Formato recomendado: retrato 63:88, `.webp`, ≤ 300 KB, igual encuadre en los 4 grados para que el cambio se note como evolución.
 
 **D15 · Granos de Incienso:** lo que sobra al llegar al tope de una carta se convierte en `fragmentos × valor` de su rareza (tabla D1). El Incienso se gasta en la tienda comprando fragmentos de **cualquier** carta a `valor` Incienso cada uno. Es una conversión justa entre rarezas (sin arbitraje). `Usuario.incienso`.
 
@@ -184,7 +192,7 @@ Los umbrales son constantes en `economia.ts`. El grado se calcula de los fragmen
 
 **D8 · Rendimiento de HoloCard:** `HoloCard` solo en (a) la pantalla de detalle, (b) el modal de apertura y (c) la vista previa del admin. Las **grillas** usan la imagen plana con un tilt CSS liviano (WebGL permite ~16 contextos). Si no hay WebGL2, HoloCard cae a la imagen.
 
-**D9 · Imagen de la carta:** `GET /api/cartas/[clave]/imagen` compone con `next/og` el arte, el marco de la rareza (y del grado) y el nombre, con caché. Mismo origen para HoloCard; `frame` coincide con el ancho del marco. Fuentes y licencias del arte en `src/lib/cartas/catalogo/CREDITOS.md`.
+**D9 · Imagen de la carta:** `GET /api/cartas/[clave]/imagen?grado=N` compone con `next/og` la imagen **de ese grado** (D19), el marco de la rareza (y del grado) y el nombre, con caché. Un usuario común solo puede pedir hasta su grado actual (403 si pide uno superior). Mismo origen para HoloCard; `frame` coincide con el ancho del marco. Fuentes y licencias del arte en `src/lib/cartas/catalogo/CREDITOS.md`.
 
 **D10 · Catálogo inicial** (lane 33): ~60 cartas en JSON validado con zod:
 - 20 misterios (gozosos, luminosos, dolorosos, gloriosos), sin fecha.
@@ -215,7 +223,7 @@ model Carta {                 // @@map("Cartas")
   celebracion String?         // "MM-DD" (null = sin fecha fija)
   historia String @db.Text, oracion String @db.Text, frase String, fraseAutor String?
   datasheet Json              // [{ etiqueta, valor }] en orden de revelación, mín. 4 (nacimiento, muerte, virtud, patronazgo…)
-  imagenUrl String, imagenAlternativaUrl String?, creditoImagen String?
+  imagenUrl String /* grado I */, imagenGrado2Url String?, imagenGrado3Url String?, imagenGrado4Url String?, creditoImagen String?
   fragmentosRequeridos Int    // por defecto el de la rareza (D1), editable
   origen OrigenCarta @default(Sistema), editadaManual Boolean @default(false)
   activa Boolean @default(true), creadorId Int?, createdAt, updatedAt
@@ -239,7 +247,7 @@ Todo aditivo (`db push` sin `--accept-data-loss`). Tras `prisma generate`, **rei
 
 ## 5. Contrato del catálogo JSON (lanes 31 y 33)
 
-`src/lib/cartas/catalogo/<categoria>.json`, arreglo con: `clave, nombre, subtitulo?, categoria, rareza, celebracion|null, historia, oracion, frase, fraseAutor?, datasheet[{etiqueta,valor}] (4–8, en orden de revelación), imagen (public/cartas/<clave>.webp), imagenAlternativa? , creditoImagen`. El esquema zod vive en `src/lib/cartas/esquema.ts` (lane 30) y lo usan el seed (31), el admin (36) y la validación del catálogo (33).
+`src/lib/cartas/catalogo/<categoria>.json`, arreglo con: `clave, nombre, subtitulo?, categoria, rareza, celebracion|null, historia, oracion, frase, fraseAutor?, datasheet[{etiqueta,valor}] (4–8, en orden de revelación), imagenes {1: ruta, 2?: ruta, 3?: ruta, 4?: ruta} (por convención public/cartas/<clave>/N.webp), creditoImagen`. El esquema zod vive en `src/lib/cartas/esquema.ts` (lane 30) y lo usan el seed (31), el admin (36) y la validación del catálogo (33).
 
 ---
 
@@ -251,11 +259,11 @@ Cadena: cada lane, al empezar, hace `git merge <rama anterior>` (rama local). Yo
 |---|---|---|---|
 | 30 | `task/lane-30-cartas-motor` | `dev` | Motor puro y tests: economía (D1/D2), sorteo en dos etapas, fragmentos con tope y conversión a Incienso (D4/D15), **revelación progresiva** (D13), **grados** (D14), fiesta/cumpleaños/bono (D5/D6/D17), fechas en `APP_TZ`, zod, simulación |
 | 31 | `task/lane-31-cartas-datos` | 30 | Prisma (§4), seed, servicio y API con **contenido redactado según D13**, compras (puntos e Incienso), reclamos, eventos. Transacciones e idempotencia |
-| 32 | `task/lane-32-holocard` | 31 | HoloCard (React Bits) + `CartaVista` con rareza y **grado** (marco, halo, arte alternativo) + `/api/cartas/[clave]/imagen` |
-| 33 | `task/lane-33-cartas-catalogo` | 32 | Catálogo (~60 cartas, datasheet 4–8 datos), arte libre, créditos, validación zod + romcal |
+| 32 | `task/lane-32-holocard` | 31 | HoloCard (React Bits) + `CartaVista` con rareza y **grado** (imagen propia de cada grado, marco, halo) + `/api/cartas/[clave]/imagen` |
+| 33 | `task/lane-33-cartas-catalogo` | 32 | Catálogo (~60 cartas, datasheet 4–8 datos), arte **provisional** por categoría (el usuario aporta el definitivo), validación zod + romcal |
 | 34 | `task/lane-34-cartas-coleccion` | 33 | Colección y álbum (B/N), pantalla de carta con **revelación por tramos**, barra de progreso con hitos 25/50/100 %, grado y entrada en la barra lateral |
 | 35 | `task/lane-35-cartas-tienda` | 34 | Tienda (Meditación, Revelación, fragmentos por puntos o Incienso, bono de fiesta) y animación de apertura/desbloqueo/subida de grado |
-| 36 | `task/lane-36-cartas-admin` | 35 | Panel crear/editar con editor de datasheet ordenable, arte alternativo y **vista previa con deslizador de % de fragmentos** |
+| 36 | `task/lane-36-cartas-admin` | 35 | Panel crear/editar con **todos los datos y las 4 imágenes por grado**, editor de datasheet ordenable y **vista previa con deslizador de % de fragmentos** |
 | 37 | `task/lane-37-cartas-eventos` | 36 | Reclamos de fiesta y cumpleaños, logros, cierre y documentación |
 
 Worktrees en `../ordo-diei-lanes/lane-NN` (copia reflink de `node_modules`). **Cada worktree tiene su propia copia del vault**: el orquestador la actualiza con `git merge dev` cuando cambia el plan. `AGY_PROMPT.md` (fuera de git) es copia de [`cartas/lane-NN-*.md`](cartas/).
@@ -291,3 +299,4 @@ Worktrees en `../ordo-diei-lanes/lane-NN` (copia reflink de `node_modules`). **C
 3. **D17:** ¿bono de ×1,5 en la tienda el día de la fiesta, además del regalo reclamable? (propuesto)
 4. **D1/D2:** precios y fragmentos iniciales; se ajustan con la simulación de la lane 30.
 5. ¿Las rarezas del catálogo (lane 33) las revisás antes del merge?
+6. **D19:** ¿te sirve el formato de imagen (retrato 63:88, `.webp`, ≤ 300 KB, mismo encuadre en los 4 grados)? Mientras no subas las tuyas, las cartas usan arte provisional.

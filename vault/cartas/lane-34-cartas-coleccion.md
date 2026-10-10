@@ -14,6 +14,7 @@
 Los dashboards y la pantalla de cada carta con la **revelación progresiva** (D13) y los **grados** (D14).
 
 ## Entregables
+(La imagen de cada carta es la de su **grado actual**, D19; el cambio de imagen al subir de grado se ve en grilla y detalle.)
 1. `/dashboard/cartas` con shadcn `tabs`: **Mi colección** (desbloqueadas, con grado y contador; las que están en progreso aparecen en una fila aparte "En camino" con su %) y **Álbum** (todas; las no desbloqueadas en blanco y negro con candado y `n/requeridos`). Grillas con `CartaVista` modo `plana`/`bloqueada` (nunca `holo` por celda). Filtros por categoría, rareza y grado, buscador, contador "X de Y", `empty` que lleva a la tienda.
 2. `/dashboard/cartas/[clave]`: `CartaVista` modo `holo` (bloqueada → B/N sin holo) y las secciones **Historia, Oración, Frase y Datasheet** con shadcn `card`/`table`, **mostrando exactamente lo que devuelve la API** (el cliente no decide qué se ve):
    - Siempre: nombre y fecha de celebración ("4 de octubre", "faltan N días").
