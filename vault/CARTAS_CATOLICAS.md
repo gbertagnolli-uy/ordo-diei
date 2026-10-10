@@ -241,7 +241,7 @@ model ReclamoCarta {          // @@map("Reclamos_Carta") — idempotencia de eve
 }
 Usuario.incienso Int @default(0) @map("Incienso")
 ```
-Todo aditivo (`db push` sin `--accept-data-loss`). Tras `prisma generate`, **reiniciar `next dev`**.
+Todo aditivo. **No usar `prisma db push`** (prohibido, ver regla 6 de `AGENTS.md`): generar el SQL con `prisma migrate diff`, aplicarlo con `prisma db execute` solo si no tiene `DROP`. Tras `prisma generate`, **reiniciar `next dev`**.
 
 ---
 
@@ -273,7 +273,7 @@ Worktrees en `../ordo-diei-lanes/lane-NN` (copia reflink de `node_modules`). **C
 - Leer `AGENTS.md`: Next 16 tiene cambios. Consultar `node_modules/next/dist/docs/` antes de usar una API de Next.
 - **UI solo con componentes prearmados** (shadcn `radix-nova`, React Bits, MagicUI, Aceternity), sin duplicar elementos ni cambiar comportamiento ajeno. Si el CLI de shadcn agrega imports desde `"cn"`, corregirlos a `@/lib/utils` y desinstalar el paquete `cn`.
 - **Reutilizar open source** antes que programar (§2.3). Sin copiar código del repo de referencia (sin licencia de reuso).
-- Base de datos: Supabase, schema `family_tasker`; solo la lane 31 toca `schema.prisma`, con `db push` aditivo. Reiniciar `next dev` tras `generate`.
+- Base de datos: Supabase, schema `family_tasker`; solo la lane 31 toca `schema.prisma`. **No usar `prisma db push`** (prohibido, ver regla 6 de `AGENTS.md`): generar el SQL con `prisma migrate diff`, aplicarlo con `prisma db execute` solo si no tiene `DROP`. Reiniciar `next dev` tras `generate`.
 - Textos en español rioplatense. Sin YouTube, Google, batallas ni ataque/defensa.
 - Verificación: `npm test`, `npx tsc --noEmit`, `npx eslint` sobre lo tocado, `npx next build` y prueba en el navegador con capturas (1440, 390, oscuro). Datos de prueba borrados.
 - Commits en la rama y una fila en el §8 (si hay conflicto en esa tabla al mergear la rama anterior, conservar ambas filas). **Sin merge a `dev` ni PR.**
