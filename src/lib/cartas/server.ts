@@ -36,6 +36,7 @@ import {
   APP_TZ,
 } from "./eventos.ts";
 import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
+import { ordenarCartas } from "./orden.ts";
 
 interface CartaPrismaRow {
   id: number;
@@ -108,7 +109,9 @@ export async function listarCartasUsuario(usuarioId: number) {
     fragmentosPorCarta.set(cu.cartaId, cu.fragmentos);
   }
 
-  const cartasVisibles: ContenidoCartaVisible[] = cartasDb.map((carta) => {
+  const cartasOrdenadas = ordenarCartas(cartasDb);
+
+  const cartasVisibles: ContenidoCartaVisible[] = cartasOrdenadas.map((carta) => {
     const fragmentos = fragmentosPorCarta.get(carta.id) ?? 0;
     const adaptada = adaptarCartaPrisma(carta);
     return contenidoVisible(adaptada, fragmentos);
@@ -138,8 +141,7 @@ export async function obtenerDetalleCarta(
     }),
     prisma.carta.findMany({
       where: { activa: true },
-      orderBy: [{ rareza: "asc" }, { nombre: "asc" }],
-      select: { clave: true },
+      select: { clave: true, categoria: true },
     }),
     prisma.movimientoFragmento.aggregate({
       where: {
@@ -168,10 +170,11 @@ export async function obtenerDetalleCarta(
   const adaptada = adaptarCartaPrisma(cartaDb);
   const visible = contenidoVisible(adaptada, fragmentos);
 
-  // Navegación secuencial dentro del catálogo
-  const idx = cartasLista.findIndex((c) => c.clave === clave);
-  const anterior = idx > 0 ? cartasLista[idx - 1].clave : null;
-  const siguiente = idx >= 0 && idx < cartasLista.length - 1 ? cartasLista[idx + 1].clave : null;
+  // Navegación secuencial dentro del catálogo siguiendo el orden litúrgico
+  const listaOrdenada = ordenarCartas(cartasLista);
+  const idx = listaOrdenada.findIndex((c) => c.clave === clave);
+  const anterior = idx > 0 ? listaOrdenada[idx - 1].clave : null;
+  const siguiente = idx >= 0 && idx < listaOrdenada.length - 1 ? listaOrdenada[idx + 1].clave : null;
 
   // Formateo y conteo de días hasta la celebración litúrgica
   let diasHastaCelebracion: number | null = null;
