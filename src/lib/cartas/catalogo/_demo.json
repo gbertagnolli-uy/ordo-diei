@@ -18,7 +18,9 @@
     ],
     "imagenes": {
       "1": "/cartas/misterio-anunciacion/1.webp",
-      "2": "/cartas/misterio-anunciacion/2.webp"
+      "2": "/cartas/misterio-anunciacion/2.webp",
+      "3": "/cartas/misterio-anunciacion/3.webp",
+      "4": "/cartas/misterio-anunciacion/4.webp"
     },
     "creditoImagen": "Dominio público / Arte cristiano"
   },
@@ -71,5 +73,30 @@
       "4": "/cartas/san-juan-pablo-ii/4.webp"
     },
     "creditoImagen": "Vatican Media / Dominio público"
+  },
+  {
+    "clave": "san-jose",
+    "nombre": "San José, Esposo de María",
+    "subtitulo": "Patrono Universal de la Iglesia",
+    "categoria": "Santo",
+    "rareza": "Celestial",
+    "celebracion": "03-19",
+    "historia": "Hombre justo y silencioso de la estirpe de David, José fue elegido por Dios para ser custodio del Redentor y castísimo esposo de la Virgen María. Con fe inquebrantable protegió al Niño Jesús huyendo a Egipto y enseñó al Hijo de Dios el oficio de carpintero en el humilde hogar de Nazaret. Es patrono de la Iglesia universal, de los padres de familia y de la buena muerte.",
+    "oracion": "Acuérdate, oh castísimo esposo de la Virgen María, San José, mi dulce protector, que jamás se ha oído decir que ninguno haya invocado tu protección sin haber sido consolado.",
+    "frase": "José hizo como el ángel del Señor le había mandado.",
+    "fraseAutor": "Evangelio según San Mateo (Mt 1, 24)",
+    "datasheet": [
+      { "etiqueta": "Estirpe", "valor": "Casa y linaje de David" },
+      { "etiqueta": "Principal virtud", "valor": "Justicia, silencio y obediencia de fe" },
+      { "etiqueta": "Patronazgo universal", "valor": "La Iglesia Católica, los trabajadores y las familias" },
+      { "etiqueta": "Título solemne", "valor": "Terror de los demonios y Custodio del Redentor" }
+    ],
+    "imagenes": {
+      "1": "/cartas/san-jose/1.webp",
+      "2": "/cartas/san-jose/2.webp",
+      "3": "/cartas/san-jose/3.webp",
+      "4": "/cartas/san-jose/4.webp"
+    },
+    "creditoImagen": "Dominio público / Arte cristiano tradicional"
   }
 ]
