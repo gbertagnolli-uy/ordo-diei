@@ -22,6 +22,8 @@ import { HabitoCard } from "./HabitoCard";
 import { Escalera } from "./Escalera";
 import { CalendarioHabitos } from "./CalendarioHabitos";
 import { TrayectoriaHabitos } from "./TrayectoriaHabitos";
+import { HabitosCarrusel } from "./HabitosCarrusel";
+import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";
 
 const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: React.ElementType }[] = [
@@ -56,6 +58,7 @@ export function HabitosClient({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [habitoAEditar, setHabitoAEditar] = useState<EstadoHabito | null>(null);
   const [preseleccionMiembro, setPreseleccionMiembro] = useState<number | null>(null);
+  const [habitoElegidoId, setHabitoElegidoId] = useState<number | null>(null);
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
 
   const habitos = estado.habitos;
@@ -63,6 +66,9 @@ export function HabitosClient({
   const hechosHoy = programadosHoy.filter((h) => h.hoy === "hecho");
   const porcentajeHoy =
     programadosHoy.length > 0 ? Math.round((hechosHoy.length / programadosHoy.length) * 100) : 0;
+
+  const predeterminados = catalogo.filter((h) => h.clave !== null);
+  const comunitarios = catalogo.filter((h) => h.clave === null);
 
   // Hábitos en etapa Retomando (G3)
   const enRetomando = habitos.filter((h) => h.etapa === "retomando");
@@ -197,6 +203,7 @@ export function HabitosClient({
                   variant="outline"
                   onClick={() => {
                     setHabitoAEditar(null);
+                    setHabitoElegidoId(null);
                     setPreseleccionMiembro(null);
                     setDialogOpen(true);
                   }}
@@ -259,6 +266,7 @@ export function HabitosClient({
             <Button
               onClick={() => {
                 setHabitoAEditar(null);
+                setHabitoElegidoId(null);
                 setPreseleccionMiembro(null);
                 setDialogOpen(true);
               }}
@@ -320,13 +328,50 @@ export function HabitosClient({
         </div>
       )}
 
+      {/* 6. Hábitos predeterminados: carrusel; al tocar uno se abre su configuración */}
+      <section className="space-y-4">
+        <div className="border-b pb-2">
+          <h3 className="font-heading text-lg font-bold">Hábitos predeterminados</h3>
+          <p className="text-xs text-muted-foreground">Tocá uno para configurarlo y empezar.</p>
+        </div>
+        <HabitosCarrusel
+          habitos={predeterminados}
+          onElegir={(id) => {
+            setHabitoAEditar(null);
+            setHabitoElegidoId(id);
+            setDialogOpen(true);
+          }}
+        />
+      </section>
+
+      {/* 7. Hábitos comunitarios: creados por otros usuarios */}
+      {comunitarios.length > 0 && (
+        <section className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="font-heading text-lg font-bold">Hábitos comunitarios</h3>
+            <p className="text-xs text-muted-foreground">Creados por la familia. Tocá uno para verlo y adoptarlo.</p>
+          </div>
+          <HabitosComunitarios
+            habitos={comunitarios}
+            habitosActivos={habitos}
+            onElegir={(id) => {
+              setHabitoAEditar(null);
+              setHabitoElegidoId(id);
+              setDialogOpen(true);
+            }}
+          />
+        </section>
+      )}
+
       {/* Diálogo de 2 pasos para crear, adoptar o editar hábitos */}
       <HabitoDialog
         isOpen={dialogOpen}
         onClose={() => {
           setDialogOpen(false);
           setHabitoAEditar(null);
+          setHabitoElegidoId(null);
         }}
+        habitoElegidoId={habitoElegidoId}
         catalogo={catalogo}
         habitosActivos={habitos}
         miembros={miembros}

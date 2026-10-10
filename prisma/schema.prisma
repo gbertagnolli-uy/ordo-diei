@@ -251,6 +251,7 @@ model Habito {
   ancla       String          @map("Ancla")
   icono       String          @map("Icono")
   minimo      String?         @map("Minimo")
+  imagen      String?         @map("Imagen")
   creadorId   Int?            @map("Creador_ID")
   archivado   Boolean         @default(false) @map("Archivado")
   createdAt   DateTime        @default(now()) @map("Created_At")
