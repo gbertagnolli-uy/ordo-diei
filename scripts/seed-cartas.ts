@@ -1,0 +1,139 @@
+// Carga idempotente del catálogo de cartas católicas desde JSON (Lane 31)
+
+import fs from "node:fs";
+import path from "node:path";
+import prisma from "../src/lib/prisma.ts";
+import { CONFIG_RAREZAS } from "../src/lib/cartas/economia.ts";
+import { esquemaCartaCatalogo, type CartaCatalogo } from "../src/lib/cartas/esquema.ts";
+
+export async function sembrarCartas(directorioCatalogo?: string) {
+  const dir =
+    directorioCatalogo ||
+    path.join(process.cwd(), "src", "lib", "cartas", "catalogo");
+
+  if (!fs.existsSync(dir)) {
+    console.log(`[Seed Cartas] Directorio no encontrado: ${dir}`);
+    return { insertadas: 0, actualizadas: 0, omitidas: 0, total: 0 };
+  }
+
+  const archivos = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".json"));
+
+  let totalProcesadas = 0;
+  let insertadas = 0;
+  let actualizadas = 0;
+  let omitidas = 0;
+
+  for (const archivo of archivos) {
+    const rutaArchivo = path.join(dir, archivo);
+    const contenido = fs.readFileSync(rutaArchivo, "utf-8");
+    let jsonArray: unknown[];
+
+    try {
+      jsonArray = JSON.parse(contenido);
+    } catch (e) {
+      console.error(`[Seed Cartas] Error al parsear JSON en ${archivo}:`, e);
+      continue;
+    }
+
+    if (!Array.isArray(jsonArray)) {
+      console.warn(`[Seed Cartas] ${archivo} no contiene un array.`);
+      continue;
+    }
+
+    for (const item of jsonArray) {
+      totalProcesadas++;
+      const parseResult = esquemaCartaCatalogo.safeParse(item);
+      if (!parseResult.success) {
+        console.error(
+          `[Seed Cartas] Validación fallida para carta en ${archivo}:`,
+          parseResult.error.format()
+        );
+        continue;
+      }
+
+      const cartaData: CartaCatalogo = parseResult.data;
+      const fragmentosReq =
+        cartaData.fragmentosRequeridos ??
+        CONFIG_RAREZAS[cartaData.rareza].fragmentosRequeridos;
+
+      const existente = await prisma.carta.findUnique({
+        where: { clave: cartaData.clave },
+      });
+
+      if (!existente) {
+        await prisma.carta.create({
+          data: {
+            clave: cartaData.clave,
+            nombre: cartaData.nombre,
+            subtitulo: cartaData.subtitulo ?? null,
+            categoria: cartaData.categoria,
+            rareza: cartaData.rareza,
+            celebracion: cartaData.celebracion ?? null,
+            historia: cartaData.historia,
+            oracion: cartaData.oracion,
+            frase: cartaData.frase,
+            fraseAutor: cartaData.fraseAutor ?? null,
+            datasheet: cartaData.datasheet,
+            imagenUrl: cartaData.imagenes["1"],
+            imagenGrado2Url: cartaData.imagenes["2"] ?? null,
+            imagenGrado3Url: cartaData.imagenes["3"] ?? null,
+            imagenGrado4Url: cartaData.imagenes["4"] ?? null,
+            creditoImagen: cartaData.creditoImagen ?? null,
+            fragmentosRequeridos: fragmentosReq,
+            origen: "Sistema",
+            editadaManual: false,
+            activa: true,
+          },
+        });
+        insertadas++;
+      } else if (existente.editadaManual) {
+        // No pisar cartas con editadaManual = true
+        omitidas++;
+      } else {
+        // Actualizar datos del sistema
+        await prisma.carta.update({
+          where: { clave: cartaData.clave },
+          data: {
+            nombre: cartaData.nombre,
+            subtitulo: cartaData.subtitulo ?? null,
+            categoria: cartaData.categoria,
+            rareza: cartaData.rareza,
+            celebracion: cartaData.celebracion ?? null,
+            historia: cartaData.historia,
+            oracion: cartaData.oracion,
+            frase: cartaData.frase,
+            fraseAutor: cartaData.fraseAutor ?? null,
+            datasheet: cartaData.datasheet,
+            imagenUrl: cartaData.imagenes["1"],
+            imagenGrado2Url: cartaData.imagenes["2"] ?? null,
+            imagenGrado3Url: cartaData.imagenes["3"] ?? null,
+            imagenGrado4Url: cartaData.imagenes["4"] ?? null,
+            creditoImagen: cartaData.creditoImagen ?? null,
+            fragmentosRequeridos: fragmentosReq,
+            origen: "Sistema",
+          },
+        });
+        actualizadas++;
+      }
+    }
+  }
+
+  console.log(
+    `[Seed Cartas] Finalizado. Total: ${totalProcesadas}, Insertadas: ${insertadas}, Actualizadas: ${actualizadas}, Omitidas por edición manual: ${omitidas}`
+  );
+  return { insertadas, actualizadas, omitidas, total: totalProcesadas };
+}
+
+// Ejecución directa si se invoca con ts-node / node
+if (process.argv[1]?.endsWith("seed-cartas.ts")) {
+  sembrarCartas()
+    .catch((err) => {
+      console.error("[Seed Cartas] Error fatal:", err);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

@@ -68,10 +68,17 @@ export function esCumpleHoy(
       mesDia = limpia.slice(5, 10);
     } else {
       const parsed = new Date(limpia);
-      mesDia = format(parsed, "MM-dd", { in: tz(timezone) });
+      mesDia = parsed.toISOString().slice(5, 10);
     }
   } else {
-    mesDia = format(fechaNacimiento, "MM-dd", { in: tz(timezone) });
+    // Si la fecha fue guardada a medianoche UTC (ej: Prisma o new Date("YYYY-MM-DD")):
+    // usar los componentes UTC para no retrasar un día en husos horarios occidentales (UTC-3)
+    const iso = fechaNacimiento.toISOString();
+    if (iso.endsWith("T00:00:00.000Z") || iso.endsWith("T12:00:00.000Z")) {
+      mesDia = iso.slice(5, 10);
+    } else {
+      mesDia = format(fechaNacimiento, "MM-dd", { in: tz(timezone) });
+    }
   }
 
   const anioActual = parseInt(hoyAnioEnTz(ahora, timezone), 10);
