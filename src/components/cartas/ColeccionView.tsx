@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/empty";
 import { CartaVista } from "@/components/cartas/CartaVista";
 import { TiendaCartasView } from "@/components/cartas/TiendaCartasView";
+import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 import { ModalAperturaSobre, type ResultadoCompraSobre, type CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { ContenidoCartaVisible } from "@/lib/cartas/revelado";
@@ -191,6 +192,22 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Aviso de fiesta litúrgica y cumpleaños del día */}
+      <BannerEventosCartas
+        className="mb-2"
+        onReclamoExitoso={() => {
+          fetch("/api/cartas")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+              if (data) {
+                setCartas(data.cartas);
+                setUsuario(data.usuario);
+              }
+            })
+            .catch(() => {});
+        }}
+      />
 
       {/* Selector de Pestañas */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">

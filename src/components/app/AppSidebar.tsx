@@ -94,6 +94,25 @@ export function AppSidebar({
     return c;
   }, [tasks]);
 
+  const [hayEventosCartas, setHayEventosCartas] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    fetch("/api/cartas/eventos")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelado && data) {
+          const fiestaPendiente = data.fiestas?.some((f: { reclamado: boolean }) => !f.reclamado);
+          const cumplePendiente = data.esCumple && !data.cumpleReclamado;
+          setHayEventosCartas(Boolean(fiestaPendiente || cumplePendiente));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelado = true;
+    };
+  }, [pathname]);
+
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
@@ -139,6 +158,9 @@ export function AppSidebar({
                   <span>Cartas</span>
                 </Link>
               </SidebarMenuButton>
+              {hayEventosCartas && (
+                <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Eventos festivos disponibles" />
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

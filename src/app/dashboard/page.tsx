@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
+import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -58,11 +59,16 @@ export default async function DashboardPage() {
   }
 
   return (
-    <TaskWorkspace
-      tasks={myTasks}
-      coResponsables={coResponsableMap}
-      isAdmin={isCurrentUserAdmin}
-      family={{ parents, children }}
-    />
+    <div className="flex flex-col w-full">
+      <div className="px-4 sm:px-6 pt-3">
+        <BannerEventosCartas />
+      </div>
+      <TaskWorkspace
+        tasks={myTasks}
+        coResponsables={coResponsableMap}
+        isAdmin={isCurrentUserAdmin}
+        family={{ parents, children }}
+      />
+    </div>
   );
 }

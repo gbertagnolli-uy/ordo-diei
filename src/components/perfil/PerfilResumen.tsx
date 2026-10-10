@@ -103,6 +103,24 @@ export function PerfilResumen({
     };
   }, [usuario.id, habitosIniciales]);
 
+  const [cartasUsuario, setCartasUsuario] = useState<Array<{ desbloqueada: boolean; rareza?: string; grado?: number }>>([]);
+
+  useEffect(() => {
+    let cancelado = false;
+    fetch("/api/cartas")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelado && data?.cartas) {
+          setCartasUsuario(data.cartas);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const totalXp = xpTotal(usuario);
   const infoNivel = nivelDe(totalXp);
 
@@ -115,6 +133,7 @@ export function PerfilResumen({
   const todosLogros = evaluarLogros({
     usuario,
     habitos,
+    cartas: cartasUsuario,
   });
 
   const logrosFiltrados =
@@ -318,6 +337,9 @@ export function PerfilResumen({
               </TabsTrigger>
               <TabsTrigger value="nivel" className="text-xs">
                 Nivel
+              </TabsTrigger>
+              <TabsTrigger value="cartas" className="text-xs">
+                Cartas
               </TabsTrigger>
             </TabsList>
           </Tabs>

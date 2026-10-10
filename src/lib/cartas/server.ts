@@ -687,9 +687,12 @@ export async function reclamarFiesta(usuarioId: number, cartaId: number) {
     }
 
     return {
+      tipo: "fiesta" as const,
+      mensaje: "Premio festividad litúrgica reclamado",
       cartaId,
       nombre: carta.nombre,
       cantidadRegalo,
+      fragmentosGanados: cantidadRegalo,
       fragmentosAntes: fragmentosActuales,
       fragmentosDespues: res.nuevo,
       desbloquea: res.desbloquea,
