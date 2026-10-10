@@ -94,7 +94,7 @@ model Recompensa {          // @@map("Recompensas")
 
 - [x] **Lane 38 · `task/lane-38-habito-libro`** (base `dev`): todo lo anterior, con tests del cálculo de progreso y del premio.
 
-**Cuidado con las lanes de cartas (30–37):** se ramificaron antes de esta lane. Antes de su `prisma db push` tienen que hacer `git merge dev`, o el push intentaría borrar `Libros` y `Recompensas`.
+**Cuidado con las lanes de cartas (30–37):** se ramificaron antes de esta lane. Nunca `prisma db push` (regla 6 de `AGENTS.md`): desde una rama sin `git merge dev` borraría `Libros` y `Recompensas`.
 
 ## 6. Registro
 

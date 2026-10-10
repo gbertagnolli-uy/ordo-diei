@@ -25,6 +25,7 @@ import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
 import { evaluarLogros, type CategoriaLogro } from "@/lib/logros";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { LogroIcon } from "./LogroIcon";
+import { subirImagen } from "@/lib/subirImagen";
 
 interface PerfilResumenProps {
   usuario: {
@@ -64,13 +65,7 @@ export function PerfilResumen({
     setSubiendo(true);
     setErrorFoto(null);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/users/foto", { method: "POST", body: fd });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(d?.error ?? "No se pudo guardar la foto");
-      }
+      await subirImagen(file, "/api/users/foto");
       router.refresh();
     } catch (e) {
       setErrorFoto(e instanceof Error ? e.message : "No se pudo guardar la foto");

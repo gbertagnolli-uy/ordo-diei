@@ -29,12 +29,12 @@ test("rutaPermitida: solo el arte del grado actual; bloqueada ve el grado I", ()
 
 test("rutaEnDiscoArte y urlArte: arte fuera de public/, sin salir de su carpeta", () => {
   assert.equal(rutaEnDiscoArte("/cartas/san-jose/2.webp"), "arte-cartas/san-jose/2.webp");
-  assert.equal(rutaEnDiscoArte("/uploads/abc_x.webp"), "public/uploads/abc_x.webp");
+  assert.equal(rutaEnDiscoArte("/api/archivos/0f8fad5b-d9cb-469f-a165-70867728950e"), null); // va por la base
   for (const mala of ["/cartas/../.env", "/cartas/san-jose/../../.env", "/etc/passwd", "/cartas/x/1.svg", "/uploads/../.env"]) {
     assert.equal(rutaEnDiscoArte(mala), null, mala);
   }
   assert.equal(urlArte("/cartas/san-jose/1.webp"), "/api/cartas/arte?ruta=%2Fcartas%2Fsan-jose%2F1.webp");
-  assert.equal(urlArte("/uploads/abc.webp"), "/uploads/abc.webp");
+  assert.equal(urlArte("/api/archivos/0f8fad5b-d9cb-469f-a165-70867728950e"), "/api/archivos/0f8fad5b-d9cb-469f-a165-70867728950e");
   assert.equal(urlArte(null), "");
 });
 

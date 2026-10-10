@@ -1,32 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
-import crypto from "crypto";
+import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/session";
+import { guardarImagen, ImagenInvalidaError } from "@/lib/archivos";
 
+export const runtime = "nodejs";
+
+// POST /api/upload — sube una imagen y devuelve { url }. Se guarda en la base (lib/archivos.ts).
+// Requiere sesión, salvo en la configuración inicial (todavía no hay ningún usuario).
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.formData();
-    const file: File | null = data.get("file") as unknown as File;
+    const session = await getSession();
+    if (!session?.user && (await prisma.usuario.count()) > 0) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
-    if (!file) {
+    const file = (await request.formData()).get("file");
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "Archivo faltante" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Normalizar nombre de archivo
-    const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
-    const uniqueName = crypto.randomUUID() + "_" + safeName;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filepath = path.join(uploadDir, uniqueName);
-
-    // Guardar en el filesystem (ideal para app local)
-    await writeFile(filepath, buffer);
-
-    return NextResponse.json({ url: `/uploads/${uniqueName}` });
+    const url = await guardarImagen(file, { subidoPorId: session?.user ? Number(session.user.id) : null });
+    return NextResponse.json({ url });
   } catch (error) {
-    console.error("Error subiendo foto:", error);
+    if (error instanceof ImagenInvalidaError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error("Error subiendo imagen:", error);
     return NextResponse.json({ error: "Error al guardar el archivo" }, { status: 500 });
   }
 }

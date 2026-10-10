@@ -6,6 +6,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
+import { subirImagen } from "@/lib/subirImagen";
 
 export function FirstSetupForm() {
   const [loading, setLoading] = useState(false);
@@ -25,13 +26,7 @@ export function FirstSetupForm() {
     
     try {
       if (file && file.size > 0) {
-        const uploadData = new FormData();
-        uploadData.append("file", file);
-        const uploadRes = await fetch("/api/upload", { method: "POST", body: uploadData });
-        if (uploadRes.ok) {
-           const { url } = await uploadRes.json();
-           fotoUrl = url;
-        }
+        fotoUrl = (await subirImagen(file)).url;
       }
 
       const res = await fetch("/api/users", {

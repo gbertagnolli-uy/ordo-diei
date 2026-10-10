@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { gradoDe, imagenDeGrado } from "@/lib/cartas/fragmentos";
 import { parsearGrado, rutaEnDiscoArte } from "@/lib/cartas/arte";
+import { leerArchivo } from "@/lib/archivos";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { GradoCarta, RarezaCarta } from "@/lib/cartas/economia";
 
@@ -108,9 +109,11 @@ export async function GET(
     // next/og recibe la imagen como data URL: el arte no es público (D19)
     let imagenAbsoluta = imagenUrlRelativa;
     if (!imagenUrlRelativa.startsWith("http")) {
+      // Catálogo: arte-cartas/ en disco. Subidas por el panel: tabla Archivos.
       const enDisco = rutaEnDiscoArte(imagenUrlRelativa);
-      if (!enDisco) return new Response("Imagen no encontrada", { status: 404 });
-      const archivo = await readFile(path.join(process.cwd(), enDisco)).catch(() => null);
+      const archivo = enDisco
+        ? await readFile(path.join(process.cwd(), enDisco)).catch(() => null)
+        : (await leerArchivo(imagenUrlRelativa))?.datos ?? null;
       if (!archivo) return new Response("Imagen no encontrada", { status: 404 });
       // next/og (satori) no decodifica WebP, que es el formato del catálogo: se pasa a PNG
       const png = await sharp(archivo).png().toBuffer();
