@@ -184,7 +184,25 @@ export function HabitosClient({
 
   return (
     <div className="space-y-8">
-      {/* 1. Resumen de hoy: Anillo Streaks y bienvenida */}
+      {/* 1. Hábitos predeterminados: carrusel; al tocar uno se abre su configuración */}
+      {predeterminados.length > 0 && (
+        <section className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="font-heading text-lg font-bold">Hábitos predeterminados</h3>
+            <p className="text-xs text-muted-foreground">Tocá uno para configurarlo y empezar.</p>
+          </div>
+          <HabitosCarrusel
+            habitos={predeterminados}
+            onElegir={(id) => {
+              setHabitoAEditar(null);
+              setHabitoElegidoId(id);
+              setDialogOpen(true);
+            }}
+          />
+        </section>
+      )}
+
+      {/* 2. Resumen de hoy: Anillo Streaks y bienvenida */}
       {habitos.length > 0 && (
         <Card className="overflow-hidden bg-card/60 backdrop-blur-xs">
           <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6">
@@ -234,7 +252,7 @@ export function HabitosClient({
         </Card>
       )}
 
-      {/* 2. Alertas de recaída compasiva (G3) */}
+      {/* 3. Alertas de recaída compasiva (G3) */}
       {enRetomando.map((h) => (
         <Alert key={h.habitoId} className="border-primary/30 bg-primary/5">
           <HeartHandshake className="size-5 text-primary" />
@@ -250,7 +268,7 @@ export function HabitosClient({
         </Alert>
       ))}
 
-      {/* 3. Secciones por franja o estado vacío */}
+      {/* 4. Secciones por franja o estado vacío */}
       {habitos.length === 0 ? (
         <Empty className="py-12 border bg-card">
           <EmptyHeader>
@@ -317,32 +335,16 @@ export function HabitosClient({
         </div>
       )}
 
-      {/* 4. Escalera de progreso (para hábitos con más de 1 paso) */}
+      {/* 5. Escalera de progreso (para hábitos con más de 1 paso) */}
       <Escalera habitos={habitos} misterios={estado.misterios?.misterios || []} />
 
-      {/* 5. Trayectoria y mapa de calor */}
+      {/* 6. Trayectoria y mapa de calor */}
       {habitos.length > 0 && (
         <div className="space-y-6">
           <TrayectoriaHabitos habitos={habitos} />
           <CalendarioHabitos habitos={habitos} hoy={estado.hoy} />
         </div>
       )}
-
-      {/* 6. Hábitos predeterminados: carrusel; al tocar uno se abre su configuración */}
-      <section className="space-y-4">
-        <div className="border-b pb-2">
-          <h3 className="font-heading text-lg font-bold">Hábitos predeterminados</h3>
-          <p className="text-xs text-muted-foreground">Tocá uno para configurarlo y empezar.</p>
-        </div>
-        <HabitosCarrusel
-          habitos={predeterminados}
-          onElegir={(id) => {
-            setHabitoAEditar(null);
-            setHabitoElegidoId(id);
-            setDialogOpen(true);
-          }}
-        />
-      </section>
 
       {/* 7. Hábitos comunitarios: creados por otros usuarios */}
       {comunitarios.length > 0 && (
