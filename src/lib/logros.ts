@@ -1,7 +1,13 @@
 import { nivelDe, xpTotal } from "./niveles.ts";
 import type { EstadoHabito } from "./habitos/server.ts";
 
-export type CategoriaLogro = "tareas" | "constancia" | "habitos" | "oracion" | "nivel";
+export type CategoriaLogro = "tareas" | "constancia" | "habitos" | "oracion" | "nivel" | "cartas";
+
+export interface DatosCartaLogro {
+  desbloqueada: boolean;
+  rareza?: string;
+  grado?: number;
+}
 
 export interface DatosLogros {
   usuario: {
@@ -13,6 +19,7 @@ export interface DatosLogros {
     experienciaHabitos?: number | null;
   };
   habitos: EstadoHabito[];
+  cartas?: DatosCartaLogro[];
 }
 
 export interface Logro {
@@ -285,6 +292,47 @@ export const LOGROS: Logro[] = [
       const m = d.habitos.find((h) => h.clave === "matutinum");
       return m && (m.etapa === "consolidacion" || m.etapa === "firme") ? 1 : 0;
     },
+  },
+
+  // --- Cartas Católicas (D12) ---
+  {
+    id: "carta-primera",
+    titulo: "Primera carta",
+    descripcion: "Desbloqueá tu primera carta católica consagrada.",
+    categoria: "cartas",
+    icono: "Layers",
+    meta: 1,
+    actual: (d) => (d.cartas || []).filter((c) => c.desbloqueada).length >= 1 ? 1 : 0,
+  },
+  {
+    id: "cartas-10",
+    titulo: "Coleccionista de 10",
+    descripcion: "Reuní 10 cartas sagradas desbloqueadas en tu álbum.",
+    categoria: "cartas",
+    icono: "Layers",
+    meta: 10,
+    actual: (d) => (d.cartas || []).filter((c) => c.desbloqueada).length,
+  },
+  {
+    id: "carta-primera-celestial",
+    titulo: "Primera Celestial",
+    descripcion: "Desbloqueá tu primera carta de rareza Celestial.",
+    categoria: "cartas",
+    icono: "Sparkles",
+    meta: 1,
+    actual: (d) =>
+      (d.cartas || []).filter((c) => c.desbloqueada && c.rareza === "Celestial").length >= 1
+        ? 1
+        : 0,
+  },
+  {
+    id: "carta-primera-gloriosa",
+    titulo: "Primera carta Gloriosa",
+    descripcion: "Consagrá una carta al Grado IV (Gloriosa) alcanzando el 300 % de veneración.",
+    categoria: "cartas",
+    icono: "Crown",
+    meta: 1,
+    actual: (d) => (d.cartas || []).filter((c) => (c.grado ?? 0) >= 4).length >= 1 ? 1 : 0,
   },
 ];
 

@@ -1,0 +1,134 @@
+[
+  {
+    "clave": "sagrada-eucaristia",
+    "nombre": "La Sagrada Eucaristía",
+    "subtitulo": "Fuente y Culmen de Toda la Vida Cristiana",
+    "categoria": "Tema",
+    "rareza": "Celestial",
+    "celebracion": null,
+    "historia": "La Sagrada Eucaristía es el sacramento supremo del amor de Jesucristo, en el cual el mismo Señor está verdaderamente presente con su Cuerpo, Sangre, Alma y Divinidad bajo las apariencias del pan y del vino consagrados en la Santa Misa.\n\nInstituida en la Última Cena antes de padecer por nuestra salvación, la Eucaristía renueva sobre el altar el único y perfecto sacrificio de la Cruz. Es el banquete celestial donde el alma se alimenta con el Pan de Vida eterna y se une íntimamente a Cristo Jesús.",
+    "oracion": "Bendito y alabado sea el Santísimo Sacramento del Altar, y la limpia y pura Concepción de la Santísima Virgen María, Madre de Dios y Señora nuestra, concebida sin mancha de pecado original en el primer instante de su ser natural. Amén.",
+    "frase": "Yo soy el pan vivo que ha bajado del cielo; el que coma de este pan vivirá para siempre.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Jn 6, 51)",
+    "datasheet": [
+      { "etiqueta": "Naturaleza sagrada", "valor": "Sacramento supremo de la presencia real de Cristo" },
+      { "etiqueta": "Materia litúrgica", "valor": "Pan ácimo de trigo y vino puro de vid" },
+      { "etiqueta": "Institución evangélica", "valor": "La Última Cena en el Cenáculo de Jerusalén" },
+      { "etiqueta": "Fruto espiritual", "valor": "Unión con Cristo, perdón de faltas veniales y vida eterna" }
+    ],
+    "imagenes": {
+      "1": "/cartas/sagrada-eucaristia/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro cristiano tradicional"
+  },
+  {
+    "clave": "sagrado-corazon-de-jesus",
+    "nombre": "El Sagrado Corazón de Jesús",
+    "subtitulo": "Horno Ardiente de Amor y Misericordia",
+    "categoria": "Tema",
+    "rareza": "Celestial",
+    "celebracion": null,
+    "historia": "La devoción al Sagrado Corazón de Jesús contempla el misterio inabarcable del amor divino y humano del Redentor hacia los hombres. Atravesado por la lanza del soldado en el monte Calvario, de su costado abierto brotaron sangre y agua, fuentes puras de gracia y sacramentos para la Iglesia.\n\nEn el siglo XVII, Jesús se manifestó en Paray-le-Monial a Santa Margarita María de Alacoque, mostrándole su divino Corazón coronado de espinas y en llamas ardientes de amor, pidiéndole reparación y prometiendo derramar bendiciones copiosas sobre las almas que honren su imagen sagrada.",
+    "oracion": "Sagrado Corazón de Jesús, en Vos confío. Jesús manso y humilde de Corazón, haz mi corazón semejante al tuyo.",
+    "frase": "He aquí el Corazón que tanto ha amado a los hombres y en cambio no recibe de la mayor parte de ellos sino ingratitudes y desprecios.",
+    "fraseAutor": "Jesucristo a Santa Margarita María de Alacoque (Paray-le-Monial, 1675)",
+    "datasheet": [
+      { "etiqueta": "Misterio contemplado", "valor": "Amor infinito del Hijo de Dios encarnado" },
+      { "etiqueta": "Símbolos sagrados", "valor": "Cruz en la cima, corona de espinas y llama de fuego" },
+      { "etiqueta": "Aparición solemne", "valor": "Paray-le-Monial, Francia (a Santa Margarita María)" },
+      { "etiqueta": "Práctica devota", "valor": "Comunión reparadora de los Primeros Viernes de mes" }
+    ],
+    "imagenes": {
+      "1": "/cartas/sagrado-corazon-de-jesus/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte cristiano devocional"
+  },
+  {
+    "clave": "inmaculado-corazon-de-maria",
+    "nombre": "El Inmaculado Corazón de María",
+    "subtitulo": "Refugio Seguro y Camino hacia Dios",
+    "categoria": "Tema",
+    "rareza": "Perfecta",
+    "celebracion": null,
+    "historia": "El Inmaculado Corazón de María es el santuario purísimo de fe, docilidad y caridad maternal en el que Dios halló su perfecta complacencia. Desde la Anunciación del Ángel hasta el pie de la Cruz, la Virgen guardaba y meditaba todas las palabras y obras del Señor en el secreto de su corazón.\n\nEn las apariciones de Fátima en 1917, Nuestra Señora pidió a los pastorcitos la devoción reparadora de los Primeros Sábados, exhortando a la humanidad a recurrir a su maternal intercesión con la promesa esperanzadora de que al final su Corazón Inmaculado triunfará sobre el mal.",
+    "oracion": "Oh Inmaculado Corazón de María, refugio de los pecadores y consuelo de los afligidos, consagramos a tu amparo maternal nuestra vida, nuestras familias y nuestra fe.",
+    "frase": "Al final, mi Inmaculado Corazón triunfará.",
+    "fraseAutor": "Santísima Virgen María (Fátima, 1917)",
+    "datasheet": [
+      { "etiqueta": "Misterio contemplado", "valor": "Pureza inmaculada y amor maternal de la Virgen María" },
+      { "etiqueta": "Símbolos sagrados", "valor": "Corona de rosas blancas, espada traspasante y resplandor" },
+      { "etiqueta": "Lugar de revelación", "valor": "Cova da Iria, Fátima, Portugal" },
+      { "etiqueta": "Práctica devota", "valor": "Consagración mariana y Primeros Sábados de reparación" }
+    ],
+    "imagenes": {
+      "1": "/cartas/inmaculado-corazon-de-maria/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro mariano"
+  },
+  {
+    "clave": "divina-misericordia",
+    "nombre": "La Divina Misericordia",
+    "subtitulo": "Confianza Infinita en Cristo Redentor",
+    "categoria": "Tema",
+    "rareza": "Perfecta",
+    "celebracion": null,
+    "historia": "En el siglo XX, Nuestro Señor Jesucristo confió a Santa Faustina Kowalska, en Cracovia, el mensaje apremiante de su misericordia infinita hacia una humanidad herida y necesitada de perdón. Jesús se le manifestó vestido de blanco, bendiciendo con su mano derecha y señalando su Corazón abierto.\n\nDe su pecho emanan dos haces de luz: uno rojo, que representa la Sangre que da vida sobrenatural a las almas, y otro pálido, que simboliza el Agua que las purifica en el Bautismo y la Reconciliación. Jesús prometió un océano de gracias a quienes confíen en su perdón infinito.",
+    "oracion": "Padre Eterno, te ofrezco el Cuerpo y la Sangre, el Alma y la Divinidad de tu amadísimo Hijo, nuestro Señor Jesucristo, como propiciación de nuestros pecados y los del mundo entero. Por su dolorosa Pasión, ten misericordia de nosotros y del mundo entero.",
+    "frase": "Jesús, en Ti confío.",
+    "fraseAutor": "Lema sagrado revelado a Santa Faustina Kowalska",
+    "datasheet": [
+      { "etiqueta": "Misterio revelado", "valor": "La misericordia como atributo supremo del amor de Dios" },
+      { "etiqueta": "Signos visibles", "valor": "Rayo rojo (Sangre redentora) y rayo pálido (Agua purificadora)" },
+      { "etiqueta": "Apóstol elegida", "valor": "Santa Faustina Kowalska (Cracovia, Polonia)" },
+      { "etiqueta": "Hora de gracia", "valor": "Las tres de la tarde (Hora de la Misericordia)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/divina-misericordia/1.webp"
+    },
+    "creditoImagen": "Dominio público / Santuario de Lagiewniki"
+  },
+  {
+    "clave": "santa-cruz",
+    "nombre": "La Santa Cruz de Nuestro Señor",
+    "subtitulo": "Árbol de Vida y Señal de Salvación",
+    "categoria": "Tema",
+    "rareza": "Buena",
+    "celebracion": "09-14",
+    "historia": "La Santa Cruz, antiguo madero de tortura e infamia, fue transformada por el sacrificio del Hijo de Dios en trofeo soberano de redención, cátedra de amor y árbol de vida eterna para el género humano.\n\nCada 14 de septiembre, la Iglesia celebra la fiesta solemne de la Exaltación de la Santa Cruz, recordando el hallazgo y veneración del santo leño y proclamando que el cristiano halla en el signo de la Cruz fortaleza en la tribulación, perdón de los pecados y victoria irrevocable sobre la muerte.",
+    "oracion": "Te adoramos, oh Cristo, y te bendecimos, porque con tu santa Cruz redimiste al mundo.",
+    "frase": "Dios me libre de gloriarme si no es en la cruz de nuestro Señor Jesucristo, por quien el mundo está crucificado para mí, y yo para el mundo.",
+    "fraseAutor": "San Pablo Apóstol (Gál 6, 14)",
+    "datasheet": [
+      { "etiqueta": "Misterio celebrado", "valor": "Redención del linaje humano por el sacrificio de Cristo" },
+      { "etiqueta": "Fiesta litúrgica", "valor": "Exaltación de la Santa Cruz (14 de septiembre)" },
+      { "etiqueta": "Señal del cristiano", "valor": "El signo de la Cruz al iniciar y concluir las oraciones" },
+      { "etiqueta": "Fruto eterno", "valor": "Vencimiento del pecado y reconciliación de la humanidad" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santa-cruz/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro cristiano"
+  },
+  {
+    "clave": "santo-rosario",
+    "nombre": "El Santo Rosario",
+    "subtitulo": "Corona de Rosas y Contemplación Evangélica",
+    "categoria": "Tema",
+    "rareza": "Buena",
+    "celebracion": "10-07",
+    "historia": "El Santo Rosario es una oración contemplativa y bíblica regalada por la Providencia divina a la Iglesia, que une el saludo evangélico del Ángel con la meditación profunda de los misterios salvíficos de la vida, pasión y resurrección de Jesucristo.\n\nAl desgranar las cuentas del rosario en compañía de la Madre del Redentor, las familias y las comunidades cristianas hallan un camino seguro de paz interior, unión fraterna y fidelidad evangélica, transformando la plegaria en una escuela perenne de seguimiento del Señor.",
+    "oracion": "Bajo tu amparo nos acogemos, santa Madre de Dios; no deseches las súplicas que te dirigimos en nuestras necesidades, antes bien, líbranos de todo peligro, oh Virgen siempre gloriosa y bendita. Amén.",
+    "frase": "El Rosario es la oración de los sencillos y de los santos; es el compendio de todo el Evangelio.",
+    "fraseAutor": "San Juan Pablo II (Carta Apostólica Rosarium Virginis Mariae, 2002)",
+    "datasheet": [
+      { "etiqueta": "Estructura contemplativa", "valor": "Veinte misterios de salvación guiados por el Evangelio" },
+      { "etiqueta": "Fiesta litúrgica", "valor": "Nuestra Señora del Rosario (7 de octubre)" },
+      { "etiqueta": "Tradición eclesial", "valor": "Difundido por la Orden de Predicadores (Santo Domingo)" },
+      { "etiqueta": "Promesa de la Virgen", "valor": "Protección especial y paz en los hogares que lo recen" }
+    ],
+    "imagenes": {
+      "1": "/cartas/santo-rosario/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía devota tradicional"
+  }
+]

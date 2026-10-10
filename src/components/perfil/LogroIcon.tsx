@@ -17,6 +17,7 @@ import {
   Sun,
   Home,
   RefreshCw,
+  Layers,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -38,6 +39,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Sun,
   Home,
   RefreshCw,
+  Layers,
 };
 
 export function LogroIcon({ name, className = "size-4" }: { name: string; className?: string }) {
