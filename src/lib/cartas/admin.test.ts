@@ -14,10 +14,12 @@ import {
 import { esquemaCartaAdmin } from "./esquema.ts";
 import { contenidoVisible, type CartaCompletaEntrada } from "./revelado.ts";
 
-test("Lane 36: Panel y lógica de administración de cartas", async (t) => {
+// Escribe en la base de DATABASE_URL, que hoy es la de producción: solo corre con PERMITIR_TESTS_DB=1
+const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base real)";
+
+test("Lane 36: Panel y lógica de administración de cartas", { skip: sinBase }, async (t) => {
   const timestamp = Date.now();
   const claveTest1 = `carta-admin-test-1-${timestamp}`;
-  const claveTest2 = `carta-admin-test-2-${timestamp}`;
 
   // 1. Crear usuarios de prueba (Padre e Hijo)
   const padre = await prisma.usuario.create({

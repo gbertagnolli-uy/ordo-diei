@@ -1,7 +1,7 @@
 // Lógica de fechas, festividades, cumpleaños y eventos litúrgicos (D5, D6, D17)
 
-import { format } from "date-fns";
-import { tz } from "@date-fns/tz";
+import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
+import { TZDate, tz } from "@date-fns/tz";
 import { BONO_FIESTA_TIENDA, SOBRE_REVELACION } from "./economia.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
@@ -126,4 +126,17 @@ export function multiplicadorTienda(
     return BONO_FIESTA_TIENDA;
   }
   return 1.0;
+}
+
+/** Medianoche de hoy en la zona de la familia (no en la del servidor, que en Vercel es UTC) */
+export function inicioDelDiaEnTz(ahora: Date = new Date(), timezone: string = APP_TZ): Date {
+  return startOfDay(new TZDate(ahora.getTime(), timezone));
+}
+
+/** Días que faltan para la próxima fiesta "MM-DD" contando en la zona de la familia (0 = hoy) */
+export function diasHastaFiesta(celebracion: string, ahora: Date = new Date(), timezone: string = APP_TZ): number {
+  const hoy = format(ahora, "yyyy-MM-dd", { in: tz(timezone) });
+  const anio = Number(hoy.slice(0, 4));
+  const objetivo = `${anio}-${celebracion}` >= hoy ? `${anio}-${celebracion}` : `${anio + 1}-${celebracion}`;
+  return differenceInCalendarDays(parseISO(objetivo), parseISO(hoy));
 }

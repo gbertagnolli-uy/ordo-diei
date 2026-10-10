@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
+import { urlArte } from "@/lib/cartas/arte";
 import { Upload, X, RefreshCw, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ export function EspacioImagenGrado({
   const [urlInput, setUrlInput] = useState<string>(urlActual || "");
 
   const tieneImagenPropia = Boolean(urlActual && urlActual.trim().length > 0);
-  const urlAMostrar = tieneImagenPropia ? urlActual : urlFallback;
+  const urlAMostrar = urlArte(tieneImagenPropia ? urlActual : urlFallback);
 
   const manejarSeleccionArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -5,7 +5,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 
 const DIR_CATALOGO = path.join(process.cwd(), "src", "lib", "cartas", "catalogo");
-const DIR_PUBLIC = path.join(process.cwd(), "public", "cartas");
+const DIR_PUBLIC = path.join(process.cwd(), "arte-cartas"); // fuera de public/ (D19)
 
 const COLORES_POR_CATEGORIA: Record<string, { bg: string; border: string; text: string }> = {
   Misterio: { bg: "#1e1b4b", border: "#6366f1", text: "#e0e7ff" },

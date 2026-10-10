@@ -12,6 +12,7 @@ import {
 } from "@/lib/cartas/economia";
 import { imagenDeGrado, type CartaConImagenes } from "@/lib/cartas/fragmentos";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
+import { urlArte } from "@/lib/cartas/arte";
 
 export interface CartaVistaProps {
   carta: CartaConImagenes & {
@@ -97,7 +98,7 @@ export function CartaVista({
 }: CartaVistaProps) {
   const estilo = ESTILOS_RAREZA[carta.rareza];
   const req = carta.fragmentosRequeridos || CONFIG_RAREZAS[carta.rareza].fragmentosRequeridos;
-  const imagenActual = imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado);
+  const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
   const esGloriosa = grado === 4;
   const esVenerada = grado >= 2;
 
@@ -125,7 +126,7 @@ export function CartaVista({
         <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg bg-stone-900">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={carta.imagenUrl}
+            src={urlArte(carta.imagenUrl)}
             alt={carta.nombre}
             className="size-full object-cover grayscale opacity-50 contrast-125 transition-all duration-300"
             draggable={false}

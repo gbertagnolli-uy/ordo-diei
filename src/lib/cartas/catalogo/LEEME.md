@@ -2,10 +2,10 @@
 
 ## 1. Estructura de Directorios y Archivos
 
-Cada carta del catálogo cuenta con una carpeta propia dentro de `public/cartas/` identificada unívocamente por su `clave` (slug en minúsculas):
+Cada carta del catálogo cuenta con una carpeta propia dentro de `arte-cartas/` (fuera de `public/` a propósito: el arte se sirve solo por `/api/cartas/arte`, que respeta el grado del usuario, D19) identificada unívocamente por su `clave` (slug en minúsculas):
 
 ```
-public/cartas/<clave>/
+arte-cartas/<clave>/
   ├── 1.webp   (Grado I  - Revelado básico / inicial)
   ├── 2.webp   (Grado II - Revelado intermedio)
   ├── 3.webp   (Grado III - Revelado avanzado)
@@ -28,5 +28,5 @@ public/cartas/<clave>/
 ## 4. Carga y Reemplazo
 
 El usuario puede:
-- Copiar directamente sus archivos definitivos a `public/cartas/<clave>/{1,2,3,4}.webp`.
+- Copiar directamente sus archivos definitivos a `arte-cartas/<clave>/{1,2,3,4}.webp`.
 - O bien subirlos desde el panel administrativo de cartas en `/dashboard/cartas/admin` (Lane 36), el cual gestiona la subida y vista previa inmediata.

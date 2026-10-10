@@ -14,7 +14,10 @@ import {
 } from "./server.ts";
 import { hoyMesDiaEnTz, APP_TZ } from "./eventos.ts";
 
-test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos real", async (t) => {
+// Escribe en la base de DATABASE_URL, que hoy es la de producción: solo corre con PERMITIR_TESTS_DB=1
+const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base real)";
+
+test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos real", { skip: sinBase }, async (t) => {
   const timestamp = Date.now();
   const hoyMMdd = hoyMesDiaEnTz(new Date(), APP_TZ);
 

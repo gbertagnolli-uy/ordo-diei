@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
+import { urlArte } from "@/lib/cartas/arte";
 import Link from "next/link";
 import {
   Search,
@@ -331,7 +332,7 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
                         <div className="relative aspect-[63/88] w-12 overflow-hidden rounded-md border border-border/80 bg-muted">
                           {c.imagenUrl ? (
                             <Image
-                              src={c.imagenUrl}
+                              src={urlArte(c.imagenUrl)}
                               alt={c.nombre}
                               fill
                               sizes="50px"

@@ -1,8 +1,12 @@
+import { readFile } from "fs/promises";
+import path from "path";
+import sharp from "sharp";
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { gradoDe, imagenDeGrado } from "@/lib/cartas/fragmentos";
+import { parsearGrado, rutaEnDiscoArte } from "@/lib/cartas/arte";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { GradoCarta, RarezaCarta } from "@/lib/cartas/economia";
 
@@ -53,8 +57,10 @@ export async function GET(
   try {
     const { clave } = await params;
     const searchParams = req.nextUrl.searchParams;
-    const gradoParam = searchParams.get("grado");
-    const gradoPedido = (gradoParam ? parseInt(gradoParam, 10) : 1) as GradoCarta;
+    const gradoPedido = parsearGrado(searchParams.get("grado")) as GradoCarta | null;
+    if (gradoPedido === null) {
+      return NextResponse.json({ error: "Grado no válido (0 a 4)" }, { status: 400 });
+    }
 
     const carta = await prisma.carta.findUnique({
       where: { clave },
@@ -99,11 +105,17 @@ export async function GET(
       gradoPedido
     );
 
-    // Convertir a URL absoluta para next/og
-    const origin = req.nextUrl.origin;
-    const imagenAbsoluta = imagenUrlRelativa.startsWith("http")
-      ? imagenUrlRelativa
-      : `${origin}${imagenUrlRelativa}`;
+    // next/og recibe la imagen como data URL: el arte no es público (D19)
+    let imagenAbsoluta = imagenUrlRelativa;
+    if (!imagenUrlRelativa.startsWith("http")) {
+      const enDisco = rutaEnDiscoArte(imagenUrlRelativa);
+      if (!enDisco) return new Response("Imagen no encontrada", { status: 404 });
+      const archivo = await readFile(path.join(process.cwd(), enDisco)).catch(() => null);
+      if (!archivo) return new Response("Imagen no encontrada", { status: 404 });
+      // next/og (satori) no decodifica WebP, que es el formato del catálogo: se pasa a PNG
+      const png = await sharp(archivo).png().toBuffer();
+      imagenAbsoluta = `data:image/png;base64,${png.toString("base64")}`;
+    }
 
     const estiloMarco = COLORES_MARCO[carta.rareza];
     const esBloqueada = gradoPedido === 0;
@@ -174,7 +186,8 @@ export async function GET(
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                filter: esBloqueada ? "grayscale(100%) brightness(0.65)" : undefined,
+                // satori falla con propiedades de estilo en undefined: el filtro va solo si está bloqueada
+                ...(esBloqueada ? { filter: "grayscale(100%) brightness(0.65)" } : {}),
               }}
             />
 
@@ -268,7 +281,8 @@ export async function GET(
         width: ancho,
         height: alto,
         headers: {
-          "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400",
+          // private: la respuesta depende del grado de quien pide; una CDN no debe compartirla (D19)
+          "Cache-Control": "private, max-age=3600",
         },
       }
     );

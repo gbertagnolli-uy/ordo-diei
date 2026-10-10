@@ -31,6 +31,8 @@ import {
   esCumpleHoy,
   regaloCumple,
   multiplicadorTienda,
+  inicioDelDiaEnTz,
+  diasHastaFiesta,
   APP_TZ,
 } from "./eventos.ts";
 import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
@@ -183,22 +185,11 @@ export async function obtenerDetalleCarta(
     const nombreMes = meses[mm - 1] || "";
     const diaMesTexto = `${dd} de ${nombreMes}`;
 
-    const hoyTz = hoyMesDiaEnTz(new Date(), APP_TZ);
-    if (cartaDb.celebracion === hoyTz) {
-      diasHastaCelebracion = 0;
-      textoCelebracion = `${diaMesTexto} · ¡Hoy es la fiesta!`;
-    } else {
-      const hoyDate = new Date();
-      const anioActual = Number(hoyAnioEnTz(hoyDate, APP_TZ));
-      let target = new Date(anioActual, mm - 1, dd);
-      const hoyMidnight = new Date(anioActual, hoyDate.getMonth(), hoyDate.getDate());
-      if (target < hoyMidnight) {
-        target = new Date(anioActual + 1, mm - 1, dd);
-      }
-      const diffMs = target.getTime() - hoyMidnight.getTime();
-      diasHastaCelebracion = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      textoCelebracion = `${diaMesTexto} · Faltan ${diasHastaCelebracion} días`;
-    }
+    diasHastaCelebracion = diasHastaFiesta(cartaDb.celebracion, new Date(), APP_TZ);
+    textoCelebracion =
+      diasHastaCelebracion === 0
+        ? `${diaMesTexto} · ¡Hoy es la fiesta!`
+        : `${diaMesTexto} · Faltan ${diasHastaCelebracion} días`;
   }
 
   // Progreso hacia el siguiente grado
@@ -302,13 +293,14 @@ export async function comprarSobre(
         ? sortearSobreMeditacion(poolSorteo, rng)
         : sortearSobreRevelacion(poolSorteo, rng);
 
-    // 4. Descontar puntos
-    await tx.usuario.update({
-      where: { id: usuarioId },
-      data: {
-        availablePoints: { decrement: costo },
-      },
+    // 4. Descontar puntos solo si todavía alcanzan (dos compras simultáneas no dejan el saldo en negativo)
+    const descuento = await tx.usuario.updateMany({
+      where: { id: usuarioId, availablePoints: { gte: costo } },
+      data: { availablePoints: { decrement: costo } },
     });
+    if (descuento.count === 0) {
+      throw new Error(`Puntos insuficientes. Necesitás ${costo} puntos.`);
+    }
 
     const ahora = new Date();
     let totalInciensoGanado = 0;
@@ -460,13 +452,13 @@ export async function comprarFragmentosDirectos(
     }
 
     const ahora = new Date();
-    const hoyInicio = new Date(ahora);
-    hoyInicio.setHours(0, 0, 0, 0);
+    const hoyInicio = inicioDelDiaEnTz(ahora, APP_TZ);
 
     let costoTotal = 0;
 
     if (moneda === "puntos") {
-      // D2: Tope de 10 fragmentos por carta y día pagando con puntos
+      // D2: Tope de 10 fragmentos por carta y día pagando con puntos. Se cuenta lo comprado
+      // (puntos gastados / precio), no lo recibido: el bono de fiesta no consume el tope.
       const comprasHoy = await tx.movimientoFragmento.aggregate({
         where: {
           usuarioId,
@@ -474,10 +466,12 @@ export async function comprarFragmentosDirectos(
           tipo: "Compra",
           createdAt: { gte: hoyInicio },
         },
-        _sum: { cantidad: true },
+        _sum: { puntosGastados: true },
       });
 
-      const fragmentosCompradosHoy = comprasHoy._sum.cantidad ?? 0;
+      const fragmentosCompradosHoy = Math.round(
+        (comprasHoy._sum.puntosGastados ?? 0) / precioFragmentoEnPuntos(carta.rareza)
+      );
       if (fragmentosCompradosHoy + cantidad > TOPE_DIARIO_FRAGMENTOS_PUNTOS) {
         const disponiblesHoy = Math.max(0, TOPE_DIARIO_FRAGMENTOS_PUNTOS - fragmentosCompradosHoy);
         throw new Error(
@@ -490,10 +484,13 @@ export async function comprarFragmentosDirectos(
         throw new Error(`Puntos insuficientes. Necesitás ${costoTotal} puntos y tenés ${usuario.availablePoints}.`);
       }
 
-      await tx.usuario.update({
-        where: { id: usuarioId },
+      const descuento = await tx.usuario.updateMany({
+        where: { id: usuarioId, availablePoints: { gte: costoTotal } },
         data: { availablePoints: { decrement: costoTotal } },
       });
+      if (descuento.count === 0) {
+        throw new Error(`Puntos insuficientes. Necesitás ${costoTotal} puntos.`);
+      }
     } else {
       // moneda === "incienso"
       costoTotal = cantidad * precioFragmentoEnIncienso(carta.rareza);
@@ -503,10 +500,13 @@ export async function comprarFragmentosDirectos(
         );
       }
 
-      await tx.usuario.update({
-        where: { id: usuarioId },
+      const descuento = await tx.usuario.updateMany({
+        where: { id: usuarioId, incienso: { gte: costoTotal } },
         data: { incienso: { decrement: costoTotal } },
       });
+      if (descuento.count === 0) {
+        throw new Error(`Incienso insuficiente. Necesitás ${costoTotal} Granos de Incienso.`);
+      }
     }
 
     // D17: Si hoy es fiesta, multiplicar fragmentos otorgados ×1.5

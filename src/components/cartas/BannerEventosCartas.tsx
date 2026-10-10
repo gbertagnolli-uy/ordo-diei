@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { urlArte } from "@/lib/cartas/arte";
 import confetti from "canvas-confetti";
 import {
   Sparkles,
@@ -43,6 +45,7 @@ interface BannerEventosCartasProps {
 }
 
 export function BannerEventosCartas({ className = "", onReclamoExitoso }: BannerEventosCartasProps) {
+  const router = useRouter();
   const [eventos, setEventos] = useState<EventosHoyResponse | null>(null);
   const [cargando, setCargando] = useState<boolean>(true);
   const [reclamandoFiestaId, setReclamandoFiestaId] = useState<number | null>(null);
@@ -108,6 +111,7 @@ export function BannerEventosCartas({ className = "", onReclamoExitoso }: Banner
       });
 
       // Actualizar estado local
+      router.refresh(); // actualiza el aviso de la barra lateral
       setEventos((prev) => {
         if (!prev) return null;
         return {
@@ -157,6 +161,7 @@ export function BannerEventosCartas({ className = "", onReclamoExitoso }: Banner
         colors: ["#f59e0b", "#ec4899", "#8b5cf6", "#3b82f6", "#10b981"],
       });
 
+      router.refresh(); // actualiza el aviso de la barra lateral
       setEventos((prev) => (prev ? { ...prev, cumpleReclamado: true } : null));
 
       if (data.tipo === "sobre_revelacion_gratis" && data.cartasAfectadas) {
@@ -296,7 +301,7 @@ export function BannerEventosCartas({ className = "", onReclamoExitoso }: Banner
               <div className="relative aspect-[63/88] w-10 sm:w-12 shrink-0 overflow-hidden rounded-lg border border-border shadow-xs bg-muted">
                 {fiesta.imagenUrl ? (
                   <Image
-                    src={fiesta.imagenUrl}
+                    src={urlArte(fiesta.imagenUrl)}
                     alt={fiesta.nombre}
                     fill
                     sizes="50px"

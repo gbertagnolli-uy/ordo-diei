@@ -14,7 +14,10 @@ import {
   APP_TZ,
 } from "./eventos.ts";
 
-test("Lane 37: Eventos temporales, reclamos de fiesta, cumpleaños, 29-feb y topes", async (t) => {
+// Escribe en la base de DATABASE_URL, que hoy es la de producción: solo corre con PERMITIR_TESTS_DB=1
+const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base real)";
+
+test("Lane 37: Eventos temporales, reclamos de fiesta, cumpleaños, 29-feb y topes", { skip: sinBase }, async (t) => {
   const timestamp = Date.now();
   const hoyMMdd = hoyMesDiaEnTz(new Date(), APP_TZ);
 

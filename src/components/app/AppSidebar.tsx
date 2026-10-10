@@ -72,11 +72,14 @@ export function AppSidebar({
   currentUser,
   tasks,
   habitosPendientes,
+  hayEventosCartas,
 }: {
   currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
   tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
   /** Hábitos programados hoy sin registrar */
   habitosPendientes?: number | null;
+  /** Fiesta o cumpleaños con regalo de cartas sin reclamar hoy */
+  hayEventosCartas?: boolean;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -93,25 +96,6 @@ export function AppSidebar({
     }
     return c;
   }, [tasks]);
-
-  const [hayEventosCartas, setHayEventosCartas] = useState(false);
-
-  useEffect(() => {
-    let cancelado = false;
-    fetch("/api/cartas/eventos")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!cancelado && data) {
-          const fiestaPendiente = data.fiestas?.some((f: { reclamado: boolean }) => !f.reclamado);
-          const cumplePendiente = data.esCumple && !data.cumpleReclamado;
-          setHayEventosCartas(Boolean(fiestaPendiente || cumplePendiente));
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelado = true;
-    };
-  }, [pathname]);
 
   return (
     <Sidebar collapsible="icon" variant="inset">

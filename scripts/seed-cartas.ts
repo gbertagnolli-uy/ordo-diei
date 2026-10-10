@@ -63,7 +63,8 @@ export async function sembrarCartas(directorioCatalogo?: string) {
         if (ruta.startsWith("http://") || ruta.startsWith("https://") || ruta.startsWith("data:")) {
           return ruta;
         }
-        const rutaEnDisco = path.join(process.cwd(), "public", ruta.replace(/^\//, ""));
+        // El arte del catálogo vive en arte-cartas/ (fuera de public/, D19)
+        const rutaEnDisco = path.join(process.cwd(), ruta.replace(/^\/cartas\//, "arte-cartas/"));
         return fs.existsSync(rutaEnDisco) ? ruta : null;
       };
 
