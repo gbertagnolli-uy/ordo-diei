@@ -15,11 +15,12 @@ import { Button } from "@/components/ui/button";
 
 // Único confeti de la app (MagicUI). Los popups lo disparan vía contexto.
 const GOLD = ['#FFD700', '#FFA500', '#FF8C00'];
-const ORACION_POPUP = {
-  ascenso: { titulo: "¡Un paso más!", texto: "Tu constancia dio fruto. Desde mañana, este es tu nuevo paso." },
-  completo: { titulo: "¡Rosario diario!", texto: "Rezás el Santo Rosario completo cada día. El hábito está formado: ahora a sostenerlo." },
+const HABITO_POPUP = (nombre = "este hábito") => ({
+  ascenso: { titulo: "¡Un paso más!", texto: `Tu constancia con ${nombre} dio fruto. Desde mañana, este es tu nuevo paso.` },
+  completo: { titulo: `¡${nombre} completado!`, texto: `Completaste la escalera de ${nombre}. El hábito está formado: ahora a sostenerlo.` },
   regreso: { titulo: "¡Qué bueno que volviste!", texto: "Volver es lo más importante. Retomamos desde aquí, sin culpa." },
-};
+});
+const ORACION_POPUP = HABITO_POPUP("Camino de oración");
 const CelebrateContext = createContext<(opts?: Parameters<ConfettiRef["fire"]>[0]) => void>(() => {});
 
 export function ModalManager() {
@@ -46,7 +47,7 @@ export function ModalManager() {
     if (type === "TASK_SUCCESS") celebrate({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     if (type === "LEVEL_UP") celebrate({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: GOLD });
     if (type === "SURPRISE_AWARD") celebrate({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: GOLD });
-    if (type === "ORACION") celebrate(data?.tipo === "regreso" ? { particleCount: 60, spread: 60, origin: { y: 0.6 } } : { particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: GOLD });
+    if (type === "ORACION" || type === "HABITO") celebrate(data?.tipo === "regreso" ? { particleCount: 60, spread: 60, origin: { y: 0.6 } } : { particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: GOLD });
   }, [isOpen, type, celebrate]);
 
   return (
@@ -89,17 +90,25 @@ export function ModalManager() {
         </Modal>
       )}
 
-      {type === "ORACION" && (
-        <Modal isOpen={isOpen} onClose={closeModal} title={ORACION_POPUP[data?.tipo as keyof typeof ORACION_POPUP]?.titulo ?? "Camino de oración"}>
-          <div className="flex flex-col items-center text-center py-6">
-            <img src={data?.tipo === "regreso" ? "/done-animate.svg" : "/winners-animate.svg"} alt="" className="w-40 h-40 mb-6 drop-shadow-xl" />
-            <h3 className="text-2xl font-heading font-bold text-[var(--on-surface)] mb-2">{data?.habito}</h3>
-            {data?.paso && <p className="text-[var(--primary)] text-lg font-bold mb-3">{data.paso}</p>}
-            <p className="text-[var(--on-surface-variant)] mb-6 px-4">{ORACION_POPUP[data?.tipo as keyof typeof ORACION_POPUP]?.texto}</p>
-            <Button size="lg" onClick={closeModal} className="w-full">Amén</Button>
-          </div>
-        </Modal>
-      )}
+      {(type === "ORACION" || type === "HABITO") && (() => {
+        const popup = HABITO_POPUP(data?.habito || "este hábito")[data?.tipo as "ascenso" | "completo" | "regreso"] ?? {
+          titulo: "¡Felicitaciones!",
+          texto: "Seguí adelante con tu constancia.",
+        };
+        return (
+          <Modal isOpen={isOpen} onClose={closeModal} title={popup.titulo}>
+            <div className="flex flex-col items-center text-center py-6">
+              <img src={data?.tipo === "regreso" ? "/done-animate.svg" : "/winners-animate.svg"} alt="" className="w-40 h-40 mb-6 drop-shadow-xl" />
+              <h3 className="text-2xl font-heading font-bold text-[var(--on-surface)] mb-2">{data?.habito}</h3>
+              {data?.paso && <p className="text-[var(--primary)] text-lg font-bold mb-3">{data.paso}</p>}
+              <p className="text-[var(--on-surface-variant)] mb-6 px-4">{popup.texto}</p>
+              <Button size="lg" onClick={closeModal} className="w-full">
+                {data?.categoria === "oracion" ? "Amén" : "¡Genial!"}
+              </Button>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {type === "TASK_SUCCESS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Misión Cumplida!">

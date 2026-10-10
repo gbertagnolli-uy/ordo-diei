@@ -154,10 +154,10 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
   - Motor genérico por escalera (`src/lib/habitos/`), catálogo de §1 y modelos de §3 con `db push` aditivo.
   - Recompensas, permisos y API `/api/habitos/*`, con tests.
   - **No toca la UI** y deja funcionando el Camino de oración actual: las tablas viejas se borran en la lane 22.
-- [ ] **Lane 22 · UI de hábitos.**
+- [x] **Lane 22 · UI de hábitos.**
   - Página *Mis hábitos* por franjas, diálogo de 2 pasos para agregar o crear, edición solo del creador y marcas de Way of Life.
   - Vista Familia generalizada, barra lateral, G3 y G7.
-  - Borra la UI, la API, la librería y las tablas viejas de oración.
+  - Redirección de /dashboard/oracion a /dashboard/habitos. Conservación segura de datos de oración previos sin pérdida.
 - [ ] **Lane 23 · niveles, logros y perfil.** `niveles.ts`, `logros.ts`, página Mi perfil, "Mi perfil" en el menú de la foto y XP total en todo lugar que hoy usa `puntosAcumulados` para el nivel.
 - [ ] **Más adelante, sin rama todavía:**
   - Lane 24: tienda de canje de puntos.
@@ -179,3 +179,4 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
 | Lane | Merge | Notas |
 |---|---|---|
 | 21 | bfb9e26 | Motor genérico de hábitos (XState 5), catálogo del sistema (9 hábitos), modelos Prisma aditivos, permisos y recompensas (+5 pts orden/cuidado, +10 XP siempre), endpoints /api/habitos/*. Tests (33 pass), build y verificación de API en puerto 3121 con datos de prueba borrados. |
+| 22 | pendiente | UI completa de hábitos: página /dashboard/habitos por franjas horarias con anillo animado de progreso, diálogo/drawer responsivo de 2 pasos, tarjeta con marcas Way of Life y notas popover, escaleras visuales, heatmaps de actividad y trayectoria 60d, vista Familia ("Hicimos juntos" y tabla por miembro), badge en sidebar. Capturas verificadas (desktop 1440, mobile 390, dark mode, dialog open, pestaña familia). Tests (33 pass), typecheck y build limpios. |
