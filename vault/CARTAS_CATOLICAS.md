@@ -291,7 +291,8 @@ Worktrees en `../ordo-diei-lanes/lane-NN` (copia reflink de `node_modules`). **C
 
 | Lane | Merge | Notas |
 |---|---|---|
-| 30–37 | — | Planificadas el 2026-10-10 y ampliadas ese mismo día (revelación progresiva, grados, Incienso, sobres nuevos); pendientes de implementar por agy |
+| 30 | `task/lane-30-cartas-motor` | Completada: motor puro (`economia.ts`, `textos.ts`, `esquema.ts` con zod, `sorteo.ts` en 2 etapas, `fragmentos.ts` con tope e Incienso, `revelado.ts` con D13 y seguridad, `eventos.ts` con D5/D6/D17, `simulacion.ts`). 42 tests en verde. Simulación con 15 pts/día: Común en 2.7d, Buena en 13.3d, Grado IV Común en 8d, Celestial en 400d directa (se recomienda aprovechar los eventos del 50% litúrgico o calibrar a 80-100 req). Sin pendientes. |
+| 31–37 | — | Pendientes de implementar por agy |
 
 ### Preguntas abiertas para el usuario
 1. **D6:** si el día del cumpleaños no hay carta, ¿Sobre de Revelación gratis? (propuesto)
