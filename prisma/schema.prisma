@@ -474,3 +474,20 @@ model ReclamoCarta {
   @@unique([usuarioId, tipo, cartaId, periodo])
   @@map("Reclamos_Carta")
 }
+
+// Imágenes subidas por los usuarios (fotos de perfil, hábitos, arte de cartas). Vercel no deja escribir
+// en disco, así que se guardan acá en WebP comprimido y se sirven por /api/archivos/<clave>.
+model Archivo {
+  id           Int      @id @default(autoincrement())
+  clave        String   @unique @map("Clave") // UUID: va en la URL y no se puede adivinar
+  tipo         String   @map("Tipo") // MIME, p. ej. image/webp
+  datos        Bytes    @map("Datos")
+  bytes        Int      @map("Bytes")
+  ancho        Int?     @map("Ancho")
+  alto         Int?     @map("Alto")
+  nombreOrigen String?  @map("Nombre_Origen")
+  subidoPorId  Int?     @map("Subido_Por_ID")
+  createdAt    DateTime @default(now()) @map("Created_At")
+
+  @@map("Archivos")
+}

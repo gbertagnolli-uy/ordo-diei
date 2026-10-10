@@ -38,7 +38,7 @@ Vas a implementar la feature de **cartas católicas coleccionables** de Ordo Die
 - **Seguridad del contenido:** el servidor nunca envía historia, oración, frase ni datos del datasheet que el usuario todavía no desbloqueó (decisión D13); el cliente solo muestra lo que recibe.
 - **No copies código de `ashishbarthwal/creator-gacha-card-game`**: no tiene licencia de reuso. Solo se usa la idea del sorteo por bandas, implementada desde cero.
 - Nada de YouTube, Google, batallas, ataque ni defensa.
-- Solo la lane 31 toca `prisma/schema.prisma`, con `db push` aditivo (nunca `--accept-data-loss`). Reiniciá `next dev` después de `prisma generate`. La base es la real (Supabase, schema `family_tasker`): usá datos de prueba y borralos.
+- Solo la lane 31 toca `prisma/schema.prisma`. **No usar `prisma db push`** (prohibido, ver regla 6 de `AGENTS.md`): generar el SQL con `prisma migrate diff`, aplicarlo con `prisma db execute` solo si no tiene `DROP`. Reiniciá `next dev` después de `prisma generate`. La base es la real (Supabase, schema `family_tasker`): usá datos de prueba y borralos.
 - Textos de la app en español rioplatense. Estética solemne y católica tradicional, no "videojuego".
 
 ## Cuando termines las 8

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { subirImagen } from "@/lib/subirImagen";
 
 export default function NewUserPage() {
   const router = useRouter();
@@ -27,13 +28,7 @@ export default function NewUserPage() {
     
     try {
       if (file && file.size > 0) {
-        const uploadData = new FormData();
-        uploadData.append("file", file);
-        const uploadRes = await fetch("/api/upload", { method: "POST", body: uploadData });
-        if (uploadRes.ok) {
-           const { url } = await uploadRes.json();
-           fotoUrl = url;
-        }
+        fotoUrl = (await subirImagen(file)).url;
       }
 
       const res = await fetch("/api/users", {
