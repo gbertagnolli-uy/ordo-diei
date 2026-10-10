@@ -1,5 +1,7 @@
 # Camino de oración — motor adaptativo de hábitos de oración
 
+> **Reemplazado por Mis hábitos (lane 22)**: Este plan fue superado por el sistema integral de hábitos documentado en [HABITOS_Y_NIVELES.md](HABITOS_Y_NIVELES.md).
+
 > Pedido (2026-10-09): de las features de la investigación de apps de hábitos (Streaks, Habitica, Fabulous, Habitify) y del informe sobre motores adaptativos de micro-hábitos (Loop, XState, B=MAP de Fogg, Modelo Transteórico), implementar **un sistema que se adapte a cada usuario** con un objetivo concreto: **la vida de oración**.
 
 Rama base: `dev` · Una rama `task/lane-N-*` por feature, worktree propio, merge `--no-ff` a `dev`, sin PR a `main`.

@@ -70,12 +70,12 @@ export function sectionHref(id: SectionId) {
 export function AppSidebar({
   currentUser,
   tasks,
-  oracionPendientes,
+  habitosPendientes,
 }: {
-  currentUser: any;
-  tasks: any[];
-  /** Oraciones de hoy sin registrar (null si el usuario no empezó el camino) */
-  oracionPendientes: number | null;
+  currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
+  tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
+  /** Hábitos programados hoy sin registrar */
+  habitosPendientes?: number | null;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -115,16 +115,16 @@ export function AppSidebar({
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Vida espiritual</SidebarGroupLabel>
+          <SidebarGroupLabel>Rutina</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/dashboard/oracion"} tooltip="Oración">
-                <Link href="/dashboard/oracion">
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/habitos"} tooltip="Mis hábitos">
+                <Link href="/dashboard/habitos">
                   <Sprout />
-                  <span>Oración</span>
+                  <span>Mis hábitos</span>
                 </Link>
               </SidebarMenuButton>
-              {!!oracionPendientes && <SidebarMenuBadge className="tabular-nums">{oracionPendientes}</SidebarMenuBadge>}
+              {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
