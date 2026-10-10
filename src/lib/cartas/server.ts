@@ -129,17 +129,22 @@ export async function obtenerDetalleCarta(
   clave: string,
   opciones?: { esAdmin?: boolean }
 ) {
-  const [cartaDb, cartaUsuario] = await Promise.all([
+  const [cartaDb, cartasLista, sumIncienso] = await Promise.all([
     prisma.carta.findUnique({
       where: { clave },
     }),
-    prisma.cartaUsuario.findUnique({
+    prisma.carta.findMany({
+      where: { activa: true },
+      orderBy: [{ rareza: "asc" }, { nombre: "asc" }],
+      select: { clave: true },
+    }),
+    prisma.movimientoFragmento.aggregate({
       where: {
-        usuarioId_cartaId: {
-          usuarioId,
-          cartaId: (await prisma.carta.findUnique({ where: { clave }, select: { id: true } }))?.id ?? 0,
-        },
+        usuarioId,
+        carta: { clave },
+        inciensoDelta: { gt: 0 },
       },
+      _sum: { inciensoDelta: true },
     }),
   ]);
 
@@ -147,14 +152,94 @@ export async function obtenerDetalleCarta(
     return null;
   }
 
+  const cartaUsuario = await prisma.cartaUsuario.findUnique({
+    where: {
+      usuarioId_cartaId: {
+        usuarioId,
+        cartaId: cartaDb.id,
+      },
+    },
+  });
+
   const fragmentos = cartaUsuario?.fragmentos ?? 0;
   const adaptada = adaptarCartaPrisma(cartaDb);
   const visible = contenidoVisible(adaptada, fragmentos);
 
+  // Navegación secuencial dentro del catálogo
+  const idx = cartasLista.findIndex((c) => c.clave === clave);
+  const anterior = idx > 0 ? cartasLista[idx - 1].clave : null;
+  const siguiente = idx >= 0 && idx < cartasLista.length - 1 ? cartasLista[idx + 1].clave : null;
+
+  // Formateo y conteo de días hasta la celebración litúrgica
+  let diasHastaCelebracion: number | null = null;
+  let textoCelebracion: string | null = null;
+  if (cartaDb.celebracion) {
+    const [mm, dd] = cartaDb.celebracion.split("-").map(Number);
+    const meses = [
+      "enero", "febrero", "marzo", "abril", "mayo", "junio",
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    ];
+    const nombreMes = meses[mm - 1] || "";
+    const diaMesTexto = `${dd} de ${nombreMes}`;
+
+    const hoyTz = hoyMesDiaEnTz(new Date(), APP_TZ);
+    if (cartaDb.celebracion === hoyTz) {
+      diasHastaCelebracion = 0;
+      textoCelebracion = `${diaMesTexto} · ¡Hoy es la fiesta!`;
+    } else {
+      const hoyDate = new Date();
+      const anioActual = Number(hoyAnioEnTz(hoyDate, APP_TZ));
+      let target = new Date(anioActual, mm - 1, dd);
+      const hoyMidnight = new Date(anioActual, hoyDate.getMonth(), hoyDate.getDate());
+      if (target < hoyMidnight) {
+        target = new Date(anioActual + 1, mm - 1, dd);
+      }
+      const diffMs = target.getTime() - hoyMidnight.getTime();
+      diasHastaCelebracion = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      textoCelebracion = `${diaMesTexto} · Faltan ${diasHastaCelebracion} días`;
+    }
+  }
+
+  // Progreso hacia el siguiente grado
+  const req = cartaDb.fragmentosRequeridos;
+  const topeFragmentos = req * 3;
+  let siguienteGrado: number | null = null;
+  let fragmentosParaSiguienteGrado = 0;
+
+  if (fragmentos < req) {
+    siguienteGrado = 1;
+    fragmentosParaSiguienteGrado = req - fragmentos;
+  } else if (fragmentos < Math.floor(req * 1.5)) {
+    siguienteGrado = 2;
+    fragmentosParaSiguienteGrado = Math.floor(req * 1.5) - fragmentos;
+  } else if (fragmentos < req * 2) {
+    siguienteGrado = 3;
+    fragmentosParaSiguienteGrado = req * 2 - fragmentos;
+  } else if (fragmentos < req * 3) {
+    siguienteGrado = 4;
+    fragmentosParaSiguienteGrado = req * 3 - fragmentos;
+  } else {
+    siguienteGrado = null;
+    fragmentosParaSiguienteGrado = 0;
+  }
+
+  const detalleEnriquecido = {
+    ...visible,
+    topeFragmentos,
+    siguienteGrado,
+    fragmentosParaSiguienteGrado,
+    inciensoGanado: sumIncienso._sum.inciensoDelta ?? 0,
+    diasHastaCelebracion,
+    textoCelebracion,
+    navegacion: {
+      anterior,
+      siguiente,
+    },
+  };
+
   if (opciones?.esAdmin) {
     return {
-      ...visible,
-      // Solo en modo admin se exponen las imágenes completas para el panel de administración
+      ...detalleEnriquecido,
       adminImagenes: {
         imagenUrl: cartaDb.imagenUrl,
         imagenGrado2Url: cartaDb.imagenGrado2Url,
@@ -164,7 +249,7 @@ export async function obtenerDetalleCarta(
     };
   }
 
-  return visible;
+  return detalleEnriquecido;
 }
 
 /**

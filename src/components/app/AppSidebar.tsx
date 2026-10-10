@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   History,
   Hourglass,
+  Layers,
   ListTodo,
   Network,
   Sprout,
@@ -125,6 +126,19 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Colección</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/cartas")} tooltip="Cartas católicas">
+                <Link href="/dashboard/cartas">
+                  <Layers />
+                  <span>Cartas</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
