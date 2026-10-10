@@ -41,6 +41,19 @@ Props: `image`, `backImage` (click/Enter la da vuelta), `alt`, `preset` (`bursts
 
 **Pedido de proceso:** documentar todo en el vault; separar cada feature en rama y worktree propios con prompt para agy; avisar al usuario; y entregar **un prompt general** que le diga a agy que vaya rama por rama y lea el prompt de cada tarea ([`cartas/PROMPT_GENERAL_AGY.md`](cartas/PROMPT_GENERAL_AGY.md)).
 
+### 1.1 Ampliación (2ª entrega, 2026-10-10) — textual
+
+> "En vez de mostrar la historia, hagamos así:"
+> - **0 % de fragmentos:** todo oculto, menos la fecha en que se celebra y el nombre.
+> - **0 a 25 % de fragmentos:** oración desbloqueada.
+> - **25 a 50 %:** desbloqueo de la frase y *algunos* datos del datasheet, pero no todos.
+> - **50 a 99 %:** datasheet desbloqueado progresivamente según el porcentaje.
+> - **100 %:** carta desbloqueada, historia desbloqueada.
+>
+> "Además quiero sumar otras features al sistema, como **niveles de cartas**, y otras features que detallo acá en este informe:" → informe completo y sin cambios en [`cartas/ref/INFORME_SISTEMAS_CARTAS.md`](cartas/ref/INFORME_SISTEMAS_CARTAS.md) (Pokémon TCG, fragmentos y duplicados en Clash Royale / Asphalt 9 / Summoners War, niveles de personaje, y su aplicación: Testimonios, Grados de Veneración, Sobres de Meditación y Revelación, Granos de Incienso, bono de festividad, campos del admin).
+
+Esta ampliación **reemplaza** la decisión D7 anterior ("el texto de las cartas bloqueadas se muestra siempre") y ajusta D2–D6; ver §3.
+
 ---
 
 ## 2. ¿Es la mejor vía? Evaluación
@@ -92,141 +105,189 @@ Buena estructura, pero **está pensado para un proyecto vacío** y choca con el 
 
 Lógica propia, solo lo que no existe: el sorteo por bandas (idea de la referencia), la economía de fragmentos/puntos y los eventos de fiesta y cumpleaños.
 
+### 2.4 Informe de sistemas de cartas: qué se adopta y qué no
+
+| Idea del informe | Decisión |
+|---|---|
+| Duplicados con valor (Clash Royale, Summoners War) | **Se adopta:** los fragmentos de una carta ya desbloqueada suben sus **Grados de Veneración** (D14). Nunca se descartan |
+| Comodines / conversión de excedente | **Se adopta:** lo que excede el último grado se convierte en **Granos de Incienso**, moneda para comprar fragmentos de *cualquier* carta (D15) |
+| Doble desbloqueo / estrellas (Asphalt 9) | **Se adopta** como los grados (D14), solo **estéticos y de contenido**; no hay estadísticas |
+| Sobres Meditación / Revelación | **Se adopta** (D2) en lugar del "sobre devoto" propuesto antes |
+| Bono de festividad en sobres (+50 % de esa carta) | **Se adopta** además del regalo reclamable pedido por el usuario (D5, D17); apagable con una constante |
+| Nombrar "Reliquias" o "Testimonios" | **"Reliquias" NO**: en el derecho canónico las reliquias no se venden (simonía) y venderlas por puntos es irreverente. Queda **"fragmentos"** (palabra del usuario). "Testimonios" es una alternativa; el rótulo vive en una constante de textos (D18) |
+| Tabla de grados I–IV del informe (Conocimiento 0–49 %, etc.) | **Reemplazada** por los tramos de revelación que pidió el usuario (D13). Del grado "Iluminado" se toma lo de arte alternativo y halo, pero **no** esconder la oración: el usuario la desbloquea al principio |
+| Campos de admin `fragmentos_para_iluminacion`, `contenido_bloqueado…` | Se adaptan al modelo nuevo (§4 y lane 36); el contenido bloqueado es siempre "???" (D13) |
+| Graduación tipo PSA, "mano caliente", mercado secundario, utilidad competitiva, Evo Shards por misiones | **No se adopta:** valor financiero, presión de compra y competencia contradicen una app familiar. Idea futura sin lane: sobres como premio de hábitos/racha |
+
 ---
 
 ## 3. Decisiones de diseño (defaults míos; el usuario puede cambiarlas)
 
 **D1 · Rarezas y pesos del sorteo** (constantes en `src/lib/cartas/economia.ts`, una sola fuente):
 
-| Rareza | Peso de banda | Fragmentos para desbloquear | Precio por fragmento suelto | Halo/Preset HoloCard |
+| Rareza | Peso de banda | Fragmentos para desbloquear (100 %) | Valor de un fragmento (D15) | Holo (HoloCard) |
 |---|---|---|---|---|
-| Común | 60 | 10 | 4 pts | sin holo (imagen plana) |
-| Buena | 28 | 25 | 8 pts | `glitter`, intensidad baja |
-| Perfecta | 10 | 60 | 16 pts | `gold` |
-| Celestial | 2 | 150 | 40 pts | `cosmos` (o `swirl`) |
+| Común | 60 | 10 | 1 | sin holo (imagen plana) |
+| Buena | 28 | 25 | 2 | `glitter`, intensidad baja |
+| Perfecta | 10 | 60 | 4 | `gold` |
+| Celestial | 2 | 150 | 10 | `cosmos` (o `swirl`) |
 
-Los números son un punto de partida: la lane 30 incluye una **simulación** (días para la primera Común, para una Celestial, según los ~10–20 puntos/día que hoy da la app) para ajustar con datos.
+Números de partida; la lane 30 simula la economía (días hasta la primera Común y la primera Celestial según los ~10–20 puntos/día de la app) y propone ajustes **sin cambiarlos sola**.
 
-**D2 · Tienda** (gasta `availablePoints`, nunca dinero real; sin cajas con pago real ni presión de compra, porque la usan chicos):
-- **Sobre de fragmentos** (aleatorio): 40 pts → 5 fragmentos repartidos en 1–3 cartas, rareza por sorteo en dos etapas.
-- **Sobre devoto** (mejor): 120 pts → garantiza al menos una Buena o superior.
-- **Fragmentos de una carta elegida**: precio por fragmento de D1, máx. 10 por carta por día (para que elegir no reemplace al azar).
-- Gasto atómico en transacción: descuenta puntos, suma fragmentos, registra movimiento. El servidor resuelve el resultado **antes** de la animación; la animación es solo presentación.
+**D2 · Tienda** (gasta `availablePoints` o Incienso, nunca dinero real; sin presión de compra porque la usan chicos):
+- **Sobre de Meditación** — 40 pts → 5 fragmentos en 1–3 cartas, **solo** bandas Común y Buena (renormalizadas).
+- **Sobre de Revelación** — 160 pts → 8 fragmentos; garantiza que al menos 4 sean de **una carta Perfecta o Celestial** (sorteo por bandas 10:2) y el resto sale del sorteo completo.
+- **Fragmentos de una carta elegida** — se pagan en **puntos** (precio por fragmento = valor × 4 pts) o en **Incienso** (precio = valor del fragmento). Tope: 10 fragmentos por carta y día pagando con puntos.
+- Gasto atómico en transacción; el servidor resuelve el resultado **antes** de animar.
 
-**D3 · Sin duplicados frustrantes:** un sobre solo sortea cartas **aún no desbloqueadas**. Si una banda se agotó, el sorteo renormaliza entre las bandas con cartas pendientes. Si el usuario tiene todo, el sobre no se vende ("Colección completa").
+**D3 · Los sobres sortean cualquier carta activa** (anula la regla anterior de "solo no desbloqueadas"): como los duplicados ahora valen (D14, D15), ya no hay frustración. El sorteo es en dos etapas (banda por peso, carta uniforme dentro de la banda).
 
-**D4 · Fragmentos y desbloqueo:** `fragmentos ≥ requeridos` ⇒ desbloquea (una sola vez, con registro `desbloqueadaEn`). Lo que sobra al desbloquear se descarta (el servidor nunca otorga más de lo que falta).
+**D4 · Fragmentos por carta:** el progreso se guarda como `fragmentos` hasta un **tope = fragmentosRequeridos × 3** (grado IV). Porcentaje = `fragmentos / fragmentosRequeridos` (puede superar 100 %). Lo que exceda el tope se convierte en Incienso (D15), nunca se pierde.
 
-**D5 · Fiesta de la carta (50 %):** el día `MM-DD` de `celebracion` (en `APP_TZ`), todo usuario que entra ve el aviso y puede **reclamar**. Regalo = `ceil(requeridos × 0,5)` limitado a lo que falta. Una vez por `(usuario, carta, año)`. Si ya la tiene desbloqueada, el aviso lo dice y no hay reclamo. Varias cartas el mismo día ⇒ un reclamo por carta.
+**D5 · Fiesta de la carta (50 %):** el día `MM-DD` de `celebracion` (en `APP_TZ`), todo usuario que entra ve el aviso y puede **reclamar**. Regalo = `ceil(requeridos × 0,5)` fragmentos (aplicados con D4, así que sirve aunque ya la tenga). Una vez por `(usuario, carta, año)`. Varias cartas el mismo día ⇒ un reclamo por carta.
 
-**D6 · Cumpleaños:** el día de `fechaNacimiento` (29-feb → 28-feb en años no bisiestos), el usuario reclama **todos los fragmentos que le faltan** de cada carta cuya `celebracion` sea ese día ⇒ se desbloquean. Una vez por `(usuario, año)` por carta. **Si ese día no hay ninguna carta** (o ya las tiene todas): regalo alternativo = un sobre devoto gratis. Regla de fallback propuesta; confirmar con el usuario.
+**D6 · Cumpleaños:** el día de `fechaNacimiento` (29-feb → 28-feb en años no bisiestos) el usuario reclama **todos los fragmentos que le faltan para el 100 %** de cada carta cuya `celebracion` sea ese día (se desbloquean). Una vez por año y carta. Si ese día no hay ninguna carta, o ya tiene todas al 100 %: regalo alternativo = **un Sobre de Revelación gratis** (confirmar con el usuario).
 
-**D7 · Contenido de cartas bloqueadas:** la imagen va en blanco y negro (`grayscale`) con candado y la barra de fragmentos. El texto (historia, oración, frase) **se muestra igual**: es una app devocional familiar y no conviene esconder oraciones tras puntos. Una constante `OCULTAR_TEXTO_BLOQUEADA` (por defecto `false`) permite difuminarlo si el usuario lo prefiere.
+**D13 · Revelación progresiva del contenido** (reemplaza D7). Sea `p = fragmentos / requeridos`:
 
-**D8 · Rendimiento de HoloCard:** `HoloCard` solo en (a) la pantalla de detalle, (b) el modal de apertura y (c) la vista previa del admin. Las **grillas** (colección y álbum) usan la imagen plana de la carta con un tilt CSS liviano. Si no hay WebGL2, HoloCard ya cae a la imagen.
+| Tramo | Se ve |
+|---|---|
+| `p = 0` | Solo **nombre** y **fecha en que se celebra** (siempre visibles). Todo lo demás: "???". Imagen en blanco y negro con candado |
+| `0 < p < 25 %` | + **Oración** |
+| `25 % ≤ p < 50 %` | + **Frase** (con su autor) + **algunos** datos del datasheet |
+| `50 % ≤ p < 100 %` | + datasheet **progresivo** según el porcentaje |
+| `p ≥ 100 %` | Carta desbloqueada: imagen a color, **historia** y datasheet completo |
 
-**D9 · Imagen de la carta:** `GET /api/cartas/[clave]/imagen` (o ruta de imagen de Next) compone con `next/og` el arte (dominio público, p. ej. Wikimedia Commons), el marco de la rareza y el nombre; se cachea. HoloCard recibe esa URL (mismo origen ⇒ sin problemas de CORS) y `frame` coincide con el ancho del marco. Las **fuentes y licencias del arte** se registran en `src/lib/cartas/catalogo/CREDITOS.md`.
+- El **datasheet** es una lista ordenada (`datasheet: [{etiqueta, valor}]`; el orden es el de revelación). La fecha de celebración no cuenta (siempre visible). Con `N` datos: `p < 25 %` → 0; `25 % ≤ p < 100 %` → `clamp(ceil(N × (p − 25 %) / 75 %), 1, N − 1)`; `p ≥ 100 %` → `N`. Para que el tramo 25–50 % sea "algunos pero no todos", el catálogo exige **N ≥ 4**.
+- Los datos aún bloqueados se muestran con su **etiqueta** y valor "???" y una pista ("se revela al 60 %"). Historia, oración y frase bloqueadas muestran "???" y el porcentaje en que se desbloquean.
+- **Seguridad:** el servidor **no envía** el texto oculto. `contenidoVisible(carta, fragmentos)` (pura, lane 30) arma la respuesta de la API; el cliente no recibe lo que no corresponde.
+- La imagen sigue en blanco y negro hasta el 100 %.
 
-**D10 · Catálogo inicial** (lane 33): ~60 cartas en JSON validado con zod, estimado:
+**D14 · Grados de Veneración** (niveles de carta, solo desbloqueadas; sin estadísticas ni combate). Múltiplos de `fragmentosRequeridos`:
+
+| Grado | Con | Lo que gana la carta (cosmético) |
+|---|---|---|
+| I · Desbloqueada | 100 % | Imagen a color y marco de su rareza |
+| II · Venerada | 150 % | Marco ornamental dorado y sello en la grilla |
+| III · Iluminada | 200 % | Holo más intenso + **arte alternativo** si la carta lo tiene |
+| IV · Gloriosa | 300 % (tope) | Halo animado en la carta y título "Gloriosa" |
+
+Los umbrales son constantes en `economia.ts`. El grado se calcula de los fragmentos (no se guarda).
+
+**D15 · Granos de Incienso:** lo que sobra al llegar al tope de una carta se convierte en `fragmentos × valor` de su rareza (tabla D1). El Incienso se gasta en la tienda comprando fragmentos de **cualquier** carta a `valor` Incienso cada uno. Es una conversión justa entre rarezas (sin arbitraje). `Usuario.incienso`.
+
+**D16 · Rarezas y holo** como en D1; el grado modifica la intensidad del holo (D14).
+
+**D17 · Bono de fiesta en la tienda:** el día de la fiesta de una carta, los fragmentos de **esa carta** que salgan de sobres o compras se multiplican ×1,5 (redondeo hacia arriba). Se suma al regalo reclamable (D5). Constante `BONO_FIESTA_TIENDA` (`1.5`; `1` lo apaga).
+
+**D18 · Textos y nombres:** "fragmentos" en la interfaz; todos los rótulos (fragmento, grado, incienso, sobres) viven en `src/lib/cartas/textos.ts` para cambiarlos en un lugar.
+
+**D8 · Rendimiento de HoloCard:** `HoloCard` solo en (a) la pantalla de detalle, (b) el modal de apertura y (c) la vista previa del admin. Las **grillas** usan la imagen plana con un tilt CSS liviano (WebGL permite ~16 contextos). Si no hay WebGL2, HoloCard cae a la imagen.
+
+**D9 · Imagen de la carta:** `GET /api/cartas/[clave]/imagen` compone con `next/og` el arte, el marco de la rareza (y del grado) y el nombre, con caché. Mismo origen para HoloCard; `frame` coincide con el ancho del marco. Fuentes y licencias del arte en `src/lib/cartas/catalogo/CREDITOS.md`.
+
+**D10 · Catálogo inicial** (lane 33): ~60 cartas en JSON validado con zod:
 - 20 misterios (gozosos, luminosos, dolorosos, gloriosos), sin fecha.
-- 9 ángeles/arcángeles (Miguel, Gabriel, Rafael, Ángel de la Guarda, coros…).
-- ~25 santos y beatos de gran devoción (María, José, Juan Bautista, Francisco, Teresita, Juan Pablo II, Pío de Pietrelcina, Don Bosco, Carlos Acutis, Nicolás de Bari…) con **fecha litúrgica verificada con romcal**.
-- ~6 temas/personas (Eucaristía, Sagrado Corazón, Papas, Concilios…).
-Rarezas asignadas por criterio fijo (p. ej. Celestial: María, José, los tres arcángeles, Cristo en la Eucaristía). Las fechas y datos de cada carta deben ser verificables; ante duda, `celebracion` queda `null`.
+- 9 ángeles/arcángeles.
+- ~25 santos y beatos de gran devoción con **fecha litúrgica verificada con romcal**.
+- ~6 temas/personas (Eucaristía, Sagrado Corazón…).
+Cada carta con **datasheet de 4 a 8 datos** (D13). Ante duda, `celebracion` queda `null`.
 
-**D11 · Permisos:** ver el catálogo, comprar y reclamar: cualquier usuario sobre **su** colección. Crear/editar cartas: **Padre o Madre** (mismo criterio que `/dashboard/admin`). El seed del catálogo no pisa cartas editadas a mano (`origen: SISTEMA | MANUAL`, `editadaManual`).
+**D11 · Permisos:** ver el catálogo, comprar y reclamar: cualquier usuario sobre **su** colección. Crear/editar cartas: **Padre o Madre**. El seed no pisa cartas editadas a mano (`origen`, `editadaManual`).
 
-**D12 · Perfil/logros:** al final (lane 37) se agrega un logro simple ("Primera carta", "Coleccionista de 10", "Primera Celestial") reutilizando `logros.ts`; el catálogo de cartas no toca la XP.
+**D12 · Perfil/logros:** lane 37 agrega logros ("Primera carta", "Coleccionista de 10", "Primera Celestial", "Primera carta Gloriosa") reutilizando `logros.ts`. Las cartas no tocan la XP.
 
 ---
 
 ## 4. Modelo de datos (lo hace solo la lane 31)
 
 ```prisma
-enum RarezaCarta   { Comun Buena Perfecta Celestial }
+enum RarezaCarta    { Comun Buena Perfecta Celestial }
 enum CategoriaCarta { Santo Angel Misterio Tema Persona }
-enum OrigenCarta   { Sistema Manual }
-enum TipoMovFragmento { Sobre Compra Fiesta Cumpleanos Ajuste }
-enum TipoReclamo   { Fiesta Cumpleanos }
+enum OrigenCarta    { Sistema Manual }
+enum TipoMovFragmento { Sobre Compra CompraIncienso Fiesta Cumpleanos ConversionIncienso Ajuste }
+enum TipoReclamo    { Fiesta Cumpleanos }
 
 model Carta {                 // @@map("Cartas")
   id Int @id @default(autoincrement())
   clave String @unique        // slug estable: "san-francisco-de-asis"
   nombre, subtitulo?, categoria CategoriaCarta, rareza RarezaCarta
   celebracion String?         // "MM-DD" (null = sin fecha fija)
-  anioNacimiento Int?, anioMuerte Int?
-  virtud String, historia String @db.Text, oracion String @db.Text, frase String, fraseAutor String?
-  datos Json?                 // datasheet extra: patronazgo, lugar, símbolo, etc.
-  imagenUrl String, creditoImagen String?
+  historia String @db.Text, oracion String @db.Text, frase String, fraseAutor String?
+  datasheet Json              // [{ etiqueta, valor }] en orden de revelación, mín. 4 (nacimiento, muerte, virtud, patronazgo…)
+  imagenUrl String, imagenAlternativaUrl String?, creditoImagen String?
   fragmentosRequeridos Int    // por defecto el de la rareza (D1), editable
   origen OrigenCarta @default(Sistema), editadaManual Boolean @default(false)
   activa Boolean @default(true), creadorId Int?, createdAt, updatedAt
 }
-model CartaUsuario {          // @@map("Cartas_Usuario") — progreso
-  id, usuarioId, cartaId, fragmentos Int @default(0), desbloqueadaEn DateTime?, createdAt, updatedAt
+model CartaUsuario {          // @@map("Cartas_Usuario")
+  id, usuarioId, cartaId, fragmentos Int @default(0) /* tope requeridos×3 */, desbloqueadaEn DateTime?, createdAt, updatedAt
   @@unique([usuarioId, cartaId])
 }
-model MovimientoFragmento {   // @@map("Movimientos_Fragmento") — libro mayor, auditoría
-  id, usuarioId, cartaId, tipo TipoMovFragmento, cantidad Int, puntosGastados Int @default(0), detalle String?, createdAt
+model MovimientoFragmento {   // @@map("Movimientos_Fragmento") — libro mayor
+  id, usuarioId, cartaId Int?, tipo TipoMovFragmento, cantidad Int, puntosGastados Int @default(0), inciensoDelta Int @default(0), detalle String?, createdAt
 }
 model ReclamoCarta {          // @@map("Reclamos_Carta") — idempotencia de eventos
-  id, usuarioId, cartaId Int?, tipo TipoReclamo, periodo String /* "2026" o "2026-10-10" */, createdAt
-  @@unique([usuarioId, tipo, cartaId, periodo])   // ojo: con cartaId nulo usar un valor centinela 0 (Postgres trata NULL como distinto)
+  id, usuarioId, cartaId Int?, tipo TipoReclamo, periodo String /* "2026" */, createdAt
+  @@unique([usuarioId, tipo, cartaId, periodo])   // Postgres trata NULL como distinto: usar centinela 0 si cartaId es nulo
 }
+Usuario.incienso Int @default(0) @map("Incienso")
 ```
-Todo aditivo (`db push` sin `--accept-data-loss`). Tras `prisma generate`, **reiniciar `next dev`** (ver nota del vault de hábitos).
+Todo aditivo (`db push` sin `--accept-data-loss`). Tras `prisma generate`, **reiniciar `next dev`**.
 
 ---
 
 ## 5. Contrato del catálogo JSON (lanes 31 y 33)
 
-`src/lib/cartas/catalogo/<categoria>.json`, arreglo de objetos con exactamente los campos de `Carta` salvo ids/fechas: `clave, nombre, subtitulo?, categoria, rareza, celebracion|null, anioNacimiento|null, anioMuerte|null, virtud, historia, oracion, frase, fraseAutor?, datos?, imagen (archivo en public/cartas/<clave>.webp), creditoImagen`. El esquema zod vive en `src/lib/cartas/esquema.ts` (lane 30) y lo usan el seed (31), el admin (36) y la validación del catálogo (33).
+`src/lib/cartas/catalogo/<categoria>.json`, arreglo con: `clave, nombre, subtitulo?, categoria, rareza, celebracion|null, historia, oracion, frase, fraseAutor?, datasheet[{etiqueta,valor}] (4–8, en orden de revelación), imagen (public/cartas/<clave>.webp), imagenAlternativa? , creditoImagen`. El esquema zod vive en `src/lib/cartas/esquema.ts` (lane 30) y lo usan el seed (31), el admin (36) y la validación del catálogo (33).
 
 ---
 
 ## 6. Lanes
 
-Las lanes forman una **cadena**: cada una, al empezar, hace `git merge <rama anterior>` (rama local, mismo repo). Así agy las hace de corrido y yo las integro después en orden con `--no-ff` a `dev`. Las lanes 32 y 33 no dependen del motor y pueden ir en cualquier punto de la cadena, pero se dejan en este orden por simplicidad.
+Cadena: cada lane, al empezar, hace `git merge <rama anterior>` (rama local). Yo las integro después en orden con `--no-ff` a `dev`.
 
 | Lane | Rama | Depende de | Qué entrega |
 |---|---|---|---|
-| 30 | `task/lane-30-cartas-motor` | `dev` | Motor puro y tests: economía (D1/D2), sorteo en dos etapas sin repetidas, desbloqueo, reglas de fiesta (D5) y cumpleaños (D6), fechas en `APP_TZ`, esquema zod, simulación de economía |
-| 31 | `task/lane-31-cartas-datos` | 30 | Prisma (§4), seed idempotente desde JSON, servicio `server.ts` y API: listar/detalle, comprar, reclamar fiesta/cumple, estado de eventos de hoy. Transacciones e idempotencia |
-| 32 | `task/lane-32-holocard` | 31 | Instalar HoloCard (React Bits) + `CartaVista` (HoloCard por rareza, versión plana para grillas, bloqueada en B/N) + `/api/cartas/[clave]/imagen` con `next/og` |
-| 33 | `task/lane-33-cartas-catalogo` | 32 | Catálogo inicial (~60 cartas, D10), arte de dominio público, `CREDITOS.md`, script de validación con zod y romcal |
-| 34 | `task/lane-34-cartas-coleccion` | 33 | `/dashboard/cartas` con pestañas **Mi colección** y **Álbum** (B/N), filtros por categoría y rareza, pantalla de cada carta `/dashboard/cartas/[clave]` (historia, oración, frase, datasheet, fragmentos), entrada en la barra lateral |
-| 35 | `task/lane-35-cartas-tienda` | 34 | Tienda de puntos (D2) y animación de apertura/desbloqueo (framer-motion + confeti), accesible, respeta `prefers-reduced-motion` |
-| 36 | `task/lane-36-cartas-admin` | 35 | Panel para crear/editar cartas (solo Padre/Madre), formulario zod con vista previa HoloCard en vivo, subida de imagen |
-| 37 | `task/lane-37-cartas-eventos` | 36 | Aviso y reclamo de fiesta del día y cumpleaños (D5/D6) con animación, logros de cartas (D12), documentación final |
+| 30 | `task/lane-30-cartas-motor` | `dev` | Motor puro y tests: economía (D1/D2), sorteo en dos etapas, fragmentos con tope y conversión a Incienso (D4/D15), **revelación progresiva** (D13), **grados** (D14), fiesta/cumpleaños/bono (D5/D6/D17), fechas en `APP_TZ`, zod, simulación |
+| 31 | `task/lane-31-cartas-datos` | 30 | Prisma (§4), seed, servicio y API con **contenido redactado según D13**, compras (puntos e Incienso), reclamos, eventos. Transacciones e idempotencia |
+| 32 | `task/lane-32-holocard` | 31 | HoloCard (React Bits) + `CartaVista` con rareza y **grado** (marco, halo, arte alternativo) + `/api/cartas/[clave]/imagen` |
+| 33 | `task/lane-33-cartas-catalogo` | 32 | Catálogo (~60 cartas, datasheet 4–8 datos), arte libre, créditos, validación zod + romcal |
+| 34 | `task/lane-34-cartas-coleccion` | 33 | Colección y álbum (B/N), pantalla de carta con **revelación por tramos**, barra de progreso con hitos 25/50/100 %, grado y entrada en la barra lateral |
+| 35 | `task/lane-35-cartas-tienda` | 34 | Tienda (Meditación, Revelación, fragmentos por puntos o Incienso, bono de fiesta) y animación de apertura/desbloqueo/subida de grado |
+| 36 | `task/lane-36-cartas-admin` | 35 | Panel crear/editar con editor de datasheet ordenable, arte alternativo y **vista previa con deslizador de % de fragmentos** |
+| 37 | `task/lane-37-cartas-eventos` | 36 | Reclamos de fiesta y cumpleaños, logros, cierre y documentación |
 
-Worktrees en `../ordo-diei-lanes/lane-NN` (copia reflink de `node_modules`; Turbopack no acepta un `node_modules` simbólico). Cada uno tiene `AGY_PROMPT.md` (fuera de git) copiado de [`cartas/lane-NN-*.md`](cartas/), que **sí** está en git.
+Worktrees en `../ordo-diei-lanes/lane-NN` (copia reflink de `node_modules`). **Cada worktree tiene su propia copia del vault**: el orquestador la actualiza con `git merge dev` cuando cambia el plan. `AGY_PROMPT.md` (fuera de git) es copia de [`cartas/lane-NN-*.md`](cartas/).
 
 ### Reglas para todas las lanes
 - Leer `AGENTS.md`: Next 16 tiene cambios. Consultar `node_modules/next/dist/docs/` antes de usar una API de Next.
-- **UI solo con componentes prearmados** (shadcn `radix-nova`, React Bits, MagicUI, Aceternity), sin duplicar elementos ni cambiar comportamiento ajeno a la lane. Si el CLI de shadcn agrega imports desde `"cn"`, corregirlos a `@/lib/utils` y desinstalar el paquete `cn`.
+- **UI solo con componentes prearmados** (shadcn `radix-nova`, React Bits, MagicUI, Aceternity), sin duplicar elementos ni cambiar comportamiento ajeno. Si el CLI de shadcn agrega imports desde `"cn"`, corregirlos a `@/lib/utils` y desinstalar el paquete `cn`.
 - **Reutilizar open source** antes que programar (§2.3). Sin copiar código del repo de referencia (sin licencia de reuso).
-- Base de datos: Supabase, schema `family_tasker`; solo la lane 31 toca `schema.prisma`, con `npx prisma db push` aditivo. Reiniciar `next dev` tras `generate`.
+- Base de datos: Supabase, schema `family_tasker`; solo la lane 31 toca `schema.prisma`, con `db push` aditivo. Reiniciar `next dev` tras `generate`.
 - Textos en español rioplatense. Sin YouTube, Google, batallas ni ataque/defensa.
-- Verificación: `npm test`, `npx tsc --noEmit`, `npx eslint` sobre lo tocado, `npx next build` y prueba en el navegador con capturas (escritorio 1440, móvil 390, modo oscuro). Datos de prueba borrados al terminar.
-- Commits en la rama de la lane y una fila en el §8. **Sin merge a `dev` ni PR**: eso lo hace el orquestador.
+- Verificación: `npm test`, `npx tsc --noEmit`, `npx eslint` sobre lo tocado, `npx next build` y prueba en el navegador con capturas (1440, 390, oscuro). Datos de prueba borrados.
+- Commits en la rama y una fila en el §8 (si hay conflicto en esa tabla al mergear la rama anterior, conservar ambas filas). **Sin merge a `dev` ni PR.**
 
 ## 7. Criterios de aceptación globales
 1. Compila (`tsc`, `next build`) y los tests pasan.
 2. Ninguna referencia a YouTube, Google, batallas, ataque o defensa.
 3. El álbum muestra en blanco y negro lo no desbloqueado.
-4. Una carta se desbloquea solo cuando `fragmentos ≥ requeridos`, y la animación corre una sola vez (el resultado ya está guardado en el servidor).
-5. El 50 % de fiesta y el regalo de cumpleaños se reclaman una sola vez por período, con tests (incluye 29-feb, varias cartas el mismo día y carta ya desbloqueada).
-6. Una carta creada en el admin aparece de inmediato en el álbum.
-7. Los puntos nunca quedan negativos ni se gastan dos veces (doble clic, dos pestañas).
+4. La revelación sigue D13 en cada frontera (0, 1, 24, 25, 49, 50, 99, 100 %) y **el servidor no envía texto oculto** (verificado en la respuesta de la API).
+5. Una carta se desbloquea con `fragmentos ≥ requeridos`; los grados con 150/200/300 %; el excedente sobre el tope se convierte en Incienso; la animación corre una sola vez.
+6. El 50 % de fiesta y el regalo de cumpleaños se reclaman una sola vez por período, con tests (29-feb, varias cartas el mismo día, carta ya desbloqueada o en el tope).
+7. Una carta creada en el admin aparece de inmediato en el álbum.
+8. Puntos e Incienso nunca quedan negativos ni se gastan dos veces (doble clic, dos pestañas).
 
 ## 8. Registro
 
 | Lane | Merge | Notas |
 |---|---|---|
-| 30–37 | — | Planificadas el 2026-10-10; pendientes de implementar por agy |
+| 30–37 | — | Planificadas el 2026-10-10 y ampliadas ese mismo día (revelación progresiva, grados, Incienso, sobres nuevos); pendientes de implementar por agy |
 
 ### Preguntas abiertas para el usuario
-1. **D6 (cumpleaños sin carta ese día):** ¿sobre devoto gratis como regalo alternativo? (propuesto)
-2. **D7:** ¿texto de cartas bloqueadas siempre visible (propuesto) o difuminado?
-3. **D1/D2:** ¿conformes con precios y fragmentos iniciales? Se ajustan con la simulación de la lane 30.
-4. ¿Contenido del catálogo (lane 33) puede asignar rarezas con el criterio de D10, o querés revisarlas antes del merge?
+1. **D6:** si el día del cumpleaños no hay carta, ¿Sobre de Revelación gratis? (propuesto)
+2. **D14:** ¿grados II, III y IV a 150 / 200 / 300 % y solo cosméticos? (propuesto)
+3. **D17:** ¿bono de ×1,5 en la tienda el día de la fiesta, además del regalo reclamable? (propuesto)
+4. **D1/D2:** precios y fragmentos iniciales; se ajustan con la simulación de la lane 30.
+5. ¿Las rarezas del catálogo (lane 33) las revisás antes del merge?

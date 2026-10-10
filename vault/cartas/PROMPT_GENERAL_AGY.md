@@ -6,7 +6,7 @@ Copiar y pegar tal cual a agy.
 
 Vas a implementar la feature de **cartas católicas coleccionables** de Ordo Diei, en 8 lanes (30 a 37). Cada lane tiene su propia rama y su propio worktree, y **trabajás de a una, en orden, de corrido**.
 
-**Antes de tocar nada, leé completo `vault/CARTAS_CATOLICAS.md`** (en cualquier worktree: el vault es el mismo). Ahí está el pedido textual del usuario, las decisiones de diseño, el modelo de datos y las reglas. Si algo del prompt de una lane contradice ese documento, gana el documento y me avisás.
+**Antes de tocar nada, leé completo `vault/CARTAS_CATOLICAS.md`** (cada worktree tiene su propia copia del vault; ya está actualizada con la ampliación del 2026-10-10: revelación progresiva por % de fragmentos, grados de veneración, Granos de Incienso, sobres de Meditación y Revelación). Ahí está el pedido textual del usuario (§1 y §1.1; el informe de referencia completo está en `vault/cartas/ref/INFORME_SISTEMAS_CARTAS.md`), las decisiones de diseño, el modelo de datos y las reglas. Si algo del prompt de una lane contradice ese documento, gana el documento y me avisás.
 
 ## Las lanes, en este orden
 
@@ -35,6 +35,7 @@ Vas a implementar la feature de **cartas católicas coleccionables** de Ordo Die
 - Next.js 16 tiene cambios incompatibles con lo que conocés: leé `AGENTS.md` y `node_modules/next/dist/docs/` antes de usar una API de Next.
 - UI **solo con componentes prearmados** (shadcn `radix-nova`, React Bits, MagicUI, Aceternity). No inventes componentes, no dupliques elementos de UI y no cambies funciones que no son de tu lane. Si el CLI de shadcn agrega imports desde `"cn"`, corregilos a `@/lib/utils` y desinstalá el paquete `cn`.
 - **Reutilizá open source** (HoloCard de React Bits, romcal, zod, framer-motion, date-fns, `next/og`…) y programá solo lo que no existe.
+- **Seguridad del contenido:** el servidor nunca envía historia, oración, frase ni datos del datasheet que el usuario todavía no desbloqueó (decisión D13); el cliente solo muestra lo que recibe.
 - **No copies código de `ashishbarthwal/creator-gacha-card-game`**: no tiene licencia de reuso. Solo se usa la idea del sorteo por bandas, implementada desde cero.
 - Nada de YouTube, Google, batallas, ataque ni defensa.
 - Solo la lane 31 toca `prisma/schema.prisma`, con `db push` aditivo (nunca `--accept-data-loss`). Reiniciá `next dev` después de `prisma generate`. La base es la real (Supabase, schema `family_tasker`): usá datos de prueba y borralos.
