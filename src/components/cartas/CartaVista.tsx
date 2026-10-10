@@ -5,6 +5,7 @@ import HoloCard from "@/components/HoloCard";
 import { Lock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  CONFIG_RAREZAS,
   type GradoCarta,
   type RarezaCarta,
 } from "@/lib/cartas/economia";
@@ -23,6 +24,7 @@ export interface CartaVistaProps {
   modo?: "holo" | "plana" | "bloqueada";
   grado?: GradoCarta;
   fragmentos?: number;
+  mostrarProgreso?: boolean; // solo modo bloqueada: fragmentos y % sobre el arte
   ancho?: number; // ancho en px (default 300)
   className?: string;
   onClick?: () => void;
@@ -89,6 +91,8 @@ export function CartaVista({
   carta,
   modo = "plana",
   grado = 1,
+  fragmentos = 0,
+  mostrarProgreso = false,
   ancho = 280,
   className,
   onClick,
@@ -104,8 +108,11 @@ export function CartaVista({
 
   // Modo BLOQUEADA: solo el arte en blanco y negro con el candado encima.
   // Llena el contenedor (que ya fija la proporción 63:88); nombre y progreso
-  // los muestra cada vista afuera de la carta.
+  // los muestra cada vista afuera de la carta, salvo con `mostrarProgreso`.
   if (modo === "bloqueada") {
+    const req = carta.fragmentosRequeridos || CONFIG_RAREZAS[carta.rareza].fragmentosRequeridos;
+    const porcentaje = Math.min(100, Math.floor((fragmentos / req) * 100));
+
     return (
       <div
         role="img"
@@ -130,6 +137,12 @@ export function CartaVista({
             <Lock className="size-6" />
           </div>
         </div>
+        {mostrarProgreso && (
+          <div className="absolute inset-x-0 bottom-0 flex justify-between px-4 pb-3 font-mono text-sm font-bold text-white tabular-nums [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+            <span>{fragmentos} / {req}</span>
+            <span>{porcentaje}%</span>
+          </div>
+        )}
       </div>
     );
   }

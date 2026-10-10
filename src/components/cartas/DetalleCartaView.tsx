@@ -107,6 +107,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
               modo={carta.desbloqueada ? "holo" : "bloqueada"}
               grado={carta.grado}
               fragmentos={carta.fragmentos}
+              mostrarProgreso
               ancho={340}
               className="w-full h-full object-cover"
               prioridad
