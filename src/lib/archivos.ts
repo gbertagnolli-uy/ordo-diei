@@ -5,7 +5,13 @@ import sharp from "sharp";
 import prisma from "./prisma.ts";
 
 export const PREFIJO_ARCHIVOS = "/api/archivos/";
-const MAX_LADO = 1600;
+/** Perfiles de optimización: el cliente elige uno por nombre, nunca números arbitrarios */
+export const PERFILES_IMAGEN = {
+  general: { maxLado: 1600, maxBytes: null as number | null },
+  // Arte de cartas (D19 / LEEME): retrato 63:88 que se muestra a ≤ 400 px; ≤ 300 KB
+  carta: { maxLado: 1200, maxBytes: 300 * 1024 },
+} as const;
+export type PerfilImagen = keyof typeof PERFILES_IMAGEN;
 /** Límite de lo que llega al servidor: el navegador ya comprime antes (Vercel corta en 4,5 MB) */
 export const MAX_BYTES_SUBIDA = 4 * 1024 * 1024;
 const TIPOS_ACEPTADOS = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/heic", "image/heif"];
@@ -26,22 +32,27 @@ export function claveDeUrl(url: string | null | undefined): string | null {
 /** Comprime y guarda una imagen; devuelve su URL */
 export async function guardarImagen(
   entrada: File | Buffer,
-  opciones: { subidoPorId?: number | null; nombreOrigen?: string | null } = {}
-): Promise<string> {
+  opciones: { subidoPorId?: number | null; nombreOrigen?: string | null; perfil?: PerfilImagen } = {}
+): Promise<{ url: string; bytes: number; ancho: number; alto: number }> {
   if (entrada instanceof File) {
     if (!TIPOS_ACEPTADOS.includes(entrada.type)) throw new ImagenInvalidaError("Formato no permitido (JPG, PNG, WebP, GIF, AVIF o HEIC)");
     if (entrada.size > MAX_BYTES_SUBIDA) throw new ImagenInvalidaError("La imagen no puede superar 4 MB");
   }
   const original = entrada instanceof File ? Buffer.from(await entrada.arrayBuffer()) : entrada;
 
+  const { maxLado, maxBytes } = PERFILES_IMAGEN[opciones.perfil ?? "general"];
   let datos: Buffer;
   let info: { width: number; height: number };
   try {
-    ({ data: datos, info } = await sharp(original)
+    const base = await sharp(original)
       .rotate()
-      .resize({ width: MAX_LADO, height: MAX_LADO, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 82 })
-      .toBuffer({ resolveWithObject: true }));
+      .resize({ width: maxLado, height: maxLado, fit: "inside", withoutEnlargement: true })
+      .toBuffer();
+    // Baja la calidad de a poco hasta entrar en el peso máximo del perfil (si tiene)
+    for (const calidad of [82, 72, 62, 52, 42]) {
+      ({ data: datos, info } = await sharp(base).webp({ quality: calidad }).toBuffer({ resolveWithObject: true }));
+      if (!maxBytes || datos.length <= maxBytes) break;
+    }
   } catch {
     throw new ImagenInvalidaError("El archivo no es una imagen válida");
   }
@@ -51,15 +62,15 @@ export async function guardarImagen(
     data: {
       clave,
       tipo: "image/webp",
-      datos: new Uint8Array(datos),
-      bytes: datos.length,
-      ancho: info.width,
-      alto: info.height,
+      datos: new Uint8Array(datos!),
+      bytes: datos!.length,
+      ancho: info!.width,
+      alto: info!.height,
       nombreOrigen: (opciones.nombreOrigen ?? (entrada instanceof File ? entrada.name : null))?.slice(0, 200) ?? null,
       subidoPorId: opciones.subidoPorId ?? null,
     },
   });
-  return urlArchivo(clave);
+  return { url: urlArchivo(clave), bytes: datos!.length, ancho: info!.width, alto: info!.height };
 }
 
 /** Bytes y tipo de un archivo por su URL /api/archivos/<uuid> */

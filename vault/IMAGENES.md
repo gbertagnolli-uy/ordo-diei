@@ -21,3 +21,11 @@
 ## Imágenes que NO pasan por acá
 - `public/habitos/*.avif` (41, en git): fotos del carrusel de hábitos. Las originales (`public/Imagenes/`, 129 MB) están fuera de git; `npm run imagenes` las regenera.
 - `arte-cartas/` (74, en git): arte del catálogo, servido por `/api/cartas/arte` según el grado (lane 39).
+
+## Lane 44 · arte de cartas optimizado (2026-10-10)
+> Pedido: "necesito que al cargar una imagen manual desde la app tambien se optimice la imagen, intente y me aparece 'El archivo pesa 1015 KB (supera los 300 KB recomendados).'"
+
+- El panel medía el archivo **original** antes de subirlo; además el perfil general (1600 px) no garantizaba ≤ 300 KB.
+- Perfiles de optimización por nombre (`PERFILES_IMAGEN`): `general` (1600 px) y `carta` (1200 px, ≤ 300 KB: el servidor baja la calidad WebP 82 → 42 hasta entrar). El navegador comprime antes con el mismo perfil.
+- `/api/upload` devuelve `{ url, bytes, ancho, alto }`; el panel muestra "Optimizada: X KB → Y KB" y solo avisa si aun optimizada supera 300 KB. Acepta también `.avif`.
+- Prueba en Chromium headless, subiendo desde "Nueva carta": JPEG de ruido de 3247 KB (2520×3520) → 290 KB (816×1140). Imagen de prueba borrada de la base.

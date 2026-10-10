@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Archivo faltante" }, { status: 400 });
     }
-    const fotoUrl = await guardarImagen(file, { subidoPorId: Number(session.user.id) });
+    const { url: fotoUrl } = await guardarImagen(file, { subidoPorId: Number(session.user.id) });
     await prisma.usuario.update({ where: { id: Number(session.user.id) }, data: { fotoUrl } });
 
     return NextResponse.json({ fotoUrl });
