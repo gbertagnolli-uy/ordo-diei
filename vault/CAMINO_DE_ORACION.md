@@ -105,7 +105,7 @@ El estado **no se guarda**: se recalcula desde el plan y los registros en cada l
 - [x] **Lane 17 · `task/lane-17-motor-oracion`** — motor puro (`engine.ts`) + tests.
 - [x] **Lane 18 · `task/lane-18-datos-oracion`** — modelos Prisma, `db push`, `server.ts`, rutas API.
 - [x] **Lane 19 · `task/lane-19-ui-oracion`** — página Oración: inicio del camino, oraciones de hoy (1 toque), escalera del Rosario, trayectoria (shadcn chart), recaída compasiva (shadcn alert), confeti al subir de paso, entrada en la barra lateral.
-- [ ] **Lane 20 · `task/lane-20-oracion-familia`** — vista de padres: camino de cada miembro, "Rezamos juntos" (Completorium para varios, hoy o días recientes), iniciar el camino y habilitar la mañana para un miembro.
+- [x] **Lane 20 · `task/lane-20-oracion-familia`** — vista de padres: camino de cada miembro, "Rezamos juntos" (Completorium para varios, hoy o días recientes), iniciar el camino y habilitar la mañana para un miembro.
 
 ## 6. Criterios de aceptación
 
@@ -122,3 +122,15 @@ El estado **no se guarda**: se recalcula desde el plan y los registros en cada l
 | 17 | `810c255` | `src/lib/oracion/engine.ts` (XState 5.33.2 + date-fns) y 14 tests (`npm test`). `tsconfig` excluye `*.test.ts` (importan con extensión `.ts` para Node). Rama y worktree borrados. |
 | 18 | `4e6910b` | `db push` solo aditivo (2 enums, `Planes_Oracion`, `Registros_Oracion`) en el schema `family_tasker`. API probada con sesiones locales: permisos (hijo no ve ni marca a otros), rango de 7 días, justificado y borrado, carga de días previos del Completorium y habilitación de la mañana. Datos de prueba borrados. Turbopack no acepta `node_modules` simbólico fuera del proyecto: los worktrees usan una copia reflink (btrfs). Rama y worktree borrados. |
 | 19 | `daf694e` | Página `/dashboard/oracion` + entrada en la barra lateral. `catalogo.ts` separado del motor (XState no llega al cliente); `tsconfig` con `allowImportingTsExtensions` en lugar de excluir los tests. La paleta `--chart-*` del tema **no pasa** el validador de color (verde/dorado indistinguibles con daltonismo): la trayectoria usa múltiplos pequeños de una sola serie en `--primary`. Rampa del mapa de calor validada (claro y oscuro). Popup `ORACION` en el `ModalManager` reutiliza el confeti único. Verificado con capturas (escritorio, oscuro, móvil) y clic real (popup de regreso); `next build` OK. Rama y worktree borrados. |
+| 20 | `f43bf06` | Pestañas "Mi camino / Familia" solo para padres (shadcn `tabs`, `table`, `checkbox`, `toggle-group`, `native-select`). Probado con clics reales: registro para 8 personas y actualización de la tabla y del contador lateral. Datos de prueba borrados (las tablas de oración quedan vacías). Rama y worktree borrados. |
+
+### Verificación final
+- `npm test` (14 tests del motor), `tsc`, `eslint` en lo nuevo y `next build` OK.
+- Capturas en escritorio, modo oscuro y móvil, sin errores de consola.
+
+### Notas y pendientes
+- Un registro de una oración aún no habilitada (p. ej. Matutinum vía "Rezamos juntos") se guarda y empieza a contar cuando se habilita.
+- Registrar para miembros sin plan guarda el historial: al comenzar, los días de Completorium previos cuentan (así se carga lo que la familia ya rezaba).
+- El PUT familiar hace un upsert por persona en una transacción: ~3 s para 8 personas contra el pooler remoto en dev. Si molesta, pasar a `createMany` + `updateMany`.
+- `@date-fns/tz` fija "hoy" en `APP_TZ` (por defecto `America/Montevideo`); en Vercel conviene definirla explícitamente.
+- La paleta `--chart-*` del tema no es apta para series categóricas (ver lane 19).
