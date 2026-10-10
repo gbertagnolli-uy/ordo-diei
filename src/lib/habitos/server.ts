@@ -108,6 +108,7 @@ export type HabitoVista = {
   ancla: string;
   icono: string;
   minimo: string | null;
+  imagen: string | null;
   pasos: Paso[];
   creador: { id: number; nombre: string } | null;
   puedeEditar: boolean;
@@ -133,6 +134,7 @@ export type EstadoHabito = EstadoMotor & {
   dias: number;
   identidad: string;
   creadorId: number | null;
+  imagen: string | null;
   activo: boolean;
   /** Solo en "Leer un libro": libro en curso, último terminado y páginas registradas hoy */
   libro: LibroVista | null;
@@ -178,6 +180,7 @@ export async function getCatalogo(usuarioId: number): Promise<HabitoVista[]> {
       ancla: h.ancla,
       icono: h.icono,
       minimo: h.minimo,
+      imagen: h.imagen,
       pasos: pasosDe(h),
       creador: h.creador,
       puedeEditar: puedeEditarHabito(h, usuarioId),
@@ -274,6 +277,7 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
         dias: adopcion.dias,
         identidad: identidadDe(adopcion.habito),
         creadorId: adopcion.habito.creadorId,
+        imagen: adopcion.habito.imagen,
         activo: adopcion.activo,
         libro: enCurso
           ? { id: enCurso.id, titulo: enCurso.titulo, paginas: enCurso.paginas, leidas, pct: progresoLibro(leidas, enCurso.paginas).pct }
@@ -303,6 +307,12 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
 
 // ---------- CRUD de hábitos ----------
 
+// Solo imágenes subidas por /api/upload
+function validarImagen(url: string | null | undefined): string | null {
+  const u = url?.trim();
+  return u && /^\/uploads\/[\w.-]+$/.test(u) ? u : null;
+}
+
 export async function crearHabito(
   creadorId: number,
   datos: {
@@ -312,6 +322,7 @@ export async function crearHabito(
     ancla: string;
     minimo?: string | null;
     icono?: string;
+    imagen?: string | null;
     adoptar?: { dias?: number; ancla?: string };
   }
 ) {
@@ -319,6 +330,8 @@ export async function crearHabito(
   const ancla = datos.ancla?.trim();
   const minimo = datos.minimo?.trim() || null;
   const icono = datos.icono?.trim() || "Sparkles";
+  const imagen = validarImagen(datos.imagen);
+  if (!imagen) throw new Error("Subí una imagen para el hábito");
 
   if (!nombre || nombre.length > 80) throw new Error("Nombre debe tener entre 1 y 80 caracteres");
   if (!ancla || ancla.length > 120) throw new Error("Ancla debe tener entre 1 y 120 caracteres");
@@ -336,6 +349,7 @@ export async function crearHabito(
       ancla,
       icono,
       minimo,
+      imagen,
       creadorId,
       archivado: false,
     },
@@ -368,6 +382,7 @@ export async function editarHabito(
     ancla: string;
     minimo: string | null;
     icono: string;
+    imagen: string | null;
   }>
 ) {
   const habito = await prisma.habito.findUnique({ where: { id } });
@@ -397,6 +412,11 @@ export async function editarHabito(
   if (datos.franja !== undefined) {
     if (!["manana", "tarde", "noche"].includes(datos.franja)) throw new Error("Franja no válida");
     data.franja = datos.franja;
+  }
+  if (datos.imagen !== undefined) {
+    const imagen = validarImagen(datos.imagen);
+    if (!imagen) throw new Error("Imagen no válida");
+    data.imagen = imagen;
   }
   if (datos.icono !== undefined) {
     data.icono = datos.icono.trim() || "Sparkles";
