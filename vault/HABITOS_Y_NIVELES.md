@@ -150,7 +150,7 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
 | 22 | `task/lane-22-ui-habitos` | 21 mergeada en `dev` | `dev` (hace `git merge dev` antes de empezar) |
 | 23 | `task/lane-23-niveles-perfil` | 21 mergeada en `dev` | `dev` (ídem). Puede correr en paralelo con la 22 |
 
-- [ ] **Lane 21 · motor y datos.**
+- [x] **Lane 21 · motor y datos.**
   - Motor genérico por escalera (`src/lib/habitos/`), catálogo de §1 y modelos de §3 con `db push` aditivo.
   - Recompensas, permisos y API `/api/habitos/*`, con tests.
   - **No toca la UI** y deja funcionando el Camino de oración actual: las tablas viejas se borran en la lane 22.
@@ -178,3 +178,4 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
 
 | Lane | Merge | Notas |
 |---|---|---|
+| 21 | (pendiente) | Motor genérico de hábitos (XState 5), catálogo del sistema (9 hábitos), modelos Prisma aditivos, permisos y recompensas (+5 pts orden/cuidado, +10 XP siempre), endpoints /api/habitos/*. Tests (33 pass), build y verificación de API en puerto 3121 con datos de prueba borrados. |
