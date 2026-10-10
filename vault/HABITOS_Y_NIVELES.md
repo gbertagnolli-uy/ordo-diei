@@ -178,4 +178,4 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
 
 | Lane | Merge | Notas |
 |---|---|---|
-| 21 | (pendiente) | Motor genérico de hábitos (XState 5), catálogo del sistema (9 hábitos), modelos Prisma aditivos, permisos y recompensas (+5 pts orden/cuidado, +10 XP siempre), endpoints /api/habitos/*. Tests (33 pass), build y verificación de API en puerto 3121 con datos de prueba borrados. |
+| 21 | bfb9e26 | Motor genérico de hábitos (XState 5), catálogo del sistema (9 hábitos), modelos Prisma aditivos, permisos y recompensas (+5 pts orden/cuidado, +10 XP siempre), endpoints /api/habitos/*. Tests (33 pass), build y verificación de API en puerto 3121 con datos de prueba borrados. |
