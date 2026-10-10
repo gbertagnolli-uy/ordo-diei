@@ -24,6 +24,7 @@ export async function sembrarCartas(directorioCatalogo?: string) {
   let insertadas = 0;
   let actualizadas = 0;
   let omitidas = 0;
+  const todasLasClaves = new Set<string>();
 
   for (const archivo of archivos) {
     const rutaArchivo = path.join(dir, archivo);
@@ -54,6 +55,7 @@ export async function sembrarCartas(directorioCatalogo?: string) {
       }
 
       const cartaData: CartaCatalogo = parseResult.data;
+      todasLasClaves.add(cartaData.clave);
       const fragmentosReq =
         cartaData.fragmentosRequeridos ??
         CONFIG_RAREZAS[cartaData.rareza].fragmentosRequeridos;
@@ -107,7 +109,7 @@ export async function sembrarCartas(directorioCatalogo?: string) {
         // No pisar cartas con editadaManual = true
         omitidas++;
       } else {
-        // Actualizar datos del sistema
+        // Actualizar datos del sistema y asegurar activa = true
         await prisma.carta.update({
           where: { clave: cartaData.clave },
           data: {
@@ -128,6 +130,7 @@ export async function sembrarCartas(directorioCatalogo?: string) {
             creditoImagen: cartaData.creditoImagen ?? null,
             fragmentosRequeridos: fragmentosReq,
             origen: "Sistema",
+            activa: true,
           },
         });
         actualizadas++;
@@ -135,8 +138,26 @@ export async function sembrarCartas(directorioCatalogo?: string) {
     }
   }
 
+  // Desactivar cartas de Sistema que ya no pertenezcan al catálogo JSON (ej. misterios luminosos quitados)
+  const desactivadas = await prisma.carta.updateMany({
+    where: {
+      origen: "Sistema",
+      clave: { notIn: Array.from(todasLasClaves) },
+      activa: true,
+    },
+    data: {
+      activa: false,
+    },
+  });
+
+  if (desactivadas.count > 0) {
+    console.log(
+      `[Seed Cartas] Desactivadas ${desactivadas.count} cartas que ya no forman parte del catálogo.`
+    );
+  }
+
   console.log(
-    `[Seed Cartas] Finalizado. Total: ${totalProcesadas}, Insertadas: ${insertadas}, Actualizadas: ${actualizadas}, Omitidas por edición manual: ${omitidas}`
+    `[Seed Cartas] Finalizado. Total: ${totalProcesadas}, Insertadas: ${insertadas}, Actualizadas: ${actualizadas}, Desactivadas: ${desactivadas.count}, Omitidas por edición manual: ${omitidas}`
   );
   return { insertadas, actualizadas, omitidas, total: totalProcesadas };
 }
