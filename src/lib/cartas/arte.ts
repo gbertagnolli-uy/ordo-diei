@@ -1,6 +1,6 @@
 // Arte de las cartas (D19, sin spoilers). Los archivos del catálogo viven en `arte-cartas/` (fuera de `public/`)
 // y se sirven solo por /api/cartas/arte, que verifica el grado del usuario. En la base las rutas siguen siendo
-// lógicas: "/cartas/<clave>/<N>.webp". Las subidas por el panel ("/uploads/<uuid>_…") tienen nombre no adivinable.
+// lógicas: "/cartas/<clave>/<N>.webp". Las subidas por el panel están en la base ("/api/archivos/<uuid>", no adivinable).
 import { gradoDe, imagenDeGrado, type CartaConImagenes } from "./fragmentos.ts";
 
 const PREFIJO_CATALOGO = "/cartas/";
@@ -14,10 +14,7 @@ export function urlArte(ruta: string | null | undefined): string {
 /** Ruta en disco (relativa a la raíz del proyecto) de una ruta lógica, o null si no es válida */
 export function rutaEnDiscoArte(ruta: string): string | null {
   const m = /^\/cartas\/([a-z0-9-]+)\/([a-zA-Z0-9_-]+\.(?:webp|png|jpe?g))$/.exec(ruta);
-  if (m) return `arte-cartas/${m[1]}/${m[2]}`;
-  const u = /^\/uploads\/([\w.-]+)$/.exec(ruta);
-  if (u && !u[1].includes("..")) return `public/uploads/${u[1]}`;
-  return null;
+  return m ? `arte-cartas/${m[1]}/${m[2]}` : null;
 }
 
 /**

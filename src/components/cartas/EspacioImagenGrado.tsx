@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { urlArte } from "@/lib/cartas/arte";
+import { subirImagen } from "@/lib/subirImagen";
 import { Upload, X, RefreshCw, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,19 +73,7 @@ export function EspacioImagenGrado({
       // 4. Subir vía /api/upload
       try {
         setSubiendo(true);
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!res.ok) {
-          throw new Error("Error al subir el archivo");
-        }
-
-        const data = await res.json();
+        const data = await subirImagen(file);
         if (data.url) {
           onImagenCambiada(data.url);
           setUrlInput(data.url);

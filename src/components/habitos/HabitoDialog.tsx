@@ -38,6 +38,7 @@ import {
 } from "@/lib/habitos/catalogo";
 import type { EstadoHabito, HabitoVista } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
+import { subirImagen } from "@/lib/subirImagen";
 
 const ANCLAS_SUGERIDAS: Record<Franja, string[]> = {
   manana: ["Al levantarme", "Antes del desayuno", "Después de desayunar", "Antes de salir"],
@@ -397,12 +398,7 @@ export function HabitoDialog({
                   if (!file) return;
                   setSubiendoImagen(true);
                   try {
-                    const fd = new FormData();
-                    fd.append("file", file);
-                    const res = await fetch("/api/upload", { method: "POST", body: fd });
-                    const json = await res.json();
-                    if (!res.ok) throw new Error(json.error || "No se pudo subir la imagen");
-                    setNuevaImagen(json.url);
+                    setNuevaImagen((await subirImagen(file)).url);
                   } catch (err) {
                     alert(err instanceof Error ? err.message : "No se pudo subir la imagen");
                   } finally {

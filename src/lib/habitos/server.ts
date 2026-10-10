@@ -28,6 +28,7 @@ import {
   type Evento,
 } from "./engine.ts";
 import { puedeEditarHabito } from "./permisos.ts";
+import { claveDeUrl } from "../archivos.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
 /** Días hacia atrás que se pueden registrar o corregir */
@@ -307,10 +308,9 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
 
 // ---------- CRUD de hábitos ----------
 
-// Solo imágenes subidas por /api/upload
+// Solo imágenes subidas por /api/upload (guardadas en la base, lib/archivos.ts)
 function validarImagen(url: string | null | undefined): string | null {
-  const u = url?.trim();
-  return u && /^\/uploads\/[\w.-]+$/.test(u) ? u : null;
+  return claveDeUrl(url) ? url!.trim() : null;
 }
 
 export async function crearHabito(
