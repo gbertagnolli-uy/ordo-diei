@@ -1,5 +1,10 @@
 "use client";
 
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { useState } from "react";
 import { Check, X, Clock, User, AlertCircle } from "lucide-react";
 
@@ -37,67 +42,48 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
   };
 
   return (
-    <div className="bg-[var(--surface-container-lowest)] rounded-md elevation-ambient border border-[color-mix(in-srgb,var(--primary)_30%,transparent)] overflow-hidden mb-8 ghost-border">
-      <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] px-6 py-4 flex items-center justify-between border-b border-[color-mix(in-srgb,var(--primary)_15%,transparent)]">
-        <h3 className="text-[var(--primary)] font-headline font-bold text-lg flex items-center gap-2">
-          <Clock className="w-5 h-5" /> Tareas Pendientes de Revisión ({waitingTasks.length})
-        </h3>
-        <span className="bg-[var(--primary)] text-[var(--on-primary)] text-xs font-title font-bold px-2 py-1 rounded-md uppercase tracking-widest">
-          Action Required
-        </span>
-      </div>
-      
-      <div className="divide-y divide-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">
+    <Card className="mb-6 gap-0 py-0">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Clock className="size-4 text-primary" /> Tareas Pendientes de Revisión ({waitingTasks.length})
+        </CardTitle>
+        <Badge>Action Required</Badge>
+      </CardHeader>
+      <ItemGroup className="gap-0 divide-y">
         {waitingTasks.map((task) => (
-          <div key={task.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--surface-container-low)] transition-colors">
-            <div className="flex gap-4">
-              <div className="w-12 h-12 rounded-md bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] flex items-center justify-center flex-shrink-0">
-                {task.asignado?.fotoUrl ? (
-                  <img src={task.asignado.fotoUrl} alt={task.asignado.nombre} className="w-full h-full object-cover rounded-md" />
-                ) : (
-                  <User className="w-6 h-6 text-[var(--primary)]" />
-                )}
-              </div>
-              <div>
-                <h4 className="font-headline font-bold text-[var(--on-surface)] text-lg leading-tight">
-                  {task.titulo}
-                </h4>
-                <div className="flex items-center gap-3 mt-1 text-sm">
-                  <span className="font-title font-bold text-[var(--primary)]">
-                    {task.asignado?.nombre}
-                  </span>
-                  <span className="text-[var(--on-surface-variant)]">•</span>
-                  <span className="flex items-center gap-1 text-[var(--warning)] font-title font-bold">
-                    💰 {task.puntosGenerados} Pts
-                  </span>
-                </div>
+          <div key={task.id}>
+            <Item className="flex-col items-start rounded-none px-6 py-3 sm:flex-row sm:items-center">
+              <ItemMedia>
+                <Avatar className="size-10 rounded-lg">
+                  <AvatarImage src={task.asignado?.fotoUrl ?? undefined} alt={task.asignado?.nombre} className="object-cover" />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary"><User className="size-5" /></AvatarFallback>
+                </Avatar>
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle className="text-base">{task.titulo}</ItemTitle>
+                <ItemDescription className="flex flex-wrap items-center gap-x-2 text-sm">
+                  <span className="font-medium text-primary">{task.asignado?.nombre}</span>
+                  <span>•</span>
+                  <span className="font-medium text-[var(--warning)]">💰 {task.puntosGenerados} Pts</span>
+                </ItemDescription>
                 {task.retroalimentacionAlgoritmo && (
-                  <p className="text-xs text-[var(--on-surface-variant)] mt-2 italic flex items-center gap-1 font-body">
-                    <AlertCircle className="w-3 h-3" /> {task.retroalimentacionAlgoritmo}
+                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground italic">
+                    <AlertCircle className="size-3" /> {task.retroalimentacionAlgoritmo}
                   </p>
                 )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 self-end sm:self-center">
-              <button
-                disabled={loadingId !== null}
-                onClick={() => handleAction(task.id, "reject")}
-                className="flex items-center gap-2 px-4 py-2 bg-[color-mix(in-srgb,var(--error)_5%,transparent)] text-[var(--error)] hover:bg-[color-mix(in-srgb,var(--error)_10%,transparent)] font-title font-bold rounded-md transition-all active:scale-95 disabled:opacity-50"
-              >
-                <X className="w-5 h-5" /> {loadingId === task.id ? "..." : "Rechazar"}
-              </button>
-              <button
-                disabled={loadingId !== null}
-                onClick={() => handleAction(task.id, "approve")}
-                className="flex items-center gap-2 px-6 py-2 bg-[var(--success)] text-[var(--on-primary)] font-title font-bold rounded-md transition-all shadow-md active:scale-95 disabled:opacity-50"
-              >
-                <Check className="w-5 h-5" /> {loadingId === task.id ? "..." : "Aprobar"}
-              </button>
-            </div>
+              </ItemContent>
+              <ItemActions className="self-end sm:self-center">
+                <Button variant="ghost" disabled={loadingId !== null} onClick={() => handleAction(task.id, "reject")} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <X /> {loadingId === task.id ? "..." : "Rechazar"}
+                </Button>
+                <Button disabled={loadingId !== null} onClick={() => handleAction(task.id, "approve")} className="bg-[var(--success)] text-[var(--on-success)] hover:bg-[var(--success-container)]">
+                  <Check /> {loadingId === task.id ? "..." : "Aprobar"}
+                </Button>
+              </ItemActions>
+            </Item>
           </div>
         ))}
-      </div>
-    </div>
+      </ItemGroup>
+    </Card>
   );
 }

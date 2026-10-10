@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { PageHeader } from "@/components/app/PageHeader";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import ClientPage from "./ClientPage";
@@ -28,5 +29,10 @@ export default async function NewTaskServerPage() {
     }
   });
 
-  return <ClientPage users={users} />;
+  return (
+    <>
+      <PageHeader group="Administración" title="Nueva tarea" />
+      <ClientPage users={users} />
+    </>
+  );
 }

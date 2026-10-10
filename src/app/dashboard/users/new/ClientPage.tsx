@@ -1,9 +1,12 @@
 "use client";
 
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, UserPlus } from "lucide-react";
-import Link from "next/link";
 
 export default function NewUserPage() {
   const router = useRouter();
@@ -53,58 +56,53 @@ export default function NewUserPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface)] p-4 sm:p-8 flex flex-col items-center">
-      <div className="w-full max-w-xl bg-[var(--surface-container-lowest)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] overflow-hidden mt-10 elevation-ambient ghost-border">
-        <div className="bg-[color-mix(in-srgb,var(--primary)_10%,transparent)] p-6 flex items-center justify-between border-b border-[color-mix(in-srgb,var(--primary)_15%,transparent)]">
-          <h2 className="text-2xl font-headline font-bold text-[var(--primary)] flex items-center gap-2">
-            <UserPlus className="w-6 h-6" /> Añadir Miembro
-          </h2>
-          <Link href="/dashboard" className="text-[var(--primary)] hover:bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] p-2 rounded-md transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-        </div>
+    <div className="flex justify-center p-4 sm:p-6">
+      <Card className="w-full max-w-xl">
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="member-nombre">Nombre</FieldLabel>
+                <Input id="member-nombre" required name="nombre" type="text" placeholder="Ej: Sofía" />
+              </Field>
 
-        <form onSubmit={handleSubmit} className="p-6 sm:p-10 flex flex-col gap-5">
-          <div>
-            <label className="text-[var(--on-surface)] font-title font-bold mb-1 block">Nombre</label>
-            <input required name="nombre" type="text" className="inkpot" placeholder="Ej: Sofía" />
-          </div>
+              <Field>
+                <FieldLabel htmlFor="member-rol">Rol Familiar</FieldLabel>
+                <NativeSelect id="member-rol" required name="rol" defaultValue="" className="w-full">
+                  <NativeSelectOption value="" disabled>Selecciona el rol...</NativeSelectOption>
+                  <NativeSelectOptGroup label="Administradores">
+                    <NativeSelectOption value="Padre">Padre</NativeSelectOption>
+                    <NativeSelectOption value="Madre">Madre</NativeSelectOption>
+                  </NativeSelectOptGroup>
+                  <NativeSelectOptGroup label="Hijos (Se ordenarán solos por edad)">
+                    <NativeSelectOption value="Hijo">Hijo</NativeSelectOption>
+                    <NativeSelectOption value="Hija">Hija</NativeSelectOption>
+                  </NativeSelectOptGroup>
+                </NativeSelect>
+              </Field>
 
-          <div>
-            <label className="text-[var(--on-surface)] font-title font-bold mb-1 block">Rol Familiar</label>
-            <select required name="rol" defaultValue="" className="inkpot cursor-pointer">
-              <option value="" disabled>Selecciona el rol...</option>
-              <optgroup label="Administradores">
-                <option value="Padre">Padre</option>
-                <option value="Madre">Madre</option>
-              </optgroup>
-              <optgroup label="Hijos (Se ordenarán solos por edad)">
-                <option value="Hijo">Hijo</option>
-                <option value="Hija">Hija</option>
-              </optgroup>
-            </select>
-          </div>
+              <Field>
+                <FieldLabel htmlFor="member-fecha">Fecha de Nacimiento</FieldLabel>
+                <Input id="member-fecha" required name="fecha" type="date" />
+              </Field>
 
-          <div>
-             <label className="text-[var(--on-surface)] font-title font-bold mb-1 block">Fecha de Nacimiento</label>
-             <input required name="fecha" type="date" className="inkpot" />
-          </div>
+              <Field>
+                <FieldLabel htmlFor="member-pin">PIN Secreto (4 dígitos)</FieldLabel>
+                <Input id="member-pin" required name="pin" type="text" maxLength={4} pattern="[0-9]{4}" placeholder="----" />
+              </Field>
 
-          <div>
-             <label className="text-[var(--on-surface)] font-title font-bold mb-1 block">PIN Secreto (4 dígitos)</label>
-             <input required name="pin" type="text" maxLength={4} pattern="[0-9]{4}" className="inkpot" placeholder="----" />
-          </div>
+              <Field>
+                <FieldLabel htmlFor="member-foto">Foto de Perfil</FieldLabel>
+                <Input id="member-foto" name="foto" type="file" accept="image/*" />
+              </Field>
 
-          <div>
-             <label className="text-[var(--on-surface)] font-title font-bold mb-1 block">Foto de Perfil</label>
-             <input name="foto" type="file" accept="image/*" className="inkpot p-0 file:mr-4 file:py-3 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-title file:font-bold file:bg-[var(--surface-container)] file:text-[var(--on-surface)] hover:file:bg-[var(--surface-container-high)] cursor-pointer" />
-          </div>
-
-          <button disabled={loading} type="submit" className="btn-primary w-full mt-4 flex justify-center items-center py-4 text-lg">
-            {loading ? "Guardando..." : "Registrar Miembro"}
-          </button>
-        </form>
-      </div>
+              <Button disabled={loading} type="submit" size="lg" className="w-full">
+                {loading ? "Guardando..." : "Registrar Miembro"}
+              </Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

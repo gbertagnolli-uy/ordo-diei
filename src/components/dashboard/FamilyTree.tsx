@@ -2,7 +2,11 @@
 
 import { motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { getLevelInfo } from "@/lib/levelUtils";
+import { nivelDe, xpTotal } from "@/lib/niveles";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface Tarea {
   estado: string;
@@ -73,64 +77,55 @@ import { useModalStore } from "@/store/modalStore";
 
 function Node({ user, isParent = false }: { user: Usuario, isParent?: boolean }) {
   const { openModal } = useModalStore();
+  const level = nivelDe(xpTotal(user));
 
   return (
-    <motion.div 
+    <motion.button
+      type="button"
       onClick={() => openModal("USER_STATS", user)}
-      whileHover={{ y: -5 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex flex-col items-center group cursor-pointer relative z-10"
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.97 }}
+      className="group relative z-10 flex flex-col items-center rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className={`relative rounded-md p-1 bg-[var(--surface-container)] border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] elevation-ambient transition-all group-hover:scale-105 group-hover:bg-[var(--surface-container-high)]`}>
-        <div className={`w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden ${isParent ? 'bg-[var(--primary)] text-[var(--on-primary)]' : 'bg-[var(--secondary)] text-[var(--on-secondary)]'} flex items-center justify-center elevation-ambient shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]`}>
-          {user.fotoUrl ? (
-             <img src={user.fotoUrl} alt={user.nombre} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-3xl font-display font-bold">{user.nombre.charAt(0).toUpperCase()}</span>
-          )}
-        </div>
-        
-        {/* Mood Emoji */}
+      <div className="relative">
+        <Avatar className={`size-20 ring-4 ring-background shadow-md sm:size-24 ${isParent ? "ring-offset-2 ring-offset-primary/30" : ""}`}>
+          <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
+          <AvatarFallback className={`font-heading text-3xl font-bold ${isParent ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            {user.nombre.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Estado de tareas */}
+        <span className="absolute -top-1 -left-1 z-20 flex size-8 items-center justify-center rounded-full border bg-card shadow-sm [&_svg]:size-5">
+          {getBadge(user.tareasAsignadas)}
+        </span>
+
         {user.moodEmoji && (
-          <div className="absolute -top-2 -right-2 z-30 bg-[var(--surface-container-lowest)] rounded-full w-8 h-8 flex items-center justify-center shadow-md border border-[var(--outline-variant)] text-lg elevation-ambient transition-transform group-hover:scale-110">
+          <span className="absolute -top-1 -right-1 z-20 flex size-8 items-center justify-center rounded-full border bg-card text-base shadow-sm">
             {user.moodEmoji}
-          </div>
+          </span>
         )}
-        
-        {/* Badge Notification */}
-        <div className="absolute -top-2 -left-2 z-20 bg-[var(--surface-container-low)] rounded-full p-1 shadow-md border border-[var(--outline-variant)] elevation-ambient">
-           {getBadge(user.tareasAsignadas)}
-        </div>
       </div>
-      
-      <div className="mt-4 flex flex-col items-center bg-[var(--surface-container-lowest)] px-4 py-3 rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_20%,transparent)] elevation-ambient transition-colors group-hover:bg-[var(--surface-container-low)] min-w-[140px]">
-        <span className="font-display font-bold text-[var(--on-surface)] text-lg">{user.nombre}</span>
-        <div className="flex items-center gap-1 mt-0.5">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest font-title border ${isParent ? 'bg-[color-mix(in-srgb,var(--primary)_8%,transparent)] text-[var(--primary)] border-[var(--primary)]' : 'bg-[color-mix(in-srgb,var(--secondary)_8%,transparent)] text-[var(--secondary)] border-[var(--secondary)]'}`}>
-            {getLevelInfo(user.puntosAcumulados || 0).title} (Lvl {getLevelInfo(user.puntosAcumulados || 0).level})
-          </span>
-          {user.streakDays && user.streakDays > 0 ? (
-             <span className="text-xs text-orange-500 font-bold ml-1 drop-shadow-sm flex items-center gap-1" title={`Racha: ${user.streakDays} días`}>
-               🔥 {user.streakDays}
-             </span>
-          ) : null}
-          <span className="text-sm font-bold text-[var(--secondary)] ml-1 drop-shadow-sm" title="Estrellas">
-             ⭐ {user.stars || 0}
-          </span>
-          <span className="text-xs font-bold text-[var(--primary)] ml-1" title="Puntos Acumulados">
-             🏆 {user.puntosAcumulados || 0}
-          </span>
+
+      <Card className="-mt-3 min-w-44 items-center gap-2 px-4 pt-5 pb-3 transition-colors group-hover:border-primary/40">
+        <span className="font-heading text-lg font-semibold leading-none">{user.nombre}</span>
+        <Badge variant={isParent ? "default" : "secondary"} className="h-5 text-[10px] uppercase tracking-wide">
+          {level.title} · Lvl {level.level}
+        </Badge>
+        <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground tabular-nums">
+          {user.streakDays && user.streakDays > 0 ? <span title={`Racha: ${user.streakDays} días`}>🔥 {user.streakDays}</span> : null}
+          <span title="Estrellas">⭐ {user.stars || 0}</span>
+          <span title="Puntos Acumulados">🏆 {user.puntosAcumulados || 0}</span>
         </div>
         {user.completionPercentage !== undefined && (
-          <div className="w-full mt-3 bg-[var(--surface-container-high)] h-1.5 rounded-sm overflow-hidden ghost-border" title={`Nivel Completitud Tareas: ${user.completionPercentage}%`}>
-            <div 
-              className={`h-full transition-all duration-1000 ${user.completionPercentage >= 90 ? 'bg-[var(--success)] shadow-[0_0_8px_rgba(var(--success-rgb),0.3)]' : 'bg-[var(--primary)] shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]'}`} 
-              style={{ width: `${user.completionPercentage}%` }}
-            />
-          </div>
+          <Progress
+            value={user.completionPercentage}
+            title={`Nivel Completitud Tareas: ${user.completionPercentage}%`}
+            className={`h-1.5 w-full ${user.completionPercentage >= 90 ? "[&>[data-slot=progress-indicator]]:bg-[var(--success)]" : ""}`}
+          />
         )}
-      </div>
-    </motion.div>
+      </Card>
+    </motion.button>
   );
 }
 
@@ -145,14 +140,14 @@ export function FamilyTree({ parents, children }: Props) {
              <Node user={parent} isParent={true} />
              {/* Línea horizontal si hay más de 1 padre */}
              {parents.length > 1 && index === 0 && (
-                <div className="absolute top-[45%] left-full w-12 sm:w-24 border-t-2 border-[var(--outline)] -z-10 opacity-30" />
+                <div className="absolute top-[45%] left-full w-12 sm:w-24 border-t-2 border-border -z-10" />
              )}
           </div>
         ))}
 
         {/* Tronco Central bajando a los Hijos */}
         {parents.length > 0 && children.length > 0 && (
-          <div className="absolute top-[85%] left-1/2 -mt-2 w-[2px] h-16 sm:h-20 bg-[var(--outline)] -translate-x-1/2 -z-10 opacity-30" />
+          <div className="absolute top-[85%] left-1/2 -mt-2 w-[2px] h-16 sm:h-20 bg-border -translate-x-1/2 -z-10" />
         )}
       </div>
 
@@ -161,7 +156,7 @@ export function FamilyTree({ parents, children }: Props) {
         <div className="flex flex-col items-center relative mt-12 sm:mt-16 gap-12 sm:gap-16 w-full">
           {/* Tronco principal bajando por todas las filas si hay múltiples */}
           {children.length > 3 && (
-             <div className="absolute top-0 left-1/2 w-[2px] bg-[var(--outline)] -translate-x-1/2 -z-20 opacity-30" style={{ height: 'calc(100% - 150px)' }} />
+             <div className="absolute top-0 left-1/2 w-[2px] bg-border -translate-x-1/2 -z-20" style={{ height: 'calc(100% - 150px)' }} />
           )}
 
           {chunkArray(children, 3).map((group, rowIndex) => (
@@ -171,7 +166,7 @@ export function FamilyTree({ parents, children }: Props) {
               {group.length > 1 && (
                 <div className="absolute top-[-24px] sm:top-[-32px] left-0 w-full flex justify-center -z-10">
                   <div 
-                    className="h-[2px] bg-[var(--outline)] opacity-30" 
+                    className="h-[2px] bg-border" 
                     style={{ 
                       width: `${((group.length - 1) / group.length) * 100}%`
                     }}
@@ -180,7 +175,7 @@ export function FamilyTree({ parents, children }: Props) {
                   {group.map((_, idx) => (
                     <div 
                       key={idx} 
-                      className="absolute top-0 w-[2px] h-6 sm:h-8 bg-[var(--outline)] opacity-30"
+                      className="absolute top-0 w-[2px] h-6 sm:h-8 bg-border"
                       style={{
                         left: `${(100 / (group.length * 2)) * (2 * idx + 1)}%`
                       }}
@@ -192,7 +187,7 @@ export function FamilyTree({ parents, children }: Props) {
               {group.map(child => (
                 <div key={child.id} className="flex flex-col items-center relative flex-1 px-2 sm:px-6">
                    {/* Tallo Vertical hacia el hijo */}
-                   <div className="w-[2px] h-8 sm:h-12 bg-[var(--outline)] -z-10 mb-[-1px] opacity-30" />
+                   <div className="w-[2px] h-8 sm:h-12 bg-border -z-10 mb-[-1px]" />
                    <Node user={child} />
                 </div>
               ))}
@@ -202,7 +197,7 @@ export function FamilyTree({ parents, children }: Props) {
       )}
       
       {parents.length === 0 && children.length === 0 && (
-        <div className="text-[var(--on-surface-variant)] text-center italic mt-10 font-body">
+        <div className="text-muted-foreground text-center italic mt-10">
           Aún no hay usuarios en la familia.
         </div>
       )}

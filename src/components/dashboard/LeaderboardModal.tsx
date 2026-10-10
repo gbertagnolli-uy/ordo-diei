@@ -2,6 +2,18 @@
 import { Trophy, Star } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useAuthStore } from "@/store/authStore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+
+const MEDAL = ["#E6B800", "#B8B8B8", "#C07A3A"];
+
+function rateTone(pct: number) {
+  return pct >= 90 ? "var(--success)" : pct >= 70 ? "var(--secondary)" : "var(--error)";
+}
 
 export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isOpen: boolean, onClose: () => void }) {
   const currentUser = useAuthStore(state => state.currentUser);
@@ -24,112 +36,63 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
     return null;
   };
 
+  // Podio: 2º, 1º, 3º
+  const podium = [1, 0, 2].filter((i) => sortedUsers[i]);
+  const pillar = ["h-24 sm:h-28", "h-32 sm:h-40", "h-20 sm:h-24"];
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="🏆 Tabla de Líderes" width="lg">
-      <div className="flex flex-col gap-6 py-2">
-        <p className="text-[var(--on-surface-variant)] text-center font-body px-4">
+      <div className="flex flex-col gap-6">
+        <p className="px-4 text-center text-sm text-muted-foreground">
           ¡Esfuérzate para ser el mejor! El ranking se basa principalmente en el porcentaje de tareas completadas con éxito.
         </p>
 
-        {/* Visual Podium */}
-        <div className="flex justify-center items-end gap-2 sm:gap-4 px-4 pt-12 pb-6">
-          {/* 2nd Place */}
-          {sortedUsers[1] && (
-            <div className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
-              <div className="relative">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#C0C0C0] overflow-hidden elevation-ambient bg-[var(--surface-container)]">
-                  {sortedUsers[1].fotoUrl ? (
-                    <img src={sortedUsers[1].fotoUrl} alt={sortedUsers[1].nombre} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-[#C0C0C0]/20 flex items-center justify-center text-[#C0C0C0] font-bold text-2xl">
-                      {sortedUsers[1].nombre.charAt(0)}
+        {/* Podio */}
+        <div className="flex items-end justify-center gap-3 px-2 pt-6 sm:gap-5">
+          {podium.map((i) => {
+            const u = sortedUsers[i];
+            const first = i === 0;
+            return (
+              <div key={u.id} className={cn("flex max-w-[132px] flex-1 flex-col items-center gap-2", first && "max-w-[148px]")}>
+                {first && <Trophy className="size-7 animate-bounce text-[#E6B800]" fill="#E6B800" />}
+                <div className="relative">
+                  <Avatar className={cn("ring-4", first ? "size-20 sm:size-24" : "size-16 sm:size-20")} style={{ ["--tw-ring-color" as any]: MEDAL[i] }}>
+                    <AvatarImage src={u.fotoUrl ?? undefined} alt={u.nombre} className="object-cover" />
+                    <AvatarFallback className="text-2xl font-semibold">{u.nombre.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <Badge className="absolute -bottom-2 left-1/2 h-5 -translate-x-1/2 border-0 text-[10px] text-black" style={{ background: MEDAL[i] }}>
+                    {["1RO", "2DO", "3RO"][i]}
+                  </Badge>
+                </div>
+                <span className="w-full truncate text-center text-sm font-medium">{u.nombre}</span>
+                <div className={cn("flex w-full flex-col items-center justify-center rounded-t-lg border border-b-0 bg-muted/60", pillar[[1, 0, 2].indexOf(i)], first && "border-primary/40 bg-primary/10")}>
+                  <span className={cn("font-heading tabular-nums", first ? "text-2xl text-primary" : "text-xl")}>{u.completionPercentage}%</span>
+                  <span className="mt-0.5 text-[10px] font-medium text-muted-foreground uppercase tabular-nums">{u.puntosAcumulados} pts</span>
+                  {first && (
+                    <div className="mt-1 flex gap-0.5">
+                      {[0, 1, 2].map((k) => <Star key={k} className="size-3 fill-secondary text-secondary" />)}
                     </div>
                   )}
                 </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#C0C0C0] text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                  2DO
-                </div>
               </div>
-              <span className="font-title font-bold text-[var(--on-surface)] text-sm truncate w-full text-center">{sortedUsers[1].nombre}</span>
-              <div className="w-full bg-[color-mix(in-srgb,var(--secondary)_15%,transparent)] h-20 sm:h-24 rounded-t-md border-x border-t border-[var(--outline-variant)] flex flex-col items-center justify-center">
-                 <span className="text-xl font-display text-[var(--secondary)]">{sortedUsers[1].completionPercentage}%</span>
-                 <span className="text-[10px] font-bold text-[var(--on-surface-variant)] uppercase mt-0.5">{sortedUsers[1].puntosAcumulados} pts</span>
-              </div>
-            </div>
-          )}
-
-          {/* 1st Place */}
-          {sortedUsers[0] && (
-            <div className="flex flex-col items-center gap-2 flex-1 max-w-[140px] -translate-y-4">
-               <Trophy className="w-8 h-8 text-[#FFD700] mb-1 animate-bounce" fill="#FFD700" />
-               <div className="relative">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#FFD700] overflow-hidden shadow-[0_0_25px_rgba(255,215,0,0.3)] bg-[var(--surface-container)]">
-                  {sortedUsers[0].fotoUrl ? (
-                    <img src={sortedUsers[0].fotoUrl} alt={sortedUsers[0].nombre} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-[#FFD700]/20 flex items-center justify-center text-[#FFD700] font-bold text-3xl">
-                      {sortedUsers[0].nombre.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#FFD700] text-black text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                  1RO
-                </div>
-              </div>
-              <span className="font-title font-bold text-[var(--on-surface)] text-base truncate w-full text-center">{sortedUsers[0].nombre}</span>
-              <div className="w-full bg-[color-mix(in-srgb,var(--primary)_20%,transparent)] h-28 sm:h-36 rounded-t-md border-x border-t border-[var(--primary)] flex flex-col items-center justify-center shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)]">
-                 <span className="text-2xl font-display text-[var(--primary)]">{sortedUsers[0].completionPercentage}%</span>
-                 <span className="text-xs font-bold text-[var(--on-surface-variant)] uppercase mt-0.5">{sortedUsers[0].puntosAcumulados} pts</span>
-                 <div className="flex gap-1 mt-1">
-                   <Star className="w-3 h-3 fill-[var(--secondary)] text-[var(--secondary)]" />
-                   <Star className="w-3 h-3 fill-[var(--secondary)] text-[var(--secondary)]" />
-                   <Star className="w-3 h-3 fill-[var(--secondary)] text-[var(--secondary)]" />
-                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* 3rd Place */}
-          {sortedUsers[2] && (
-            <div className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
-              <div className="relative">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#CD7F32] overflow-hidden elevation-ambient bg-[var(--surface-container)]">
-                  {sortedUsers[2].fotoUrl ? (
-                    <img src={sortedUsers[2].fotoUrl} alt={sortedUsers[2].nombre} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-[#CD7F32]/20 flex items-center justify-center text-[#CD7F32] font-bold text-2xl">
-                      {sortedUsers[2].nombre.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#CD7F32] text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                  3RO
-                </div>
-              </div>
-              <span className="font-title font-bold text-[var(--on-surface)] text-sm truncate w-full text-center">{sortedUsers[2].nombre}</span>
-              <div className="w-full bg-[color-mix(in-srgb,var(--warning)_15%,transparent)] h-16 sm:h-20 rounded-t-md border-x border-t border-[var(--outline-variant)] flex flex-col items-center justify-center">
-                 <span className="text-lg font-display text-[var(--warning)]">{sortedUsers[2].completionPercentage}%</span>
-                 <span className="text-[10px] font-bold text-[var(--on-surface-variant)] uppercase mt-0.5">{sortedUsers[2].puntosAcumulados} pts</span>
-              </div>
-            </div>
-          )}
-
+            );
+          })}
         </div>
 
-        <div className="overflow-x-auto rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] elevation-ambient transition-colors w-full">
-          <table className="w-full text-left border-collapse min-w-max">
-            <thead className="bg-[var(--surface-container-low)]">
-              <tr>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">Pos</th>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest">Usuario</th>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🔥</th>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">⭐</th>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🏆 Pts</th>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-center">🎁</th>
-                <th className="px-3 py-4 text-[10px] font-title font-bold text-[var(--on-surface-variant)] uppercase tracking-widest text-right whitespace-nowrap">% Éxito</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)]">
+        <div className="overflow-hidden rounded-xl border">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead className="w-14 text-center">Pos</TableHead>
+                <TableHead>Usuario</TableHead>
+                <TableHead className="text-center" title="Racha">🔥</TableHead>
+                <TableHead className="text-center" title="Estrellas">⭐</TableHead>
+                <TableHead className="text-center">🏆 Pts</TableHead>
+                <TableHead className="text-center" title="Premios sorpresa">🎁</TableHead>
+                <TableHead className="text-right">% Éxito</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {sortedUsers.map((user, index) => {
                 const trophy = getTrophy(index);
                 const isCurrentUser = currentUser?.id === user.id;
@@ -142,85 +105,56 @@ export function LeaderboardModal({ users, isOpen, onClose }: { users: any[], isO
                 }
 
                 return (
-                  <tr key={user.id} className={`
-                    ${index === 0 ? 'bg-[color-mix(in-srgb,var(--secondary)_10%,transparent)]' : ''}
-                    ${isCurrentUser ? 'bg-[color-mix(in-srgb,var(--primary)_15%,transparent)] shadow-[inset_4px_0_0_var(--primary)]' : 'hover:bg-[var(--surface-container-low)]'}
-                    transition-colors
-                  `}>
-                    <td className="px-3 py-4 text-center">
-                      <div className="flex justify-center items-center">
-                        {trophy ? (
-                          <span className="text-2xl drop-shadow-sm">{trophy}</span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-md font-bold font-title text-sm bg-[var(--surface-container)] text-[var(--on-surface-variant)]">
-                            {index + 1}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-4">
+                  <TableRow key={user.id} data-state={isCurrentUser ? "selected" : undefined} className={cn(isCurrentUser && "shadow-[inset_3px_0_0_var(--primary)]")}>
+                    <TableCell className="text-center">
+                      {trophy ? <span className="text-xl">{trophy}</span> : <span className="text-sm font-medium text-muted-foreground tabular-nums">{index + 1}</span>}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md ghost-border overflow-hidden elevation-ambient flex-shrink-0">
-                          {user.fotoUrl ? (
-                            <img src={user.fotoUrl} alt={user.nombre} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-[var(--primary)] flex items-center justify-center text-[var(--on-primary)] font-headline font-bold">
-                              {user.nombre.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col">
-                           <div className="flex items-center gap-2">
-                             <span className={`font-title font-bold text-[var(--on-surface)] truncate max-w-[120px] ${isCurrentUser ? 'text-[var(--primary)]' : ''}`}>{user.nombre}</span>
-                             {isCurrentUser && <span className="text-[10px] bg-[var(--primary)] text-[var(--on-primary)] px-1.5 rounded-sm font-bold">TÚ</span>}
-                           </div>
-                           <span className="text-[10px] text-[var(--primary)] uppercase tracking-wider font-bold">Lvl {Math.floor(Math.sqrt((user.puntosAcumulados || 0)/100))+1}</span>
+                        <Avatar className="size-9 rounded-lg">
+                          <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
+                          <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">{user.nombre.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn("max-w-[120px] truncate font-medium", isCurrentUser && "text-primary")}>{user.nombre}</span>
+                            {isCurrentUser && <Badge className="h-4 px-1.5 text-[10px]">TÚ</Badge>}
+                          </div>
+                          <span className="text-xs text-muted-foreground">Lvl {Math.floor(Math.sqrt((user.puntosAcumulados || 0)/100))+1}</span>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-3 py-4 text-center font-bold text-orange-500" title="Racha Actual">{user.streakDays || 0}</td>
-                    <td className="px-3 py-4 text-center font-bold text-[var(--secondary)]" title="Estrellas">{user.stars}</td>
-                    <td className="px-3 py-4 text-center font-bold text-[var(--primary)]">
-                      <div className="flex flex-col items-center">
+                    </TableCell>
+                    <TableCell className="text-center font-medium tabular-nums text-orange-500" title="Racha Actual">{user.streakDays || 0}</TableCell>
+                    <TableCell className="text-center font-medium tabular-nums text-secondary" title="Estrellas">{user.stars}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center font-medium tabular-nums text-primary">
                         <span>{user.puntosAcumulados}</span>
                         {pointsToNext && isCurrentUser && (
-                          <span className="text-[8px] text-[var(--on-surface-variant)] uppercase mt-0.5 block whitespace-nowrap">a {pointsToNext} del #{index}</span>
+                          <span className="mt-0.5 text-[10px] font-normal whitespace-nowrap text-muted-foreground">a {pointsToNext} del #{index}</span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-3 py-4 text-center font-bold text-[var(--error)]" title="Premios Sorpresa">{user.surprises}</td>
-                    <td className="px-3 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-center font-medium tabular-nums text-destructive" title="Premios Sorpresa">{user.surprises}</TableCell>
+                    <TableCell className="text-right">
                       <div className="flex flex-col items-end gap-1">
-                        <span className={`text-sm font-bold font-title ${
-                          user.completionPercentage >= 90 ? 'text-[var(--success)]' :
-                          user.completionPercentage >= 70 ? 'text-[var(--secondary)]' : 'text-[var(--error)]'
-                        }`}>
-                          {user.completionPercentage}%
-                        </span>
-                        <div className="w-16 bg-[var(--surface-container-high)] h-1.5 rounded-sm overflow-hidden ghost-border">
-                          <div 
-                            className={`h-full transition-all duration-1000 ${
-                              user.completionPercentage >= 90 ? 'bg-[var(--success)]' :
-                              user.completionPercentage >= 70 ? 'bg-[var(--secondary)]' : 'bg-[var(--error)]'
-                            }`}
-                            style={{ width: `${user.completionPercentage}%` }}
-                          />
-                        </div>
+                        <span className="text-sm font-semibold tabular-nums" style={{ color: rateTone(user.completionPercentage) }}>{user.completionPercentage}%</span>
+                        <Progress
+                          value={user.completionPercentage}
+                          className="h-1.5 w-16 [&>[data-slot=progress-indicator]]:bg-(--progress-color)"
+                          style={{ ["--progress-color" as any]: rateTone(user.completionPercentage) }}
+                        />
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
-        <button 
-          onClick={onClose}
-          className="btn-primary mt-2 w-full justify-center py-4 text-sm tracking-widest uppercase"
-        >
+        <Button size="lg" onClick={onClose} className="w-full">
           ¡Cerrar con Orgullo!
-        </button>
+        </Button>
       </div>
     </Modal>
   );

@@ -61,7 +61,14 @@ model Usuario {
   tareasCreadas             Tarea[]     @relation("TareasCreadas")
   tareasAsignadas           Tarea[]     @relation("TareasAsignadas")
   historialAcciones         HistorialAccion[]
+  registrosAnimo            RegistroAnimo[]
   premiosEntregados        PremioEntregado[]
+
+  experienciaHabitos        Int               @default(0) @map("Experiencia_Habitos")
+  habitosCreados            Habito[]          @relation("HabitosCreados")
+  habitosUsuario            HabitoUsuario[]
+  registrosHabito           RegistroHabito[]  @relation("RegistrosHabito")
+  registrosHabitoHechos     RegistroHabito[]  @relation("RegistrosHabitoHechos")
 
   @@map("Usuarios")
 }
@@ -135,6 +142,20 @@ model HistorialAccion {
   @@map("Historial_Acciones")
 }
 
+// Cada vez que alguien elige su estado de ánimo se guarda una fila, para graficar la evolución.
+model RegistroAnimo {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int      @map("Usuario_ID")
+  animo       String   @map("Animo")
+  puntaje     Int      @map("Puntaje")
+  creadoEn    DateTime @default(now()) @map("Creado_En")
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, creadoEn])
+  @@map("Registros_Animo")
+}
+
 model ReglaHogar {
   id                  Int      @id @default(autoincrement())
   textoEstricto       String   @map("Texto_Estricto")
@@ -197,3 +218,82 @@ model PremioEntregado {
   @@unique([premioId, usuarioId])
   @@map("Premios_Entregados")
 }
+
+// Hábitos generales (vault/HABITOS_Y_NIVELES.md)
+enum CategoriaHabito {
+  oracion
+  orden
+  cuidado
+}
+
+enum FranjaHabito {
+  manana
+  tarde
+  noche
+}
+
+enum MarcaHabito {
+  hecho
+  justificado
+  no
+}
+
+model Habito {
+  id          Int             @id @default(autoincrement())
+  clave       String?         @unique @map("Clave")
+  nombre      String          @map("Nombre")
+  descripcion String?         @map("Descripcion")
+  categoria   CategoriaHabito @map("Categoria")
+  franja      FranjaHabito    @map("Franja")
+  ancla       String          @map("Ancla")
+  icono       String          @map("Icono")
+  minimo      String?         @map("Minimo")
+  creadorId   Int?            @map("Creador_ID")
+  archivado   Boolean         @default(false) @map("Archivado")
+  createdAt   DateTime        @default(now()) @map("Created_At")
+  updatedAt   DateTime        @updatedAt @map("Updated_At")
+
+  creador     Usuario?        @relation("HabitosCreados", fields: [creadorId], references: [id])
+  adopciones  HabitoUsuario[]
+  registros   RegistroHabito[]
+
+  @@map("Habitos")
+}
+
+model HabitoUsuario {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("Usuario_ID")
+  habitoId  Int      @map("Habito_ID")
+  desde     DateTime @db.Date @map("Desde")
+  dias      Int      @default(127) @map("Dias")
+  ancla     String?  @map("Ancla")
+  activo    Boolean  @default(true) @map("Activo")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito    Habito   @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, habitoId])
+  @@map("Habitos_Usuario")
+}
+
+model RegistroHabito {
+  id              Int         @id @default(autoincrement())
+  usuarioId       Int         @map("Usuario_ID")
+  habitoId        Int         @map("Habito_ID")
+  fecha           DateTime    @db.Date @map("Fecha")
+  marca           MarcaHabito @map("Marca")
+  nota            String?     @map("Nota")
+  puntos          Int         @default(0) @map("Puntos")
+  xp              Int         @default(0) @map("XP")
+  registradoPorId Int         @map("Registrado_Por_ID")
+  createdAt       DateTime    @default(now()) @map("Created_At")
+
+  usuario         Usuario     @relation("RegistrosHabito", fields: [usuarioId], references: [id], onDelete: Cascade)
+  registradoPor   Usuario     @relation("RegistrosHabitoHechos", fields: [registradoPorId], references: [id])
+  habito          Habito      @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, habitoId, fecha])
+  @@map("Registros_Habito")
+}
+

@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Gift, CheckCircle, Clock, XCircle, HelpCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, Gift, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Premio {
   id: number;
@@ -101,13 +110,13 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
   const getStatusBadge = (estado: string) => {
     switch (estado) {
       case "Entregado":
-        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in-srgb,var(--success)_10%,transparent)] text-[var(--success)]"><CheckCircle className="w-3 h-3"/> Entregado</span>;
+        return <Badge variant="outline" className="gap-1 border-[color-mix(in_srgb,var(--success)_30%,transparent)] text-[var(--success)]"><CheckCircle /> Entregado</Badge>;
       case "Pendiente":
-        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in-srgb,var(--warning)_10%,transparent)] text-[var(--warning)]"><Clock className="w-3 h-3"/> Pendiente</span>;
+        return <Badge variant="outline" className="gap-1 border-[color-mix(in_srgb,var(--warning)_30%,transparent)] text-[var(--warning)]"><Clock /> Pendiente</Badge>;
       case "No_ganado":
-        return <span className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[color-mix(in-srgb,var(--error)_10%,transparent)] text-[var(--error)]"><XCircle className="w-3 h-3"/> No ganado</span>;
+        return <Badge variant="outline" className="gap-1 border-destructive/30 text-destructive"><XCircle /> No ganado</Badge>;
       default:
-        return <span className="px-2 py-1 rounded-md text-xs font-bold bg-[var(--surface-container-low)] text-[var(--on-surface-variant)]">{estado}</span>;
+        return <Badge variant="outline">{estado}</Badge>;
     }
   };
 
@@ -132,211 +141,202 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
   };
 
   return (
-    <div className="flex flex-col flex-1">
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={() => { setEditingPremio(null); setFormData({ titulo: "", cantidad: 0, tipoFrecuencia: "Semanal", diaEntregaSemana: 1, diaDelMes: 1, tareasRequeridasIds: [] }); setShowModal(true); }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" /> Nuevo Premio
-        </button>
-      </div>
+    <div className="flex flex-1 flex-col">
+      <Card className="gap-0 py-0">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-4">
+          <CardTitle className="text-base">{premios.length} {premios.length === 1 ? "premio" : "premios"}</CardTitle>
+          <Button
+            onClick={() => { setEditingPremio(null); setFormData({ titulo: "", cantidad: 0, tipoFrecuencia: "Semanal", diaEntregaSemana: 1, diaDelMes: 1, tareasRequeridasIds: [] }); setShowModal(true); }}
+          >
+            <Plus /> Nuevo Premio
+          </Button>
+        </CardHeader>
 
-      <div className="overflow-x-auto w-full custom-scrollbar rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] bg-[var(--surface-container-lowest)]">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-[var(--surface-container-low)] text-[var(--on-surface-variant)] text-sm tracking-wider uppercase font-title font-bold">
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Premio</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Frecuencia</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Tareas Requeridas</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Entregas</th>
-              <th className="p-4 border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)]">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="text-[var(--on-surface)] font-body">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead className="pl-6">Premio</TableHead>
+              <TableHead>Frecuencia</TableHead>
+              <TableHead>Tareas Requeridas</TableHead>
+              <TableHead>Entregas</TableHead>
+              <TableHead className="pr-6 text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {premios.map(premio => (
-              <tr key={premio.id} className="border-b border-[color-mix(in-srgb,var(--outline-variant)_15%,transparent)] hover:bg-[var(--surface-container-low)] transition-colors">
-                <td className="p-4">
+              <TableRow key={premio.id}>
+                <TableCell className="pl-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[var(--primary-container)] flex items-center justify-center">
-                      <Gift className="w-5 h-5 text-[var(--primary)]" />
-                    </div>
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Gift className="size-4" />
+                    </span>
                     <div>
-                      <div className="font-title font-bold">{premio.titulo}</div>
-                      <div className="text-sm text-[var(--on-surface-variant)]">x{premio.cantidad}</div>
+                      <div className="font-medium">{premio.titulo}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">x{premio.cantidad}</div>
                     </div>
                   </div>
-                </td>
-                <td className="p-4">
-                  <span className="text-sm">{getFrecuenciaLabel(premio.tipoFrecuencia,premio.diaEntregaSemana,premio.diaDelMes)}</span>
-                </td>
-                <td className="p-4">
+                </TableCell>
+                <TableCell className="text-sm">{getFrecuenciaLabel(premio.tipoFrecuencia,premio.diaEntregaSemana,premio.diaDelMes)}</TableCell>
+                <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {getTareasRequeridas(premio.tareasRequeridasIds).length > 0 ? (
                       getTareasRequeridas(premio.tareasRequeridasIds).slice(0, 2).map((t, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md text-xs bg-[var(--surface-container-low)] text-[var(--on-surface-variant)]">
-                          {t}
-                        </span>
+                        <Badge key={i} variant="outline">{t}</Badge>
                       ))
                     ) : (
-                      <span className="text-xs text-[var(--on-surface-variant)]">Sin tareas</span>
+                      <span className="text-xs text-muted-foreground">Sin tareas</span>
                     )}
                     {getTareasRequeridas(premio.tareasRequeridasIds).length > 2 && (
-                      <span className="px-2 py-0.5 rounded-md text-xs bg-[var(--surface-container-low)] text-[var(--primary)] font-bold">
-                        +{getTareasRequeridas(premio.tareasRequeridasIds).length - 2}
-                      </span>
+                      <Badge variant="secondary">+{getTareasRequeridas(premio.tareasRequeridasIds).length - 2}</Badge>
                     )}
                   </div>
-                </td>
-                <td className="p-4">
+                </TableCell>
+                <TableCell>
                   <div className="flex flex-col gap-1">
                     {premio.entregas.length > 0 ? (
                       premio.entregas.slice(0, 3).map(e => (
                         <div key={e.id} className="flex items-center gap-2 text-xs">
                           {getStatusBadge(e.estado)}
-                          <span className="text-[var(--on-surface-variant)]">{e.usuario?.nombre || "Usuario"}</span>
+                          <span className="text-muted-foreground">{e.usuario?.nombre || "Usuario"}</span>
                         </div>
                       ))
                     ) : (
-                      <span className="text-xs text-[var(--on-surface-variant)]">Sin entregas</span>
+                      <span className="text-xs text-muted-foreground">Sin entregas</span>
                     )}
                     {premio.entregas.length > 3 && (
-                      <span className="text-xs text-[var(--primary)] font-bold">+{premio.entregas.length - 3} más</span>
+                      <span className="text-xs font-medium text-primary">+{premio.entregas.length - 3} más</span>
                     )}
                   </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(premio)}
-                      className="p-2 rounded-md hover:bg-[var(--surface-container-low)] text-[var(--primary)] transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(premio.id)}
-                      className="p-2 rounded-md hover:bg-[var(--surface-container-low)] text-[var(--error)] transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                </TableCell>
+                <TableCell className="pr-6 text-right">
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(premio)} aria-label="Editar">
+                      <Edit2 />
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(premio.id)} aria-label="Eliminar" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                      <Trash2 />
+                    </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         {premios.length === 0 && (
-          <div className="p-16 text-center text-[var(--on-surface-variant)] flex flex-col items-center gap-2 font-bold font-title text-lg">
-            <Gift className="w-12 h-12 text-[var(--outline)]" /> No hay premios configurados.
-          </div>
+          <Empty className="py-16">
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Gift /></EmptyMedia>
+              <EmptyTitle>No hay premios configurados.</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         )}
-      </div>
+      </Card>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingPremio ? "Editar Premio" : "Nuevo Premio"} width="md">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Título del Premio</label>
-            <input
-              type="text"
-              value={formData.titulo}
-              onChange={e => setFormData({ ...formData, titulo: e.target.value })}
-              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
-              placeholder="ej. Monedas de Oro"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="premio-titulo">Título del Premio</FieldLabel>
+              <Input
+                id="premio-titulo"
+                type="text"
+                value={formData.titulo}
+                onChange={e => setFormData({ ...formData, titulo: e.target.value })}
+                placeholder="ej. Monedas de Oro"
+                required
+              />
+            </Field>
 
-          <div>
-            <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Cantidad</label>
-            <input
-              type="number"
-              value={formData.cantidad}
-              onChange={e => setFormData({ ...formData, cantidad: parseInt(e.target.value) || 0 })}
-              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
-              min="1"
-              required
-            />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="premio-cantidad">Cantidad</FieldLabel>
+              <Input
+                id="premio-cantidad"
+                type="number"
+                value={formData.cantidad}
+                onChange={e => setFormData({ ...formData, cantidad: parseInt(e.target.value) || 0 })}
+                min="1"
+                required
+              />
+            </Field>
 
-          <div>
-            <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Frecuencia</label>
-            <select
-              value={formData.tipoFrecuencia}
-              onChange={e => setFormData({ ...formData, tipoFrecuencia: e.target.value })}
-              className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
-            >
-              <option value="Semanal">Semanal</option>
-              <option value="Mensual">Mensual</option>
-            </select>
-          </div>
-
-          {formData.tipoFrecuencia === "Semanal" && (
-            <div>
-              <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Día de Entrega</label>
-              <select
-                value={formData.diaEntregaSemana}
-                onChange={e => setFormData({ ...formData, diaEntregaSemana: parseInt(e.target.value) })}
-                className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
+            <Field>
+              <FieldLabel htmlFor="premio-frecuencia">Frecuencia</FieldLabel>
+              <NativeSelect
+                id="premio-frecuencia"
+                className="w-full"
+                value={formData.tipoFrecuencia}
+                onChange={e => setFormData({ ...formData, tipoFrecuencia: e.target.value })}
               >
-                <option value={1}>Lunes</option>
-                <option value={2}>Martes</option>
-                <option value={3}>Miércoles</option>
-                <option value={4}>Jueves</option>
-                <option value={5}>Viernes</option>
-                <option value={6}>Sábado</option>
-                <option value={7}>Domingo</option>
-              </select>
-            </div>
-          )}
+                <NativeSelectOption value="Semanal">Semanal</NativeSelectOption>
+                <NativeSelectOption value="Mensual">Mensual</NativeSelectOption>
+              </NativeSelect>
+            </Field>
 
-          {formData.tipoFrecuencia === "Mensual" && (
-            <div>
-              <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Día del Mes</label>
-              <select
-                value={formData.diaDelMes}
-                onChange={e => setFormData({ ...formData, diaDelMes: parseInt(e.target.value) })}
-                className="w-full bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3 outline-none text-[var(--on-surface)] font-body"
-              >
-                {Array.from({ length: 28 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+            {formData.tipoFrecuencia === "Semanal" && (
+              <Field>
+                <FieldLabel htmlFor="premio-dia-semana">Día de Entrega</FieldLabel>
+                <NativeSelect
+                  id="premio-dia-semana"
+                  className="w-full"
+                  value={formData.diaEntregaSemana}
+                  onChange={e => setFormData({ ...formData, diaEntregaSemana: parseInt(e.target.value) })}
+                >
+                  <NativeSelectOption value={1}>Lunes</NativeSelectOption>
+                  <NativeSelectOption value={2}>Martes</NativeSelectOption>
+                  <NativeSelectOption value={3}>Miércoles</NativeSelectOption>
+                  <NativeSelectOption value={4}>Jueves</NativeSelectOption>
+                  <NativeSelectOption value={5}>Viernes</NativeSelectOption>
+                  <NativeSelectOption value={6}>Sábado</NativeSelectOption>
+                  <NativeSelectOption value={7}>Domingo</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+            )}
+
+            {formData.tipoFrecuencia === "Mensual" && (
+              <Field>
+                <FieldLabel htmlFor="premio-dia-mes">Día del Mes</FieldLabel>
+                <NativeSelect
+                  id="premio-dia-mes"
+                  className="w-full"
+                  value={formData.diaDelMes}
+                  onChange={e => setFormData({ ...formData, diaDelMes: parseInt(e.target.value) })}
+                >
+                  {Array.from({ length: 28 }, (_, i) => (
+                    <NativeSelectOption key={i + 1} value={i + 1}>{i + 1}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+
+            <Field>
+              <FieldLabel>Tareas Requeridas (selecciona múltiples)</FieldLabel>
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
+                {tareas.map(tarea => (
+                  <Field key={tarea.id} orientation="horizontal">
+                    <Checkbox
+                      id={`premio-tarea-${tarea.id}`}
+                      checked={formData.tareasRequeridasIds.includes(tarea.id)}
+                      onCheckedChange={checked => {
+                        if (checked) {
+                          setFormData({ ...formData, tareasRequeridasIds: [...formData.tareasRequeridasIds, tarea.id] });
+                        } else {
+                          setFormData({ ...formData, tareasRequeridasIds: formData.tareasRequeridasIds.filter(id => id !== tarea.id) });
+                        }
+                      }}
+                    />
+                    <FieldLabel htmlFor={`premio-tarea-${tarea.id}`} className="font-normal">{tarea.titulo}</FieldLabel>
+                  </Field>
                 ))}
-              </select>
-            </div>
-          )}
+                {tareas.length === 0 && (
+                  <div className="text-sm text-muted-foreground">No hay tareas disponibles</div>
+                )}
+              </div>
+            </Field>
 
-          <div>
-            <label className="block text-sm font-title font-bold text-[var(--on-surface)] mb-2">Tareas Requeridas (selecciona múltiples)</label>
-            <div className="max-h-40 overflow-y-auto bg-[var(--surface-container-low)] rounded-md border border-[color-mix(in-srgb,var(--outline-variant)_30%,transparent)] p-3">
-              {tareas.map(tarea => (
-                <label key={tarea.id} className="flex items-center gap-2 py-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.tareasRequeridasIds.includes(tarea.id)}
-                    onChange={e => {
-                      if (e.target.checked) {
-                        setFormData({ ...formData, tareasRequeridasIds: [...formData.tareasRequeridasIds, tarea.id] });
-                      } else {
-                        setFormData({ ...formData, tareasRequeridasIds: formData.tareasRequeridasIds.filter(id => id !== tarea.id) });
-                      }
-                    }}
-                    className="w-4 h-4 accent-[var(--primary)]"
-                  />
-                  <span className="text-sm text-[var(--on-surface)]">{tarea.titulo}</span>
-                </label>
-              ))}
-              {tareas.length === 0 && (
-                <div className="text-sm text-[var(--on-surface-variant)]">No hay tareas disponibles</div>
-              )}
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full py-3 mt-2"
-          >
-            {loading ? "Guardando..." : editingPremio ? "Actualizar Premio" : "Crear Premio"}
-          </button>
+            <Button type="submit" size="lg" disabled={loading} className="w-full">
+              {loading ? "Guardando..." : editingPremio ? "Actualizar Premio" : "Crear Premio"}
+            </Button>
+          </FieldGroup>
         </form>
       </Modal>
     </div>
