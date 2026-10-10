@@ -11,6 +11,7 @@ import {
   Hourglass,
   ListTodo,
   Network,
+  Sprout,
   Timer,
 } from "lucide-react";
 import {
@@ -66,7 +67,16 @@ export function sectionHref(id: SectionId) {
   return id === "todo" ? "/dashboard" : `/dashboard?s=${id}`;
 }
 
-export function AppSidebar({ currentUser, tasks }: { currentUser: any; tasks: any[] }) {
+export function AppSidebar({
+  currentUser,
+  tasks,
+  oracionPendientes,
+}: {
+  currentUser: any;
+  tasks: any[];
+  /** Oraciones de hoy sin registrar (null si el usuario no empezó el camino) */
+  oracionPendientes: number | null;
+}) {
   const pathname = usePathname();
   const params = useSearchParams();
   const active = pathname === "/dashboard" ? sectionFromParams(params) : null;
@@ -104,6 +114,20 @@ export function AppSidebar({ currentUser, tasks }: { currentUser: any; tasks: an
       </SidebarHeader>
 
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Vida espiritual</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/oracion"} tooltip="Oración">
+                <Link href="/dashboard/oracion">
+                  <Sprout />
+                  <span>Oración</span>
+                </Link>
+              </SidebarMenuButton>
+              {!!oracionPendientes && <SidebarMenuBadge className="tabular-nums">{oracionPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
         {NAV.map((group) => (
           <SidebarGroup key={group.heading}>
             <SidebarGroupLabel>{group.heading}</SidebarGroupLabel>
