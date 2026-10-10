@@ -13,6 +13,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  KeyRound,
 } from "lucide-react";
 import { FloatingDock, DockItem } from "@/components/ui/floating-dock";
 import { useAuthStore } from "@/store/authStore";
@@ -76,6 +77,12 @@ export function MainDock({
             icon: <UserPlus className="w-5 h-5 text-[var(--success)]" />,
             href: "/dashboard/users/new",
             active: pathname === "/dashboard/users/new",
+          },
+          {
+            title: "Restablecer PIN",
+            icon: <KeyRound className="w-5 h-5" />,
+            href: "/dashboard/users/pines",
+            active: pathname === "/dashboard/users/pines",
           },
           {
             title: "Premios Familiares",

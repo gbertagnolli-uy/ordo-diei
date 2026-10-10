@@ -709,17 +709,17 @@ export function HabitoDialog({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[92vh] overflow-y-auto px-4">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[92dvh] overflow-hidden px-4">
         <DrawerHeader className="text-left">
           <DrawerTitle className="font-heading">{dialogTitle}</DrawerTitle>
           <DrawerDescription>{dialogDesc}</DrawerDescription>
         </DrawerHeader>
 
-        <div className="overflow-y-auto px-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1">
           {paso === 1 ? renderPaso1() : renderPaso2()}
         </div>
 
-        <DrawerFooter className="border-t pt-3">
+        <DrawerFooter className="shrink-0 border-t pt-3">
           {renderFooter()}
         </DrawerFooter>
       </DrawerContent>

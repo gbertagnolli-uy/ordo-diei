@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           totalTasksCompleted: { increment: 1 },
           stars: { increment: bonusStars }
         }
-      })
+      }),
+      registrarAccion(prisma, { tareaId: taskId, actorId: user.id, estadoAnterior: "Esperando_Aprobacion", estadoNuevo: "Aprobada" })
     ]);
 
     // Recalcular porcentaje de éxito

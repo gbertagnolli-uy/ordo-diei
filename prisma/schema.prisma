@@ -61,6 +61,7 @@ model Usuario {
   tareasCreadas             Tarea[]     @relation("TareasCreadas")
   tareasAsignadas           Tarea[]     @relation("TareasAsignadas")
   historialAcciones         HistorialAccion[]
+  registrosAnimo            RegistroAnimo[]
   premiosEntregados        PremioEntregado[]
 
   experienciaHabitos        Int               @default(0) @map("Experiencia_Habitos")
@@ -139,6 +140,20 @@ model HistorialAccion {
   actor               Usuario      @relation(fields: [actorId], references: [id])
 
   @@map("Historial_Acciones")
+}
+
+// Cada vez que alguien elige su estado de ánimo se guarda una fila, para graficar la evolución.
+model RegistroAnimo {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int      @map("Usuario_ID")
+  animo       String   @map("Animo")
+  puntaje     Int      @map("Puntaje")
+  creadoEn    DateTime @default(now()) @map("Creado_En")
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, creadoEn])
+  @@map("Registros_Animo")
 }
 
 model ReglaHogar {

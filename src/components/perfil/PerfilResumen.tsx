@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ExternalLink,
   Flame,
@@ -10,6 +11,8 @@ import {
   Trophy,
   CheckCircle2,
   Lock,
+  Loader2,
+  Plus,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +44,7 @@ interface PerfilResumenProps {
   };
   habitos?: EstadoHabito[];
   enlaceCompleto?: boolean;
+  puedeEditarFoto?: boolean;
   onCerrarModal?: () => void;
 }
 
@@ -48,8 +52,34 @@ export function PerfilResumen({
   usuario,
   habitos: habitosIniciales,
   enlaceCompleto = false,
+  puedeEditarFoto = false,
   onCerrarModal,
 }: PerfilResumenProps) {
+  const router = useRouter();
+  const inputFoto = useRef<HTMLInputElement>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [errorFoto, setErrorFoto] = useState<string | null>(null);
+
+  async function cambiarFoto(file: File) {
+    setSubiendo(true);
+    setErrorFoto(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/users/foto", { method: "POST", body: fd });
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(d?.error ?? "No se pudo guardar la foto");
+      }
+      router.refresh();
+    } catch (e) {
+      setErrorFoto(e instanceof Error ? e.message : "No se pudo guardar la foto");
+    } finally {
+      setSubiendo(false);
+      if (inputFoto.current) inputFoto.current.value = "";
+    }
+  }
+
   const [habitosCargados, setHabitosCargados] = useState<EstadoHabito[]>([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
 
@@ -107,6 +137,30 @@ export function PerfilResumen({
                   {usuario.nombre.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+              {puedeEditarFoto && (
+                <>
+                  <input
+                    ref={inputFoto}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) cambiarFoto(f);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="absolute -right-1 -top-1 size-7 rounded-full shadow-md"
+                    aria-label="Cambiar foto de perfil"
+                    disabled={subiendo}
+                    onClick={() => inputFoto.current?.click()}
+                  >
+                    {subiendo ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                  </Button>
+                </>
+              )}
               {usuario.moodEmoji && (
                 <span className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border bg-card text-base shadow-sm">
                   {usuario.moodEmoji}
@@ -115,6 +169,7 @@ export function PerfilResumen({
             </div>
 
             <div className="text-center sm:text-left">
+              {errorFoto && <p className="mb-1 text-xs text-destructive">{errorFoto}</p>}
               <div className="flex items-center justify-center gap-2 sm:justify-start">
                 <h2 className="font-heading text-2xl font-bold">{usuario.nombre}</h2>
                 <Badge variant="secondary" className="text-xs">

@@ -20,6 +20,7 @@ import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { HabitoIcon } from "@/components/habitos/HabitoIcon";
 import { PerfilResumen } from "./PerfilResumen";
+import { GraficoAnimo, type RegistroAnimoItem } from "./GraficoAnimo";
 
 export interface PremioItem {
   id: number;
@@ -50,17 +51,20 @@ interface PerfilViewProps {
   };
   habitos: EstadoHabito[];
   premios: PremioItem[];
+  animo: RegistroAnimoItem[];
   esPropio: boolean;
 }
 
-export function PerfilView({ usuario, habitos, premios, esPropio }: PerfilViewProps) {
+export function PerfilView({ usuario, habitos, premios, animo, esPropio }: PerfilViewProps) {
   const totalXp = xpTotal(usuario);
   const infoNivel = nivelDe(totalXp);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       {/* Componente principal de resumen (Cabecera, estadísticas, logros) */}
-      <PerfilResumen usuario={usuario} habitos={habitos} />
+      <PerfilResumen usuario={usuario} habitos={habitos} puedeEditarFoto={esPropio} />
+
+      <GraficoAnimo registros={animo} nombre={usuario.nombre} esPropio={esPropio} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Hábitos activos */}

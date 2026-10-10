@@ -159,7 +159,7 @@ export function TaskWorkspace({
               {isCalendar ? (
                 <div className="px-4 pb-4"><MissionCalendar tasks={visible} onSelect={selectTask} /></div>
               ) : isBoard ? (
-                <TaskBoard tasks={visible} coResponsables={coResponsables} selectedId={selectedId} onSelect={selectTask} />
+                <TaskBoard tasks={visible} coResponsables={coResponsables} selectedId={selectedId} onSelect={selectTask} isParent={isAdmin} />
               ) : visible.length === 0 ? (
                 <EmptyState section={section} />
               ) : (

@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { MOOD_POR_KEY } from "@/lib/animo";
 
-const MOOD_EMOJIS: Record<string, string> = {
-  feliz: "😁",
-  inspirado: "😍",
-  contento: "😊",
-  neutral: "😐",
-  cansado: "🥱",
-  triste: "😔",
-  preocupado: "😟",
-  enojado: "🤬",
-  enfermo: "🤢",
-  fiestero: "🥳",
-  asustado: "😨",
-  aburrido: "😑",
-  agradecido: "🥹",
-  serio: "🧐",
-  tranquilo: "😌",
-  ofendido: "😒",
-  enamorado: "🥰",
-};
 
 // PUT /api/users/mood — Set current user's mood
 export async function PUT(req: NextRequest) {
@@ -41,17 +23,22 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ ok: true, moodEmoji: null });
     }
 
-    const emoji = MOOD_EMOJIS[mood];
-    if (!emoji) {
+    const m = MOOD_POR_KEY[mood];
+    if (!m) {
       return NextResponse.json({ error: "Emoji no válido" }, { status: 400 });
     }
 
-    await prisma.usuario.update({
-      where: { id: session.user.id },
-      data: { moodEmoji: emoji, moodSetAt: new Date() }
-    });
+    await prisma.$transaction([
+      prisma.usuario.update({
+        where: { id: session.user.id },
+        data: { moodEmoji: m.emoji, moodSetAt: new Date() }
+      }),
+      prisma.registroAnimo.create({
+        data: { usuarioId: session.user.id, animo: m.key, puntaje: m.puntaje }
+      }),
+    ]);
 
-    return NextResponse.json({ ok: true, moodEmoji: emoji });
+    return NextResponse.json({ ok: true, moodEmoji: m.emoji });
   } catch (error) {
     console.error("Mood API Error:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

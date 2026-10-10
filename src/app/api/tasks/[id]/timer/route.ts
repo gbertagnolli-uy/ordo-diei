@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { registrarAccion } from "@/lib/historial";
+
+const ACTIONABLE = ["Pendiente", "Pausada", "En_progreso", "Rechazada"];
 
 // PUT /api/tasks/[id]/timer — Start, pause, or get timer state
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,10 +22,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (action === "start") {
       // Start the timer: record when it started
-      await prisma.tarea.update({
-        where: { id: taskId },
-        data: { timerStartedAt: new Date() }
-      });
+      const now = new Date();
+      const nuevo = ACTIONABLE.includes(task.estado) ? "En_progreso" : task.estado;
+      await prisma.$transaction([
+        prisma.tarea.update({ where: { id: taskId }, data: { timerStartedAt: now, estado: nuevo } }),
+        ...(nuevo !== task.estado ? [registrarAccion(prisma, { tareaId: taskId, actorId: session.user.id, estadoAnterior: task.estado, estadoNuevo: nuevo })] : []),
+      ]);
       return NextResponse.json({ ok: true, timerStartedAt: new Date().toISOString(), tiempoAcumulado: task.tiempoAcumuladoTimer });
     }
 
@@ -33,10 +38,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const elapsed = Math.floor((Date.now() - new Date(task.timerStartedAt).getTime()) / 1000);
         acumulado += elapsed;
       }
-      await prisma.tarea.update({
-        where: { id: taskId },
-        data: { timerStartedAt: null, tiempoAcumuladoTimer: acumulado }
-      });
+      const sesion = task.timerStartedAt ? acumulado - task.tiempoAcumuladoTimer : null;
+      const nuevo = task.estado === "En_progreso" ? "Pausada" : task.estado;
+      await prisma.$transaction([
+        prisma.tarea.update({ where: { id: taskId }, data: { timerStartedAt: null, tiempoAcumuladoTimer: acumulado, estado: nuevo } }),
+        ...(nuevo !== task.estado ? [registrarAccion(prisma, { tareaId: taskId, actorId: session.user.id, estadoAnterior: task.estado, estadoNuevo: nuevo, duracionSesionSeg: sesion })] : []),
+      ]);
       return NextResponse.json({ ok: true, tiempoAcumulado: acumulado });
     }
 

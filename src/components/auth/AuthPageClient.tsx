@@ -61,15 +61,19 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
 
   return (
     <div className="relative z-10 flex w-full max-w-4xl flex-col items-center px-4 py-12">
-      <span className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-primary font-heading text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
-        OD
-      </span>
-      <h1 className="bg-gradient-to-b from-[#F3E3CC] to-[#C4956A] bg-clip-text text-center font-heading text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
-        Ordo Diei
-      </h1>
-      <p className="mt-3 mb-12 max-w-xl px-4 text-center font-heading text-base leading-relaxed text-muted-foreground italic">
-        Sancta rutina diei ad animam fovendam et Deum laudandum. Omnis dies incipit cum oratione et finitur cum examine conscientiae.
-      </p>
+      {!selectedUser && (
+        <>
+        <span className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-primary font-heading text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
+          OD
+        </span>
+        <h1 className="bg-gradient-to-b from-[#F3E3CC] to-[#C4956A] bg-clip-text text-center font-heading text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
+          Ordo Diei
+        </h1>
+        <p className="mt-3 mb-12 max-w-xl px-4 text-center font-heading text-base leading-relaxed text-muted-foreground italic">
+          Sancta rutina diei ad animam fovendam et Deum laudandum. Omnis dies incipit cum oratione et finitur cum examine conscientiae.
+        </p>
+        </>
+      )}
 
       <AnimatePresence mode="wait">
         {!selectedUser ? (

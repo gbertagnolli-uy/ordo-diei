@@ -30,7 +30,7 @@ export default async function PerfilPage({
     targetUserId = permitidos[0];
   }
 
-  const [targetUser, estadoUsuario, premiosRaw] = await Promise.all([
+  const [targetUser, estadoUsuario, premiosRaw, animoRaw] = await Promise.all([
     prisma.usuario.findUnique({
       where: { id: targetUserId },
       omit: { pinSecretoHash: true },
@@ -48,6 +48,11 @@ export default async function PerfilPage({
         },
       },
       orderBy: { fechaEntrega: "desc" },
+    }),
+    prisma.registroAnimo.findMany({
+      where: { usuarioId: targetUserId, creadoEn: { gte: new Date(Date.now() - 91 * 86_400_000) } },
+      select: { creadoEn: true, puntaje: true },
+      orderBy: { creadoEn: "asc" },
     }),
   ]);
 
@@ -71,6 +76,7 @@ export default async function PerfilPage({
           usuario={targetUser}
           habitos={estadoUsuario.habitos}
           premios={premios}
+          animo={animoRaw.map((a) => ({ creadoEn: a.creadoEn.toISOString(), puntaje: a.puntaje }))}
           esPropio={esPropio}
         />
       </main>

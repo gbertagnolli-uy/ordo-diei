@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader, Noto_Serif, Geist_Mono, Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <script dangerouslySetInnerHTML={{ __html: `
+        <Script id="ordo-diei-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {
               var s = JSON.parse(localStorage.getItem('ordo-diei-theme') || '{}');
