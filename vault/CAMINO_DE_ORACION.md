@@ -103,7 +103,7 @@ El estado **no se guarda**: se recalcula desde el plan y los registros en cada l
 ## 5. Lanes
 
 - [x] **Lane 17 · `task/lane-17-motor-oracion`** — motor puro (`engine.ts`) + tests.
-- [ ] **Lane 18 · `task/lane-18-datos-oracion`** — modelos Prisma, `db push`, `server.ts`, rutas API.
+- [x] **Lane 18 · `task/lane-18-datos-oracion`** — modelos Prisma, `db push`, `server.ts`, rutas API.
 - [ ] **Lane 19 · `task/lane-19-ui-oracion`** — página Oración: inicio del camino, oraciones de hoy (1 toque), escalera del Rosario, trayectoria (shadcn chart), recaída compasiva (shadcn alert), confeti al subir de paso, entrada en la barra lateral.
 - [ ] **Lane 20 · `task/lane-20-oracion-familia`** — vista de padres: camino de cada miembro, "Rezamos juntos" (Completorium para varios, hoy o días recientes), iniciar el camino y habilitar la mañana para un miembro.
 
@@ -120,3 +120,4 @@ El estado **no se guarda**: se recalcula desde el plan y los registros en cada l
 | Lane | Merge | Notas |
 |---|---|---|
 | 17 | `810c255` | `src/lib/oracion/engine.ts` (XState 5.33.2 + date-fns) y 14 tests (`npm test`). `tsconfig` excluye `*.test.ts` (importan con extensión `.ts` para Node). Rama y worktree borrados. |
+| 18 | `4e6910b` | `db push` solo aditivo (2 enums, `Planes_Oracion`, `Registros_Oracion`) en el schema `family_tasker`. API probada con sesiones locales: permisos (hijo no ve ni marca a otros), rango de 7 días, justificado y borrado, carga de días previos del Completorium y habilitación de la mañana. Datos de prueba borrados. Turbopack no acepta `node_modules` simbólico fuera del proyecto: los worktrees usan una copia reflink (btrfs). Rama y worktree borrados. |
