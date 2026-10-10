@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { getLevelInfo } from "@/lib/levelUtils";
+import { nivelDe, xpTotal } from "@/lib/niveles";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -77,7 +77,7 @@ import { useModalStore } from "@/store/modalStore";
 
 function Node({ user, isParent = false }: { user: Usuario, isParent?: boolean }) {
   const { openModal } = useModalStore();
-  const level = getLevelInfo(user.puntosAcumulados || 0);
+  const level = nivelDe(xpTotal(user));
 
   return (
     <motion.button
