@@ -9,10 +9,13 @@ export const esquemaOrigen = z.enum(["Sistema", "Manual"]);
 
 // Formato MM-DD o null para celebración litúrgica
 export const regexCelebracion = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-export const esquemaCelebracion = z
-  .string()
-  .regex(regexCelebracion, "Formato debe ser MM-DD (ej: 10-04)")
-  .nullable();
+export const esquemaCelebracion = z.preprocess(
+  (val) => (val === "" || val === undefined ? null : val),
+  z
+    .string()
+    .regex(regexCelebracion, "Formato debe ser MM-DD (ej: 10-04)")
+    .nullable()
+);
 
 // Elemento individual del datasheet
 export const esquemaDatoDatasheet = z.object({
@@ -66,23 +69,23 @@ export const esquemaCartaAdmin = z
       .regex(/^[a-z0-9-]+$/, "La clave debe ser un slug en minúsculas (ej: san-francisco-de-asis)")
       .optional(),
     nombre: z.string().trim().min(1, "El nombre es requerido"),
-    subtitulo: z.string().trim().nullable().optional(),
+    subtitulo: z.preprocess((v) => (v === "" ? null : v), z.string().trim().nullable().optional()),
     categoria: esquemaCategoria,
     rareza: esquemaRareza,
     celebracion: esquemaCelebracion.optional(),
     historia: z.string().trim().min(10, "La historia debe tener al menos 10 caracteres"),
     oracion: z.string().trim().min(5, "La oración debe tener al menos 5 caracteres"),
     frase: z.string().trim().min(5, "La frase debe tener al menos 5 caracteres"),
-    fraseAutor: z.string().trim().nullable().optional(),
+    fraseAutor: z.preprocess((v) => (v === "" ? null : v), z.string().trim().nullable().optional()),
     datasheet: z
       .array(esquemaDatoDatasheet)
       .min(4, "El datasheet debe tener al menos 4 datos")
       .max(8, "El datasheet no puede superar 8 datos"),
     imagenUrl: z.string().trim().min(1, "La imagen del Grado I es requerida"),
-    imagenGrado2Url: z.string().trim().nullable().optional(),
-    imagenGrado3Url: z.string().trim().nullable().optional(),
-    imagenGrado4Url: z.string().trim().nullable().optional(),
-    creditoImagen: z.string().trim().nullable().optional(),
+    imagenGrado2Url: z.preprocess((v) => (v === "" ? null : v), z.string().trim().nullable().optional()),
+    imagenGrado3Url: z.preprocess((v) => (v === "" ? null : v), z.string().trim().nullable().optional()),
+    imagenGrado4Url: z.preprocess((v) => (v === "" ? null : v), z.string().trim().nullable().optional()),
+    creditoImagen: z.preprocess((v) => (v === "" ? null : v), z.string().trim().nullable().optional()),
     fragmentosRequeridos: z.number().int().positive().optional(),
     activa: z.boolean().default(true),
   })

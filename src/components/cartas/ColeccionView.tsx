@@ -12,6 +12,7 @@ import {
   Award,
   Filter,
   ShoppingBag,
+  ShieldCheck,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,10 @@ interface ColeccionViewProps {
       incienso: number;
     };
   };
+  rolFamiliar?: string | null;
 }
 
-export function ColeccionView({ inicial }: ColeccionViewProps) {
+export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get("tab");
   const tabInicial = tabParam === "tienda" || tabParam === "album" ? tabParam : "coleccion";
@@ -212,14 +214,25 @@ export function ColeccionView({ inicial }: ColeccionViewProps) {
             </TabsTrigger>
           </TabsList>
 
-          <div className="text-xs text-muted-foreground flex items-center gap-1 sm:self-center">
-            <span>Progreso del Álbum:</span>
-            <span className="font-medium text-foreground">
-              {Math.round((totalDesbloqueadas / (totalCartas || 1)) * 100)} %
-            </span>
-            <span className="text-muted-foreground/60">
-              ({totalDesbloqueadas} de {totalCartas} descubiertas)
-            </span>
+          <div className="flex items-center gap-3">
+            {(rolFamiliar === "Padre" || rolFamiliar === "Madre") && (
+              <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs h-8">
+                <Link href="/dashboard/cartas/admin">
+                  <ShieldCheck className="size-3.5 text-amber-500" />
+                  <span>Administrar</span>
+                </Link>
+              </Button>
+            )}
+
+            <div className="text-xs text-muted-foreground flex items-center gap-1 sm:self-center">
+              <span>Progreso del Álbum:</span>
+              <span className="font-medium text-foreground">
+                {Math.round((totalDesbloqueadas / (totalCartas || 1)) * 100)} %
+              </span>
+              <span className="text-muted-foreground/60">
+                ({totalDesbloqueadas} de {totalCartas} descubiertas)
+              </span>
+            </div>
           </div>
         </div>
 

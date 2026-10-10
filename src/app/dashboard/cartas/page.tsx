@@ -14,5 +14,5 @@ export default async function CartasPage() {
   const usuarioId = Number(session.user.id);
   const resultado = await listarCartasUsuario(usuarioId);
 
-  return <ColeccionView inicial={resultado} />;
+  return <ColeccionView inicial={resultado} rolFamiliar={session.user.rolFamiliar} />;
 }

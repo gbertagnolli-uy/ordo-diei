@@ -33,6 +33,7 @@ import {
   multiplicadorTienda,
   APP_TZ,
 } from "./eventos.ts";
+import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
 
 interface CartaPrismaRow {
   id: number;
@@ -995,3 +996,192 @@ export async function eventosDeHoy(usuarioId: number) {
     fiestas,
   };
 }
+
+/**
+ * 8. Funciones de Administración de Cartas (Lane 36)
+ */
+
+export interface CartaAdminItem {
+  id: number;
+  clave: string;
+  nombre: string;
+  subtitulo: string | null;
+  categoria: CategoriaCarta;
+  rareza: RarezaCarta;
+  celebracion: string | null;
+  historia: string;
+  oracion: string;
+  frase: string;
+  fraseAutor: string | null;
+  datasheet: Array<{ etiqueta: string; valor: string }>;
+  imagenUrl: string;
+  imagenGrado2Url: string | null;
+  imagenGrado3Url: string | null;
+  imagenGrado4Url: string | null;
+  creditoImagen: string | null;
+  fragmentosRequeridos: number;
+  origen: "Sistema" | "Manual";
+  editadaManual: boolean;
+  activa: boolean;
+  createdAt: string;
+  updatedAt: string;
+  usuariosColeccionando: number;
+}
+
+export async function adminListarCartas(): Promise<CartaAdminItem[]> {
+  const cartas = await prisma.carta.findMany({
+    orderBy: [
+      { activa: "desc" },
+      { id: "desc" },
+    ],
+    include: {
+      _count: {
+        select: { cartasUsuario: true },
+      },
+    },
+  });
+
+  return cartas.map((c) => ({
+    id: c.id,
+    clave: c.clave,
+    nombre: c.nombre,
+    subtitulo: c.subtitulo,
+    categoria: c.categoria as CategoriaCarta,
+    rareza: c.rareza as RarezaCarta,
+    celebracion: c.celebracion,
+    historia: c.historia,
+    oracion: c.oracion,
+    frase: c.frase,
+    fraseAutor: c.fraseAutor,
+    datasheet: Array.isArray(c.datasheet)
+      ? (c.datasheet as Array<{ etiqueta: string; valor: string }>)
+      : [],
+    imagenUrl: c.imagenUrl,
+    imagenGrado2Url: c.imagenGrado2Url,
+    imagenGrado3Url: c.imagenGrado3Url,
+    imagenGrado4Url: c.imagenGrado4Url,
+    creditoImagen: c.creditoImagen,
+    fragmentosRequeridos: c.fragmentosRequeridos,
+    origen: c.origen as "Sistema" | "Manual",
+    editadaManual: c.editadaManual,
+    activa: c.activa,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+    usuariosColeccionando: c._count.cartasUsuario,
+  }));
+}
+
+export async function adminCrearCarta(entrada: unknown, creadorId?: number) {
+  const datos = esquemaCartaAdmin.parse(entrada);
+
+  let clave = datos.clave?.trim() || generarClaveSlug(datos.nombre);
+  if (!clave) {
+    clave = `carta-${Date.now()}`;
+  }
+
+  // Asegurar clave única en base de datos
+  let claveFinal = clave;
+  let contador = 2;
+  while (await prisma.carta.findUnique({ where: { clave: claveFinal } })) {
+    claveFinal = `${clave}-${contador}`;
+    contador++;
+  }
+
+  const nuevaCarta = await prisma.carta.create({
+    data: {
+      clave: claveFinal,
+      nombre: datos.nombre,
+      subtitulo: datos.subtitulo ?? null,
+      categoria: datos.categoria,
+      rareza: datos.rareza,
+      celebracion: datos.celebracion ?? null,
+      historia: datos.historia,
+      oracion: datos.oracion,
+      frase: datos.frase,
+      fraseAutor: datos.fraseAutor ?? null,
+      datasheet: datos.datasheet,
+      imagenUrl: datos.imagenUrl,
+      imagenGrado2Url: datos.imagenGrado2Url ?? null,
+      imagenGrado3Url: datos.imagenGrado3Url ?? null,
+      imagenGrado4Url: datos.imagenGrado4Url ?? null,
+      creditoImagen: datos.creditoImagen ?? null,
+      fragmentosRequeridos: datos.fragmentosRequeridos,
+      origen: "Manual",
+      editadaManual: true,
+      activa: datos.activa ?? true,
+      creadorId: creadorId ?? null,
+    },
+  });
+
+  return nuevaCarta;
+}
+
+export async function adminActualizarCarta(id: number, entrada: unknown) {
+  const datos = esquemaCartaAdmin.parse(entrada);
+
+  const existente = await prisma.carta.findUnique({ where: { id } });
+  if (!existente) {
+    throw new Error(`Carta con ID ${id} no encontrada`);
+  }
+
+  let claveFinal = existente.clave;
+  if (datos.clave && datos.clave.trim() !== existente.clave) {
+    claveFinal = datos.clave.trim();
+    const yaExiste = await prisma.carta.findUnique({ where: { clave: claveFinal } });
+    if (yaExiste && yaExiste.id !== id) {
+      throw new Error(`Ya existe una carta con la clave "${claveFinal}"`);
+    }
+  }
+
+  const cartaActualizada = await prisma.carta.update({
+    where: { id },
+    data: {
+      clave: claveFinal,
+      nombre: datos.nombre,
+      subtitulo: datos.subtitulo ?? null,
+      categoria: datos.categoria,
+      rareza: datos.rareza,
+      celebracion: datos.celebracion ?? null,
+      historia: datos.historia,
+      oracion: datos.oracion,
+      frase: datos.frase,
+      fraseAutor: datos.fraseAutor ?? null,
+      datasheet: datos.datasheet,
+      imagenUrl: datos.imagenUrl,
+      imagenGrado2Url: datos.imagenGrado2Url ?? null,
+      imagenGrado3Url: datos.imagenGrado3Url ?? null,
+      imagenGrado4Url: datos.imagenGrado4Url ?? null,
+      creditoImagen: datos.creditoImagen ?? null,
+      fragmentosRequeridos: datos.fragmentosRequeridos,
+      activa: datos.activa ?? true,
+      editadaManual: true,
+    },
+  });
+
+  return cartaActualizada;
+}
+
+export async function adminArchivarCarta(id: number) {
+  const existente = await prisma.carta.findUnique({ where: { id } });
+  if (!existente) {
+    throw new Error(`Carta con ID ${id} no encontrada`);
+  }
+
+  return await prisma.carta.update({
+    where: { id },
+    data: { activa: false },
+  });
+}
+
+export async function adminRestaurarCarta(id: number) {
+  const existente = await prisma.carta.findUnique({ where: { id } });
+  if (!existente) {
+    throw new Error(`Carta con ID ${id} no encontrada`);
+  }
+
+  return await prisma.carta.update({
+    where: { id },
+    data: { activa: true },
+  });
+}
+
