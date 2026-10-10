@@ -31,7 +31,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import {
   CATEGORIAS,
+  CLAVE_LIBRO,
   DIAS_LUN_VIE,
+  MAX_PAGINAS_LIBRO,
   DIAS_TODOS,
   pasosDe,
   type Categoria,
@@ -121,12 +123,18 @@ export function HabitoDialog({
     Record<number, { ancla: string; diasTipo: string; diasBits: number }>
   >({});
 
+  // Paso 2: libro con el que empieza "Leer un libro"
+  const [libroTitulo, setLibroTitulo] = useState("");
+  const [libroPaginas, setLibroPaginas] = useState("");
+
   // Reset del diálogo al abrirse o cambiar habitoAEditar
   useEffect(() => {
     if (!isOpen) return;
     setPaso(1);
     setGuardando(false);
     setUsuarioObjetivoId(preseleccionMiembroId ?? usuarioActualId);
+    setLibroTitulo("");
+    setLibroPaginas("");
 
     if (habitoAEditar) {
       // Modo edición de hábito propio
@@ -195,6 +203,12 @@ export function HabitoDialog({
   const totalNuevos = seleccionados.length + (mostrarCrearNuevo && nuevoNombre.trim() ? 1 : 0);
   const avisoDemasiados = !habitoAEditar && totalNuevos + enInicio > 2;
 
+  const libroId = catalogo.find((h) => h.clave === CLAVE_LIBRO)?.id;
+  const pideLibro = !habitoAEditar && libroId !== undefined && seleccionados.includes(libroId);
+  const paginasLibro = Number(libroPaginas);
+  const libroValido =
+    libroTitulo.trim().length > 0 && Number.isInteger(paginasLibro) && paginasLibro >= 1 && paginasLibro <= MAX_PAGINAS_LIBRO;
+
   // Submit final
   const handleGuardar = async () => {
     setGuardando(true);
@@ -231,7 +245,12 @@ export function HabitoDialog({
           });
         }
       } else {
-        const itemsAAdoptar: { habitoId: number; dias: number; ancla: string }[] = [];
+        const itemsAAdoptar: {
+          habitoId: number;
+          dias: number;
+          ancla: string;
+          libro?: { titulo: string; paginas: number };
+        }[] = [];
 
         // 1. Si creó uno nuevo: POST /api/habitos
         if (mostrarCrearNuevo && nuevoNombre.trim()) {
@@ -264,6 +283,7 @@ export function HabitoDialog({
             habitoId: id,
             dias: rec?.diasBits ?? DIAS_TODOS,
             ancla: rec?.ancla || "Al levantarme",
+            ...(id === libroId ? { libro: { titulo: libroTitulo.trim(), paginas: paginasLibro } } : {}),
           });
         }
 
@@ -487,6 +507,7 @@ export function HabitoDialog({
         const def = catalogo.find((x) => x.id === id)!;
         return {
           id,
+          clave: def.clave,
           nombre: def.nombre,
           icono: def.icono,
           franja: def.franja,
@@ -498,6 +519,7 @@ export function HabitoDialog({
         ? [
             {
               id: -1,
+              clave: null,
               nombre: nuevoNombre.trim(),
               icono: "Sparkles",
               franja: nuevaFranja,
@@ -573,6 +595,35 @@ export function HabitoDialog({
                     ))}
                   </div>
                 </div>
+
+                {/* "Leer un libro": con qué libro empieza */}
+                {item.clave === CLAVE_LIBRO && (
+                  <div className="grid gap-3 border-t pt-3 sm:grid-cols-[1fr_8rem]">
+                    <div className="space-y-1">
+                      <Label htmlFor="libro-titulo" className="text-xs">Libro que vas a leer</Label>
+                      <Input
+                        id="libro-titulo"
+                        placeholder="Ej. Las Crónicas de Narnia"
+                        value={libroTitulo}
+                        maxLength={200}
+                        onChange={(e) => setLibroTitulo(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="libro-paginas" className="text-xs">Páginas</Label>
+                      <Input
+                        id="libro-paginas"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={MAX_PAGINAS_LIBRO}
+                        placeholder="Ej. 180"
+                        value={libroPaginas}
+                        onChange={(e) => setLibroPaginas(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Días programados */}
                 <div className="space-y-2 pt-2 border-t">
@@ -677,7 +728,7 @@ export function HabitoDialog({
           <Button
             type="button"
             size="sm"
-            disabled={guardando}
+            disabled={guardando || (pideLibro && !libroValido)}
             onClick={handleGuardar}
           >
             {guardando ? <Spinner /> : <Check className="size-4" />}

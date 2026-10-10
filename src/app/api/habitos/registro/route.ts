@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 const MARCAS_VALIDAS = ["hecho", "justificado", "no", null];
 
 // PUT /api/habitos/registro — marcar un hábito como hecho, justificado, no o borrarlo (null)
-// body: { habitoId, marca: "hecho" | "justificado" | "no" | null, fecha?, nota?, usuarioIds? }
+// body: { habitoId, marca: "hecho" | "justificado" | "no" | null, fecha?, nota?, paginas?, usuarioIds? }
+// paginas: obligatorio al marcar "hecho" en "Leer un libro"
 export async function PUT(req: NextRequest) {
   try {
     const session = await getSession();
@@ -49,6 +50,7 @@ export async function PUT(req: NextRequest) {
         fecha,
         marca,
         nota,
+        paginas: body.paginas,
       });
 
       const estados = await getEstadosHabitos(ids);

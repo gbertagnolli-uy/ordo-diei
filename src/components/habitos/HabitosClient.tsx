@@ -68,7 +68,7 @@ export function HabitosClient({
   const enRetomando = habitos.filter((h) => h.etapa === "retomando");
 
   // Registrar hábito
-  const handleRegistrar = async (habitoId: number, marca: Marca | null, nota?: string) => {
+  const handleRegistrar = async (habitoId: number, marca: Marca | null, nota?: string, paginas?: number) => {
     setOcupadoId(habitoId);
     try {
       const res = await fetch("/api/habitos/registro", {
@@ -78,6 +78,7 @@ export function HabitosClient({
           habitoId,
           marca,
           nota,
+          paginas,
           usuarioIds: [estado.usuarioId],
         }),
       });
@@ -100,10 +101,40 @@ export function HabitosClient({
         });
       }
 
+      // Libro terminado: premio "Un libro nuevo" (vault/HABITO_LIBRO.md)
       const rec = json.recompensas?.[0];
+      if (rec?.libroTerminado) {
+        openModal("HABITO", { tipo: "libro", habito: rec.libroTerminado, paso: null, categoria: "cuidado" });
+      }
       return rec ? { puntos: rec.puntos, xp: rec.xp } : undefined;
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al registrar");
+    } finally {
+      setOcupadoId(null);
+    }
+  };
+
+  // Cargar el libro que se empieza a leer (o corregir el actual)
+  const handleCargarLibro = async (habitoId: number, datos: { titulo: string; paginas: number }) => {
+    setOcupadoId(habitoId);
+    try {
+      const res = await fetch("/api/habitos/libros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habitoId, ...datos, usuarioIds: [estado.usuarioId] }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Error al guardar el libro");
+      setEstado(json.estados[0]);
+      router.refresh();
+      const terminado = json.terminados?.[0];
+      if (terminado) {
+        openModal("HABITO", { tipo: "libro", habito: terminado.titulo, paso: null, categoria: "cuidado" });
+      }
+      return true;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al guardar el libro");
+      return false;
     } finally {
       setOcupadoId(null);
     }
@@ -268,6 +299,7 @@ export function HabitosClient({
                         setDialogOpen(true);
                       }}
                       onArchivar={handleArchivar}
+                      onCargarLibro={handleCargarLibro}
                     />
                   ))}
                 </div>

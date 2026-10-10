@@ -29,6 +29,9 @@ function fakeHabito(partial: Partial<EstadoHabito>): EstadoHabito {
     recaidaEl: null,
     trayectoria: [],
     programadoHoy: true,
+    libro: null,
+    libroTerminado: null,
+    paginasHoy: null,
     ...partial,
   };
 }

@@ -7,6 +7,7 @@ import {
   AlarmClock,
   CalendarCheck,
   CheckCircle2,
+  Gift,
   History,
   Hourglass,
   ListTodo,
@@ -71,11 +72,14 @@ export function AppSidebar({
   currentUser,
   tasks,
   habitosPendientes,
+  premiosPendientes,
 }: {
   currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
   tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
   /** Hábitos programados hoy sin registrar */
   habitosPendientes?: number | null;
+  /** Premios por reclamar y, para padres, reclamos de la familia por entregar */
+  premiosPendientes?: number | null;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -125,6 +129,15 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/mis-premios"} tooltip="Mis premios">
+                <Link href="/dashboard/mis-premios">
+                  <Gift />
+                  <span>Mis premios</span>
+                </Link>
+              </SidebarMenuButton>
+              {!!premiosPendientes && <SidebarMenuBadge className="tabular-nums">{premiosPendientes}</SidebarMenuBadge>}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

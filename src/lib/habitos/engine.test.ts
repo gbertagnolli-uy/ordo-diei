@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { addDays, format, parseISO } from "date-fns";
 import {
   CATALOGO,
+  decidirLibro,
+  progresoLibro,
   DIAS_LUN_VIE,
   DIAS_TODOS,
   misteriosDelDia,
@@ -355,4 +357,40 @@ test("puedeEditarHabito: creador sí, otro no, sistema nadie", () => {
   // Sistema (creadorId = null)
   assert.equal(puedeEditarHabito({ creadorId: null }, 1), false);
   assert.equal(puedeEditarHabito({ creadorId: null }, 2), false);
+});
+
+// ---------- Leer un libro (vault/HABITO_LIBRO.md) ----------
+
+const libro = (patron: string) =>
+  reproducir({ pasos: CATALOGO.libro.pasos, desde: INICIO, hoy: dia(patron.length), marcas: marcas(patron) });
+
+test("Leer un libro: 2 → 4 (1 semana) → 6 (2 semanas) → 8 páginas (4 semanas)", () => {
+  assert.equal(CATALOGO.libro.recomendado, true);
+  assert.deepEqual(CATALOGO.libro.pasos.map((p) => p.meta), [2, 4, 6, 8]);
+  assert.equal(libro("").pasoActual.meta, 2);
+  assert.equal(libro("H".repeat(6)).pasoActual.meta, 2);
+  assert.equal(libro("H".repeat(7)).pasoActual.meta, 4);
+  assert.equal(libro("H".repeat(14)).pasoActual.meta, 6);
+  assert.equal(libro("H".repeat(27)).pasoActual.meta, 6);
+  assert.equal(libro("H".repeat(28)).pasoActual.meta, 8);
+  assert.equal(libro("H".repeat(60)).pasoActual.meta, 8);
+});
+
+test("progresoLibro: porcentaje con tope en 100 %", () => {
+  assert.deepEqual(progresoLibro(0, 200), { leidas: 0, total: 200, pct: 0, terminado: false });
+  assert.equal(progresoLibro(50, 200).pct, 25);
+  assert.equal(progresoLibro(199, 200).terminado, false);
+  assert.equal(progresoLibro(200, 200).terminado, true);
+  assert.equal(progresoLibro(230, 200).pct, 100);
+});
+
+test("decidirLibro: termina, reabre solo si el premio no se reclamó, y nunca deja dos en curso", () => {
+  const base = { total: 100, premio: null, otroEnCurso: false } as const;
+  assert.equal(decidirLibro({ ...base, leidas: 100, terminado: false }), "terminar");
+  assert.equal(decidirLibro({ ...base, leidas: 99, terminado: false }), null);
+  assert.equal(decidirLibro({ ...base, leidas: 120, terminado: true }), null);
+  assert.equal(decidirLibro({ ...base, leidas: 90, terminado: true, premio: "disponible" }), "reabrir");
+  assert.equal(decidirLibro({ ...base, leidas: 90, terminado: true, premio: "reclamado" }), null);
+  assert.equal(decidirLibro({ ...base, leidas: 90, terminado: true, premio: "entregado" }), null);
+  assert.equal(decidirLibro({ ...base, leidas: 90, terminado: true, premio: "disponible", otroEnCurso: true }), null);
 });

@@ -15,6 +15,8 @@ export interface Paso {
   diasParaSubir: number | null;
   /** Misterios que se meditan en este paso (Rosario) */
   misterios: number;
+  /** Cantidad diaria del paso (páginas, en "Leer un libro") */
+  meta?: number;
 }
 
 export type ClaveSistema =
@@ -26,7 +28,8 @@ export type ClaveSistema =
   | "cama"
   | "aseo"
   | "bano"
-  | "ropero";
+  | "ropero"
+  | "libro";
 
 export interface DefinicionSistema {
   clave: ClaveSistema;
@@ -102,7 +105,21 @@ function pasoRosario(i: number): Paso {
 
 const ESCALERA_ROSARIO: Paso[] = Array.from({ length: 15 }, (_, i) => pasoRosario(i));
 
-// ---------- Catálogo del sistema (9 hábitos) ----------
+// ---------- Escalera de "Leer un libro" (vault/HABITO_LIBRO.md) ----------
+
+const ESCALERA_LIBRO: Paso[] = [
+  { titulo: "2 páginas", diasParaSubir: 7, misterios: 0, meta: 2 },
+  { titulo: "4 páginas", diasParaSubir: 7, misterios: 0, meta: 4 },
+  { titulo: "6 páginas", diasParaSubir: 14, misterios: 0, meta: 6 },
+  { titulo: "8 páginas", diasParaSubir: null, misterios: 0, meta: 8 },
+];
+
+/** Hábito que lleva libro y páginas leídas */
+export const CLAVE_LIBRO = "libro";
+export const MAX_PAGINAS_DIA = 2000;
+export const MAX_PAGINAS_LIBRO = 10000;
+
+// ---------- Catálogo del sistema (10 hábitos) ----------
 
 export const CATALOGO: Record<ClaveSistema, DefinicionSistema> = {
   matutinum: {
@@ -228,6 +245,18 @@ export const CATALOGO: Record<ClaveSistema, DefinicionSistema> = {
     identidad: "Sos de los que mantienen sus cosas ordenadas y en su lugar.",
     recomendado: false,
   },
+  libro: {
+    clave: "libro",
+    nombre: "Leer un libro",
+    descripcion: "Unas páginas por día hasta terminar el libro; al terminarlo, pedís uno nuevo",
+    categoria: "cuidado",
+    franja: "noche",
+    ancla: "Antes de dormir",
+    icono: "BookMarked",
+    pasos: ESCALERA_LIBRO,
+    identidad: "Sos de los que leen todos los días.",
+    recomendado: true,
+  },
 };
 
 // ---------- Etiquetas y constantes ----------
@@ -297,4 +326,31 @@ export function identidadDe(h: { clave: string | null }): string {
 /** Determina si un hábito entrega puntos canjeables (solo orden y cuidado, no oración) */
 export function daPuntos(categoria: Categoria): boolean {
   return categoria !== "oracion";
+}
+
+/** Progreso de un libro: páginas leídas (sumadas) sobre el total, sin pasarse del 100 % */
+export function progresoLibro(leidas: number, total: number) {
+  const pct = total > 0 ? Math.min(100, Math.round((leidas / total) * 100)) : 0;
+  return { leidas, total, pct, terminado: total > 0 && leidas >= total };
+}
+
+/**
+ * Qué hacer con un libro tras cambiar sus páginas: terminarlo (y dar el premio),
+ * reabrirlo (si se deshizo el registro que lo terminó y el premio no se reclamó) o nada.
+ */
+export function decidirLibro(input: {
+  leidas: number;
+  total: number;
+  terminado: boolean;
+  /** Estado del premio de ese libro, si existe */
+  premio: "disponible" | "reclamado" | "entregado" | null;
+  /** Hay otro libro en curso (no se reabre para no tener dos) */
+  otroEnCurso: boolean;
+}): "terminar" | "reabrir" | null {
+  const { terminado: completo } = progresoLibro(input.leidas, input.total);
+  if (completo && !input.terminado) return "terminar";
+  if (!completo && input.terminado && !input.otroEnCurso && (input.premio === null || input.premio === "disponible")) {
+    return "reabrir";
+  }
+  return null;
 }

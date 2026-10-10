@@ -34,16 +34,16 @@ Rama base: `dev` · Lane 38 · `task/lane-38-habito-libro`, sin PR a `main`. La 
 
 Checklist contra el pedido:
 
-- [ ] R1 Hábito del sistema **recomendado** "Leer un libro".
-- [ ] R2 Escalera: 2 páginas → (1 semana) 4 → (2 semanas) 6 → (4 semanas) 8.
-- [ ] R3 Selector de páginas leídas al marcar "Hecho".
-- [ ] R4 Se guardan las páginas leídas.
-- [ ] R5 Al adoptarlo se pide el libro y su cantidad de páginas.
-- [ ] R6 Barra de progreso páginas leídas / páginas totales.
-- [ ] R7 Terminar el libro da el premio "pedir un libro nuevo".
-- [ ] R8 Lugar donde se guardan los premios; click → reclamar.
-- [ ] R9 Al reclamar, los padres se enteran (aparece en algún lugar) para entregarlo.
-- [ ] R10 Premio libro: al reclamar, campo de texto con el libro deseado.
+- [x] R1 Hábito del sistema **recomendado** "Leer un libro".
+- [x] R2 Escalera: 2 páginas → (1 semana) 4 → (2 semanas) 6 → (4 semanas) 8.
+- [x] R3 Selector de páginas leídas al marcar "Hecho".
+- [x] R4 Se guardan las páginas leídas.
+- [x] R5 Al adoptarlo se pide el libro y su cantidad de páginas.
+- [x] R6 Barra de progreso páginas leídas / páginas totales.
+- [x] R7 Terminar el libro da el premio "pedir un libro nuevo".
+- [x] R8 Lugar donde se guardan los premios; click → reclamar.
+- [x] R9 Al reclamar, los padres se enteran (aparece en algún lugar) para entregarlo.
+- [x] R10 Premio libro: al reclamar, campo de texto con el libro deseado.
 
 ## 2. Decisiones (del orquestador; corregibles)
 
@@ -92,7 +92,7 @@ model Recompensa {          // @@map("Recompensas")
 
 ## 5. Lane
 
-- [ ] **Lane 38 · `task/lane-38-habito-libro`** (base `dev`): todo lo anterior, con tests del cálculo de progreso y del premio.
+- [x] **Lane 38 · `task/lane-38-habito-libro`** (base `dev`): todo lo anterior, con tests del cálculo de progreso y del premio.
 
 **Cuidado con las lanes de cartas (30–37):** se ramificaron antes de esta lane. Antes de su `prisma db push` tienen que hacer `git merge dev`, o el push intentaría borrar `Libros` y `Recompensas`.
 
@@ -100,4 +100,4 @@ model Recompensa {          // @@map("Recompensas")
 
 | Lane | Merge | Notas |
 |---|---|---|
-| 38 | | |
+| 38 | (ver git log) | Implementada por el orquestador. `Libros`, `Recompensas` y `Registros_Habito.Paginas/Libro_ID` creados con SQL **aditivo** (`prisma db execute`), no con `db push`: la base ya tiene las tablas de cartas de la lane 31 y un push desde `dev` las habría borrado. `npm test` 31/31, `tsc`, eslint y `next build` OK. E2E contra `next start` en :3121 con dos usuarios temporales (hijo y padre), 21/21: escalera, páginas obligatorias, progreso, terminar → premio, deshacer → reabrir, reclamar con pedido, permisos (403), entrega por el padre, libro nuevo, páginas SSR 200. Datos de prueba borrados. **Sin revisión visual en navegador.** Tras el `prisma generate`, reiniciar `next dev`. |

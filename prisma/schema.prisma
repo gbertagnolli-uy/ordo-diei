@@ -69,6 +69,9 @@ model Usuario {
   habitosUsuario            HabitoUsuario[]
   registrosHabito           RegistroHabito[]  @relation("RegistrosHabito")
   registrosHabitoHechos     RegistroHabito[]  @relation("RegistrosHabitoHechos")
+  libros                    Libro[]
+  recompensas               Recompensa[]      @relation("Recompensas")
+  recompensasEntregadas     Recompensa[]      @relation("RecompensasEntregadas")
 
   @@map("Usuarios")
 }
@@ -256,6 +259,7 @@ model Habito {
   creador     Usuario?        @relation("HabitosCreados", fields: [creadorId], references: [id])
   adopciones  HabitoUsuario[]
   registros   RegistroHabito[]
+  libros      Libro[]
 
   @@map("Habitos")
 }
@@ -287,13 +291,63 @@ model RegistroHabito {
   puntos          Int         @default(0) @map("Puntos")
   xp              Int         @default(0) @map("XP")
   registradoPorId Int         @map("Registrado_Por_ID")
+  paginas         Int?        @map("Paginas")
+  libroId         Int?        @map("Libro_ID")
   createdAt       DateTime    @default(now()) @map("Created_At")
 
   usuario         Usuario     @relation("RegistrosHabito", fields: [usuarioId], references: [id], onDelete: Cascade)
   registradoPor   Usuario     @relation("RegistrosHabitoHechos", fields: [registradoPorId], references: [id])
   habito          Habito      @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  libro           Libro?      @relation(fields: [libroId], references: [id], onDelete: SetNull)
 
   @@unique([usuarioId, habitoId, fecha])
   @@map("Registros_Habito")
+}
+
+// Hábito "Leer un libro" y premios reclamables (vault/HABITO_LIBRO.md)
+enum EstadoRecompensa {
+  disponible
+  reclamado
+  entregado
+}
+
+model Libro {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int       @map("Usuario_ID")
+  habitoId    Int       @map("Habito_ID")
+  titulo      String    @map("Titulo")
+  paginas     Int       @map("Paginas")
+  iniciadoEn  DateTime  @default(now()) @map("Iniciado_En")
+  terminadoEn DateTime? @map("Terminado_En")
+
+  usuario     Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito      Habito           @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  registros   RegistroHabito[]
+  recompensa  Recompensa?
+
+  @@index([usuarioId, habitoId])
+  @@map("Libros")
+}
+
+model Recompensa {
+  id             Int              @id @default(autoincrement())
+  usuarioId      Int              @map("Usuario_ID")
+  tipo           String           @map("Tipo")
+  titulo         String           @map("Titulo")
+  origen         String?          @map("Origen")
+  libroId        Int?             @unique @map("Libro_ID")
+  estado         EstadoRecompensa @default(disponible) @map("Estado")
+  pedido         String?          @map("Pedido")
+  ganadaEn       DateTime         @default(now()) @map("Ganada_En")
+  reclamadaEn    DateTime?        @map("Reclamada_En")
+  entregadaEn    DateTime?        @map("Entregada_En")
+  entregadaPorId Int?             @map("Entregada_Por_ID")
+
+  usuario        Usuario  @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
+  entregadaPor   Usuario? @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
+  libro          Libro?   @relation(fields: [libroId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId, estado])
+  @@map("Recompensas")
 }
 
