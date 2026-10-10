@@ -4,13 +4,14 @@ import {
   adoptar,
   ajustarAdopcion,
   getEstadosHabitos,
+  validarLibro,
 } from "@/lib/habitos/server";
 import { usuariosObjetivo } from "@/lib/habitos/permisos";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/habitos/adopciones — adoptar uno o más hábitos
-// body: { items: [{ habitoId, dias?, ancla? }], usuarioIds? }
+// body: { items: [{ habitoId, dias?, ancla?, libro?: { titulo, paginas } }], usuarioIds? }
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
@@ -24,11 +25,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Se requiere un listado de hábitos a adoptar" }, { status: 400 });
     }
 
-    const items = body.items.map((it: { habitoId: unknown; dias?: unknown; ancla?: unknown }) => ({
-      habitoId: Number(it.habitoId),
-      dias: it.dias !== undefined ? Number(it.dias) : undefined,
-      ancla: typeof it.ancla === "string" ? it.ancla : undefined,
-    }));
+    let items;
+    try {
+      items = body.items.map((it: { habitoId: unknown; dias?: unknown; ancla?: unknown; libro?: unknown }) => ({
+        habitoId: Number(it.habitoId),
+        dias: it.dias !== undefined ? Number(it.dias) : undefined,
+        ancla: typeof it.ancla === "string" ? it.ancla : undefined,
+        libro: it.libro !== undefined ? validarLibro(it.libro) : undefined,
+      }));
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "Libro no válido" }, { status: 400 });
+    }
 
     if (items.some((it: { habitoId: number }) => !Number.isInteger(it.habitoId))) {
       return NextResponse.json({ error: "ID de hábito no válido" }, { status: 400 });

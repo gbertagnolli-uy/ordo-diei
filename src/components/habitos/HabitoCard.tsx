@@ -26,9 +26,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { ETAPAS, type Marca } from "@/lib/habitos/catalogo";
+import { CLAVE_LIBRO, ETAPAS, type Marca } from "@/lib/habitos/catalogo";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
+import { LibroProgreso, PaginasHecho, type DatosLibro } from "./LibroLectura";
 
 const pct = (n: number) => `${Math.round(n * 100)} %`;
 
@@ -42,16 +43,23 @@ export function HabitoCard({
   onDejarDePracticar,
   onEditar,
   onArchivar,
+  onCargarLibro,
 }: {
   h: EstadoHabito;
   misterios: readonly string[];
   ocupado: boolean;
   puedeEditar: boolean;
-  onRegistrar: (habitoId: number, marca: Marca | null, nota?: string) => Promise<{ puntos: number; xp: number } | void>;
+  onRegistrar: (
+    habitoId: number,
+    marca: Marca | null,
+    nota?: string,
+    paginas?: number
+  ) => Promise<{ puntos: number; xp: number } | void>;
   onAjustar?: (habito: EstadoHabito) => void;
   onDejarDePracticar?: (habitoId: number) => void;
   onEditar?: (habito: EstadoHabito) => void;
   onArchivar?: (habitoId: number) => void;
+  onCargarLibro?: (habitoId: number, datos: DatosLibro) => Promise<boolean>;
 }) {
   const [recompensaFlotante, setRecompensaFlotante] = useState<{ puntos: number; xp: number } | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -64,10 +72,11 @@ export function HabitoCard({
   const noHecho = h.hoy === "no";
   const meta = h.pasoActual.diasParaSubir;
   const muestraIdentidad = h.etapa === "consolidacion" || h.etapa === "firme";
+  const esLibro = h.clave === CLAVE_LIBRO;
 
-  const handleMarcar = async (marca: Marca | null, nota?: string) => {
+  const handleMarcar = async (marca: Marca | null, nota?: string, paginas?: number) => {
     setPopoverOpen(false);
-    const res = await onRegistrar(h.habitoId, marca, nota);
+    const res = await onRegistrar(h.habitoId, marca, nota, paginas);
     if (res && marca === "hecho") {
       setRecompensaFlotante(res);
       setTimeout(() => setRecompensaFlotante(null), 3500);
@@ -195,6 +204,10 @@ export function HabitoCard({
           )}
         </div>
 
+        {esLibro && onCargarLibro && (
+          <LibroProgreso h={h} ocupado={ocupado} onCargarLibro={(datos) => onCargarLibro(h.habitoId, datos)} />
+        )}
+
         <div className="mt-auto space-y-3 text-sm">
           {meta !== null && !h.completo && (
             <div className="space-y-1.5">
@@ -226,7 +239,13 @@ export function HabitoCard({
               {hecho && <Check className="size-4" />}
               {justificado && <AlertCircle className="size-4" />}
               {noHecho && <X className="size-4" />}
-              {hecho ? "Hecho hoy" : justificado ? "Omitido hoy" : "No realizado"}
+              {hecho
+                ? esLibro && h.paginasHoy
+                  ? `Hecho hoy · ${h.paginasHoy} ${h.paginasHoy === 1 ? "página" : "páginas"}`
+                  : "Hecho hoy"
+                : justificado
+                ? "Omitido hoy"
+                : "No realizado"}
             </span>
             <Button
               variant="ghost"
@@ -239,13 +258,21 @@ export function HabitoCard({
           </>
         ) : (
           <>
-            <Button
-              className="flex-1"
-              disabled={ocupado}
-              onClick={() => handleMarcar("hecho")}
-            >
-              {ocupado ? <Spinner /> : <Check className="size-4" />} Hecho
-            </Button>
+            {esLibro ? (
+              <PaginasHecho
+                meta={h.pasoActual.meta ?? 1}
+                ocupado={ocupado}
+                onConfirmar={(paginas) => handleMarcar("hecho", undefined, paginas)}
+              />
+            ) : (
+              <Button
+                className="flex-1"
+                disabled={ocupado}
+                onClick={() => handleMarcar("hecho")}
+              >
+                {ocupado ? <Spinner /> : <Check className="size-4" />} Hecho
+              </Button>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
