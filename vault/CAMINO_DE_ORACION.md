@@ -32,7 +32,20 @@ El hábito queda **completo** cuando el usuario reza el Rosario entero (5 mister
 | Responsabilidad social de "cuidado", no punitiva | Finch | Completorium marcado en familia por un padre |
 | **No** se usa: HP/castigos, rankings de oración, recomendaciones colaborativas (LightFM), wearables | — | Contrarios al espíritu o sin datos suficientes |
 
-**XState no se agrega como dependencia**: las etapas se calculan con una función pura que *reproduce* el historial día por día (§4). Mismo modelo de estados y guards, sin estado mutable que se desincronice.
+### 2.1 Reutilizar open source antes que programar
+
+| Pieza | Librería (licencia) | Uso |
+|---|---|---|
+| Máquina de etapas | **XState 5.33.2** (MIT) | `setup().createMachine` con guards; el historial se reproduce con `transition()` (función pura) |
+| Fechas y zona horaria | **date-fns 4** (ya instalado) + **@date-fns/tz 1.5.0** (MIT) | "Hoy" en `APP_TZ`, recorrido día por día |
+| Fuerza del hábito | Fórmula de **Loop Habit Tracker** | Reimplementada (≈ 5 líneas): su código es Kotlin/GPLv3 y no se puede importar |
+| Trayectoria | **shadcn chart** sobre **Recharts 3.10.1** (MIT) | Gráfico de área de la constancia |
+| Mapa de calor | **react-activity-calendar 3.2.1** (MIT) | Días rezados / justificados, estilo Habitify |
+| Feedback | MagicUI Confetti (ya instalado) | Al subir de paso o al volver tras una recaída |
+| Alertas y controles | shadcn `alert`, `card`, `progress`, `dropdown-menu`, `toggle-group`, `checkbox`, `tabs` | Toda la UI |
+| Tests | `node:test` (Node 26, TS nativo) | Sin dependencias nuevas |
+
+Lógica propia, solo lo que no existe en ningún proyecto: la **escalera del Rosario** y las **reglas de recaída** (§3), que van como datos y guards de la máquina de XState.
 
 ## 3. Reglas de progresión
 
@@ -77,7 +90,7 @@ Un solo paso cada uno. Su avance se mide por etapas (§3.4). **Matutinum se habi
 
 ```
 src/lib/oracion/
-  engine.ts      función pura: catálogo, escalera, misterios, replay(historial) → estado
+  engine.ts      catálogo, escalera, misterios, máquina XState y replay(historial) → estado
   engine.test.ts node --test (Node 26 corre TS nativo)
   server.ts      Prisma + zona horaria: getEstadoOracion(usuarioId), registrar(...)
 prisma: PlanOracion (1 por usuario), RegistroOracion (usuario, oración, fecha, Hecho|Justificado, motivo, quién registró)
