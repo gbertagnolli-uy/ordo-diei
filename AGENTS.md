@@ -30,5 +30,6 @@ Varios agentes trabajan en paralelo sobre este repo. Para no pisar el trabajo de
    - Si solo agrega (`CREATE`, `ADD COLUMN`), aplicalo con `npx prisma db execute --file /tmp/cambio.sql` y después `npx prisma generate`.
    - Si no estás seguro, **no toques la base**: dejá anotado en el vault qué SQL falta y avisá al orquestador.
    - Los tests que escriben en la base real se saltean salvo `PERMITIR_TESTS_DB=1`; no lo actives sin que lo pida el usuario.
-7. Al terminar: registrá la lane en el vault (`vault/`) y dejá el worktree para que el orquestador lo limpie.
+7. Al terminar: registrá la lane en el vault (`vault/`).
+8. **Después de cada merge exitoso a `dev`, limpiá el worktree** (lo hace quien hizo el merge): desde `ordo-diei/`, `git worktree remove ../ordo-diei-lanes/lane-NN` y `git branch -d task/lane-NN-...`. Usá `-d`, no `-D`: si git dice que la rama no está mergeada, no la borres. Si el worktree tiene cambios sin commitear, no lo fuerces: avisá.
 <!-- END:git-workflow-rules -->
