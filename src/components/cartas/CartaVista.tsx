@@ -29,7 +29,12 @@ export interface CartaVistaProps {
   className?: string;
   onClick?: () => void;
   prioridad?: boolean;
+  mostrarTitulo?: boolean; // solo modo holo: nombre y grado bajo la carta
 }
+
+// Holo igual para todas las cartas (lane 49)
+const INTENSIDAD_HOLO = 0.5;
+const GLARE_HOLO = 0.5;
 
 // Colores de marco y brillo por rareza
 const ESTILOS_RAREZA: Record<
@@ -41,7 +46,6 @@ const ESTILOS_RAREZA: Record<
     textoBadge: string;
     badgeBg: string;
     preset: "bursts" | "stars" | "shards" | "cosmos" | "rainbow" | "swirl" | "glitter" | "gold";
-    intensidadBase: number;
     foilColor: string;
   }
 > = {
@@ -51,8 +55,7 @@ const ESTILOS_RAREZA: Record<
     fondo: "from-stone-900/90 via-stone-950 to-stone-900",
     textoBadge: "text-stone-300",
     badgeBg: "bg-stone-800/80 border-stone-600/50",
-    preset: "bursts",
-    intensidadBase: 0, // D1: Común sin holo
+    preset: "gold",
     foilColor: "#d6d3d1",
   },
   Buena: {
@@ -62,7 +65,6 @@ const ESTILOS_RAREZA: Record<
     textoBadge: "text-emerald-300",
     badgeBg: "bg-emerald-950/80 border-emerald-700/50",
     preset: "glitter",
-    intensidadBase: 0.4,
     foilColor: "#a7f3d0",
   },
   Perfecta: {
@@ -72,7 +74,6 @@ const ESTILOS_RAREZA: Record<
     textoBadge: "text-amber-200",
     badgeBg: "bg-amber-950/80 border-amber-600/60",
     preset: "gold",
-    intensidadBase: 0.85,
     foilColor: "#fef08a",
   },
   Celestial: {
@@ -81,8 +82,7 @@ const ESTILOS_RAREZA: Record<
     fondo: "from-slate-950 via-sky-950/40 to-slate-950",
     textoBadge: "text-sky-200",
     badgeBg: "bg-sky-950/80 border-sky-500/70",
-    preset: "cosmos",
-    intensidadBase: 1.0,
+    preset: "bursts",
     foilColor: "#bae6fd",
   },
 };
@@ -96,15 +96,13 @@ export function CartaVista({
   ancho = 280,
   className,
   onClick,
+  mostrarTitulo = true,
 }: CartaVistaProps) {
   const estilo = ESTILOS_RAREZA[carta.rareza];
   const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
   const esGloriosa = grado === 4;
   const esVenerada = grado >= 2;
 
-  // Multiplicador de intensidad de holo según Grado (D14: grado III más intensa)
-  const factorGrado = grado === 3 ? 1.3 : grado === 4 ? 1.4 : grado === 2 ? 1.15 : 1.0;
-  const intensidadHolo = Math.min(1.0, estilo.intensidadBase * factorGrado);
 
   // Modo BLOQUEADA: solo el arte en blanco y negro con el candado encima.
   // Llena el contenedor (que ya fija la proporción 63:88); nombre y progreso
@@ -174,7 +172,8 @@ export function CartaVista({
             image={imagenActual}
             alt={carta.nombre}
             preset={estilo.preset}
-            intensity={intensidadHolo}
+            intensity={INTENSIDAD_HOLO}
+            glare={GLARE_HOLO}
             width={ancho}
             foilColor={estilo.foilColor}
             frame={4}
@@ -213,6 +212,7 @@ export function CartaVista({
         </div>
 
         {/* Título y etiqueta de Grado */}
+        {mostrarTitulo && (
         <div className="mt-3 text-center">
           <h3 className="font-serif text-base font-bold text-stone-100 tracking-wide">
             {carta.nombre}
@@ -228,6 +228,7 @@ export function CartaVista({
             {TEXTOS_CARTAS.grados[grado]}
           </p>
         </div>
+        )}
       </div>
     );
   }

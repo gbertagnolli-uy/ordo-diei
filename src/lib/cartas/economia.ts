@@ -10,7 +10,7 @@ export interface ConfigRareza {
   pesoBanda: number;
   fragmentosRequeridos: number;
   valorFragmento: number; // Granos de Incienso equivalentes por fragmento
-  holoPreset: "glitter" | "gold" | "cosmos" | null;
+  holoPreset: "glitter" | "gold" | "bursts";
   holoIntensidad: number;
 }
 
@@ -19,29 +19,29 @@ export const CONFIG_RAREZAS: Record<RarezaCarta, ConfigRareza> = {
     pesoBanda: 60,
     fragmentosRequeridos: 10,
     valorFragmento: 1,
-    holoPreset: null,
-    holoIntensidad: 0,
+    holoPreset: "gold",
+    holoIntensidad: 0.5,
   },
   Buena: {
     pesoBanda: 28,
     fragmentosRequeridos: 25,
     valorFragmento: 2,
     holoPreset: "glitter",
-    holoIntensidad: 0.4,
+    holoIntensidad: 0.5,
   },
   Perfecta: {
     pesoBanda: 10,
     fragmentosRequeridos: 60,
     valorFragmento: 4,
     holoPreset: "gold",
-    holoIntensidad: 0.85,
+    holoIntensidad: 0.5,
   },
   Celestial: {
     pesoBanda: 2,
     fragmentosRequeridos: 150,
     valorFragmento: 10,
-    holoPreset: "cosmos",
-    holoIntensidad: 1.0,
+    holoPreset: "bursts",
+    holoIntensidad: 0.5,
   },
 } as const;
 
