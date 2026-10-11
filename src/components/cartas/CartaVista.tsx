@@ -30,6 +30,7 @@ export interface CartaVistaProps {
   onClick?: () => void;
   prioridad?: boolean;
   mostrarTitulo?: boolean; // solo modo holo: nombre y grado bajo la carta
+  blancoYNegro?: boolean; // solo modo holo: carta sin consagrar (arte B/N y candado, el foil sigue)
 }
 
 // Holo igual para todas las cartas (lane 49)
@@ -97,6 +98,7 @@ export function CartaVista({
   className,
   onClick,
   mostrarTitulo = true,
+  blancoYNegro = false,
 }: CartaVistaProps) {
   const estilo = ESTILOS_RAREZA[carta.rareza];
   const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
@@ -167,7 +169,7 @@ export function CartaVista({
         )}
 
         {/* Componente HoloCard oficial */}
-        <div className="relative">
+        <div className="relative max-w-full">
           <HoloCard
             image={imagenActual}
             alt={carta.nombre}
@@ -176,12 +178,22 @@ export function CartaVista({
             glare={GLARE_HOLO}
             width={ancho}
             foilColor={estilo.foilColor}
+            grayscale={blancoYNegro}
             frame={4}
             radius={12}
             className="shadow-2xl"
           />
 
+          {blancoYNegro && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="rounded-full bg-black/50 p-3 text-stone-100 shadow-lg">
+                <Lock className="size-6" />
+              </div>
+            </div>
+          )}
+
           {/* Insignia de Grado */}
+          {!blancoYNegro && (
           <div className="absolute top-3 left-3 pointer-events-none">
             <span
               className={cn(
@@ -197,6 +209,7 @@ export function CartaVista({
               {TEXTOS_CARTAS.gradosRomanos[grado]}
             </span>
           </div>
+          )}
 
           <div className="absolute top-3 right-3 pointer-events-none">
             <span

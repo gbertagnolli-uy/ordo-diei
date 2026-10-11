@@ -159,7 +159,7 @@ export function ModalAperturaSobre({
   return (
     <Dialog open={open} onOpenChange={handleCerrar}>
       <DialogContent
-        className="sm:max-w-md md:max-w-lg p-6 bg-card text-card-foreground border-stone-800 shadow-2xl focus:outline-hidden"
+        className="sm:max-w-md md:max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 bg-card text-card-foreground border-stone-800 shadow-2xl focus:outline-hidden"
         aria-live="polite"
       >
         <DialogHeader className="sr-only">
@@ -241,7 +241,8 @@ export function ModalAperturaSobre({
               initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.85, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
-              className="relative flex w-full max-w-[240px] justify-center"
+              // En pantallas bajas la carta se achica para que el modal entre sin recortarse
+              className="relative flex w-[min(240px,max(150px,calc((100dvh_-_28rem)*0.716)))] justify-center"
             >
               <CartaVista
                 carta={{
@@ -253,10 +254,12 @@ export function ModalAperturaSobre({
                     cartaActual.imagenUrl ??
                     `/cartas/${cartaActual.cartaClave}/${Math.max(1, cartaActual.gradoDespues)}.webp`,
                 }}
-                modo={cartaActual.gradoDespues >= 1 ? "holo" : "bloqueada"}
+                modo="holo"
+                blancoYNegro={cartaActual.gradoDespues < 1}
                 grado={cartaActual.gradoDespues as GradoCarta}
                 fragmentos={cartaActual.fragmentosDespues}
                 ancho={240}
+                className="min-w-0 max-w-full"
                 mostrarTitulo={false}
               />
             </motion.div>
