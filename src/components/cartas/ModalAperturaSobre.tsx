@@ -282,7 +282,7 @@ export function ModalAperturaSobre({
 
               {/* Hitos Especiales */}
               {cartaActual.desbloquea && (
-                <div className="flex items-center gap-1.5 p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 font-semibold text-xs mt-1 animate-bounce">
+                <div className="flex items-center gap-1.5 p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 font-semibold text-xs mt-1">
                   <CheckCircle2 className="size-3.5" />
                   <span>¡Nueva carta consagrada! (100 %)</span>
                 </div>

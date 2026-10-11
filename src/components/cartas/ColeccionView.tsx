@@ -474,7 +474,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                             grado={carta.grado}
                             fragmentos={carta.fragmentos}
                             ancho={240}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                            className="w-full h-full"
                           />
                         </div>)}
                         <div className="flex flex-col gap-1">
@@ -543,7 +543,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                           grado={carta.grado}
                           fragmentos={carta.fragmentos}
                           ancho={240}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          className="w-full h-full"
                         />
                       </div>)}
                       <div className="flex flex-col gap-1">

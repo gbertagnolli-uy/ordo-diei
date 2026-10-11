@@ -233,79 +233,57 @@ export function CartaVista({
     );
   }
 
-  // Modo PLANA (para grillas con inclinación CSS liviana, D8)
+  // Modo PLANA (grillas): llena el contenedor (que ya fija la proporción 63:88),
+  // igual que la bloqueada; el nombre lo muestra cada vista afuera de la carta.
   return (
     <div
       role="group"
       aria-label={`${carta.nombre} (${TEXTOS_CARTAS.grados[grado]})`}
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col items-center overflow-hidden rounded-xl border p-2.5 shadow-md select-none transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl",
-        "motion-reduce:hover:translate-y-0",
+        "group relative aspect-[63/88] w-full overflow-hidden rounded-lg border bg-stone-900 select-none",
         estilo.borde,
-        esVenerada && "ring-1 ring-amber-400/50",
-        esGloriosa && "ring-2 ring-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]",
+        esVenerada && "ring-1 ring-inset ring-amber-400/50",
+        esGloriosa && "ring-2 ring-inset ring-amber-400",
         className
       )}
-      style={{ width: `${ancho}px` }}
     >
-      {/* Halo sutil para Grado IV */}
-      {esGloriosa && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -inset-1 rounded-xl bg-gradient-to-tr from-amber-400/20 via-sky-300/20 to-amber-300/20 blur-sm"
-        />
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imagenActual}
+        alt={carta.nombre}
+        className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100"
+        draggable={false}
+      />
 
-      {/* Imagen de la carta con ratio 63:88 */}
-      <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg bg-stone-900">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imagenActual}
-          alt={carta.nombre}
-          className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100"
-          draggable={false}
-        />
-
-        {/* Sello de Grado en número romano */}
-        <div className="absolute top-2 left-2">
-          <span
-            className={cn(
-              "flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-serif font-bold tracking-wider backdrop-blur-md shadow border",
-              grado === 4
-                ? "bg-amber-400 text-stone-950 border-amber-200 font-extrabold"
-                : grado >= 2
-                ? "bg-stone-900/90 text-amber-300 border-amber-400/80"
-                : "bg-stone-900/80 text-stone-200 border-stone-600/70"
-            )}
-          >
-            {grado === 4 && <Sparkles className="size-2.5 text-stone-950" />}
-            {TEXTOS_CARTAS.gradosRomanos[grado]}
-          </span>
-        </div>
-
-        {/* Etiqueta de Rareza */}
-        <div className="absolute top-2 right-2">
-          <span
-            className={cn(
-              "rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-md shadow border",
-              estilo.badgeBg,
-              estilo.textoBadge
-            )}
-          >
-            {TEXTOS_CARTAS.rarezas[carta.rareza]}
-          </span>
-        </div>
+      {/* Sello de Grado en número romano */}
+      <div className="absolute top-2 left-2">
+        <span
+          className={cn(
+            "flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-serif font-bold tracking-wider backdrop-blur-md shadow border",
+            grado === 4
+              ? "bg-amber-400 text-stone-950 border-amber-200 font-extrabold"
+              : grado >= 2
+              ? "bg-stone-900/90 text-amber-300 border-amber-400/80"
+              : "bg-stone-900/80 text-stone-200 border-stone-600/70"
+          )}
+        >
+          {grado === 4 && <Sparkles className="size-2.5 text-stone-950" />}
+          {TEXTOS_CARTAS.gradosRomanos[grado]}
+        </span>
       </div>
 
-      {/* Pie con nombre */}
-      <div className="mt-2 w-full text-center">
-        <h4 className="font-serif text-sm font-semibold text-stone-200 line-clamp-1 group-hover:text-stone-100">
-          {carta.nombre}
-        </h4>
-        <p className="text-[11px] font-serif italic text-stone-400 line-clamp-1">
-          {TEXTOS_CARTAS.gradosCortos[grado]}
-        </p>
+      {/* Etiqueta de Rareza */}
+      <div className="absolute top-2 right-2">
+        <span
+          className={cn(
+            "rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-md shadow border",
+            estilo.badgeBg,
+            estilo.textoBadge
+          )}
+        >
+          {TEXTOS_CARTAS.rarezas[carta.rareza]}
+        </span>
       </div>
     </div>
   );
