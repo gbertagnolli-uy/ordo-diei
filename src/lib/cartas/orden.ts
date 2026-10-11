@@ -10,13 +10,21 @@ export const ORDEN_CANONICO_CARTAS: readonly string[] = [
   // --- 1. DIOS Y NUESTRO SEÑOR ---
   "sagrada-eucaristia",
   "sagrado-corazon-de-jesus",
-  "divina-misericordia",
   "santa-cruz",
-  "santo-rosario",
 
-  // --- 2. LA SANTÍSIMA VIRGEN MARÍA (después de Dios le sigue la Virgen María) ---
+  // --- 2. LA SANTÍSIMA VIRGEN MARÍA Y SUS FIESTAS LITÚRGICAS (SAN PÍO V) ---
+  // (Después de Dios le sigue la Santísima Virgen María)
   "santa-maria-madre-de-dios",
-  "inmaculado-corazon-de-maria",
+  "fiesta-purificacion-de-maria",
+  "fiesta-anunciacion-de-maria",
+  "fiesta-visitacion-de-maria",
+  "fiesta-santa-maria-de-las-nieves",
+  "fiesta-asuncion-de-maria",
+  "fiesta-natividad-de-maria",
+  "fiesta-dolores-de-maria",
+  "santo-rosario",
+  "fiesta-presentacion-de-maria",
+  "fiesta-inmaculada-concepcion",
 
   // --- 3. SANTOS DEL LETANIAE SANCTORUM (los primeros son los más importantes) ---
   // Precursor y Patriarcas

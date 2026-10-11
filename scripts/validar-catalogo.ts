@@ -16,11 +16,10 @@ interface ResultadoValidacion {
   errores: string[];
 }
 
-// Fechas litúrgicas universales verificadas por decreto eclesial reciente
-// (para aquellas no incluidas en la versión base del calendario de romcal)
+// Fechas litúrgicas históricas y tradicionales confirmadas (San Pío V)
+// o decretos específicos no incluidos en el calendario base de romcal
 const FECHAS_ECLESIALES_CONFIRMADAS: Record<string, string> = {
-  "san-carlos-acutis": "10-12", // Memoria litúrgica del Beato/Santo Carlos Acutis (12 de octubre)
-  "santa-faustina-kowalska": "10-05", // Memoria libre en el Calendario Romano General (Decreto Congregación Culto Divino, 2020)
+  "fiesta-visitacion-de-maria": "07-02", // Liturgia tradicional de San Pío V (2 de julio)
 };
 
 export function validarCatalogo(directorio?: string): ResultadoValidacion {
