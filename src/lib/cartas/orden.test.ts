@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { ORDEN_CANONICO_CARTAS, ordenarCartas, pesoCarta } from "./orden.ts";
+import { ORDEN_CANONICO_CARTAS, ordenarCartas, ordenarPorCelebracion, pesoCarta } from "./orden.ts";
 
 test("Orden canónico y litúrgico de cartas (Lane 43)", async (t) => {
   await t.test("Los misterios luminosos no están presentes en el catálogo ni en el orden canónico", () => {
@@ -186,4 +186,30 @@ test("Orden canónico y litúrgico de cartas (Lane 43)", async (t) => {
       ]
     );
   });
+});
+
+test("Orden por próxima celebración (Lane 48)", () => {
+  // 10 de octubre de 2026, 15:00 en Montevideo
+  const ahora = new Date("2026-10-10T18:00:00Z");
+  const cartas = [
+    { clave: "coro-tronos", categoria: "Angel", celebracion: null },
+    { clave: "san-jose", categoria: "Santo", celebracion: "03-19" },
+    { clave: "santo-rosario", categoria: "Tema", celebracion: "10-07" },
+    { clave: "san-lucas-evangelista", categoria: "Santo", celebracion: "10-18" },
+    { clave: "fiesta-inmaculada-concepcion", categoria: "Tema", celebracion: "12-08" },
+    { clave: "sagrada-eucaristia", categoria: "Tema", celebracion: null },
+    { clave: "san-francisco-de-asis", categoria: "Santo", celebracion: "10-10" },
+  ];
+  assert.deepEqual(
+    ordenarPorCelebracion(cartas, ahora, "America/Montevideo").map((c) => c.clave),
+    [
+      "san-francisco-de-asis", // hoy
+      "san-lucas-evangelista",
+      "fiesta-inmaculada-concepcion",
+      "san-jose", // el año que viene
+      "santo-rosario", // ya pasó: dentro de casi un año
+      "sagrada-eucaristia", // sin fecha, en orden canónico
+      "coro-tronos",
+    ]
+  );
 });

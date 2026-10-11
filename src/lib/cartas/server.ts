@@ -47,7 +47,7 @@ import {
   APP_TZ,
 } from "./eventos.ts";
 import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
-import { ordenarCartas } from "./orden.ts";
+import { ordenarPorCelebracion } from "./orden.ts";
 import { TEXTOS_CARTAS } from "./textos.ts";
 
 /** Período del reclamo de bienvenida (D23): uno solo por usuario, para siempre */
@@ -174,7 +174,7 @@ export async function listarCartasUsuario(usuarioId: number) {
   const progresoPorCarta = new Map(coleccionUsuario.map((cu) => [cu.cartaId, cu]));
   const ahora = new Date();
 
-  const cartasOrdenadas = ordenarCartas(cartasDb);
+  const cartasOrdenadas = ordenarPorCelebracion(cartasDb, ahora);
 
   const cartasVisibles: CartaListada[] = cartasOrdenadas.map((carta) => {
     const progreso = progresoPorCarta.get(carta.id);
@@ -210,7 +210,7 @@ export async function obtenerDetalleCarta(
     }),
     prisma.carta.findMany({
       where: { activa: true },
-      select: { clave: true, categoria: true },
+      select: { clave: true, categoria: true, celebracion: true },
     }),
     prisma.movimientoFragmento.aggregate({
       where: {
@@ -252,8 +252,8 @@ export async function obtenerDetalleCarta(
       },
     }));
 
-  // Navegación secuencial dentro del catálogo siguiendo el orden litúrgico
-  const listaOrdenada = ordenarCartas(cartasLista);
+  // Navegación secuencial en el mismo orden que el álbum (próxima celebración primero)
+  const listaOrdenada = ordenarPorCelebracion(cartasLista, ahora);
   const idx = listaOrdenada.findIndex((c) => c.clave === clave);
   const anterior = idx > 0 ? listaOrdenada[idx - 1].clave : null;
   const siguiente = idx >= 0 && idx < listaOrdenada.length - 1 ? listaOrdenada[idx + 1].clave : null;
@@ -732,7 +732,7 @@ async function cartasElegiblesCumple(tx: Prisma.TransactionClient | typeof prism
     }),
   ]);
   const fragmentos = new Map(propias.map((p) => [p.cartaId, p.fragmentos]));
-  return ordenarCartas(
+  return ordenarPorCelebracion(
     cartas.filter((c) => gradoDe(fragmentos.get(c.id) ?? 0, c.fragmentosRequeridos) === 0)
   ).map((c) => ({ ...c, fragmentos: fragmentos.get(c.id) ?? 0 }));
 }
