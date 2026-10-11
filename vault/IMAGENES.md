@@ -29,3 +29,10 @@
 - Perfiles de optimización por nombre (`PERFILES_IMAGEN`): `general` (1600 px) y `carta` (1200 px, ≤ 300 KB: el servidor baja la calidad WebP 82 → 42 hasta entrar). El navegador comprime antes con el mismo perfil.
 - `/api/upload` devuelve `{ url, bytes, ancho, alto }`; el panel muestra "Optimizada: X KB → Y KB" y solo avisa si aun optimizada supera 300 KB. Acepta también `.avif`.
 - Prueba en Chromium headless, subiendo desde "Nueva carta": JPEG de ruido de 3247 KB (2520×3520) → 290 KB (816×1140). Imagen de prueba borrada de la base.
+
+## Lane 56 — recorte automático del arte de cartas
+
+Pedido (textual): "cuando se sube una imagen a una carta, además de optimizarla se debe recortar para que tenga la proporcion correcta y no aparezcan mensajes como esteo: ' Proporción 1628×1920 difiere del formato retrato 63:88.'"
+
+- `lib/archivos.ts`: el perfil `carta` tiene `proporcion: 63/88`; `guardarImagen` aplica EXIF y recorta centrado al máximo rectángulo 63:88 antes de achicar y pasar a WebP.
+- `EspacioImagenGrado.tsx`: se quitó el aviso de proporción (ya no hace falta).
