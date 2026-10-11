@@ -6,6 +6,8 @@
 // 4. Los Santos Ángeles y Coros celestiales.
 // 5. Los 15 misterios tradicionales del Rosario (Gozosos, Dolorosos, Gloriosos).
 
+import { APP_TZ, diasHastaFiesta } from "./eventos.ts";
+
 export const ORDEN_CANONICO_CARTAS: readonly string[] = [
   // --- 1. DIOS Y NUESTRO SEÑOR ---
   "sagrada-eucaristia",
@@ -144,4 +146,17 @@ export function ordenarCartas<T extends { clave: string; categoria?: string }>(
     if (pa !== pb) return pa - pb;
     return a.clave.localeCompare(b.clave);
   });
+}
+
+/**
+ * Ordena por la próxima celebración (Lane 48): primero la de hoy, después las que están
+ * por cumplirse; las cartas sin fecha van al final. Empates y cartas sin fecha: orden canónico.
+ */
+export function ordenarPorCelebracion<
+  T extends { clave: string; categoria?: string; celebracion?: string | null },
+>(cartas: T[], ahora: Date = new Date(), timezone: string = APP_TZ): T[] {
+  const dias = new Map(
+    cartas.map((c) => [c.clave, c.celebracion ? diasHastaFiesta(c.celebracion, ahora, timezone) : Infinity])
+  );
+  return ordenarCartas(cartas).sort((a, b) => dias.get(a.clave)! - dias.get(b.clave)!);
 }
