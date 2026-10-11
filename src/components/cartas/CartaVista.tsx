@@ -181,7 +181,6 @@ export function CartaVista({
             grayscale={blancoYNegro}
             frame={4}
             radius={12}
-            className="shadow-2xl"
           />
 
           {blancoYNegro && (
