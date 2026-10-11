@@ -5,6 +5,7 @@ import {
   CONFIG_RAREZAS,
   SOBRE_MEDITACION,
   SOBRE_REVELACION,
+  type ConfigSobre,
   type RarezaCarta,
 } from "./economia.ts";
 
@@ -129,101 +130,67 @@ export function particionarFragmentos(
   return [p1, p2, p3];
 }
 
-/**
- * Sortea un Sobre de Meditación (D2):
- * - Costo y fragmentos en SOBRE_MEDITACION (40 pts → 8 fragmentos)
- * - 1-3 cartas
- * - Solo bandas Común y Buena
- */
-export function sortearSobreMeditacion(
-  pool: CartaSorteable[],
-  rng: RngFn = Math.random
-): ResultadoSobre {
-  const rarezasPermitidas = SOBRE_MEDITACION.rarezasPermitidas;
-  // Determinar cuántas cartas (1, 2 o 3)
-  const numPartes = 1 + Math.floor(rng() * 3);
-  const partes = particionarFragmentos(SOBRE_MEDITACION.fragmentosTotal, numPartes, rng);
+/** Junta fragmentos sueltos por carta y los devuelve como ítems del sobre */
+function juntarItems(
+  acumulado: Map<number, { carta: CartaSorteable; cantidad: number }>
+): FragmentoOtorgado[] {
+  return Array.from(acumulado.values()).map(({ carta, cantidad }) => ({
+    cartaId: carta.id,
+    cartaClave: carta.clave,
+    rareza: carta.rareza,
+    cantidad,
+  }));
+}
 
-  const acumuladoPorCarta = new Map<number, { carta: CartaSorteable; cantidad: number }>();
-
-  for (const cantidad of partes) {
-    const carta = sortearCarta(pool, rarezasPermitidas, rng);
-    const existente = acumuladoPorCarta.get(carta.id);
-    if (existente) {
-      existente.cantidad += cantidad;
-    } else {
-      acumuladoPorCarta.set(carta.id, { carta, cantidad });
-    }
-  }
-
-  const items: FragmentoOtorgado[] = Array.from(acumuladoPorCarta.values()).map(
-    ({ carta, cantidad }) => ({
-      cartaId: carta.id,
-      cartaClave: carta.clave,
-      rareza: carta.rareza,
-      cantidad,
-    })
-  );
-
-  return {
-    nombreSobre: SOBRE_MEDITACION.nombre,
-    costoPuntos: SOBRE_MEDITACION.costoPuntos,
-    fragmentosTotal: SOBRE_MEDITACION.fragmentosTotal,
-    items,
-  };
+function sumar(
+  acumulado: Map<number, { carta: CartaSorteable; cantidad: number }>,
+  carta: CartaSorteable,
+  cantidad: number
+) {
+  const existente = acumulado.get(carta.id);
+  if (existente) existente.cantidad += cantidad;
+  else acumulado.set(carta.id, { carta, cantidad });
 }
 
 /**
- * Sortea un Sobre de Revelación (D2):
- * - Costo y fragmentos en SOBRE_REVELACION (100 pts → 12 fragmentos)
- * - Garantiza garantiaMinFragmentos (6) de una carta Perfecta o Celestial (sorteo 10:2)
- * - El resto sale del sorteo completo (todas las bandas)
+ * Sortea un sobre cualquiera según su configuración (D2):
+ * - Con `garantiaRarezas`: `garantiaMinFragmentos` de una carta de esas rarezas (sorteo por bandas) y el
+ *   resto en 1 o 2 tiradas del pool completo.
+ * - Sin garantía: los `fragmentosTotal` se parten en `cartasMin`–`cartasMax` cartas de `rarezasPermitidas`.
  */
-export function sortearSobreRevelacion(
+export function sortearSobre(
+  config: ConfigSobre,
   pool: CartaSorteable[],
   rng: RngFn = Math.random
 ): ResultadoSobre {
-  const garantiaMin = SOBRE_REVELACION.garantiaMinFragmentos;
-  const restoFragmentos = SOBRE_REVELACION.fragmentosTotal - garantiaMin;
+  const acumulado = new Map<number, { carta: CartaSorteable; cantidad: number }>();
 
-  // 1. Carta garantizada Perfecta o Celestial
-  const cartaGarantizada = sortearCarta(pool, SOBRE_REVELACION.garantiaRarezas, rng);
-
-  const acumuladoPorCarta = new Map<number, { carta: CartaSorteable; cantidad: number }>();
-  acumuladoPorCarta.set(cartaGarantizada.id, {
-    carta: cartaGarantizada,
-    cantidad: garantiaMin,
-  });
-
-  // 2. Fragmentos restantes: repartidos en 1 o 2 tiradas del pool completo
-  const numPartesResto = 1 + Math.floor(rng() * 2); // 1 o 2 partes
-  const partesResto = particionarFragmentos(restoFragmentos, numPartesResto, rng);
-
-  for (const cantidad of partesResto) {
-    const carta = sortearCarta(pool, undefined, rng);
-    const existente = acumuladoPorCarta.get(carta.id);
-    if (existente) {
-      existente.cantidad += cantidad;
-    } else {
-      acumuladoPorCarta.set(carta.id, { carta, cantidad });
-    }
+  if (config.garantiaRarezas && config.garantiaMinFragmentos) {
+    sumar(acumulado, sortearCarta(pool, config.garantiaRarezas, rng), config.garantiaMinFragmentos);
+    const resto = config.fragmentosTotal - config.garantiaMinFragmentos;
+    const partesResto = particionarFragmentos(resto, 1 + Math.floor(rng() * 2), rng);
+    for (const cantidad of partesResto) sumar(acumulado, sortearCarta(pool, undefined, rng), cantidad);
+  } else {
+    const rango = config.cartasMax - config.cartasMin + 1;
+    const numPartes = config.cartasMin + Math.floor(rng() * rango);
+    const partes = particionarFragmentos(config.fragmentosTotal, numPartes, rng);
+    for (const cantidad of partes) sumar(acumulado, sortearCarta(pool, config.rarezasPermitidas, rng), cantidad);
   }
 
-  const items: FragmentoOtorgado[] = Array.from(acumuladoPorCarta.values()).map(
-    ({ carta, cantidad }) => ({
-      cartaId: carta.id,
-      cartaClave: carta.clave,
-      rareza: carta.rareza,
-      cantidad,
-    })
-  );
-
   return {
-    nombreSobre: SOBRE_REVELACION.nombre,
-    costoPuntos: SOBRE_REVELACION.costoPuntos,
-    fragmentosTotal: SOBRE_REVELACION.fragmentosTotal,
-    items,
+    nombreSobre: config.nombre,
+    costoPuntos: config.costoPuntos,
+    fragmentosTotal: config.fragmentosTotal,
+    items: juntarItems(acumulado),
   };
+}
+
+export function sortearSobreMeditacion(pool: CartaSorteable[], rng: RngFn = Math.random): ResultadoSobre {
+  return sortearSobre(SOBRE_MEDITACION, pool, rng);
+}
+
+export function sortearSobreRevelacion(pool: CartaSorteable[], rng: RngFn = Math.random): ResultadoSobre {
+  return sortearSobre(SOBRE_REVELACION, pool, rng);
 }
 
 /**

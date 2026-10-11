@@ -47,7 +47,7 @@ export interface CartaAfectadaCompra {
 }
 
 export interface ResultadoCompraSobre {
-  tipoSobre?: "meditacion" | "revelacion";
+  tipoSobre?: "meditacion" | "devocion" | "revelacion" | "gloria";
   nombreSobre?: string;
   puntosGastados?: number;
   nuevoSaldoPuntos: number;

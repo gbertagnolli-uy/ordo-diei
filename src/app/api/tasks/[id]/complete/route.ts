@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { estrellasPorRacha } from "@/lib/cartas/racha";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -82,7 +83,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
-    const awardedStar = false;
 
     const todayDate = new Date();
     todayDate.setUTCHours(0, 0, 0, 0);
@@ -156,16 +156,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
       }
 
-      if (awardedStar) {
-        feedback += " ¡Ganaste 1 Estrella por tu racha de 7 días!";
-      }
     } else {
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
 
     let wonSurprise = false;
-    let earnedStars = 0;
+    // 1 estrella cada 7 días de racha (vault/ECONOMIA_CARTAS.md §8): la racha solo sube al cambiar de día
+    const earnedStars = isNewStreak ? estrellasPorRacha(asignado?.streakDays ?? 0, newStreakDays) : 0;
+    if (earnedStars > 0) {
+      feedback += ` ¡Ganaste ${earnedStars} ${earnedStars === 1 ? "Estrella" : "Estrellas"} por tu racha de ${newStreakDays} días!`;
+    }
 
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
@@ -189,6 +190,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             increment: rewardPoints
           },
           streakDays: newStreakDays,
+          stars: { increment: earnedStars },
           lastTaskCompletedDate: now,
           surprises: {
             increment: wonSurprise ? 1 : 0
@@ -212,6 +214,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
+      earnedStars,
       isHappyHour
     });
   } catch (error) {

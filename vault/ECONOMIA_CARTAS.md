@@ -1,6 +1,7 @@
 # Economía de las cartas: reclamos, regalo de bienvenida y dificultad por rareza
 
 > Pedido (2026-10-10), registrado **completo y textual** en §1. Decisiones del usuario en §2, hallazgos en §3, reglas nuevas en §4 y tabla de dificultad en §5.
+> **Lane 53 (2026-10-11):** sobres más caros, sobres nuevos, estrellas, XP mínimo, descuento por racha y fiesta parcial en Perfectas y Celestiales: ver **§8**, que reemplaza los precios y sobres de §4.6 y el regalo de fiesta de D21.
 > Amplía y en partes reemplaza las decisiones D2, D5 y D6 de [`CARTAS_CATOLICAS.md`](CARTAS_CATOLICAS.md). Referencia del componente en [`cartas/ref/electric-border.md`](cartas/ref/electric-border.md).
 
 Rama: `task/lane-47-economia-reclamos` · Worktree `../ordo-diei-lanes/lane-47` · base `dev`. La implementa el orquestador (Claude).
@@ -131,3 +132,76 @@ Lectura: una Celestial con fecha se consigue gratis en su fiesta, pero si se pie
 | 2026-10-10 | Plan y decisiones | Este documento |
 | 2026-10-10 | Lane 47 implementada (`task/lane-47-economia-reclamos`) | **Base:** SQL aditivo aplicado con `prisma db execute` (enums `Bienvenida`, columna `Cartas_Usuario.Grado_Reclamado` con las desbloqueadas existentes llevadas a su grado; había 0). **Código:** todo lo de §6; `otorgarFragmentos` reemplaza 5 copias del upsert. De paso: el modal de apertura pedía el arte por `/cartas/<clave>/<grado>.webp` y el control de la lane 39 lo rechazaba (salía gris) → el servidor manda `imagenUrl` del grado visible; el modal mostraba a color cartas todavía bloqueadas → `bloqueada`; la compra directa mostraba "+undefined fragmentos" (`data.cantidad`) → `cantidadFinal`; "Ver mi colección" no reiniciaba la animación del modal. **Verificación:** `npm test` 59 + 3 saltados (los de base no se corrieron: necesitan `PERMITIR_TESTS_DB=1`; se actualizaron a las reglas nuevas), `tsc`, eslint de lo tocado y `next build` OK. E2E con `next start` en :3147 y un usuario temporal (borrado, 0 filas): bienvenida (3 Comunes distintas), cumpleaños con selector (53 elegibles → carta elegida), compra de 10 fragmentos que deja la carta al 100 % **sin** desbloquear, reclamo desde la grilla (Grado III) y desde el detalle (desbloqueo), borde eléctrico en banner, grilla y detalle (1440 y 390). **No probado en navegador:** el reclamo de fiesta (hoy, 10-10, no hay ninguna carta con fiesta; lo cubre `eventos_integracion.test.ts`). |
 | 2026-10-10 | Seed del catálogo (pedido: "corré el seed del catálogo y mergeá a dev") | `npx tsx scripts/seed-cartas.ts` desde el worktree de la lane 47: 79 procesadas, 40 insertadas, 36 actualizadas, 23 desactivadas (ninguna tenía dueños), 3 omitidas por `editadaManual` (san-jose, san-pedro-apostol, sagrada-eucaristia: conservan la edición del admin). Quedan **80 activas**: las 79 del catálogo + "Maternitatis Beatæ Mariæ Virginis" (creada a mano por un admin, no se toca). El Santo Rosario ya tiene la frase de San Pío V. |
+
+---
+
+## 8. Lane 53: sobres más caros, estrellas, XP y descuento por racha (2026-10-11)
+
+Rama `task/lane-53-economia-sobres` · worktree `../ordo-diei-lanes/lane-53` · base `dev`. Sin cambios de esquema ni de base.
+
+### 8.1 Pedido del usuario (textual)
+
+> Quiero trabajar en la economia de la tienda de cartas. Necesito que los sobres tengan mayor valor de modo que no sea tan facil commprar un sobre.
+>
+> Ademas, quiero que existan mas tipos de sobres mas caros que los actuales para cartas de mayor rareza.
+>
+> Hay usuarios que ya tienen 900 puntos generados de antes de que existiera el sistema de cartas si los sobres son demasiados baratos, podran comprar varios.
+>
+> Mas alla de eso, necesito revisar la relacion entre commpletar tareas o habitos y el precio de un sobre.
+>
+> Un sobre comun deberia requerir finalizar varias tareas, no necesariamente de varios dias, pero tampoco hacer una tarea sola y ya poder comprar un sobre. Deberia tener un minimo de 3 tareas, pero evaluado en cantidad sino en puntos.
+>
+> Ademas, los sobres de cartas de mayor rareza deberian requerir otro tipo de monedas para comprarlos, monedas diferentes a los puntos, se deben usar las "monedas" que ya existen en la app como estrellas. Tambien algunas cartas deberian requerir un minimo de XP, al menos 500 o 1000 de XP para las perfectas y mas de 2000 XP para las celestiales.
+>
+> Los dias de racha deberian regalar un porcentaje de descuento de 1% por dia de racha, con un maxixmo de 30% de descuento en la apertura de sobres.
+>
+> Evalua esta economia de juego, para entender el pacing, si realmente se puede avanzar haciendo tareas y habitos, y si por el contrario no es demasiado facil obtener cartas.
+>
+> Entiendo que un sobre no contiene cartas sino fragmentos, asi que ayudame a evaluar la mejor economia para mantener motivadaos  los usuarios pero no regalarles todas las cartas facilmente.
+
+Respuestas posteriores: "Me parece bien lo que propones. Tambien que la fiesta de el 50% de las perfectas y el 25% de las celestiales." · "Esta bien con los valores propuestos anteriormente. Implementalo."
+
+### 8.2 Diagnóstico
+
+- Una tarea vale ~20 pts (base `max(10, minutos)`, racha +2/día hasta +20, fin de semana u hora feliz +10). Un hábito, 5 pts y 10 XP por día (la oración no da puntos).
+- Antes: Meditación 40 pts (2 tareas) y Revelación 100 pts (5 tareas). Con 900 pts, 22 y 9 sobres. Comprar directo era aún más barato (una Común, 40 pts).
+- Las estrellas casi no se ganaban (+1 por cada 100 pts en una sola tarea, +10 por premio entregado). El código de "1 estrella por racha de 7 días" estaba apagado (`awardedStar = false`).
+- La racha paga dos veces: sube los puntos por tarea (~10 → ~30) y ahora además descuenta. Por eso el precio base se fijó para que, con 30 % y racha máxima, el sobre común siga costando ~3 tareas de ese tamaño.
+- `streakDays` solo se actualiza al completar una tarea: si no se juega, el número guardado sigue alto. El descuento usa la **racha efectiva** (`racha.ts`): 0 si la última tarea fue antes de ayer en `APP_TZ`.
+
+### 8.3 Reglas
+
+| Sobre | Puntos | Estrellas | XP mínimo | Contenido |
+|---|---|---|---|---|
+| Meditación | 120 (84 con 30 %) | 0 | 0 | 8 fragmentos, 1–3 cartas Común/Buena |
+| Devoción (nuevo) | 200 | 0 | 0 | 10 fragmentos, 1–3 cartas Buena/Perfecta |
+| Revelación | 250 | 1 | 1.000 | 12 fragmentos, 6 garantizados de Perfecta/Celestial |
+| Gloria (nuevo) | 700 | 3 | 2.500 | 20 fragmentos de una misma Celestial |
+
+- **Precio por fragmento (puntos):** Común 12, Buena 18, Perfecta 24. **La Celestial no se compra con puntos:** 1 estrella por cada 5 fragmentos (en múltiplos de 5, sin tope diario), o Incienso. El tope de 10 fragmentos por carta y día con puntos se mantiene.
+- **XP mínimo** (`xpTotal` = puntos acumulados + XP de hábitos, no se gasta): Perfecta 1.000, Celestial 2.500 (nivel 6). Rige para comprar fragmentos de esa rareza (cualquier moneda) y para el regalo de fiesta. Los sobres piden el XP de su rareza principal.
+- **Descuento por racha:** 1 % por día de racha efectiva, máximo 30 %, solo en los puntos de los sobres (no en estrellas ni XP, no en compra directa).
+- **Estrellas por racha:** +1 cada vez que la racha llega a un múltiplo de 7 días (`estrellasPorRacha`, al completar la tarea). Se suman a las +10 por premio entregado.
+- **Fiesta (reemplaza D21):** Común y Buena, la carta entera; **Perfecta 50 %** (30 fragmentos) y **Celestial 25 %** (38), redondeado hacia arriba. Perfecta y Celestial piden el XP mínimo; sin él, el botón del banner queda deshabilitado con el aviso. Cumpleaños y bienvenida no cambian.
+- **Ajuste respecto de lo hablado:** la Devoción salió a **200 pts** (no 180). A 180 valía 1,09 de lo que costaba comprando directo; a 200 vale 0,98 y se mantiene la regla de que un sobre nunca rinde más que comprar directo.
+
+### 8.4 Ritmo estimado (simulación en `simulacion.ts`, a 20 pts/día)
+
+| Meta | Puntos | Días |
+|---|---|---|
+| Común | 120 | 6 |
+| Buena | 450 | 22,5 |
+| Perfecta | 1.440 | 72 (XP 1.000) |
+| Celestial por sobres de Gloria (7,5) | 5.250 + 22,5 ⭐ | 262 (XP 2.500) |
+
+Rendimiento de cada sobre sobre la compra directa: Meditación 0,93 · Devoción 0,98 · Revelación 1,01 (+1 ⭐) · Gloria 1,14 (+3 ⭐). XP de 2.500 en ~7 semanas con 1 tarea y 2 hábitos por día; el cuello de botella de una Celestial son los puntos y las estrellas, no el XP.
+
+### 8.5 Cambios de código
+
+`economia.ts` (`SOBRES`, precios, `XP_MINIMO_RAREZA`, descuento) · `sorteo.ts` (`sortearSobre` genérico) · `racha.ts` (nuevo) · `eventos.ts` (`regaloFiesta(requeridos, rareza)`) · `server.ts` (`comprarSobre` con XP, estrellas y descuento; compra con `estrellas`; XP en fiesta; `listarCartasUsuario` y `eventosDeHoy` con estrellas, XP y descuento) · `/api/cartas/comprar` · `/api/tasks/[id]/complete` (estrellas por racha) · `TiendaCartasView` (cuatro sobres desde una sola definición, descuento, requisitos, moneda Estrellas), `ColeccionView` (saldo de estrellas), `BannerEventosCartas` · `textos.ts` · tests.
+
+### 8.6 Registro
+
+| Fecha | Qué | Notas |
+|---|---|---|
+| 2026-10-11 | Lane 53 implementada | `npm test` 62 + 3 saltados (los de base necesitan `PERMITIR_TESTS_DB=1`; se actualizaron a los precios nuevos pero no se corrieron), `tsc` y `next build` OK. No probado en navegador ni contra la base. |

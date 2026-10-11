@@ -1,13 +1,16 @@
-// Simulación de la economía de cartas católicas: dificultad por rareza (vault/ECONOMIA_CARTAS.md §5)
+// Simulación de la economía de cartas católicas: dificultad por rareza (vault/ECONOMIA_CARTAS.md §5 y §8)
 
 import {
   CONFIG_RAREZAS,
-  SOBRE_MEDITACION,
-  SOBRE_REVELACION,
+  SOBRES,
+  SOBRE_GLORIA,
+  TIPOS_SOBRE,
   TOPE_DIARIO_FRAGMENTOS_PUNTOS,
   precioFragmentoEnPuntos,
   MULTIPLICADOR_TOPE_FRAGMENTOS,
+  type ConfigSobre,
   type RarezaCarta,
+  type TipoSobre,
 } from "./economia.ts";
 
 const RAREZAS: RarezaCarta[] = ["Comun", "Buena", "Perfecta", "Celestial"];
@@ -19,6 +22,8 @@ export interface DificultadRareza {
   fragmentos: number;
   ptsDesbloquear: number;
   diasDesbloquear: number;
+  /** Estrellas que hacen falta además de los puntos (Celestial, por sobres de Gloria) */
+  estrellasDesbloquear: number;
   /** Días mínimos por el tope diario de compra con puntos, aunque sobren puntos */
   diasMinimosPorTope: number;
   ptsGradoIV: number;
@@ -28,9 +33,8 @@ export interface DificultadRareza {
 export interface ResultadoSimulacion {
   ritmoPtsPorDia: number;
   rarezas: DificultadRareza[];
-  /** Valor esperado de cada sobre a precio de compra directa, sobre su costo (1 = igual) */
-  rendimientoSobreMeditacion: number;
-  rendimientoSobreRevelacion: number;
+  /** Valor esperado de cada sobre a precio de compra directa, sobre su costo en puntos (1 = igual) */
+  rendimientoSobres: Record<TipoSobre, number>;
 }
 
 /** Precio medio por fragmento de un sorteo por bandas restringido a `rarezas` */
@@ -39,33 +43,44 @@ function precioMedioBandas(rarezas: readonly RarezaCarta[]): number {
   return rarezas.reduce((s, r) => s + CONFIG_RAREZAS[r].pesoBanda * precioFragmentoEnPuntos(r), 0) / pesoTotal;
 }
 
+/** Valor esperado de un sobre a precio de compra directa */
+function valorSobre(config: ConfigSobre): number {
+  if (config.garantiaRarezas && config.garantiaMinFragmentos) {
+    return (
+      config.garantiaMinFragmentos * precioMedioBandas(config.garantiaRarezas) +
+      (config.fragmentosTotal - config.garantiaMinFragmentos) * precioMedioBandas(RAREZAS)
+    );
+  }
+  return config.fragmentosTotal * precioMedioBandas(config.rarezasPermitidas ?? RAREZAS);
+}
+
 export function simularEconomia(ritmoPtsPorDia: number): ResultadoSimulacion {
   const rarezas = RAREZAS.map((rareza): DificultadRareza => {
     const fragmentos = CONFIG_RAREZAS[rareza].fragmentosRequeridos;
-    const ptsDesbloquear = fragmentos * precioFragmentoEnPuntos(rareza);
+    // La Celestial no se compra con puntos: se junta con sobres de Gloria (puntos + estrellas)
+    const packsGloria = fragmentos / SOBRE_GLORIA.fragmentosTotal;
+    const esCelestial = rareza === "Celestial";
+    const ptsDesbloquear = esCelestial
+      ? packsGloria * SOBRE_GLORIA.costoPuntos
+      : fragmentos * precioFragmentoEnPuntos(rareza);
     const ptsGradoIV = ptsDesbloquear * MULTIPLICADOR_TOPE_FRAGMENTOS;
     return {
       rareza,
       fragmentos,
       ptsDesbloquear,
       diasDesbloquear: redondear(ptsDesbloquear / ritmoPtsPorDia),
-      diasMinimosPorTope: Math.ceil(fragmentos / TOPE_DIARIO_FRAGMENTOS_PUNTOS),
+      estrellasDesbloquear: esCelestial ? packsGloria * SOBRE_GLORIA.costoEstrellas : 0,
+      diasMinimosPorTope: esCelestial ? 1 : Math.ceil(fragmentos / TOPE_DIARIO_FRAGMENTOS_PUNTOS),
       ptsGradoIV,
       diasGradoIV: redondear(ptsGradoIV / ritmoPtsPorDia),
     };
   });
 
-  const valorMeditacion = SOBRE_MEDITACION.fragmentosTotal * precioMedioBandas(SOBRE_MEDITACION.rarezasPermitidas);
-  const valorRevelacion =
-    SOBRE_REVELACION.garantiaMinFragmentos * precioMedioBandas(SOBRE_REVELACION.garantiaRarezas) +
-    (SOBRE_REVELACION.fragmentosTotal - SOBRE_REVELACION.garantiaMinFragmentos) * precioMedioBandas(RAREZAS);
+  const rendimientoSobres = Object.fromEntries(
+    TIPOS_SOBRE.map((tipo) => [tipo, Math.round((valorSobre(SOBRES[tipo]) / SOBRES[tipo].costoPuntos) * 100) / 100])
+  ) as Record<TipoSobre, number>;
 
-  return {
-    ritmoPtsPorDia,
-    rarezas,
-    rendimientoSobreMeditacion: Math.round((valorMeditacion / SOBRE_MEDITACION.costoPuntos) * 100) / 100,
-    rendimientoSobreRevelacion: Math.round((valorRevelacion / SOBRE_REVELACION.costoPuntos) * 100) / 100,
-  };
+  return { ritmoPtsPorDia, rarezas, rendimientoSobres };
 }
 
 /**

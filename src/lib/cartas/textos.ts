@@ -57,13 +57,25 @@ export const TEXTOS_CARTAS = {
     meditacion: {
       nombre: "Sobre de Meditación",
       descripcion: "8 fragmentos de cartas comunes o buenas.",
-      precio: "40 puntos",
+      destacado: "Ideal para completar los misterios del Rosario y santos protectores.",
+    },
+    devocion: {
+      nombre: "Sobre de Devoción",
+      descripcion: "10 fragmentos de cartas buenas o perfectas.",
+      destacado: "El camino para llegar a las Perfectas sin esperar su fiesta.",
     },
     revelacion: {
       nombre: "Sobre de Revelación",
       descripcion: "12 fragmentos, con al menos 6 de una carta Perfecta o Celestial garantizada.",
-      precio: "100 puntos",
+      destacado: "Garantiza al menos 6 fragmentos de una carta Perfecta o Celestial.",
     },
+    gloria: {
+      nombre: "Sobre de Gloria",
+      descripcion: "20 fragmentos de una misma carta Celestial.",
+      destacado: "La única forma de reunir una Celestial sin esperar su fiesta.",
+    },
+    requiereXp: (xp: number) => `Requiere ${xp} XP en total.`,
+    descuentoRacha: (pct: number) => `Tu racha te da ${pct} % de descuento en los sobres (1 % por día, hasta 30 %).`,
   },
 
   // Pistas de revelación progresiva (D13)
@@ -79,7 +91,7 @@ export const TEXTOS_CARTAS = {
   eventos: {
     fiestaAviso: (nombre: string) => `Hoy se celebra ${nombre}`,
     fiestaPremio: "Reclamar la carta",
-    fiestaPremioRepetida: "Reclamar +100 %",
+    fiestaPremioRepetida: "Reclamar el regalo",
     fiestaDetalle: "Si no la reclamás hoy, no la ganás.",
     fiestaReclamado: "Regalo de la fiesta reclamado",
     cumpleAviso: "¡Feliz cumpleaños! Elegí una carta de regalo",
