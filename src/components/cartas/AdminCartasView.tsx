@@ -9,6 +9,7 @@ import {
   Plus,
   Pencil,
   Archive,
+  Trash2,
   RefreshCw,
   ArrowLeft,
   ShieldCheck,
@@ -18,6 +19,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -52,6 +61,7 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
   const [estadoFiltro, setEstadoFiltro] = useState<string>("Todas");
 
   const [cargandoAccion, setCargandoAccion] = useState<number | null>(null);
+  const [cartaAEliminar, setCartaAEliminar] = useState<CartaAdminItem | null>(null);
   const [notificacion, setNotificacion] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null);
 
   const cartasFiltradas = useMemo(() => {
@@ -158,6 +168,30 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
       setNotificacion({ tipo: "error", texto: msg });
     } finally {
       setCargandoAccion(null);
+    }
+  };
+
+  // Eliminar carta definitivamente
+  const eliminarCarta = async (c: CartaAdminItem) => {
+    try {
+      setCargandoAccion(c.id);
+      setNotificacion(null);
+
+      const res = await fetch(`/api/cartas/admin?id=${c.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Error al eliminar la carta");
+      }
+
+      setCartas((prev) => prev.filter((item) => item.id !== c.id));
+      setNotificacion({ tipo: "exito", texto: `Carta "${c.nombre}" eliminada definitivamente.` });
+    } catch (err: unknown) {
+      console.error("Error al eliminar:", err);
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      setNotificacion({ tipo: "error", texto: msg });
+    } finally {
+      setCargandoAccion(null);
+      setCartaAEliminar(null);
     }
   };
 
@@ -314,7 +348,7 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
                   <TableHead className="w-[100px] text-center">Req.</TableHead>
                   <TableHead className="w-[110px] text-center">Origen</TableHead>
                   <TableHead className="w-[100px] text-center">Estado</TableHead>
-                  <TableHead className="w-[130px] text-right">Acciones</TableHead>
+                  <TableHead className="w-[160px] text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -464,6 +498,18 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
                               <RefreshCw className="h-3.5 w-3.5" />
                             )}
                           </Button>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={cargandoAccion === c.id}
+                            onClick={() => setCartaAEliminar(c)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            title="Eliminar carta"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -474,6 +520,30 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!cartaAEliminar} onOpenChange={(abierto) => !abierto && setCartaAEliminar(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar &quot;{cartaAEliminar?.nombre}&quot;?</DialogTitle>
+            <DialogDescription>
+              Se borra definitivamente y se pierde el progreso de todos los usuarios en esta carta.
+              Esto no se puede deshacer. Si solo querés ocultarla, usá Archivar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCartaAEliminar(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={cargandoAccion !== null}
+              onClick={() => cartaAEliminar && eliminarCarta(cartaAEliminar)}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

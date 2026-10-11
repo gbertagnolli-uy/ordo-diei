@@ -1304,6 +1304,19 @@ export async function adminArchivarCarta(id: number) {
   });
 }
 
+/**
+ * Borrado definitivo. A diferencia de archivar, también se pierde el progreso de todos
+ * los usuarios en esa carta (CartaUsuario en cascada); los movimientos quedan sin carta.
+ */
+export async function adminEliminarCarta(id: number) {
+  const existente = await prisma.carta.findUnique({ where: { id } });
+  if (!existente) {
+    throw new Error(`Carta con ID ${id} no encontrada`);
+  }
+
+  return await prisma.carta.delete({ where: { id } });
+}
+
 export async function adminRestaurarCarta(id: number) {
   const existente = await prisma.carta.findUnique({ where: { id } });
   if (!existente) {
