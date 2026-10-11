@@ -35,31 +35,105 @@ test("Orden canónico y litúrgico de cartas (Lane 43)", async (t) => {
     }
   });
 
+  await t.test("Carlos Acutis y santos nombrados después de Pío XII no aparecen", () => {
+    const santosPostPioXII = [
+      "san-carlos-acutis",
+      "carlos-acutis",
+      "santa-faustina-kowalska",
+      "divina-misericordia",
+      "san-juan-pablo-ii",
+      "san-padre-pio",
+      "san-josemaria-escriva",
+      "santa-teresa-de-calcuta",
+    ];
+
+    for (const clave of santosPostPioXII) {
+      assert.equal(
+        ORDEN_CANONICO_CARTAS.includes(clave),
+        false,
+        `La clave post-Pío XII ${clave} no debe existir en el orden canónico`
+      );
+    }
+
+    const dirCatalogo = path.join(process.cwd(), "src", "lib", "cartas", "catalogo");
+    const archivos = fs.readdirSync(dirCatalogo).filter((f) => f.endsWith(".json"));
+    for (const arch of archivos) {
+      const items = JSON.parse(fs.readFileSync(path.join(dirCatalogo, arch), "utf-8"));
+      for (const item of items) {
+        for (const prohibido of santosPostPioXII) {
+          assert.notEqual(
+            item.clave,
+            prohibido,
+            `El archivo ${arch} contiene la clave no permitida: ${prohibido}`
+          );
+        }
+      }
+    }
+  });
+
   await t.test("Dios y Nuestro Señor van al principio de la colección", () => {
     const cartasDios = [
       "sagrada-eucaristia",
       "sagrado-corazon-de-jesus",
-      "divina-misericordia",
+      "santa-cruz",
     ];
 
     for (const c of cartasDios) {
       const idx = ORDEN_CANONICO_CARTAS.indexOf(c);
-      assert.ok(idx >= 0 && idx < 5, `${c} debe estar entre las primeras posiciones`);
+      assert.ok(idx >= 0 && idx < 4, `${c} debe estar entre las primeras posiciones`);
     }
   });
 
-  await t.test("Después de Dios le sigue la Santísima Virgen María", () => {
+  await t.test("Después de Dios le sigue la Santísima Virgen María y sus fiestas de San Pío V", () => {
     const idxEucaristia = ORDEN_CANONICO_CARTAS.indexOf("sagrada-eucaristia");
     const idxSagradoCorazon = ORDEN_CANONICO_CARTAS.indexOf("sagrado-corazon-de-jesus");
+    const idxSantaCruz = ORDEN_CANONICO_CARTAS.indexOf("santa-cruz");
     const idxMaria = ORDEN_CANONICO_CARTAS.indexOf("santa-maria-madre-de-dios");
+    const idxJose = ORDEN_CANONICO_CARTAS.indexOf("san-jose");
 
     assert.ok(idxEucaristia < idxMaria, "Dios (Eucaristía) precede a la Virgen María");
     assert.ok(idxSagradoCorazon < idxMaria, "Dios (Sagrado Corazón) precede a la Virgen María");
+    assert.ok(idxSantaCruz < idxMaria, "Dios (Santa Cruz) precede a la Virgen María");
+
+    // Fiestas marianas de la liturgia de San Pío V (Missale Romanum 1570)
+    const fiestasMarianasPioV = [
+      "fiesta-purificacion-de-maria",
+      "fiesta-anunciacion-de-maria",
+      "fiesta-visitacion-de-maria",
+      "fiesta-santa-maria-de-las-nieves",
+      "fiesta-asuncion-de-maria",
+      "fiesta-natividad-de-maria",
+      "fiesta-dolores-de-maria",
+      "santo-rosario",
+      "fiesta-presentacion-de-maria",
+      "fiesta-inmaculada-concepcion",
+    ];
+
+    for (const fiesta of fiestasMarianasPioV) {
+      const idxFiesta = ORDEN_CANONICO_CARTAS.indexOf(fiesta);
+      assert.ok(
+        idxFiesta > idxSantaCruz,
+        `La fiesta mariana ${fiesta} debe ir después de Dios`
+      );
+      assert.ok(
+        idxFiesta < idxJose,
+        `La fiesta mariana ${fiesta} debe ir antes de San José y los santos`
+      );
+    }
+
+    // En el catálogo de temas todas las fiestas marianas de San Pío V existen
+    const rutaTemas = path.join(process.cwd(), "src", "lib", "cartas", "catalogo", "temas.json");
+    const temas = JSON.parse(fs.readFileSync(rutaTemas, "utf-8"));
+    for (const fiesta of fiestasMarianasPioV) {
+      assert.ok(
+        temas.some((t: { clave: string }) => t.clave === fiesta),
+        `La fiesta mariana ${fiesta} debe estar en temas.json`
+      );
+    }
 
     // Entre todos los santos, María es la primera
     const rutaSantos = path.join(process.cwd(), "src", "lib", "cartas", "catalogo", "santos.json");
     const santos = JSON.parse(fs.readFileSync(rutaSantos, "utf-8"));
-
     assert.equal(santos[0].clave, "santa-maria-madre-de-dios", "María debe ser la primera de los santos");
   });
 
