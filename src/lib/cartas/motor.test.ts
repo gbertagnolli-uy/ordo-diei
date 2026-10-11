@@ -7,6 +7,13 @@ import {
   precioFragmentoEnPuntos,
   precioFragmentoEnIncienso,
   BONO_FIESTA_TIENDA,
+  SOBRE_DEVOCION,
+  SOBRE_GLORIA,
+  SOBRE_MEDITACION,
+  SOBRE_REVELACION,
+  XP_MINIMO_RAREZA,
+  costoConDescuento,
+  descuentoPorRacha,
 } from "./economia.ts";
 import {
   esquemaCartaCatalogo,
@@ -17,6 +24,7 @@ import {
   elegirBanda,
   sortearCarta,
   sortearBienvenida,
+  sortearSobre,
   sortearSobreMeditacion,
   sortearSobreRevelacion,
   type CartaSorteable,
@@ -41,6 +49,7 @@ import {
   multiplicadorTienda,
 } from "./eventos.ts";
 import { ejecutarSimulacionCompleta } from "./simulacion.ts";
+import { rachaEfectiva, estrellasPorRacha } from "./racha.ts";
 
 // Pool de cartas mock para pruebas de sorteo
 const POOL_PRUEBA: CartaSorteable[] = [
@@ -61,11 +70,10 @@ test("Economía: valores base y sin arbitraje de Incienso", () => {
   assert.equal(CONFIG_RAREZAS.Perfecta.valorFragmento, 4);
   assert.equal(CONFIG_RAREZAS.Celestial.valorFragmento, 10);
 
-  // Precios en puntos por rareza (vault/ECONOMIA_CARTAS.md §4.6)
-  assert.equal(precioFragmentoEnPuntos("Comun"), 4);
-  assert.equal(precioFragmentoEnPuntos("Buena"), 6);
-  assert.equal(precioFragmentoEnPuntos("Perfecta"), 8);
-  assert.equal(precioFragmentoEnPuntos("Celestial"), 12);
+  // Precios en puntos por rareza (vault/ECONOMIA_CARTAS.md §8); la Celestial no se compra con puntos
+  assert.equal(precioFragmentoEnPuntos("Comun"), 12);
+  assert.equal(precioFragmentoEnPuntos("Buena"), 18);
+  assert.equal(precioFragmentoEnPuntos("Perfecta"), 24);
 
   // Precios en Incienso = valor directo (sin arbitraje entre rarezas)
   assert.equal(precioFragmentoEnIncienso("Comun"), 1);
@@ -110,7 +118,7 @@ test("Sorteo: Sobre de Meditación nunca contiene cartas Perfecta ni Celestial",
   for (let i = 0; i < 50; i++) {
     const res = sortearSobreMeditacion(POOL_PRUEBA, rngPseudo);
     assert.equal(res.fragmentosTotal, 8);
-    assert.equal(res.costoPuntos, 40);
+    assert.equal(res.costoPuntos, 120);
     assert.ok(res.items.length >= 1 && res.items.length <= 3);
     const suma = res.items.reduce((acc, it) => acc + it.cantidad, 0);
     assert.equal(suma, 8);
@@ -134,7 +142,7 @@ test("Sorteo: Sobre de Revelación garantiza al menos 6 fragmentos de Perfecta o
   for (let i = 0; i < 50; i++) {
     const res = sortearSobreRevelacion(POOL_PRUEBA, rngPseudo);
     assert.equal(res.fragmentosTotal, 12);
-    assert.equal(res.costoPuntos, 100);
+    assert.equal(res.costoPuntos, 250);
     assert.ok(res.items.length >= 1 && res.items.length <= 3);
     const suma = res.items.reduce((acc, it) => acc + it.cantidad, 0);
     assert.equal(suma, 12);
@@ -389,11 +397,11 @@ test("Eventos: fiesta litúrgica y bono de tienda (D5, D17)", () => {
   assert.equal(esFiestaHoy("10-04", otraFecha, "America/Montevideo"), false);
   assert.equal(esFiestaHoy(null, fechaFiesta), false);
 
-  // Regalo fiesta (D21): la carta entera
-  assert.equal(regaloFiesta(10), 10);
-  assert.equal(regaloFiesta(25), 25);
-  assert.equal(regaloFiesta(60), 60);
-  assert.equal(regaloFiesta(150), 150);
+  // Regalo fiesta (D21, lane 53): entera en Común y Buena, 50 % Perfecta, 25 % Celestial
+  assert.equal(regaloFiesta(10, "Comun"), 10);
+  assert.equal(regaloFiesta(25, "Buena"), 25);
+  assert.equal(regaloFiesta(60, "Perfecta"), 30);
+  assert.equal(regaloFiesta(150, "Celestial"), 38);
 
   // Bono tienda: 1.5 en el día de fiesta
   assert.equal(multiplicadorTienda("10-04", fechaFiesta, "America/Montevideo"), BONO_FIESTA_TIENDA);
@@ -474,18 +482,21 @@ test("Simulación económica para 10, 15 y 20 pts/día", () => {
   const resultados = ejecutarSimulacionCompleta();
   assert.equal(resultados.length, 3);
 
-  // A 20 pts/día (vault/ECONOMIA_CARTAS.md §5): Común 2, Buena 7,5, Perfecta 24, Celestial 90 días
+  // A 20 pts/día (vault/ECONOMIA_CARTAS.md §8): Común 6, Buena 22,5, Perfecta 72 días;
+  // la Celestial sale de 7,5 sobres de Gloria (5.250 pts + 22,5 estrellas)
   const r20 = resultados[2];
   assert.equal(r20.ritmoPtsPorDia, 20);
   const dias = Object.fromEntries(r20.rarezas.map((r) => [r.rareza, r.diasDesbloquear]));
-  assert.deepEqual(dias, { Comun: 2, Buena: 7.5, Perfecta: 24, Celestial: 90 });
+  assert.deepEqual(dias, { Comun: 6, Buena: 22.5, Perfecta: 72, Celestial: 262.5 });
   const celestial = r20.rarezas.find((r) => r.rareza === "Celestial")!;
-  assert.equal(celestial.diasMinimosPorTope, 15);
-  assert.equal(celestial.diasGradoIV, 270);
+  assert.equal(celestial.estrellasDesbloquear, 22.5);
 
-  // Los sobres valen algo menos que comprar directo (sin tope diario y con sorpresa)
-  assert.ok(r20.rendimientoSobreMeditacion > 0.85 && r20.rendimientoSobreMeditacion < 1);
-  assert.ok(r20.rendimientoSobreRevelacion > 0.75 && r20.rendimientoSobreRevelacion < 1);
+  // Un sobre vale casi lo mismo que comprar directo: ni regala ni estafa
+  const rend = r20.rendimientoSobres;
+  assert.ok(rend.meditacion > 0.85 && rend.meditacion <= 1);
+  assert.ok(rend.devocion > 0.9 && rend.devocion <= 1);
+  assert.ok(rend.revelacion > 0.9 && rend.revelacion <= 1.05); // además cuesta 1 estrella
+  assert.ok(rend.gloria > 0.9 && rend.gloria <= 1.2); // además cuesta 3 estrellas
 
   // La dificultad crece con la rareza a cualquier ritmo
   for (const r of resultados) {
@@ -493,4 +504,53 @@ test("Simulación económica para 10, 15 y 20 pts/día", () => {
       assert.ok(r.rarezas[k].diasDesbloquear > r.rarezas[k - 1].diasDesbloquear);
     }
   }
+});
+
+test("Sobres: Devoción y Gloria sortean solo sus rarezas y suman sus fragmentos", () => {
+  let step = 0;
+  const rngPseudo = () => {
+    step = (step + 23) % 100;
+    return step / 100;
+  };
+  for (let i = 0; i < 50; i++) {
+    const dev = sortearSobre(SOBRE_DEVOCION, POOL_PRUEBA, rngPseudo);
+    assert.equal(dev.items.reduce((a, it) => a + it.cantidad, 0), 10);
+    assert.ok(dev.items.every((it) => it.rareza === "Buena" || it.rareza === "Perfecta"));
+
+    const glo = sortearSobre(SOBRE_GLORIA, POOL_PRUEBA, rngPseudo);
+    assert.equal(glo.items.length, 1);
+    assert.equal(glo.items[0].cantidad, 20);
+    assert.equal(glo.items[0].rareza, "Celestial");
+  }
+});
+
+test("Economía: requisitos de XP, descuento por racha y estrellas por racha", () => {
+  // Requisitos de XP por rareza y por sobre
+  assert.deepEqual(XP_MINIMO_RAREZA, { Comun: 0, Buena: 0, Perfecta: 1000, Celestial: 2500 });
+  assert.equal(SOBRE_REVELACION.xpMinimo, 1000);
+  assert.equal(SOBRE_GLORIA.xpMinimo, 2500);
+  assert.equal(SOBRE_REVELACION.costoEstrellas, 1);
+  assert.equal(SOBRE_GLORIA.costoEstrellas, 3);
+
+  // 1 % por día, máximo 30 %
+  assert.equal(descuentoPorRacha(0), 0);
+  assert.equal(descuentoPorRacha(7), 7);
+  assert.equal(descuentoPorRacha(30), 30);
+  assert.equal(descuentoPorRacha(90), 30);
+  assert.equal(costoConDescuento(120, 30), 84);
+  // Con racha máxima el sobre común sigue costando ~3 tareas de 30 pts (10 base + 20 de racha)
+  assert.ok(costoConDescuento(SOBRE_MEDITACION.costoPuntos, 30) >= 3 * 28);
+
+  // Racha efectiva: se corta si la última tarea fue antes de ayer
+  const ahora = new Date("2026-10-11T15:00:00Z");
+  assert.equal(rachaEfectiva(12, new Date("2026-10-11T10:00:00Z"), ahora), 12); // hoy
+  assert.equal(rachaEfectiva(12, new Date("2026-10-10T10:00:00Z"), ahora), 12); // ayer
+  assert.equal(rachaEfectiva(12, new Date("2026-10-09T10:00:00Z"), ahora), 0); // anteayer
+  assert.equal(rachaEfectiva(12, null, ahora), 0);
+
+  // Estrella cada 7 días de racha
+  assert.equal(estrellasPorRacha(6, 7), 1);
+  assert.equal(estrellasPorRacha(7, 8), 0);
+  assert.equal(estrellasPorRacha(13, 14), 1);
+  assert.equal(estrellasPorRacha(20, 1), 0); // racha rota
 });

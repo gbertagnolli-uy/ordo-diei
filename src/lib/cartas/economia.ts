@@ -57,13 +57,43 @@ export const UMBRALES_GRADO = {
   IV_GLORIOSA: 3.0,     // 300% (tope)
 } as const;
 
-/** Puntos por fragmento comprado directo, según rareza (vault/ECONOMIA_CARTAS.md §4.6). A 20 pts/día:
- *  Común 2 días, Buena 7,5, Perfecta 24, Celestial 90. */
+/** Puntos por fragmento comprado directo, según rareza (vault/ECONOMIA_CARTAS.md §8). Una tarea vale
+ *  ~20 pts: Común ≈ 6 tareas, Buena ≈ 22, Perfecta ≈ 72. La Celestial NO se compra con puntos
+ *  (`RAREZAS_COMPRA_PUNTOS`); el valor es solo la referencia para valuar sobres y simular. */
 export const PRECIO_PUNTOS_FRAGMENTO: Record<RarezaCarta, number> = {
-  Comun: 4,
-  Buena: 6,
-  Perfecta: 8,
-  Celestial: 12,
+  Comun: 12,
+  Buena: 18,
+  Perfecta: 24,
+  Celestial: 40,
+};
+
+/** Rarezas cuyos fragmentos se pueden comprar directo con puntos */
+export const RAREZAS_COMPRA_PUNTOS: readonly RarezaCarta[] = ["Comun", "Buena", "Perfecta"] as const;
+
+/** XP total mínimo para obtener fragmentos de cada rareza por compra, sobre o fiesta (§8.3) */
+export const XP_MINIMO_RAREZA: Record<RarezaCarta, number> = {
+  Comun: 0,
+  Buena: 0,
+  Perfecta: 1000,
+  Celestial: 2500,
+};
+
+/** Fragmentos Celestiales que se compran con 1 estrella (la compra es en múltiplos de esto) */
+export const FRAGMENTOS_POR_ESTRELLA = 5;
+
+/** Cada cuántos días de racha se gana 1 estrella */
+export const DIAS_RACHA_POR_ESTRELLA = 7;
+
+/** Descuento en sobres: 1 % por día de racha, hasta 30 % */
+export const DESCUENTO_POR_DIA_RACHA = 1;
+export const DESCUENTO_MAXIMO = 30;
+
+/** Parte de la carta que regala su fiesta, por rareza (§8.4) */
+export const FRACCION_REGALO_FIESTA: Record<RarezaCarta, number> = {
+  Comun: 1,
+  Buena: 1,
+  Perfecta: 0.5,
+  Celestial: 0.25,
 };
 
 /** Límite diario de fragmentos que un usuario puede comprar con puntos para una misma carta */
@@ -75,32 +105,86 @@ export const BONO_FIESTA_TIENDA = 1.5;
 export interface ConfigSobre {
   nombre: string;
   costoPuntos: number;
+  /** Estrellas que cuesta además de los puntos */
+  costoEstrellas: number;
+  /** XP total mínimo para poder abrirlo */
+  xpMinimo: number;
   fragmentosTotal: number;
   cartasMin: number;
   cartasMax: number;
+  /** Rarezas de las que sale el sorteo (sin garantía) */
+  rarezasPermitidas?: readonly RarezaCarta[];
+  /** Con garantía: `garantiaMinFragmentos` de una carta de estas rarezas y el resto del pool completo */
+  garantiaRarezas?: readonly RarezaCarta[];
+  garantiaMinFragmentos?: number;
 }
 
-export const SOBRE_MEDITACION: ConfigSobre & { rarezasPermitidas: readonly RarezaCarta[] } = {
+export type TipoSobre = "meditacion" | "devocion" | "revelacion" | "gloria";
+
+export const SOBRE_MEDITACION = {
   nombre: "Sobre de Meditación",
-  costoPuntos: 40,
+  costoPuntos: 120,
+  costoEstrellas: 0,
+  xpMinimo: 0,
   fragmentosTotal: 8,
   cartasMin: 1,
   cartasMax: 3,
   rarezasPermitidas: ["Comun", "Buena"] as const,
-};
+} satisfies ConfigSobre;
 
-export const SOBRE_REVELACION: ConfigSobre & {
-  garantiaRarezas: readonly RarezaCarta[];
-  garantiaMinFragmentos: number;
-} = {
+export const SOBRE_DEVOCION = {
+  nombre: "Sobre de Devoción",
+  costoPuntos: 200,
+  costoEstrellas: 0,
+  xpMinimo: 0,
+  fragmentosTotal: 10,
+  cartasMin: 1,
+  cartasMax: 3,
+  rarezasPermitidas: ["Buena", "Perfecta"] as const,
+} satisfies ConfigSobre;
+
+export const SOBRE_REVELACION = {
   nombre: "Sobre de Revelación",
-  costoPuntos: 100,
+  costoPuntos: 250,
+  costoEstrellas: 1,
+  xpMinimo: XP_MINIMO_RAREZA.Perfecta,
   fragmentosTotal: 12,
   cartasMin: 1,
   cartasMax: 3,
   garantiaRarezas: ["Perfecta", "Celestial"] as const,
   garantiaMinFragmentos: 6,
+} satisfies ConfigSobre;
+
+export const SOBRE_GLORIA = {
+  nombre: "Sobre de Gloria",
+  costoPuntos: 700,
+  costoEstrellas: 3,
+  xpMinimo: XP_MINIMO_RAREZA.Celestial,
+  fragmentosTotal: 20,
+  cartasMin: 1,
+  cartasMax: 1,
+  rarezasPermitidas: ["Celestial"] as const,
+} satisfies ConfigSobre;
+
+export const SOBRES: Record<TipoSobre, ConfigSobre> = {
+  meditacion: SOBRE_MEDITACION,
+  devocion: SOBRE_DEVOCION,
+  revelacion: SOBRE_REVELACION,
+  gloria: SOBRE_GLORIA,
 };
+
+export const TIPOS_SOBRE = Object.keys(SOBRES) as TipoSobre[];
+
+/** Costo en puntos de un sobre tras el descuento por racha (porcentaje entero 0–30) */
+export function costoConDescuento(costoPuntos: number, descuentoPct: number): number {
+  return Math.round(costoPuntos * (1 - descuentoPct / 100));
+}
+
+/** Descuento (%) por días de racha efectiva: 1 % por día, máximo 30 % */
+export function descuentoPorRacha(rachaDias: number): number {
+  const dias = Math.max(0, Math.floor(rachaDias || 0));
+  return Math.min(DESCUENTO_MAXIMO, dias * DESCUENTO_POR_DIA_RACHA);
+}
 
 /** Precio de compra de 1 fragmento directo de una carta en puntos */
 export function precioFragmentoEnPuntos(rareza: RarezaCarta): number {

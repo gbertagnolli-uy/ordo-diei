@@ -13,6 +13,7 @@ import {
   Filter,
   ShoppingBag,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,9 @@ interface ColeccionViewProps {
     usuario: {
       availablePoints: number;
       incienso: number;
+      stars: number;
+      xp: number;
+      descuentoPct: number;
     };
   };
   rolFamiliar?: string | null;
@@ -142,11 +146,13 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
     return null;
   };
 
-  const handleActualizarSaldo = (nuevoPuntos: number, nuevoIncienso: number) => {
-    setUsuario({
+  const handleActualizarSaldo = (nuevoPuntos: number, nuevoIncienso: number, nuevasEstrellas?: number) => {
+    setUsuario((previo) => ({
+      ...previo,
       availablePoints: nuevoPuntos,
       incienso: nuevoIncienso,
-    });
+      stars: nuevasEstrellas ?? previo.stars,
+    }));
   };
 
   // Estadísticas generales
@@ -243,6 +249,14 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
             <span className="text-xs text-muted-foreground">Incienso:</span>
             <span className="text-sm font-semibold tabular-nums">
               {usuario.incienso}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-card text-card-foreground shadow-xs">
+            <Star className="size-4 text-yellow-400" />
+            <span className="text-xs text-muted-foreground">Estrellas:</span>
+            <span className="text-sm font-semibold tabular-nums">
+              {usuario.stars}
             </span>
           </div>
         </div>

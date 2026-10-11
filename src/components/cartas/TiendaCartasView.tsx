@@ -7,7 +7,7 @@ import {
   Award,
   Calendar,
   AlertCircle,
-  CheckCircle2,
+  Star,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  SOBRE_MEDITACION,
-  SOBRE_REVELACION,
+  FRAGMENTOS_POR_ESTRELLA,
+  SOBRES,
+  TIPOS_SOBRE,
   TOPE_DIARIO_FRAGMENTOS_PUNTOS,
+  XP_MINIMO_RAREZA,
+  costoConDescuento,
   precioFragmentoEnPuntos,
   precioFragmentoEnIncienso,
+  type TipoSobre,
 } from "@/lib/cartas/economia";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { ContenidoCartaVisible } from "@/lib/cartas/revelado";
@@ -36,10 +40,43 @@ interface TiendaCartasViewProps {
   usuario: {
     availablePoints: number;
     incienso: number;
+    stars: number;
+    xp: number;
+    descuentoPct: number;
   };
   onCompraExitosa: (resultado: ResultadoCompraSobre) => void;
-  onActualizarSaldo: (nuevoPuntos: number, nuevoIncienso: number) => void;
+  onActualizarSaldo: (nuevoPuntos: number, nuevoIncienso: number, nuevasEstrellas?: number) => void;
 }
+
+type Moneda = "puntos" | "incienso" | "estrellas";
+
+/** Aspecto de cada sobre (el contenido sale de SOBRES y TEXTOS_CARTAS) */
+const ESTILO_SOBRE: Record<TipoSobre, { resplandor: string; insignia: string; boton: string; icono: string }> = {
+  meditacion: {
+    resplandor: "bg-emerald-500/10",
+    insignia: "border-emerald-500/50 text-emerald-400",
+    boton: "bg-emerald-700 hover:bg-emerald-600 text-white font-medium",
+    icono: "text-emerald-400",
+  },
+  devocion: {
+    resplandor: "bg-sky-500/10",
+    insignia: "border-sky-500/50 text-sky-400",
+    boton: "bg-sky-700 hover:bg-sky-600 text-white font-medium",
+    icono: "text-sky-400",
+  },
+  revelacion: {
+    resplandor: "bg-amber-500/15",
+    insignia: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+    boton: "bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold",
+    icono: "text-amber-400",
+  },
+  gloria: {
+    resplandor: "bg-fuchsia-500/15",
+    insignia: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40",
+    boton: "bg-fuchsia-700 hover:bg-fuchsia-600 text-white font-bold",
+    icono: "text-fuchsia-400",
+  },
+};
 
 export function TiendaCartasView({
   cartas,
@@ -52,23 +89,34 @@ export function TiendaCartasView({
 
   // Estado para compra directa de fragmentos
   const [cartaSeleccionadaId, setCartaSeleccionadaId] = useState<number>(cartas[0]?.id ?? 1);
-  const [cantidadFragmentos, setCantidadFragmentos] = useState<number>(1);
-  const [monedaSeleccionada, setMonedaSeleccionada] = useState<"puntos" | "incienso">("puntos");
+  const [cantidadElegida, setCantidadFragmentos] = useState<number>(1);
+  const [monedaElegida, setMonedaSeleccionada] = useState<Moneda>("puntos");
 
   // Estado del Diálogo de Confirmación
   const [confirmacionOpen, setConfirmacionOpen] = useState<boolean>(false);
   const [datosConfirmacion, setDatosConfirmacion] = useState<{
     tipo: "sobre" | "fragmentos";
-    sobre?: "meditacion" | "revelacion";
+    sobre?: TipoSobre;
     nombre: string;
     costo: number;
-    moneda: "puntos" | "incienso";
+    moneda: Moneda;
     detalles: string;
   } | null>(null);
 
   const cartaSeleccionada = useMemo(() => {
     return cartas.find((c) => c.id === cartaSeleccionadaId) ?? cartas[0];
   }, [cartas, cartaSeleccionadaId]);
+
+  // Las Celestiales no se compran con puntos y las estrellas solo sirven para ellas
+  const esCelestial = cartaSeleccionada?.rareza === "Celestial";
+  const monedaSeleccionada: Moneda =
+    esCelestial && monedaElegida === "puntos" ? "estrellas" : !esCelestial && monedaElegida === "estrellas" ? "puntos" : monedaElegida;
+  const cantidadFragmentos =
+    monedaSeleccionada === "estrellas"
+      ? Math.max(FRAGMENTOS_POR_ESTRELLA, Math.round(cantidadElegida / FRAGMENTOS_POR_ESTRELLA) * FRAGMENTOS_POR_ESTRELLA)
+      : cantidadElegida;
+  const xpMinimoCarta = cartaSeleccionada ? XP_MINIMO_RAREZA[cartaSeleccionada.rareza] : 0;
+  const xpFaltanteCarta = Math.max(0, xpMinimoCarta - usuario.xp);
 
   // Cálculo de festividad hoy (MM-DD)
   const hoyMmDd = useMemo(() => {
@@ -87,30 +135,32 @@ export function TiendaCartasView({
   // Cálculos de costo compra directa
   const costoUnitario = useMemo(() => {
     if (!cartaSeleccionada) return 0;
+    if (monedaSeleccionada === "estrellas") return 1 / FRAGMENTOS_POR_ESTRELLA;
     return monedaSeleccionada === "puntos"
       ? precioFragmentoEnPuntos(cartaSeleccionada.rareza)
       : precioFragmentoEnIncienso(cartaSeleccionada.rareza);
   }, [cartaSeleccionada, monedaSeleccionada]);
 
-  const costoTotalDirecto = costoUnitario * cantidadFragmentos;
+  const costoTotalDirecto = Math.round(costoUnitario * cantidadFragmentos);
 
   // Validación de saldos
-  const saldoSuficienteDirecto =
+  const saldoDirecto =
     monedaSeleccionada === "puntos"
-      ? usuario.availablePoints >= costoTotalDirecto
-      : usuario.incienso >= costoTotalDirecto;
+      ? usuario.availablePoints
+      : monedaSeleccionada === "estrellas"
+        ? usuario.stars
+        : usuario.incienso;
+  const saldoSuficienteDirecto = saldoDirecto >= costoTotalDirecto && xpFaltanteCarta === 0;
+  const unidadMoneda = { puntos: "puntos", estrellas: "estrellas", incienso: "granos de incienso" }[monedaSeleccionada];
 
-  const puntosFaltantesMeditacion = Math.max(0, SOBRE_MEDITACION.costoPuntos - usuario.availablePoints);
-  const puntosFaltantesRevelacion = Math.max(0, SOBRE_REVELACION.costoPuntos - usuario.availablePoints);
-
-  const solicitarCompraSobre = (sobre: "meditacion" | "revelacion") => {
+  const solicitarCompraSobre = (sobre: TipoSobre) => {
     setErrorMensaje(null);
-    const config = sobre === "meditacion" ? SOBRE_MEDITACION : SOBRE_REVELACION;
+    const config = SOBRES[sobre];
     setDatosConfirmacion({
       tipo: "sobre",
       sobre,
       nombre: config.nombre,
-      costo: config.costoPuntos,
+      costo: costoConDescuento(config.costoPuntos, usuario.descuentoPct),
       moneda: "puntos",
       detalles: TEXTOS_CARTAS.sobres[sobre].descripcion,
     });
@@ -164,7 +214,7 @@ export function TiendaCartasView({
 
       // Actualizar saldos
       if (data.nuevoSaldoPuntos !== undefined && data.nuevoSaldoIncienso !== undefined) {
-        onActualizarSaldo(data.nuevoSaldoPuntos, data.nuevoSaldoIncienso);
+        onActualizarSaldo(data.nuevoSaldoPuntos, data.nuevoSaldoIncienso, data.nuevoSaldoEstrellas);
       }
 
       // Disparar modal de apertura o confirmación
@@ -244,98 +294,90 @@ export function TiendaCartasView({
           </p>
         </div>
 
+        {usuario.descuentoPct > 0 && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-medium">
+            <Flame className="size-4 shrink-0" />
+            <span>
+              {TEXTOS_CARTAS.sobres.descuentoRacha(usuario.descuentoPct)}
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Sobre de Meditación */}
-          <Card className="flex flex-col justify-between border-stone-800 bg-stone-950 text-stone-100 shadow-xl overflow-hidden relative">
-            <div className="absolute -top-12 -right-12 size-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="border-emerald-500/50 text-emerald-400 text-xs">
-                  5 Fragmentos
-                </Badge>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
-                  <Award className="size-3.5" />
-                  <span>{SOBRE_MEDITACION.costoPuntos} puntos</span>
-                </div>
-              </div>
-              <CardTitle className="font-heading text-lg font-bold text-stone-100 mt-2">
-                {SOBRE_MEDITACION.nombre}
-              </CardTitle>
-              <CardDescription className="text-xs text-stone-400">
-                {TEXTOS_CARTAS.sobres.meditacion.descripcion}
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="text-xs text-stone-400 flex flex-col gap-1.5">
-              <span className="flex items-center gap-1.5 text-stone-300">
-                <CheckCircle2 className="size-3.5 text-emerald-400" />
-                Ideal para completar los misterios del Rosario y santos protectores.
-              </span>
-              <span className="text-[11px] text-stone-500 italic">
-                Cartas Comunes (60 %) y Buenas (28 %).
-              </span>
-            </CardContent>
-
-            <CardFooter className="pt-2">
-              <Button
-                onClick={() => solicitarCompraSobre("meditacion")}
-                disabled={comprando || usuario.availablePoints < SOBRE_MEDITACION.costoPuntos}
-                className="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-medium text-xs"
+          {TIPOS_SOBRE.map((tipo) => {
+            const config = SOBRES[tipo];
+            const estilo = ESTILO_SOBRE[tipo];
+            const textos = TEXTOS_CARTAS.sobres[tipo];
+            const costo = costoConDescuento(config.costoPuntos, usuario.descuentoPct);
+            const xpFaltante = Math.max(0, config.xpMinimo - usuario.xp);
+            const puntosFaltantes = Math.max(0, costo - usuario.availablePoints);
+            const estrellasFaltantes = Math.max(0, config.costoEstrellas - usuario.stars);
+            const disponible = xpFaltante === 0 && puntosFaltantes === 0 && estrellasFaltantes === 0;
+            return (
+              <Card
+                key={tipo}
+                className="flex flex-col justify-between border-stone-800 bg-stone-950 text-stone-100 shadow-xl overflow-hidden relative"
               >
-                {usuario.availablePoints >= SOBRE_MEDITACION.costoPuntos ? (
-                  `Abrir Sobre (${SOBRE_MEDITACION.costoPuntos} pts)`
-                ) : (
-                  `Te faltan ${puntosFaltantesMeditacion} puntos`
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+                <div className={`absolute -top-12 -right-12 size-36 rounded-full blur-2xl pointer-events-none ${estilo.resplandor}`} />
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="outline" className={`text-xs ${estilo.insignia}`}>
+                      {config.fragmentosTotal} Fragmentos
+                    </Badge>
+                    <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+                      <span className="flex items-center gap-1.5">
+                        <Award className="size-3.5" />
+                        {costo < config.costoPuntos && (
+                          <span className="line-through text-stone-500 font-normal">{config.costoPuntos}</span>
+                        )}
+                        <span>{costo} puntos</span>
+                      </span>
+                      {config.costoEstrellas > 0 && (
+                        <span className="flex items-center gap-1 text-yellow-300">
+                          <Star className="size-3.5 fill-yellow-300" />
+                          {config.costoEstrellas}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <CardTitle className="font-heading text-lg font-bold text-stone-100 mt-2">
+                    {config.nombre}
+                  </CardTitle>
+                  <CardDescription className="text-xs text-stone-400">
+                    {textos.descripcion}
+                  </CardDescription>
+                </CardHeader>
 
-          {/* Sobre de Revelación */}
-          <Card className="flex flex-col justify-between border-stone-800 bg-stone-950 text-stone-100 shadow-xl overflow-hidden relative">
-            <div className="absolute -top-12 -right-12 size-36 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-xs">
-                  8 Fragmentos · Garantizado
-                </Badge>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
-                  <Award className="size-3.5" />
-                  <span>{SOBRE_REVELACION.costoPuntos} puntos</span>
-                </div>
-              </div>
-              <CardTitle className="font-heading text-lg font-bold text-stone-100 mt-2">
-                {SOBRE_REVELACION.nombre}
-              </CardTitle>
-              <CardDescription className="text-xs text-stone-400">
-                {TEXTOS_CARTAS.sobres.revelacion.descripcion}
-              </CardDescription>
-            </CardHeader>
+                <CardContent className="text-xs text-stone-400 flex flex-col gap-1.5">
+                  <span className="flex items-center gap-1.5 text-stone-300">
+                    <Sparkles className={`size-3.5 ${estilo.icono}`} />
+                    {textos.destacado}
+                  </span>
+                  {config.xpMinimo > 0 && (
+                    <span className="text-[11px] text-stone-500 italic">
+                      {TEXTOS_CARTAS.sobres.requiereXp(config.xpMinimo)}
+                    </span>
+                  )}
+                </CardContent>
 
-            <CardContent className="text-xs text-stone-400 flex flex-col gap-1.5">
-              <span className="flex items-center gap-1.5 text-stone-300">
-                <Sparkles className="size-3.5 text-amber-400" />
-                Garantiza al menos 4 fragmentos de cartas Perfectas o Celestiales.
-              </span>
-              <span className="text-[11px] text-stone-500 italic">
-                Sagrarios marianos, arcángeles, apóstoles insignes y la Eucaristía.
-              </span>
-            </CardContent>
-
-            <CardFooter className="pt-2">
-              <Button
-                onClick={() => solicitarCompraSobre("revelacion")}
-                disabled={comprando || usuario.availablePoints < SOBRE_REVELACION.costoPuntos}
-                className="w-full bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs"
-              >
-                {usuario.availablePoints >= SOBRE_REVELACION.costoPuntos ? (
-                  `Abrir Sobre (${SOBRE_REVELACION.costoPuntos} pts)`
-                ) : (
-                  `Te faltan ${puntosFaltantesRevelacion} puntos`
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+                <CardFooter className="pt-2">
+                  <Button
+                    onClick={() => solicitarCompraSobre(tipo)}
+                    disabled={comprando || !disponible}
+                    className={`w-full text-xs ${estilo.boton}`}
+                  >
+                    {disponible
+                      ? `Abrir Sobre (${costo} pts${config.costoEstrellas > 0 ? ` + ${config.costoEstrellas} ★` : ""})`
+                      : xpFaltante > 0
+                        ? `Te faltan ${xpFaltante} XP`
+                        : puntosFaltantes > 0
+                          ? `Te faltan ${puntosFaltantes} puntos`
+                          : `Te faltan ${estrellasFaltantes} estrellas`}
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -346,7 +388,7 @@ export function TiendaCartasView({
             Consagración Directa de Fragmentos
           </h2>
           <p className="text-xs text-muted-foreground">
-            Elegí una carta en particular y adquirí fragmentos específicos con puntos o Granos de Incienso.
+            Elegí una carta en particular y adquirí fragmentos específicos con puntos o Granos de Incienso (las Celestiales, también con estrellas).
           </p>
         </div>
 
@@ -369,6 +411,13 @@ export function TiendaCartasView({
                     </option>
                   ))}
                 </select>
+                {xpMinimoCarta > 0 && (
+                  <span className={`text-[11px] font-medium ${xpFaltanteCarta > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                    {xpFaltanteCarta > 0
+                      ? `Necesitás ${xpMinimoCarta} XP (te faltan ${xpFaltanteCarta}).`
+                      : `Requiere ${xpMinimoCarta} XP.`}
+                  </span>
+                )}
                 {esFiestaCartaSeleccionada && (
                   <span className="text-[11px] text-amber-500 font-medium">
                     ★ ¡Hoy tiene bono ×1,5 de fiesta!
@@ -388,7 +437,8 @@ export function TiendaCartasView({
                 </label>
                 <input
                   type="number"
-                  min="1"
+                  min={monedaSeleccionada === "estrellas" ? FRAGMENTOS_POR_ESTRELLA : 1}
+                  step={monedaSeleccionada === "estrellas" ? FRAGMENTOS_POR_ESTRELLA : 1}
                   max={monedaSeleccionada === "puntos" ? TOPE_DIARIO_FRAGMENTOS_PUNTOS : 50}
                   value={cantidadFragmentos}
                   onChange={(e) =>
@@ -411,11 +461,12 @@ export function TiendaCartasView({
                 <label className="text-xs font-semibold text-foreground">
                   Medio de ofrenda:
                 </label>
-                <div className="grid grid-cols-2 gap-2 h-10">
+                <div className="grid grid-cols-3 gap-2 h-10">
                   <Button
                     type="button"
                     variant={monedaSeleccionada === "puntos" ? "default" : "outline"}
                     size="sm"
+                    disabled={esCelestial}
                     onClick={() => {
                       setMonedaSeleccionada("puntos");
                       if (cantidadFragmentos > TOPE_DIARIO_FRAGMENTOS_PUNTOS) {
@@ -437,6 +488,17 @@ export function TiendaCartasView({
                     <Flame className="size-3.5 text-orange-500" />
                     <span>Incienso</span>
                   </Button>
+                  <Button
+                    type="button"
+                    variant={monedaSeleccionada === "estrellas" ? "default" : "outline"}
+                    size="sm"
+                    disabled={!esCelestial}
+                    onClick={() => setMonedaSeleccionada("estrellas")}
+                    className="text-xs gap-1.5 h-full"
+                  >
+                    <Star className="size-3.5 text-yellow-400" />
+                    <span>Estrellas</span>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -448,15 +510,18 @@ export function TiendaCartasView({
                 <div className="flex items-center gap-1.5 text-sm font-bold text-foreground">
                   {monedaSeleccionada === "puntos" ? (
                     <Award className="size-4 text-amber-500" />
+                  ) : monedaSeleccionada === "estrellas" ? (
+                    <Star className="size-4 text-yellow-400" />
                   ) : (
                     <Flame className="size-4 text-orange-500" />
                   )}
                   <span>
-                    {costoTotalDirecto}{" "}
-                    {monedaSeleccionada === "puntos" ? "puntos" : "granos de incienso"}
+                    {costoTotalDirecto} {unidadMoneda}
                   </span>
                   <span className="text-xs text-muted-foreground font-normal">
-                    ({costoUnitario} c/u)
+                    {monedaSeleccionada === "estrellas"
+                      ? `(1 cada ${FRAGMENTOS_POR_ESTRELLA} fragmentos)`
+                      : `(${costoUnitario} c/u)`}
                   </span>
                 </div>
               </div>
@@ -468,9 +533,9 @@ export function TiendaCartasView({
               >
                 {saldoSuficienteDirecto
                   ? `Comprar ${cantidadFragmentos} fragmento(s)`
-                  : monedaSeleccionada === "puntos"
-                  ? `Te faltan ${costoTotalDirecto - usuario.availablePoints} puntos`
-                  : `Te faltan ${costoTotalDirecto - usuario.incienso} granos`}
+                  : xpFaltanteCarta > 0
+                    ? `Te faltan ${xpFaltanteCarta} XP`
+                    : `Te faltan ${costoTotalDirecto - saldoDirecto} ${unidadMoneda}`}
               </Button>
             </div>
           </CardContent>

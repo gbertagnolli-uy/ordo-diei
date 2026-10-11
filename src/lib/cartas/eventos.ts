@@ -2,7 +2,12 @@
 
 import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import { TZDate, tz } from "@date-fns/tz";
-import { BONO_FIESTA_TIENDA, SOBRE_REVELACION } from "./economia.ts";
+import {
+  BONO_FIESTA_TIENDA,
+  FRACCION_REGALO_FIESTA,
+  SOBRE_REVELACION,
+  type RarezaCarta,
+} from "./economia.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
 
@@ -42,11 +47,12 @@ export function esFiestaHoy(
 }
 
 /**
- * Fragmentos regalados en el día de fiesta de una carta (D21): la carta entera
- * (+100 %), la tenga o no. Si ya está al tope, lo que sobra se convierte en Incienso.
+ * Fragmentos regalados en el día de fiesta de una carta (D21, ajustado en la lane 53): la carta entera
+ * (+100 %) en Común y Buena, el 50 % en Perfecta y el 25 % en Celestial (redondeado hacia arriba).
+ * Si la carta ya está al tope, lo que sobra se convierte en Incienso.
  */
-export function regaloFiesta(fragmentosRequeridos: number): number {
-  return fragmentosRequeridos;
+export function regaloFiesta(fragmentosRequeridos: number, rareza: RarezaCarta = "Comun"): number {
+  return Math.ceil(fragmentosRequeridos * FRACCION_REGALO_FIESTA[rareza]);
 }
 
 /**
