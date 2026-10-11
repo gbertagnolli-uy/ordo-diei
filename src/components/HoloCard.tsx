@@ -18,6 +18,8 @@ export interface HoloCardProps {
   frame?: number;
   glare?: number;
   foilColor?: string;
+  /** Arte en blanco y negro; el foil sigue a color (Ordo Diei: cartas sin consagrar) */
+  grayscale?: boolean;
   width?: number;
   radius?: number;
   tiltMax?: number;
@@ -36,6 +38,7 @@ interface Settings {
   frame: number;
   glare: number;
   foil: number[];
+  gray: number;
   radius: number;
   tiltMax: number;
   hoverScale: number;
@@ -70,6 +73,7 @@ uniform float uFrame;
 uniform float uRadius;
 uniform float uGlare;
 uniform vec3 uFoil;
+uniform float uGray;
 uniform float uReady;
 
 out vec4 outColor;
@@ -256,6 +260,7 @@ void main() {
     return;
   }
   vec3 art = uReady > 0.5 ? pow(sampled.rgb, vec3(2.2)) : vec3(0.12);
+  art = mix(art, vec3(dot(art, vec3(0.2126, 0.7152, 0.0722))), uGray);
 
   mat3 rx = mat3(1.0, 0.0, 0.0, 0.0, cos(uTilt.x), sin(uTilt.x), 0.0, -sin(uTilt.x), cos(uTilt.x));
   mat3 ry = mat3(cos(uTilt.y), 0.0, -sin(uTilt.y), 0.0, 1.0, 0.0, sin(uTilt.y), 0.0, cos(uTilt.y));
@@ -352,6 +357,7 @@ export default function HoloCard({
   frame = 4,
   glare = 0.5,
   foilColor = '#e2e6ec',
+  grayscale = false,
   width = 320,
   radius = 14,
   tiltMax = 14,
@@ -383,6 +389,7 @@ export default function HoloCard({
     frame: clamp(frame, 0, 20) / 100,
     glare: clamp(glare, 0, 1),
     foil: parseColor(foilColor),
+    gray: grayscale ? 1 : 0,
     radius: Math.max(0, radius),
     tiltMax: clamp(tiltMax, 0, 45),
     hoverScale: clamp(hoverScale, 0.8, 1.3),
@@ -456,6 +463,7 @@ export default function HoloCard({
           'uRadius',
           'uGlare',
           'uFoil',
+          'uGray',
           'uReady'
         ]) {
           uniforms[name] = gl.getUniformLocation(program, name);
@@ -510,6 +518,7 @@ export default function HoloCard({
       gl.uniform1f(uniforms.uRadius, s.radius / Math.max(1, canvas.clientWidth));
       gl.uniform1f(uniforms.uGlare, s.glare);
       gl.uniform3f(uniforms.uFoil, s.foil[0], s.foil[1], s.foil[2]);
+      gl.uniform1f(uniforms.uGray, s.gray);
       gl.uniform1f(uniforms.uReady, textureReady ? 1 : 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
@@ -710,7 +719,7 @@ export default function HoloCard({
       {shadow ? <span ref={shadowRef} className="holo-card__shadow" aria-hidden="true" /> : null}
       <div ref={rotorRef} className="holo-card__rotor">
         <div className="holo-card__face holo-card__face--front">
-          {image ? <img src={image} alt="" draggable={false} /> : null}
+          {image ? <img src={image} alt="" draggable={false} style={grayscale ? { filter: 'grayscale(1)' } : undefined} /> : null}
           <canvas ref={canvasRef} />
         </div>
         {flippable ? (
