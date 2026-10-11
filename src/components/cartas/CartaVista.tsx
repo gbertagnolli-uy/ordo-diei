@@ -29,6 +29,7 @@ export interface CartaVistaProps {
   className?: string;
   onClick?: () => void;
   prioridad?: boolean;
+  mostrarTitulo?: boolean; // solo modo holo: nombre y grado bajo la carta
 }
 
 // Colores de marco y brillo por rareza
@@ -96,6 +97,7 @@ export function CartaVista({
   ancho = 280,
   className,
   onClick,
+  mostrarTitulo = true,
 }: CartaVistaProps) {
   const estilo = ESTILOS_RAREZA[carta.rareza];
   const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
@@ -213,6 +215,7 @@ export function CartaVista({
         </div>
 
         {/* Título y etiqueta de Grado */}
+        {mostrarTitulo && (
         <div className="mt-3 text-center">
           <h3 className="font-serif text-base font-bold text-stone-100 tracking-wide">
             {carta.nombre}
@@ -228,6 +231,7 @@ export function CartaVista({
             {TEXTOS_CARTAS.grados[grado]}
           </p>
         </div>
+        )}
       </div>
     );
   }

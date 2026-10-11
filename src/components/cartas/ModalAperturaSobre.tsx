@@ -159,7 +159,7 @@ export function ModalAperturaSobre({
   return (
     <Dialog open={open} onOpenChange={handleCerrar}>
       <DialogContent
-        className="sm:max-w-md md:max-w-lg p-6 bg-card text-card-foreground border-stone-800 shadow-2xl overflow-hidden focus:outline-hidden"
+        className="sm:max-w-md md:max-w-lg p-6 bg-card text-card-foreground border-stone-800 shadow-2xl focus:outline-hidden"
         aria-live="polite"
       >
         <DialogHeader className="sr-only">
@@ -241,7 +241,7 @@ export function ModalAperturaSobre({
               initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.85, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
-              className="relative w-full max-w-[240px] aspect-[63/88] rounded-xl overflow-hidden shadow-2xl"
+              className="relative flex w-full max-w-[240px] justify-center"
             >
               <CartaVista
                 carta={{
@@ -257,7 +257,7 @@ export function ModalAperturaSobre({
                 grado={cartaActual.gradoDespues as GradoCarta}
                 fragmentos={cartaActual.fragmentosDespues}
                 ancho={240}
-                className="w-full h-full object-cover"
+                mostrarTitulo={false}
               />
             </motion.div>
 
