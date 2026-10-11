@@ -1,5 +1,5 @@
 // Imágenes subidas por los usuarios, guardadas en la base (Vercel no deja escribir en disco).
-// Se normalizan con sharp: orientación EXIF, máximo 1600 px de lado y WebP, para que pesen ~100–300 KB.
+// Se normalizan con sharp: orientación EXIF, máximo 1600 px de lado (las cartas se recortan a 63:88) y WebP, para que pesen ~100–300 KB.
 import crypto from "crypto";
 import sharp from "sharp";
 import prisma from "./prisma.ts";
@@ -7,9 +7,9 @@ import prisma from "./prisma.ts";
 export const PREFIJO_ARCHIVOS = "/api/archivos/";
 /** Perfiles de optimización: el cliente elige uno por nombre, nunca números arbitrarios */
 export const PERFILES_IMAGEN = {
-  general: { maxLado: 1600, maxBytes: null as number | null },
-  // Arte de cartas (D19 / LEEME): retrato 63:88 que se muestra a ≤ 400 px; ≤ 300 KB
-  carta: { maxLado: 1200, maxBytes: 300 * 1024 },
+  general: { maxLado: 1600, maxBytes: null as number | null, proporcion: null as number | null },
+  // Arte de cartas (D19 / LEEME): retrato 63:88 que se muestra a ≤ 400 px; ≤ 300 KB. Se recorta a esa proporción
+  carta: { maxLado: 1200, maxBytes: 300 * 1024, proporcion: 63 / 88 },
 } as const;
 export type PerfilImagen = keyof typeof PERFILES_IMAGEN;
 /** Límite de lo que llega al servidor: el navegador ya comprime antes (Vercel corta en 4,5 MB) */
@@ -40,12 +40,26 @@ export async function guardarImagen(
   }
   const original = entrada instanceof File ? Buffer.from(await entrada.arrayBuffer()) : entrada;
 
-  const { maxLado, maxBytes } = PERFILES_IMAGEN[opciones.perfil ?? "general"];
+  const { maxLado, maxBytes, proporcion } = PERFILES_IMAGEN[opciones.perfil ?? "general"];
   let datos: Buffer;
   let info: { width: number; height: number };
   try {
-    const base = await sharp(original)
-      .rotate()
+    // Aplica la orientación EXIF antes de medir, para recortar sobre las dimensiones reales
+    const orientada = await sharp(original).rotate().toBuffer({ resolveWithObject: true });
+    let tuberia = sharp(orientada.data);
+    if (proporcion) {
+      // Recorte centrado a la proporción del perfil (el máximo rectángulo que entra); no agranda nada
+      const { width: w, height: h } = orientada.info;
+      const ancho = Math.min(w, Math.round(h * proporcion));
+      const alto = Math.min(h, Math.round(w / proporcion));
+      tuberia = tuberia.extract({
+        left: Math.floor((w - ancho) / 2),
+        top: Math.floor((h - alto) / 2),
+        width: ancho,
+        height: alto,
+      });
+    }
+    const base = await tuberia
       .resize({ width: maxLado, height: maxLado, fit: "inside", withoutEnlargement: true })
       .toBuffer();
     // Baja la calidad de a poco hasta entrar en el peso máximo del perfil (si tiene)
