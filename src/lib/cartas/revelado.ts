@@ -1,7 +1,7 @@
 // Revelación progresiva del contenido de cartas católicas según % de fragmentos (D13)
 
 import type { CategoriaCarta, GradoCarta, RarezaCarta } from "./economia.ts";
-import { gradoDe, imagenDeGrado, type CartaConImagenes } from "./fragmentos.ts";
+import { gradoDe, gradoVisible, imagenDeGrado, type CartaConImagenes } from "./fragmentos.ts";
 import { TEXTOS_CARTAS } from "./textos.ts";
 
 export interface DatoDatasheetCompleto {
@@ -56,7 +56,9 @@ export interface ContenidoCartaVisible {
   fragmentosRequeridos: number;
   porcentaje: number; // Porcentaje entero (puede superar 100)
   desbloqueada: boolean;
-  grado: GradoCarta;
+  grado: GradoCarta; // grado reclamado (el que se ve)
+  gradoDisponible: GradoCarta; // grado que alcanzan los fragmentos
+  reclamable: boolean; // gradoDisponible > grado: borde eléctrico y botón "Reclamar" (D20)
 
   // Imagen del grado actual según D19 (nunca URLs de grados superiores)
   imagenUrl: string;
@@ -108,13 +110,18 @@ export function contarDatosVisiblesDatasheet(p: number, totalDatos: number): num
  */
 export function contenidoVisible(
   carta: CartaCompletaEntrada,
-  fragmentos: number
+  fragmentos: number,
+  gradoReclamado?: number
 ): ContenidoCartaVisible {
   const req = carta.fragmentosRequeridos;
-  const p = req > 0 ? fragmentos / req : 0;
-  const porcentaje = req > 0 ? Math.floor(p * 100) : 0;
-  const desbloqueada = p >= 1.0;
-  const grado = gradoDe(fragmentos, req);
+  const porcentaje = req > 0 ? Math.floor((fragmentos / req) * 100) : 0;
+  const gradoDisponible = gradoDe(fragmentos, req);
+  // Sin gradoReclamado (vista previa del admin) se muestra todo lo que alcanzan los fragmentos
+  const grado = gradoReclamado === undefined ? gradoDisponible : gradoVisible(fragmentos, req, gradoReclamado);
+  const desbloqueada = grado >= 1;
+  // D20: hasta reclamarla, una carta al 100 % se revela como si tuviera 99 %
+  const pReal = req > 0 ? fragmentos / req : 0;
+  const p = desbloqueada ? pReal : Math.min(pReal, 0.99);
 
   // 1. Oración: > 0% de fragmentos (p > 0)
   const oracionVisible = p > 0;
@@ -198,6 +205,8 @@ export function contenidoVisible(
     porcentaje,
     desbloqueada,
     grado,
+    gradoDisponible,
+    reclamable: gradoDisponible > grado,
     imagenUrl,
     creditoImagen: carta.creditoImagen ?? null,
     historia,

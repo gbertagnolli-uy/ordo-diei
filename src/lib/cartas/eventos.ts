@@ -42,11 +42,11 @@ export function esFiestaHoy(
 }
 
 /**
- * Cantidad de fragmentos regalados en el día de fiesta de una carta (D5):
- * ceil(requeridos × 0,5).
+ * Fragmentos regalados en el día de fiesta de una carta (D21): la carta entera
+ * (+100 %), la tenga o no. Si ya está al tope, lo que sobra se convierte en Incienso.
  */
 export function regaloFiesta(fragmentosRequeridos: number): number {
-  return Math.ceil(fragmentosRequeridos * 0.5);
+  return fragmentosRequeridos;
 }
 
 /**

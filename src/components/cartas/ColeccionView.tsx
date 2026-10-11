@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -31,13 +31,15 @@ import { CartaVista } from "@/components/cartas/CartaVista";
 import { TiendaCartasView } from "@/components/cartas/TiendaCartasView";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 import { ModalAperturaSobre, type ResultadoCompraSobre, type CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
+import { BordeReclamable } from "@/components/cartas/BordeReclamable";
+import { useReclamoCarta, claveReclamo } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
-import type { ContenidoCartaVisible } from "@/lib/cartas/revelado";
+import type { CartaListada } from "@/lib/cartas/server";
 import type { GradoCarta } from "@/lib/cartas/economia";
 
 interface ColeccionViewProps {
   inicial: {
-    cartas: ContenidoCartaVisible[];
+    cartas: CartaListada[];
     usuario: {
       availablePoints: number;
       incienso: number;
@@ -57,7 +59,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   const [rarezaFiltro, setRarezaFiltro] = useState<string>("Todas");
   const [gradoFiltro, setGradoFiltro] = useState<string>("Todos");
 
-  const [cartas, setCartas] = useState<ContenidoCartaVisible[]>(inicial.cartas);
+  const [cartas, setCartas] = useState<CartaListada[]>(inicial.cartas);
   const [usuario, setUsuario] = useState(inicial.usuario);
   const [modalAperturaOpen, setModalAperturaOpen] = useState<boolean>(false);
   const [resultadoApertura, setResultadoApertura] = useState<ResultadoCompraSobre | null>(null);
@@ -78,6 +80,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
               fragmentos: afectada.fragmentosDespues,
               desbloqueada: Boolean(afectada.desbloquea || c.desbloqueada),
               grado: afectada.gradoDespues as GradoCarta,
+              reclamable: Boolean(afectada.reclamable),
               porcentaje: Math.floor((afectada.fragmentosDespues / c.fragmentosRequeridos) * 100),
             };
           }
@@ -85,6 +88,58 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
         })
       );
     }
+  };
+
+  const recargarCartas = () => {
+    fetch("/api/cartas")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setCartas(data.cartas);
+          setUsuario(data.usuario);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const { reclamar, reclamando, modal: modalReclamo } = useReclamoCarta(recargarCartas);
+
+  // D20/D21: borde eléctrico en toda carta reclamable (grado alcanzado o fiesta de hoy)
+  const marcoCarta = (carta: CartaListada, contenido: ReactNode) => (
+    <BordeReclamable activo={carta.reclamable || carta.fiestaHoy} radio={8}>
+      {contenido}
+    </BordeReclamable>
+  );
+
+  // El grado se reclama acá; la fiesta, en el aviso de arriba (un solo botón por reclamo)
+  const accionReclamo = (carta: CartaListada) => {
+    if (carta.reclamable && carta.id) {
+      const enCurso = reclamando === claveReclamo({ tipo: "grado", cartaId: carta.id });
+      return (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => reclamar({ tipo: "grado", cartaId: carta.id! })}
+          disabled={enCurso}
+          className="h-7 gap-1 text-xs bg-amber-500 text-amber-950 hover:bg-amber-600"
+        >
+          <Sparkles className="size-3.5" />
+          {enCurso
+            ? "Reclamando..."
+            : TEXTOS_CARTAS.reclamos.reclamarGrado(
+                carta.desbloqueada ? TEXTOS_CARTAS.gradosRomanos[carta.gradoDisponible] : ""
+              )}
+        </Button>
+      );
+    }
+    if (carta.fiestaHoy) {
+      return (
+        <Badge variant="outline" className="justify-center text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10">
+          {TEXTOS_CARTAS.reclamos.fiestaHoy}
+        </Badge>
+      );
+    }
+    return null;
   };
 
   const handleActualizarSaldo = (nuevoPuntos: number, nuevoIncienso: number) => {
@@ -194,20 +249,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
       </div>
 
       {/* Aviso de fiesta litúrgica y cumpleaños del día */}
-      <BannerEventosCartas
-        className="mb-2"
-        onReclamoExitoso={() => {
-          fetch("/api/cartas")
-            .then((r) => (r.ok ? r.json() : null))
-            .then((data) => {
-              if (data) {
-                setCartas(data.cartas);
-                setUsuario(data.usuario);
-              }
-            })
-            .catch(() => {});
-        }}
-      />
+      <BannerEventosCartas className="mb-2" onReclamoExitoso={recargarCartas} />
 
       {/* Selector de Pestañas */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
@@ -344,34 +386,36 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                     (carta.fragmentos / carta.fragmentosRequeridos) * 100
                   );
                   return (
-                    <Link
-                      key={carta.clave}
-                      href={`/dashboard/cartas/${carta.clave}`}
-                      className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
-                    >
-                      <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
-                        <CartaVista
-                          carta={carta}
-                          modo="bloqueada"
-                          grado={carta.grado}
-                          fragmentos={carta.fragmentos}
-                          ancho={240}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
-                          {carta.nombre}
-                        </span>
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>
-                            {carta.fragmentos}/{carta.fragmentosRequeridos}
+                    <div key={carta.clave} className="flex flex-col gap-1.5">
+                      <Link
+                        href={`/dashboard/cartas/${carta.clave}`}
+                        className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
+                      >
+                        {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
+                          <CartaVista
+                            carta={carta}
+                            modo="bloqueada"
+                            grado={carta.grado}
+                            fragmentos={carta.fragmentos}
+                            ancho={240}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>)}
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                            {carta.nombre}
                           </span>
-                          <span className="font-medium text-foreground">{pct}%</span>
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>
+                              {carta.fragmentos}/{carta.fragmentosRequeridos}
+                            </span>
+                            <span className="font-medium text-foreground">{pct}%</span>
+                          </div>
+                          <Progress value={pct} className="h-1.5" />
                         </div>
-                        <Progress value={pct} className="h-1.5" />
-                      </div>
-                    </Link>
+                      </Link>
+                      {accionReclamo(carta)}
+                    </div>
                   );
                 })}
               </div>
@@ -418,38 +462,40 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                 {coleccionDesbloqueadas.map((carta) => {
                   const romano = TEXTOS_CARTAS.gradosRomanos[carta.grado] || "I";
                   return (
-                    <Link
-                      key={carta.clave}
-                      href={`/dashboard/cartas/${carta.clave}`}
-                      className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
-                    >
-                      <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
-                        <CartaVista
-                          carta={carta}
-                          modo="plana"
-                          grado={carta.grado}
-                          fragmentos={carta.fragmentos}
-                          ancho={240}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
-                            {carta.nombre}
+                    <div key={carta.clave} className="flex flex-col gap-1.5">
+                      <Link
+                        href={`/dashboard/cartas/${carta.clave}`}
+                        className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
+                      >
+                        {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
+                          <CartaVista
+                            carta={carta}
+                            modo="plana"
+                            grado={carta.grado}
+                            fragmentos={carta.fragmentos}
+                            ancho={240}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          />
+                        </div>)}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                              {carta.nombre}
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] px-1 py-0 font-serif font-bold uppercase shrink-0"
+                            >
+                              Grado {romano}
+                            </Badge>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {carta.subtitulo || TEXTOS_CARTAS.rarezas[carta.rareza]}
                           </span>
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] px-1 py-0 font-serif font-bold uppercase shrink-0"
-                          >
-                            Grado {romano}
-                          </Badge>
                         </div>
-                        <span className="text-[11px] text-muted-foreground truncate">
-                          {carta.subtitulo || TEXTOS_CARTAS.rarezas[carta.rareza]}
-                        </span>
-                      </div>
-                    </Link>
+                      </Link>
+                      {accionReclamo(carta)}
+                    </div>
                   );
                 })}
               </div>
@@ -485,47 +531,49 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                 const romano = TEXTOS_CARTAS.gradosRomanos[carta.grado] || "I";
 
                 return (
-                  <Link
-                    key={carta.clave}
-                    href={`/dashboard/cartas/${carta.clave}`}
-                    className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
-                  >
-                    <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
-                      <CartaVista
-                        carta={carta}
-                        modo={modo}
-                        grado={carta.grado}
-                        fragmentos={carta.fragmentos}
-                        ancho={240}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
-                          {carta.nombre}
+                  <div key={carta.clave} className="flex flex-col gap-1.5">
+                    <Link
+                      href={`/dashboard/cartas/${carta.clave}`}
+                      className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
+                    >
+                      {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
+                        <CartaVista
+                          carta={carta}
+                          modo={modo}
+                          grado={carta.grado}
+                          fragmentos={carta.fragmentos}
+                          ancho={240}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        />
+                      </div>)}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                            {carta.nombre}
+                          </span>
+                          {carta.desbloqueada ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] px-1 py-0 font-serif font-bold uppercase shrink-0"
+                            >
+                              Grado {romano}
+                            </Badge>
+                          ) : (
+                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                              <Lock className="size-3" />
+                              <span>
+                                {carta.fragmentos}/{carta.fragmentosRequeridos}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground truncate">
+                          {TEXTOS_CARTAS.rarezas[carta.rareza]} · {carta.categoria}
                         </span>
-                        {carta.desbloqueada ? (
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] px-1 py-0 font-serif font-bold uppercase shrink-0"
-                          >
-                            Grado {romano}
-                          </Badge>
-                        ) : (
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground shrink-0 tabular-nums">
-                            <Lock className="size-3" />
-                            <span>
-                              {carta.fragmentos}/{carta.fragmentosRequeridos}
-                            </span>
-                          </div>
-                        )}
                       </div>
-                      <span className="text-[11px] text-muted-foreground truncate">
-                        {TEXTOS_CARTAS.rarezas[carta.rareza]} · {carta.categoria}
-                      </span>
-                    </div>
-                  </Link>
+                    </Link>
+                    {accionReclamo(carta)}
+                  </div>
                 );
               })}
             </div>
@@ -544,6 +592,8 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
           />
         </TabsContent>
       </Tabs>
+
+      {modalReclamo}
 
       {/* Modal de Apertura Animado en 3 Etapas con Confeti */}
       <ModalAperturaSobre

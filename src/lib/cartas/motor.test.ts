@@ -16,12 +16,14 @@ import {
 import {
   elegirBanda,
   sortearCarta,
+  sortearBienvenida,
   sortearSobreMeditacion,
   sortearSobreRevelacion,
   type CartaSorteable,
 } from "./sorteo.ts";
 import {
   gradoDe,
+  gradoVisible,
   aplicarFragmentos,
   imagenDeGrado,
 } from "./fragmentos.ts";
@@ -59,11 +61,11 @@ test("Economía: valores base y sin arbitraje de Incienso", () => {
   assert.equal(CONFIG_RAREZAS.Perfecta.valorFragmento, 4);
   assert.equal(CONFIG_RAREZAS.Celestial.valorFragmento, 10);
 
-  // Precios en puntos = valor × 4
+  // Precios en puntos por rareza (vault/ECONOMIA_CARTAS.md §4.6)
   assert.equal(precioFragmentoEnPuntos("Comun"), 4);
-  assert.equal(precioFragmentoEnPuntos("Buena"), 8);
-  assert.equal(precioFragmentoEnPuntos("Perfecta"), 16);
-  assert.equal(precioFragmentoEnPuntos("Celestial"), 40);
+  assert.equal(precioFragmentoEnPuntos("Buena"), 6);
+  assert.equal(precioFragmentoEnPuntos("Perfecta"), 8);
+  assert.equal(precioFragmentoEnPuntos("Celestial"), 12);
 
   // Precios en Incienso = valor directo (sin arbitraje entre rarezas)
   assert.equal(precioFragmentoEnIncienso("Comun"), 1);
@@ -107,11 +109,11 @@ test("Sorteo: Sobre de Meditación nunca contiene cartas Perfecta ni Celestial",
 
   for (let i = 0; i < 50; i++) {
     const res = sortearSobreMeditacion(POOL_PRUEBA, rngPseudo);
-    assert.equal(res.fragmentosTotal, 5);
+    assert.equal(res.fragmentosTotal, 8);
     assert.equal(res.costoPuntos, 40);
     assert.ok(res.items.length >= 1 && res.items.length <= 3);
     const suma = res.items.reduce((acc, it) => acc + it.cantidad, 0);
-    assert.equal(suma, 5);
+    assert.equal(suma, 8);
 
     for (const item of res.items) {
       assert.ok(
@@ -122,7 +124,7 @@ test("Sorteo: Sobre de Meditación nunca contiene cartas Perfecta ni Celestial",
   }
 });
 
-test("Sorteo: Sobre de Revelación garantiza al menos 4 fragmentos de Perfecta o Celestial", () => {
+test("Sorteo: Sobre de Revelación garantiza al menos 6 fragmentos de Perfecta o Celestial", () => {
   let step = 0;
   const rngPseudo = () => {
     step = (step + 13) % 100;
@@ -131,19 +133,19 @@ test("Sorteo: Sobre de Revelación garantiza al menos 4 fragmentos de Perfecta o
 
   for (let i = 0; i < 50; i++) {
     const res = sortearSobreRevelacion(POOL_PRUEBA, rngPseudo);
-    assert.equal(res.fragmentosTotal, 8);
-    assert.equal(res.costoPuntos, 160);
+    assert.equal(res.fragmentosTotal, 12);
+    assert.equal(res.costoPuntos, 100);
     assert.ok(res.items.length >= 1 && res.items.length <= 3);
     const suma = res.items.reduce((acc, it) => acc + it.cantidad, 0);
-    assert.equal(suma, 8);
+    assert.equal(suma, 12);
 
-    // Debe existir al menos un item de Perfecta o Celestial con >= 4 fragmentos
+    // Debe existir al menos un item de Perfecta o Celestial con >= 6 fragmentos
     const garantizado = res.items.some(
-      (it) => (it.rareza === "Perfecta" || it.rareza === "Celestial") && it.cantidad >= 4
+      (it) => (it.rareza === "Perfecta" || it.rareza === "Celestial") && it.cantidad >= 6
     );
     assert.ok(
       garantizado,
-      "Sobre de Revelación no cumplió la garantía de al menos 4 fragmentos de Perfecta o Celestial"
+      "Sobre de Revelación no cumplió la garantía de al menos 6 fragmentos de Perfecta o Celestial"
     );
   }
 });
@@ -317,6 +319,53 @@ test("Revelado D13: fronteras 0, 1, 24, 25, 49, 50, 99, 100 % y seguridad del te
   assert.equal(v100.datasheet.every((d) => !d.valor.includes("???")), true);
 });
 
+test("Reclamar (D20): al 100 % sin reclamar sigue bloqueada; el grado sube solo al reclamarlo", () => {
+  // 100 % sin reclamar: bloqueada, sin historia, lista para reclamar
+  const sinReclamar = contenidoVisible(CARTA_MOCK, 100, 0);
+  assert.equal(sinReclamar.desbloqueada, false);
+  assert.equal(sinReclamar.grado, 0);
+  assert.equal(sinReclamar.gradoDisponible, 1);
+  assert.equal(sinReclamar.reclamable, true);
+  assert.equal(sinReclamar.porcentaje, 100);
+  assert.equal(sinReclamar.historia.visible, false);
+  assert.ok(!JSON.stringify(sinReclamar).includes("TEXTO_SECRETO_HISTORIA"));
+  assert.equal(sinReclamar.datasheet.at(-1)?.visible, false);
+
+  // Reclamada en Grado I, con fragmentos para el III: se ve en I y puede reclamar
+  const pendiente = contenidoVisible(CARTA_MOCK, 200, 1);
+  assert.equal(pendiente.desbloqueada, true);
+  assert.equal(pendiente.grado, 1);
+  assert.equal(pendiente.gradoDisponible, 3);
+  assert.equal(pendiente.reclamable, true);
+  assert.equal(pendiente.historia.visible, true);
+
+  // Todo reclamado: nada pendiente
+  const alDia = contenidoVisible(CARTA_MOCK, 300, 4);
+  assert.equal(alDia.grado, 4);
+  assert.equal(alDia.reclamable, false);
+
+  // Nunca se ve un grado mayor que el que alcanzan los fragmentos
+  assert.equal(gradoVisible(50, 100, 4), 0);
+  assert.equal(gradoVisible(150, 100, 1), 1);
+});
+
+test("Bienvenida (D23): 3 Comunes distintas al azar", () => {
+  let step = 0;
+  const rngPseudo = () => {
+    step = (step + 37) % 100;
+    return step / 100;
+  };
+  for (let i = 0; i < 30; i++) {
+    const elegidas = sortearBienvenida(POOL_PRUEBA, 3, rngPseudo);
+    const comunes = POOL_PRUEBA.filter((c) => c.rareza === "Comun").length;
+    assert.equal(elegidas.length, Math.min(3, comunes));
+    assert.ok(elegidas.every((c) => c.rareza === "Comun"));
+    assert.equal(new Set(elegidas.map((c) => c.id)).size, elegidas.length);
+  }
+  // Con menos Comunes que las pedidas devuelve las que hay
+  assert.equal(sortearBienvenida(POOL_PRUEBA.filter((c) => c.rareza !== "Comun"), 3).length, 0);
+});
+
 test("Datasheet clamp formula (D13)", () => {
   const N = 4;
   // p < 25 % -> 0
@@ -340,11 +389,11 @@ test("Eventos: fiesta litúrgica y bono de tienda (D5, D17)", () => {
   assert.equal(esFiestaHoy("10-04", otraFecha, "America/Montevideo"), false);
   assert.equal(esFiestaHoy(null, fechaFiesta), false);
 
-  // Regalo fiesta: ceil(req * 0.5)
-  assert.equal(regaloFiesta(10), 5);
-  assert.equal(regaloFiesta(25), 13);
-  assert.equal(regaloFiesta(60), 30);
-  assert.equal(regaloFiesta(150), 75);
+  // Regalo fiesta (D21): la carta entera
+  assert.equal(regaloFiesta(10), 10);
+  assert.equal(regaloFiesta(25), 25);
+  assert.equal(regaloFiesta(60), 60);
+  assert.equal(regaloFiesta(150), 150);
 
   // Bono tienda: 1.5 en el día de fiesta
   assert.equal(multiplicadorTienda("10-04", fechaFiesta, "America/Montevideo"), BONO_FIESTA_TIENDA);
@@ -425,21 +474,23 @@ test("Simulación económica para 10, 15 y 20 pts/día", () => {
   const resultados = ejecutarSimulacionCompleta();
   assert.equal(resultados.length, 3);
 
-  // Para 15 pts/día:
-  const r15 = resultados[1];
-  assert.equal(r15.ritmoPtsPorDia, 15);
-  // Primera Común directa: 40 pts / 15 = 2.7 días
-  assert.equal(r15.diasPrimeraComunDirecta, 2.7);
-  // Primera Buena directa: 200 pts / 15 = 13.3 días
-  assert.equal(r15.diasPrimeraBuenaDirecta, 13.3);
-  // Grado IV Común directa: 120 pts / 15 = 8 días
-  assert.equal(r15.diasGradoIVComunDirecta, 8);
-  // Primera Celestial directa: 6000 pts / 15 = 400 días
-  assert.equal(r15.diasPrimeraCelestialDirecta, 400);
+  // A 20 pts/día (vault/ECONOMIA_CARTAS.md §5): Común 2, Buena 7,5, Perfecta 24, Celestial 90 días
+  const r20 = resultados[2];
+  assert.equal(r20.ritmoPtsPorDia, 20);
+  const dias = Object.fromEntries(r20.rarezas.map((r) => [r.rareza, r.diasDesbloquear]));
+  assert.deepEqual(dias, { Comun: 2, Buena: 7.5, Perfecta: 24, Celestial: 90 });
+  const celestial = r20.rarezas.find((r) => r.rareza === "Celestial")!;
+  assert.equal(celestial.diasMinimosPorTope, 15);
+  assert.equal(celestial.diasGradoIV, 270);
 
-  // Comprobar que todos los valores son numéricos válidos
+  // Los sobres valen algo menos que comprar directo (sin tope diario y con sorpresa)
+  assert.ok(r20.rendimientoSobreMeditacion > 0.85 && r20.rendimientoSobreMeditacion < 1);
+  assert.ok(r20.rendimientoSobreRevelacion > 0.75 && r20.rendimientoSobreRevelacion < 1);
+
+  // La dificultad crece con la rareza a cualquier ritmo
   for (const r of resultados) {
-    assert.ok(r.diasPrimeraComunDirecta > 0);
-    assert.ok(r.diasPrimeraCelestialDirecta > r.diasPrimeraComunDirecta);
+    for (let k = 1; k < r.rarezas.length; k++) {
+      assert.ok(r.rarezas[k].diasDesbloquear > r.rarezas[k - 1].diasDesbloquear);
+    }
   }
 });

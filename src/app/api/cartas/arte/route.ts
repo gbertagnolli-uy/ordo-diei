@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     const cu = await prisma.cartaUsuario.findUnique({
       where: { usuarioId_cartaId: { usuarioId: Number(session.user.id), cartaId: carta.id } },
     });
-    if (rutaPermitida(carta, cu?.fragmentos ?? 0) !== ruta) {
+    if (rutaPermitida(carta, cu?.fragmentos ?? 0, cu?.gradoReclamado ?? 0) !== ruta) {
       return NextResponse.json({ error: "Todavía no alcanzaste este grado" }, { status: 403 });
     }
   }

@@ -82,7 +82,7 @@ export function AppSidebar({
   habitosPendientes?: number | null;
   /** Premios por reclamar y, para padres, reclamos de la familia por entregar */
   premiosPendientes?: number | null;
-  /** Fiesta o cumpleaños con regalo de cartas sin reclamar hoy */
+  /** Cartas por reclamar: fiesta, cumpleaños, bienvenida o un grado alcanzado */
   hayEventosCartas?: boolean;
 }) {
   const pathname = usePathname();
@@ -156,7 +156,7 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {hayEventosCartas && (
-                <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Eventos festivos disponibles" />
+                <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Cartas para reclamar" />
               )}
             </SidebarMenuItem>
           </SidebarMenu>
