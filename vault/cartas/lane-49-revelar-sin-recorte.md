@@ -19,3 +19,14 @@ El tilt 3D de `HoloCard` (y el halo de la Gloriosa) quedaban cortados por esos r
 - `CartaVista.tsx`: nueva prop `mostrarTitulo` (default `true`, solo modo holo). El modal pasa `false`, porque antes
   el título de la carta quedaba oculto por el recorte y el modal ya muestra el nombre debajo; así no aparece duplicado.
 - Sin cambios de comportamiento ni en otras vistas (el default mantiene el título).
+
+## Pedido 2 (textual)
+
+> además quiero que las cartas comunes tengan el preset "Gold". Las que tienen el preset "Cosmos" lo quiero cambiar por "Bursts". Todas las cartas debe tener el efecto holo configurado con intensidad 0.5 y glare en 0.5.
+
+## Cambio 2
+
+- `CartaVista.tsx`: Común pasa a `gold`; Celestial (era `cosmos`) pasa a `bursts`. Buena (`glitter`) y Perfecta (`gold`) siguen igual.
+- Holo con `intensity` 0.5 y `glare` 0.5 para todas las cartas (constantes `INTENSIDAD_HOLO` y `GLARE_HOLO`).
+  Se quitó la intensidad por rareza y el multiplicador por grado (reemplaza D1 "Común sin holo" y el refuerzo por grado de D14).
+- `economia.ts`: `CONFIG_RAREZAS.holoPreset` y `holoIntensidad` alineados con lo anterior (hoy no los lee ninguna vista).
