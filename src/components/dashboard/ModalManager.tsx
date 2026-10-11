@@ -19,6 +19,7 @@ const HABITO_POPUP = (nombre = "este hábito") => ({
   ascenso: { titulo: "¡Un paso más!", texto: `Tu constancia con ${nombre} dio fruto. Desde mañana, este es tu nuevo paso.` },
   completo: { titulo: `¡${nombre} completado!`, texto: `Completaste la escalera de ${nombre}. El hábito está formado: ahora a sostenerlo.` },
   regreso: { titulo: "¡Qué bueno que volviste!", texto: "Volver es lo más importante. Retomamos desde aquí, sin culpa." },
+  libro: { titulo: "¡Terminaste el libro!", texto: "Ganaste un premio: pedir un libro nuevo. Reclamalo en Mis premios y contale a tus papás cuál querés." },
 });
 const CelebrateContext = createContext<(opts?: Parameters<ConfettiRef["fire"]>[0]) => void>(() => {});
 
@@ -90,7 +91,7 @@ export function ModalManager() {
       )}
 
       {(type === "ORACION" || type === "HABITO") && (() => {
-        const popup = HABITO_POPUP(data?.habito || "este hábito")[data?.tipo as "ascenso" | "completo" | "regreso"] ?? {
+        const popup = HABITO_POPUP(data?.habito || "este hábito")[data?.tipo as "ascenso" | "completo" | "regreso" | "libro"] ?? {
           titulo: "¡Felicitaciones!",
           texto: "Seguí adelante con tu constancia.",
         };

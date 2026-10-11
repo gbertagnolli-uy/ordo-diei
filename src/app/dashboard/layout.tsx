@@ -7,6 +7,8 @@ import { MainDock } from "@/components/dashboard/MainDock";
 import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
 import { getEstadoHabitos } from "@/lib/habitos/server";
+import { contarRecompensasPendientes } from "@/lib/recompensas/server";
+import { eventosDeHoy } from "@/lib/cartas/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/");
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario] = await Promise.all([
+  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -24,7 +26,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       select: { id: true, estado: true, timerStartedAt: true, fechaVencimiento: true, horaEjecucion: true },
     }),
     getEstadoHabitos(Number(session.user.id)),
+    contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
+    eventosDeHoy(Number(session.user.id)).catch(() => null),
   ]);
+  const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
   const tasks = myTasks.map((t) => ({
@@ -36,7 +41,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <SidebarProvider>
-      <AppSidebar currentUser={currentUser} tasks={tasks} habitosPendientes={habitosPendientes} />
+      <AppSidebar
+        currentUser={currentUser}
+        tasks={tasks}
+        habitosPendientes={habitosPendientes}
+        premiosPendientes={premiosPendientes}
+        hayEventosCartas={hayEventosCartas}
+      />
       <SidebarInset className="min-w-0">
         <NoticeBar />
         <div className="flex flex-1 flex-col pb-24">{children}</div>

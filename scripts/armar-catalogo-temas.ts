@@ -1,0 +1,320 @@
+import fs from "node:fs";
+import path from "node:path";
+
+interface CartaTema {
+  clave: string;
+  nombre: string;
+  subtitulo?: string;
+  categoria: "Tema";
+  rareza: "Comun" | "Buena" | "Perfecta" | "Celestial";
+  celebracion: string | null;
+  historia: string;
+  oracion: string;
+  frase: string;
+  fraseAutor: string;
+  datasheet: Array<{ etiqueta: string; valor: string }>;
+  imagenes: { [grado: string]: string };
+  creditoImagen: string;
+}
+
+const temas: CartaTema[] = [
+  // --- 1. DIOS Y NUESTRO SEÑOR ---
+  {
+    clave: "sagrada-eucaristia",
+    nombre: "La Sagrada Eucaristía",
+    subtitulo: "Fuente y Culmen de Toda la Vida Cristiana",
+    categoria: "Tema",
+    rareza: "Celestial",
+    celebracion: null,
+    historia:
+      "La Sagrada Eucaristía es el sacramento supremo del amor de Jesucristo, en el cual el mismo Señor está verdaderamente presente con su Cuerpo, Sangre, Alma y Divinidad bajo las apariencias del pan y del vino consagrados en la Santa Misa.\n\nInstituida en la Última Cena antes de padecer por nuestra salvación, la Eucaristía renueva sobre el altar el único y perfecto sacrificio de la Cruz. Es el banquete celestial donde el alma se alimenta con el Pan de Vida eterna y se une íntimamente a Cristo Jesús.",
+    oracion:
+      "Bendito y alabado sea el Santísimo Sacramento del Altar, y la limpia y pura Concepción de la Santísima Virgen María, Madre de Dios y Señora nuestra, concebida sin mancha de pecado original en el primer instante de su ser natural. Amén.",
+    frase: "Yo soy el pan vivo que ha bajado del cielo; el que coma de este pan vivirá para siempre.",
+    fraseAutor: "Jesucristo Nuestro Señor (Jn 6, 51)",
+    datasheet: [
+      { etiqueta: "Naturaleza sagrada", valor: "Sacramento supremo de la presencia real de Cristo" },
+      { etiqueta: "Materia litúrgica", valor: "Pan ácimo de trigo y vino puro de vid" },
+      { etiqueta: "Institución evangélica", valor: "La Última Cena en el Cenáculo de Jerusalén" },
+      { etiqueta: "Fruto espiritual", valor: "Unión con Cristo, perdón de faltas veniales y vida eterna" },
+    ],
+    imagenes: { "1": "/cartas/sagrada-eucaristia/1.webp" },
+    creditoImagen: "Dominio público / Arte sacro cristiano tradicional",
+  },
+  {
+    clave: "sagrado-corazon-de-jesus",
+    nombre: "El Sagrado Corazón de Jesús",
+    subtitulo: "Horno Ardiente de Amor y Misericordia",
+    categoria: "Tema",
+    rareza: "Celestial",
+    celebracion: null,
+    historia:
+      "La devoción al Sagrado Corazón de Jesús contempla el misterio inabarcable del amor divino y humano del Redentor hacia los hombres. Atravesado por la lanza del soldado en el monte Calvario, de su costado abierto brotaron sangre y agua, fuentes puras de gracia y sacramentos para la Iglesia.\n\nEn el siglo XVII, Jesús se manifestó en Paray-le-Monial a Santa Margarita María de Alacoque, mostrándole su divino Corazón coronado de espinas y en llamas ardientes de amor, pidiéndole reparación y prometiendo derramar bendiciones copiosas sobre las almas que honren su imagen sagrada.",
+    oracion:
+      "Sagrado Corazón de Jesús, en Vos confío. Jesús manso y humilde de Corazón, haz mi corazón semejante al tuyo.",
+    frase:
+      "He aquí el Corazón que tanto ha amado a los hombres y en cambio no recibe de la mayor parte de ellos sino ingratitudes y desprecios.",
+    fraseAutor: "Jesucristo a Santa Margarita María de Alacoque (Paray-le-Monial, 1675)",
+    datasheet: [
+      { etiqueta: "Misterio contemplado", valor: "Amor infinito del Hijo de Dios encarnado" },
+      { etiqueta: "Símbolos sagrados", valor: "Cruz en la cima, corona de espinas y llama de fuego" },
+      { etiqueta: "Aparición solemne", valor: "Paray-le-Monial, Francia (a Santa Margarita María)" },
+      { etiqueta: "Práctica devota", valor: "Comunión reparadora de los Primeros Viernes de mes" },
+    ],
+    imagenes: { "1": "/cartas/sagrado-corazon-de-jesus/1.webp" },
+    creditoImagen: "Dominio público / Arte cristiano devocional",
+  },
+  {
+    clave: "santa-cruz",
+    nombre: "La Santa Cruz de Nuestro Señor",
+    subtitulo: "Árbol de Vida y Señal de Salvación",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "09-14",
+    historia:
+      "La Santa Cruz, antiguo madero de tortura e infamia, fue transformada por el sacrificio del Hijo de Dios en trofeo soberano de redención, cátedra de amor y árbol de vida eterna para el género humano.\n\nCada 14 de septiembre, la Iglesia celebra la fiesta solemne de la Exaltación de la Santa Cruz, recordando el hallazgo y veneración del santo leño y proclamando que el cristiano halla en el signo de la Cruz fortaleza en la tribulación, perdón de los pecados y victoria irrevocable sobre la muerte.",
+    oracion: "Te adoramos, oh Cristo, y te bendecimos, porque con tu santa Cruz redimiste al mundo.",
+    frase:
+      "Dios me libre de gloriarme si no es en la cruz de nuestro Señor Jesucristo, por quien el mundo está crucificado para mí, y yo para el mundo.",
+    fraseAutor: "San Pablo Apóstol (Gál 6, 14)",
+    datasheet: [
+      { etiqueta: "Misterio celebrado", valor: "Redención del linaje humano por el sacrificio de Cristo" },
+      { etiqueta: "Fiesta litúrgica", valor: "Exaltación de la Santa Cruz (14 de septiembre)" },
+      { etiqueta: "Señal del cristiano", valor: "El signo de la Cruz al iniciar y concluir las oraciones" },
+      { etiqueta: "Fruto eterno", valor: "Vencimiento del pecado y reconciliación de la humanidad" },
+    ],
+    imagenes: { "1": "/cartas/santa-cruz/1.webp" },
+    creditoImagen: "Dominio público / Arte sacro cristiano",
+  },
+
+  // --- 2. FIESTAS MARIANAS DE LA LITURGIA DE SAN PÍO V ---
+  {
+    clave: "fiesta-purificacion-de-maria",
+    nombre: "La Purificación de Nuestra Señora",
+    subtitulo: "Fiesta de la Candelaria y Presentación en el Templo (San Pío V)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "02-02",
+    historia:
+      "Celebrada cuarenta días después de la Natividad de Nuestro Señor, la Purificación de la Santísima Virgen María conmemora la humilde sumisión de la Madre de Dios a la Ley mosaica en el Templo de Jerusalén. Aunque exenta de toda impureza por su virginidad perpetua y concepción inmaculada, María se presentó con el Niño Jesús y la ofrenda de los pobres: un par de tórtolas o dos pichones.\n\nEn esta fiesta solemne, llamada tradicionalmente de la Candelaria, la Iglesia bendice los cirios y realiza una devota procesión cantando el Cántico de Simeón, quien proclamó a Cristo como «Luz para iluminar a las naciones». La liturgia de San Pío V ensalza este misterio como manifestación de obediencia, pureza y luz divina.",
+    oracion:
+      "Dios todopoderoso y eterno, te suplicamos humildemente que, así como tu Unigénito fue presentado hoy en el templo en la sustancia de nuestra carne, así nos concedas ser presentados ante Ti con almas purificadas.",
+    frase: "Mis ojos han visto tu salvación, luz para iluminar a las naciones y gloria de tu pueblo Israel.",
+    fraseAutor: "Cántico del anciano Simeón (Lc 2, 30-32)",
+    datasheet: [
+      { etiqueta: "Día litúrgico", valor: "2 de febrero (40 días después de Navidad)" },
+      { etiqueta: "Rito tradicional", valor: "Bendición solemne de las candelas y procesión de la luz" },
+      { etiqueta: "Misterio celebrado", valor: "Obediencia perfecta de María y manifestación de Cristo luz" },
+      { etiqueta: "Profecía mariana", valor: "«Una espada atravesará tu propia alma» (Lc 2, 35)" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-purificacion-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Arte sacro mariano tradicional",
+  },
+  {
+    clave: "fiesta-anunciacion-de-maria",
+    nombre: "La Anunciación de la Virgen María",
+    subtitulo: "Encarnación del Verbo y el Fiat de María (San Pío V)",
+    categoria: "Tema",
+    rareza: "Celestial",
+    celebracion: "03-25",
+    historia:
+      "El 25 de marzo la Iglesia celebra uno de los misterios más excelsos de la Redención: el momento solemne en que el Verbo divino se hizo carne en el seno purísimo de la Virgen María. El Arcángel San Gabriel fue enviado por la Santísima Trinidad a Nazaret para saludarla: «Ave, gratia plena, Dominus tecum».\n\nCon humildad y fe inquebrantable, María pronunció su generoso «Fiat»: «He aquí la esclava del Señor; hágase en mí según tu palabra». En ese instante supremo, el Hijo de Dios se encarnó en sus entrañas virginales por obra del Espíritu Santo, comenzando en el tiempo la salvación de la humanidad.",
+    oracion:
+      "Te rogamos, Señor, que infundas tu gracia en nuestras almas, para que habiendo conocido por la voz del Ángel la Encarnación de Cristo tu Hijo, seamos conducidos por su Pasión y Cruz a la gloria de su Resurrección.",
+    frase: "He aquí la esclava del Señor; hágase en mí según tu palabra.",
+    fraseAutor: "Santa María Virgen (Lc 1, 38)",
+    datasheet: [
+      { etiqueta: "Misterio central", valor: "La Encarnación del Hijo de Dios en las entrañas de María" },
+      { etiqueta: "Mensajero divino", valor: "El Arcángel San Gabriel enviado por el Altísimo" },
+      { etiqueta: "Respuesta de fe", valor: "El «Fiat» virginal de María Santísima" },
+      { etiqueta: "Fecha litúrgica", valor: "25 de marzo (exactamente nueve meses antes de Navidad)" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-anunciacion-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Arte sacro mariano",
+  },
+  {
+    clave: "fiesta-visitacion-de-maria",
+    nombre: "La Visitación de Nuestra Señora",
+    subtitulo: "Caridad Mariana y Cántico del Magníficat (San Pío V)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "07-02",
+    historia:
+      "Fijada el 2 de julio en el Misal y Breviario de San Pío V, la festividad de la Visitación conmemora el viaje presuroso de la Virgen María desde Nazaret hasta la montaña de Judea para servir y felicitar a su prima Santa Isabel, que esperaba a San Juan Bautista.\n\nAl escuchar Isabel el saludo de María, la criatura saltó de júbilo en su vientre e Isabel proclamó llena del Espíritu Santo: «¡Bendita tú entre todas las mujeres y bendito el fruto de tu vientre!». María respondió entonando el inmortal cántico del Magníficat: «Proclama mi alma la grandeza del Señor», que la Iglesia canta a diario en la hora sagrada de Vísperas.",
+    oracion:
+      "Concede, Señor, a tus siervos el don de la gracia celestial, para que a quienes el parto de la Santísima Virgen otorgó el principio de la salvación, la devota solemnidad de su Visitación nos aumente la paz.",
+    frase: "Proclama mi alma la grandeza del Señor, y se alegra mi espíritu en Dios mi Salvador.",
+    fraseAutor: "Cántico del Magníficat (Lc 1, 46-47)",
+    datasheet: [
+      { etiqueta: "Fecha de San Pío V", valor: "2 de julio en el Misal Romano de 1570" },
+      { etiqueta: "Lugar bíblico", valor: "Ain Karim, montañas de Judea" },
+      { etiqueta: "Primer milagro de gracia", valor: "Santificación de San Juan Bautista en el seno materno" },
+      { etiqueta: "Cántico perenne", valor: "El Magníficat rezado diariamente en Vísperas" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-visitacion-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Arte mariano tradicional",
+  },
+  {
+    clave: "fiesta-santa-maria-de-las-nieves",
+    nombre: "Santa María de las Nieves",
+    subtitulo: "Dedicación de la Basílica de Santa María la Mayor (San Pío V)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "08-05",
+    historia:
+      "En la noche del 5 de agosto del año 358, en pleno rigor del estío romano, la Santísima Virgen se apareció en sueños al piadoso patricio Juan y al Papa San Liberio, pidiéndoles erigir un templo en el lugar del monte Esquilino que encontrarían cubierto de nieve milagrosa al amanecer. El prodigio congregó a todo el pueblo y el Papa trazó los cimientos de la primera basílica mariana de Occidente.\n\nTras el Concilio Ecuménico de Éfeso (431), que definió el dogma supremo de la Maternidad Divina de María (Theotokos), el Papa San Sixto III reedificó la basílica convirtiéndola en Santa María la Mayor. San Pío V confirmó esta festividad solemne en su reforma litúrgica para exaltar el patrocinio maternal de la Virgen.",
+    oracion:
+      "Perdona, Señor, los pecados de tus siervos, para que los que no podemos complacerte con nuestras propias obras seamos salvados por la intercesión de la Madre de tu Hijo Jesucristo, cuya memoria celebramos.",
+    frase: "Bajo tu amparo nos acogemos, Santa Madre de Dios; no desprecies nuestras oraciones en las necesidades.",
+    fraseAutor: "Antigua antífona Sub Tuum Praesidium venerada en Santa María la Mayor",
+    datasheet: [
+      { etiqueta: "Milagro histórico", valor: "Nevada milagrosa en el monte Esquilino el 5 de agosto del año 358" },
+      { etiqueta: "Templo insigne", valor: "Basílica Patriarcal de Santa María la Mayor en Roma" },
+      { etiqueta: "Tesoro venerado", valor: "El icono de la Salus Populi Romani y las reliquias del Sagrado Pesebre" },
+      { etiqueta: "Dogma proclamado", valor: "Madre de Dios (Theotokos, Concilio de Éfeso del 431)" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-santa-maria-de-las-nieves/1.webp" },
+    creditoImagen: "Dominio público / Mosaicos de Santa María la Mayor",
+  },
+  {
+    clave: "fiesta-asuncion-de-maria",
+    nombre: "La Asunción de la Virgen María",
+    subtitulo: "Elevada en Cuerpo y Alma a los Cielos (San Pío V)",
+    categoria: "Tema",
+    rareza: "Celestial",
+    celebracion: "08-15",
+    historia:
+      "La Asunción es la solemnidad mariana cumbre del año litúrgico de la Iglesia. Cumplido el curso de su peregrinación terrena, la Inmaculada Madre de Dios no padeció la corrupción del sepulcro, sino que fue elevada en cuerpo y alma a la gloria del Cielo por ministerio de los Santos Ángeles y coronada por la Santísima Trinidad como Reina del Universo.\n\nCelebrada con máxima devoción en la liturgia de San Pío V con vigilia y octava, la fiesta de la Asunción infunde gozo y esperanza viva a la Iglesia militante, mostrando en María la primicia gloriosa de la Redención y la promesa cierta de la resurrección futura de los fieles cristianos.",
+    oracion:
+      "Dios todopoderoso y eterno, que elevaste en cuerpo y alma a la gloria del cielo a la Inmaculada Virgen María, Madre de tu Hijo, concédenos aspirar siempre a los bienes celestiales para ser partícipes de su misma gloria.",
+    frase:
+      "Una gran señal apareció en el cielo: una Mujer vestida de sol, con la luna bajo sus pies y una corona de doce estrellas sobre su cabeza.",
+    fraseAutor: "San Juan Apóstol en el Apocalipsis (Ap 12, 1)",
+    datasheet: [
+      { etiqueta: "Rango litúrgico", valor: "Solemnidad suprema con vigilia y octava en el rito tradicional" },
+      { etiqueta: "Misterio de fe", valor: "Asunción en cuerpo y alma a la gloria celestial" },
+      { etiqueta: "Fecha tradicional", valor: "15 de agosto (la fiesta de 'Nuestra Señora de Agosto')" },
+      { etiqueta: "Corona celestial", valor: "Coronada por la Santísima Trinidad como Reina de los Santos" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-asuncion-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Arte mariano tradicional",
+  },
+  {
+    clave: "fiesta-natividad-de-maria",
+    nombre: "La Natividad de la Virgen María",
+    subtitulo: "La Aurora de la Salvación y Gozo del Mundo (San Pío V)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "09-08",
+    historia:
+      "El 8 de septiembre la cristiandad celebra con santo regocijo el nacimiento terrenal de la Virgen María, nacida de los santos esposos Joaquín y Ana en Jerusalén. Su nacimiento es la aurora purísima que disipa las tinieblas del pecado y anuncia la salida del Sol de Justicia, Jesucristo Redentor.\n\nPreservada inmaculada desde su concepción, María nació colmada de todas las gracias celestiales para ser la morada incorruptible del Verbo Encarnado. San Pío V prescribió esta solemnidad con su octava sagrada, invitando a los fieles a contemplar la misericordia de Dios que prepara el camino a la plenitud de los tiempos.",
+    oracion:
+      "Concede, Señor, a tus siervos el don de tu gracia celestial, para que el nacimiento de la Santísima Virgen María traiga aumento de paz a quienes su maternidad divina dio el principio de la salvación.",
+    frase:
+      "Tu Natividad, oh Virgen Madre de Dios, anunció el gozo a todo el universo, pues de ti nació el Sol de Justicia, Cristo nuestro Dios.",
+    fraseAutor: "Antífona solemne de Laudes de la Natividad de María",
+    datasheet: [
+      { etiqueta: "Padres santos", valor: "San Joaquín y Santa Ana" },
+      { etiqueta: "Significado teológico", valor: "La aurora santa que precede a la luz de Cristo" },
+      { etiqueta: "Fecha litúrgica", valor: "8 de septiembre (nueve meses después de la Inmaculada Concepción)" },
+      { etiqueta: "Fruto eterno", valor: "Preparación del tabernáculo viviente del Redentor" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-natividad-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Arte sacro mariano",
+  },
+  {
+    clave: "fiesta-dolores-de-maria",
+    nombre: "Nuestra Señora de los Dolores",
+    subtitulo: "Mater Dolorosa al Pie de la Cruz (San Pío V)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "09-15",
+    historia:
+      "La memoria de los Dolores de la Santísima Virgen María contempla el sufrimiento corredentor de la Madre de Dios íntimamente asociada al sacrificio pascual de su divino Hijo. De pie con heroica fortaleza junto a la Cruz en el monte Calvario, María ofreció con dolor inenarrable al Cordero inmaculado para la reconciliación del género humano.\n\nLa liturgia tradicional entona en su honor la venerable secuencia del Stabat Mater Dolorosa («Estaba la Madre dolorosa llorando junto a la cruz»), recordando la profecía de Simeón según la cual una espada de dolor atravesaría su alma virginal para consuelo de los afligidos de todos los siglos.",
+    oracion:
+      "Señor Dios, en cuya Pasión, según la profecía de Simeón, una espada de dolor atravesó la tierna alma de la gloriosa Virgen María, Madre tuya, concédenos venerar sus dolores con devoto corazón.",
+    frase: "Estaba la Madre dolorosa junto a la Cruz llorando, mientras su Hijo pendía de ella.",
+    fraseAutor: "Secuencia litúrgica tradicional del Stabat Mater Dolorosa",
+    datasheet: [
+      { etiqueta: "Lugar bíblico", valor: "El monte Calvario al pie de la Cruz (Jn 19, 25)" },
+      { etiqueta: "Secuencia sacra", valor: "El himno Stabat Mater cantado en la Santa Misa" },
+      { etiqueta: "Símbolo tradicional", valor: "Corazón traspasado por siete espadas de dolor" },
+      { etiqueta: "Título venerable", valor: "Reina de los Mártires y Consoladora de los afligidos" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-dolores-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Imaginería tradicional dolorosa",
+  },
+  {
+    clave: "santo-rosario",
+    nombre: "Nuestra Señora del Rosario",
+    subtitulo: "Nuestra Señora de las Victorias instituida por San Pío V (1571)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "10-07",
+    historia:
+      "El Papa San Pío V instituyó solemnemente esta festividad el 7 de octubre de 1571 con el título de 'Nuestra Señora de las Victorias', tras el portentoso triunfo naval de la Liga Santa en la batalla de Lepanto, atribuido al rezo incesante del Santo Rosario convocado en todas las iglesias y cofradías de la Cristiandad.\n\nEn su histórica bula 'Consueverunt Romani Pontifices' (1569), San Pío V fijó con autoridad pontificia la devoción de los quince misterios evangélicos y las salutaciones angélicas, proclamando al Rosario como escudo invencible contra las herejías y refugio seguro de las familias en las horas de prueba.",
+    oracion:
+      "Dios nuestro, cuyo Hijo Unigénito nos obtuvo con su vida, muerte y resurrección el premio de la salvación eterna, concédenos que meditando estos misterios en el santo Rosario de la Virgen María, imitemos lo que contienen y alcancemos lo que prometen.",
+    frase:
+      "El Rosario es el azote de los demonios, consuelo de los afligidos y oración gratísima a la Madre de Dios.",
+    fraseAutor: "San Pío V Papa (Bula Consueverunt Romani Pontifices, 1569)",
+    datasheet: [
+      { etiqueta: "Institución pontificia", valor: "San Pío V Papa tras la victoria de Lepanto (7 de octubre de 1571)" },
+      { etiqueta: "Bula fundacional", valor: "Consueverunt Romani Pontifices (San Pío V, 1569)" },
+      { etiqueta: "Estructura contemplativa", valor: "Quince misterios tradicionales del Santo Rosario" },
+      { etiqueta: "Título primitivo", valor: "Sancta Maria de Victoria (Nuestra Señora de la Victoria)" },
+    ],
+    imagenes: { "1": "/cartas/santo-rosario/1.webp" },
+    creditoImagen: "Dominio público / Iconografía devota tradicional",
+  },
+  {
+    clave: "fiesta-presentacion-de-maria",
+    nombre: "La Presentación de María en el Templo",
+    subtitulo: "Consagración Total de la Doncella a Dios (San Pío V)",
+    categoria: "Tema",
+    rareza: "Buena",
+    celebracion: "11-21",
+    historia:
+      "La festividad del 21 de noviembre conmemora la ofrenda perfecta que la Niña María, conducida por sus santos padres Joaquín y Ana al Templo de Jerusalén a la edad de tres años, hizo de toda su vida y de su virginidad para la gloria del Altísimo.\n\nEn el recogimiento del santuario, María creció en continua oración, meditación de las Escrituras y ardiente caridad, convirtiéndose en el verdadero Arca viviente de la Alianza. San Pío V confirmó esta celebración mariana en el Misal Romano para proponer a los fieles el modelo supremo de consagración total y pureza de corazón.",
+    oracion:
+      "Dios nuestro, que quisiste que la santísima Virgen María, habitáculo del Espíritu Santo, fuera presentada hoy en el templo, concédenos por su intercesión ser presentados en el templo de tu gloria.",
+    frase:
+      "María se ofreció a Dios en el templo desde su más tierna edad, consagrándole cuerpo y alma sin reserva alguna.",
+    fraseAutor: "San Juan Damasceno (Homilía sobre la Presentación de María)",
+    datasheet: [
+      { etiqueta: "Lugar sagrado", valor: "El Templo de Jerusalén" },
+      { etiqueta: "Virtud ensalzada", valor: "Consagración irrevocable y silencio contemplativo" },
+      { etiqueta: "Padres piadosos", valor: "San Joaquín y Santa Ana cumpliendo su voto sagrado" },
+      { etiqueta: "Significado místico", valor: "La Niña María convertida en Arca viviente de la Alianza" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-presentacion-de-maria/1.webp" },
+    creditoImagen: "Dominio público / Arte sacro tradicional",
+  },
+  {
+    clave: "fiesta-inmaculada-concepcion",
+    nombre: "La Inmaculada Concepción",
+    subtitulo: "Preservada Inmune de Toda Culpa Original (San Pío V)",
+    categoria: "Tema",
+    rareza: "Celestial",
+    celebracion: "12-08",
+    historia:
+      "El 8 de diciembre la Iglesia celebra el singularísimo privilegio por el cual la Bienaventurada Virgen María fue preservada inmune de toda mancha de pecado original desde el primer instante de su concepción en el seno de Santa Ana, en previsión de los méritos infinitos de Jesucristo Redentor.\n\nSan Pío V incluyó formalmente esta solemnidad con misa y oficio propio en el Breviario y Misal de 1568/1570 mediante su bula 'Super speculam Domini', defendiendo con vigor la devoción inmaculista de la Iglesia y proclamando a María como la criatura más pura y resplandeciente salida de las manos del Creador.",
+    oracion:
+      "Oh Dios, que por la Inmaculada Concepción de la Virgen preparaste a tu Hijo una digna morada, te rogamos que, así como la preservaste de toda mancha en virtud de la muerte de tu mismo Hijo, nos concedas por su intercesión llegar a Ti limpios de pecado.",
+    frase:
+      "Tota pulchra es, Maria, et macula originalis non est in te (Toda hermosa eres, María, y no hay mancha original en ti).",
+    fraseAutor: "Antífona solemne de la liturgia de la Inmaculada Concepción",
+    datasheet: [
+      { etiqueta: "Privilegio soberano", valor: "Preservada de toda mancha de culpa original desde su concepción" },
+      { etiqueta: "Mérito salvífico", valor: "En previsión de los méritos de Cristo Redentor en la Cruz" },
+      { etiqueta: "Defensa de San Pío V", valor: "Bula Super speculam Domini (1570) promoviendo la fiesta solemne" },
+      { etiqueta: "Antífona tradicional", valor: "«Tota pulchra es, Maria, et macula originalis non est in te»" },
+    ],
+    imagenes: { "1": "/cartas/fiesta-inmaculada-concepcion/1.webp" },
+    creditoImagen: "Dominio público / Inmaculada de Murillo",
+  },
+];
+
+const destino = path.join(process.cwd(), "src", "lib", "cartas", "catalogo", "temas.json");
+fs.writeFileSync(destino, JSON.stringify(temas, null, 2), "utf-8");
+console.log(`Catálogo de temas generado exitosamente con ${temas.length} cartas.`);

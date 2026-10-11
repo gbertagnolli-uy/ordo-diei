@@ -2,14 +2,20 @@
 import { addDays, format, parseISO } from "date-fns";
 import { tz } from "@date-fns/tz";
 import prisma from "../prisma.ts";
+import type { Prisma } from "@prisma/client";
 import {
   CATALOGO,
+  CLAVE_LIBRO,
   DIAS_TODOS,
+  MAX_PAGINAS_DIA,
+  MAX_PAGINAS_LIBRO,
   RECOMPENSA,
   daPuntos,
+  decidirLibro,
   identidadDe,
   misteriosDelDia,
   pasosDe,
+  progresoLibro,
   type Categoria,
   type ClaveSistema,
   type Franja,
@@ -22,6 +28,7 @@ import {
   type Evento,
 } from "./engine.ts";
 import { puedeEditarHabito } from "./permisos.ts";
+import { claveDeUrl } from "../archivos.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
 /** Días hacia atrás que se pueden registrar o corregir */
@@ -102,10 +109,19 @@ export type HabitoVista = {
   ancla: string;
   icono: string;
   minimo: string | null;
+  imagen: string | null;
   pasos: Paso[];
   creador: { id: number; nombre: string } | null;
   puedeEditar: boolean;
   recomendado: boolean;
+};
+
+export type LibroVista = {
+  id: number;
+  titulo: string;
+  paginas: number;
+  leidas: number;
+  pct: number;
 };
 
 export type EstadoHabito = EstadoMotor & {
@@ -119,7 +135,12 @@ export type EstadoHabito = EstadoMotor & {
   dias: number;
   identidad: string;
   creadorId: number | null;
+  imagen: string | null;
   activo: boolean;
+  /** Solo en "Leer un libro": libro en curso, último terminado y páginas registradas hoy */
+  libro: LibroVista | null;
+  libroTerminado: { titulo: string } | null;
+  paginasHoy: number | null;
 };
 
 export type EstadoUsuario = {
@@ -160,6 +181,7 @@ export async function getCatalogo(usuarioId: number): Promise<HabitoVista[]> {
       ancla: h.ancla,
       icono: h.icono,
       minimo: h.minimo,
+      imagen: h.imagen,
       pasos: pasosDe(h),
       creador: h.creador,
       puedeEditar: puedeEditarHabito(h, usuarioId),
@@ -177,7 +199,7 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
   await asegurarCatalogo();
   const hoy = hoyEnFamilia();
 
-  const [adopciones, registros] = await Promise.all([
+  const [adopciones, registros, libros] = await Promise.all([
     prisma.habitoUsuario.findMany({
       where: {
         usuarioId: { in: usuarioIds },
@@ -196,7 +218,13 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
         habitoId: true,
         fecha: true,
         marca: true,
+        paginas: true,
+        libroId: true,
       },
+    }),
+    prisma.libro.findMany({
+      where: { usuarioId: { in: usuarioIds } },
+      orderBy: { iniciadoEn: "desc" },
     }),
   ]);
 
@@ -220,6 +248,15 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
       const desdeAdopcion = aClave(adopcion.desde);
       const desde = primerRegistro && primerRegistro < desdeAdopcion ? primerRegistro : desdeAdopcion;
       const pasos = pasosDe(adopcion.habito);
+      const esLibro = adopcion.habito.clave === CLAVE_LIBRO;
+      const misLibros = esLibro
+        ? libros.filter((l) => l.usuarioId === usuarioId && l.habitoId === adopcion.habitoId)
+        : [];
+      const enCurso = misLibros.find((l) => !l.terminadoEn);
+      const terminado = misLibros.find((l) => l.terminadoEn);
+      const leidas = enCurso
+        ? regHabito.reduce((t, r) => t + (r.libroId === enCurso.id ? r.paginas ?? 0 : 0), 0)
+        : 0;
 
       const estadoMotor = reproducir({
         pasos,
@@ -241,7 +278,15 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
         dias: adopcion.dias,
         identidad: identidadDe(adopcion.habito),
         creadorId: adopcion.habito.creadorId,
+        imagen: adopcion.habito.imagen,
         activo: adopcion.activo,
+        libro: enCurso
+          ? { id: enCurso.id, titulo: enCurso.titulo, paginas: enCurso.paginas, leidas, pct: progresoLibro(leidas, enCurso.paginas).pct }
+          : null,
+        libroTerminado: !enCurso && terminado ? { titulo: terminado.titulo } : null,
+        paginasHoy: esLibro
+          ? regHabito.find((r) => aClave(r.fecha) === hoy)?.paginas ?? null
+          : null,
       };
     });
 
@@ -263,6 +308,11 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
 
 // ---------- CRUD de hábitos ----------
 
+// Solo imágenes subidas por /api/upload (guardadas en la base, lib/archivos.ts)
+function validarImagen(url: string | null | undefined): string | null {
+  return claveDeUrl(url) ? url!.trim() : null;
+}
+
 export async function crearHabito(
   creadorId: number,
   datos: {
@@ -272,6 +322,7 @@ export async function crearHabito(
     ancla: string;
     minimo?: string | null;
     icono?: string;
+    imagen?: string | null;
     adoptar?: { dias?: number; ancla?: string };
   }
 ) {
@@ -279,6 +330,8 @@ export async function crearHabito(
   const ancla = datos.ancla?.trim();
   const minimo = datos.minimo?.trim() || null;
   const icono = datos.icono?.trim() || "Sparkles";
+  const imagen = validarImagen(datos.imagen);
+  if (!imagen) throw new Error("Subí una imagen para el hábito");
 
   if (!nombre || nombre.length > 80) throw new Error("Nombre debe tener entre 1 y 80 caracteres");
   if (!ancla || ancla.length > 120) throw new Error("Ancla debe tener entre 1 y 120 caracteres");
@@ -296,6 +349,7 @@ export async function crearHabito(
       ancla,
       icono,
       minimo,
+      imagen,
       creadorId,
       archivado: false,
     },
@@ -328,6 +382,7 @@ export async function editarHabito(
     ancla: string;
     minimo: string | null;
     icono: string;
+    imagen: string | null;
   }>
 ) {
   const habito = await prisma.habito.findUnique({ where: { id } });
@@ -358,6 +413,11 @@ export async function editarHabito(
     if (!["manana", "tarde", "noche"].includes(datos.franja)) throw new Error("Franja no válida");
     data.franja = datos.franja;
   }
+  if (datos.imagen !== undefined) {
+    const imagen = validarImagen(datos.imagen);
+    if (!imagen) throw new Error("Imagen no válida");
+    data.imagen = imagen;
+  }
   if (datos.icono !== undefined) {
     data.icono = datos.icono.trim() || "Sparkles";
   }
@@ -381,9 +441,23 @@ export async function archivarHabito(actorId: number, id: number) {
 
 // ---------- Adopciones ----------
 
+export type DatosLibro = { titulo: string; paginas: number };
+
+/** Valida y normaliza el título y las páginas de un libro */
+export function validarLibro(datos: unknown): DatosLibro {
+  const d = (datos ?? {}) as { titulo?: unknown; paginas?: unknown };
+  const titulo = typeof d.titulo === "string" ? d.titulo.trim() : "";
+  const paginas = Number(d.paginas);
+  if (!titulo || titulo.length > 200) throw new Error("El nombre del libro debe tener entre 1 y 200 caracteres");
+  if (!Number.isInteger(paginas) || paginas < 1 || paginas > MAX_PAGINAS_LIBRO) {
+    throw new Error(`La cantidad de páginas debe ser un número entre 1 y ${MAX_PAGINAS_LIBRO}`);
+  }
+  return { titulo, paginas };
+}
+
 export async function adoptar(
   usuarioIds: number[],
-  items: { habitoId: number; dias?: number; ancla?: string }[]
+  items: { habitoId: number; dias?: number; ancla?: string; libro?: DatosLibro }[]
 ) {
   const hoy = hoyEnFamilia();
   const fechaHoy = aFecha(hoy);
@@ -391,6 +465,17 @@ export async function adoptar(
   await prisma.$transaction(async (tx) => {
     for (const usuarioId of usuarioIds) {
       for (const item of items) {
+        if (item.libro) {
+          const enCurso = await tx.libro.findFirst({
+            where: { usuarioId, habitoId: item.habitoId, terminadoEn: null },
+          });
+          if (!enCurso) {
+            await tx.libro.create({
+              data: { usuarioId, habitoId: item.habitoId, ...item.libro },
+            });
+          }
+        }
+
         const existente = await tx.habitoUsuario.findUnique({
           where: {
             usuarioId_habitoId: {
@@ -445,6 +530,75 @@ export async function ajustarAdopcion(
   });
 }
 
+// ---------- Libros ("Leer un libro") ----------
+
+/**
+ * Recalcula un libro tras cambiar sus registros o su total: lo termina y crea el premio
+ * "Un libro nuevo", o lo reabre si se deshizo lo que lo terminó (vault/HABITO_LIBRO.md D6).
+ * Devuelve el título si el libro quedó terminado en esta llamada.
+ */
+async function actualizarLibro(tx: Prisma.TransactionClient, libroId: number): Promise<string | null> {
+  const libro = await tx.libro.findUnique({ where: { id: libroId }, include: { recompensa: true } });
+  if (!libro) return null;
+  const suma = await tx.registroHabito.aggregate({ where: { libroId }, _sum: { paginas: true } });
+  const otroEnCurso = await tx.libro.count({
+    where: { usuarioId: libro.usuarioId, habitoId: libro.habitoId, terminadoEn: null, id: { not: libroId } },
+  });
+
+  const accion = decidirLibro({
+    leidas: suma._sum.paginas ?? 0,
+    total: libro.paginas,
+    terminado: libro.terminadoEn !== null,
+    premio: libro.recompensa?.estado ?? null,
+    otroEnCurso: otroEnCurso > 0,
+  });
+
+  if (accion === "terminar") {
+    await tx.libro.update({ where: { id: libroId }, data: { terminadoEn: new Date() } });
+    await tx.recompensa.upsert({
+      where: { libroId },
+      create: {
+        usuarioId: libro.usuarioId,
+        tipo: "libro",
+        titulo: "Un libro nuevo",
+        origen: `Terminaste «${libro.titulo}»`,
+        libroId,
+      },
+      update: {},
+    });
+    return libro.titulo;
+  }
+  if (accion === "reabrir") {
+    await tx.recompensa.deleteMany({ where: { libroId, estado: "disponible" } });
+    await tx.libro.update({ where: { id: libroId }, data: { terminadoEn: null } });
+  }
+  return null;
+}
+
+/**
+ * Carga el libro que se empieza a leer. Si ya hay uno en curso, corrige su título y páginas.
+ * Devuelve el título si al corregir las páginas el libro quedó terminado.
+ */
+export async function cargarLibro(usuarioIds: number[], habitoId: number, datos: DatosLibro) {
+  const habito = await prisma.habito.findUnique({ where: { id: habitoId } });
+  if (!habito || habito.clave !== CLAVE_LIBRO) throw new Error("Este hábito no lleva libro");
+
+  return prisma.$transaction(async (tx) => {
+    const terminados: { usuarioId: number; titulo: string }[] = [];
+    for (const usuarioId of usuarioIds) {
+      const enCurso = await tx.libro.findFirst({ where: { usuarioId, habitoId, terminadoEn: null } });
+      if (enCurso) {
+        await tx.libro.update({ where: { id: enCurso.id }, data: datos });
+        const titulo = await actualizarLibro(tx, enCurso.id);
+        if (titulo) terminados.push({ usuarioId, titulo });
+      } else {
+        await tx.libro.create({ data: { usuarioId, habitoId, ...datos } });
+      }
+    }
+    return terminados;
+  });
+}
+
 // ---------- Recompensas y registro ----------
 
 /**
@@ -488,7 +642,8 @@ export async function registrar(input: {
   fecha: string;
   marca: Marca | null;
   nota?: string | null;
-}): Promise<{ usuarioId: number; puntos: number; xp: number }[]> {
+  paginas?: number | null;
+}): Promise<{ usuarioId: number; puntos: number; xp: number; libroTerminado: string | null }[]> {
   const { actorId, usuarioIds, habitoId, fecha, marca, nota } = input;
   const fechaDb = aFecha(fecha);
   const hoy = hoyEnFamilia();
@@ -500,9 +655,19 @@ export async function registrar(input: {
 
   const categoria = habito.categoria as Categoria;
   const pasos = pasosDe(habito);
+  const esLibro = habito.clave === CLAVE_LIBRO;
+
+  // Páginas: obligatorias al marcar "hecho" en "Leer un libro"; en el resto no se guardan
+  let paginas: number | null = null;
+  if (esLibro && marca === "hecho") {
+    paginas = Number(input.paginas);
+    if (!Number.isInteger(paginas) || paginas < 1 || paginas > MAX_PAGINAS_DIA) {
+      throw new Error(`Indicá cuántas páginas leíste (entre 1 y ${MAX_PAGINAS_DIA})`);
+    }
+  }
 
   return prisma.$transaction(async (tx) => {
-    const resultados: { usuarioId: number; puntos: number; xp: number }[] = [];
+    const resultados: { usuarioId: number; puntos: number; xp: number; libroTerminado: string | null }[] = [];
 
     for (const usuarioId of usuarioIds) {
       // 1. Obtener registro previo
@@ -559,7 +724,19 @@ export async function registrar(input: {
         categoria
       );
 
-      // 4. Modificar registro
+      // 4. Modificar registro (en "Leer un libro", las páginas van al libro en curso)
+      let libroId: number | null = null;
+      if (paginas !== null) {
+        libroId =
+          previo?.libroId ??
+          (await tx.libro.findFirst({
+            where: { usuarioId, habitoId, terminadoEn: null },
+            orderBy: { iniciadoEn: "desc" },
+            select: { id: true },
+          }))?.id ??
+          null;
+      }
+
       if (marca === null) {
         if (previo) {
           await tx.registroHabito.delete({
@@ -584,6 +761,8 @@ export async function registrar(input: {
             puntos: recompensa.nuevoPuntos,
             xp: recompensa.nuevoXp,
             registradoPorId: actorId,
+            paginas,
+            libroId,
           },
           update: {
             marca: marca,
@@ -591,8 +770,16 @@ export async function registrar(input: {
             puntos: recompensa.nuevoPuntos,
             xp: recompensa.nuevoXp,
             registradoPorId: actorId,
+            paginas,
+            libroId,
           },
         });
+      }
+
+      // 4b. Terminar o reabrir los libros afectados
+      let libroTerminado: string | null = null;
+      for (const id of new Set([previo?.libroId, libroId])) {
+        if (id) libroTerminado = (await actualizarLibro(tx, id)) ?? libroTerminado;
       }
 
       // 5. Actualizar puntos y XP del usuario
@@ -629,6 +816,7 @@ export async function registrar(input: {
         usuarioId,
         puntos: recompensa.nuevoPuntos,
         xp: recompensa.nuevoXp,
+        libroTerminado,
       });
     }
 

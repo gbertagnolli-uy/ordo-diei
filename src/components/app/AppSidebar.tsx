@@ -7,8 +7,10 @@ import {
   AlarmClock,
   CalendarCheck,
   CheckCircle2,
+  Gift,
   History,
   Hourglass,
+  Layers,
   ListTodo,
   Network,
   Sprout,
@@ -71,11 +73,17 @@ export function AppSidebar({
   currentUser,
   tasks,
   habitosPendientes,
+  premiosPendientes,
+  hayEventosCartas,
 }: {
   currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
   tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
   /** Hábitos programados hoy sin registrar */
   habitosPendientes?: number | null;
+  /** Premios por reclamar y, para padres, reclamos de la familia por entregar */
+  premiosPendientes?: number | null;
+  /** Cartas por reclamar: fiesta, cumpleaños, bienvenida o un grado alcanzado */
+  hayEventosCartas?: boolean;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -125,6 +133,31 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/mis-premios"} tooltip="Mis premios">
+                <Link href="/dashboard/mis-premios">
+                  <Gift />
+                  <span>Mis premios</span>
+                </Link>
+              </SidebarMenuButton>
+              {!!premiosPendientes && <SidebarMenuBadge className="tabular-nums">{premiosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Colección</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/cartas")} tooltip="Cartas católicas">
+                <Link href="/dashboard/cartas">
+                  <Layers />
+                  <span>Cartas</span>
+                </Link>
+              </SidebarMenuButton>
+              {hayEventosCartas && (
+                <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Cartas para reclamar" />
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

@@ -1,32 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
-import crypto from "crypto";
+import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/session";
+import { guardarImagen, ImagenInvalidaError, PERFILES_IMAGEN, type PerfilImagen } from "@/lib/archivos";
 
+export const runtime = "nodejs";
+
+// POST /api/upload — sube una imagen y devuelve { url, bytes, ancho, alto }. Se guarda en la base (lib/archivos.ts).
+// Campo opcional "perfil": "general" (1600 px) o "carta" (1200 px, ≤ 300 KB).
+// Requiere sesión, salvo en la configuración inicial (todavía no hay ningún usuario).
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.formData();
-    const file: File | null = data.get("file") as unknown as File;
-
-    if (!file) {
-      return NextResponse.json({ error: "Archivo faltante" }, { status: 400 });
+    const session = await getSession();
+    if (!session?.user && (await prisma.usuario.count()) > 0) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const form = await request.formData();
+    const file = form.get("file");
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "Archivo faltante" }, { status: 400 });
+    }
+    const pedido = String(form.get("perfil") ?? "general");
+    const perfil: PerfilImagen = pedido in PERFILES_IMAGEN ? (pedido as PerfilImagen) : "general";
 
-    // Normalizar nombre de archivo
-    const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
-    const uniqueName = crypto.randomUUID() + "_" + safeName;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filepath = path.join(uploadDir, uniqueName);
-
-    // Guardar en el filesystem (ideal para app local)
-    await writeFile(filepath, buffer);
-
-    return NextResponse.json({ url: `/uploads/${uniqueName}` });
+    const guardada = await guardarImagen(file, { subidoPorId: session?.user ? Number(session.user.id) : null, perfil });
+    return NextResponse.json(guardada);
   } catch (error) {
-    console.error("Error subiendo foto:", error);
+    if (error instanceof ImagenInvalidaError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error("Error subiendo imagen:", error);
     return NextResponse.json({ error: "Error al guardar el archivo" }, { status: 500 });
   }
 }

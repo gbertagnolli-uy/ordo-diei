@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Check, Plus, ChevronRight, ChevronLeft } from "lucide-react";
+import { AlertCircle, Check, ChevronRight, ChevronLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +28,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import {
-  CATEGORIAS,
+  CLAVE_LIBRO,
   DIAS_LUN_VIE,
+  MAX_PAGINAS_LIBRO,
   DIAS_TODOS,
   pasosDe,
   type Categoria,
@@ -39,6 +38,7 @@ import {
 } from "@/lib/habitos/catalogo";
 import type { EstadoHabito, HabitoVista } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
+import { subirImagen } from "@/lib/subirImagen";
 
 const ANCLAS_SUGERIDAS: Record<Franja, string[]> = {
   manana: ["Al levantarme", "Antes del desayuno", "Después de desayunar", "Antes de salir"],
@@ -72,6 +72,7 @@ export function HabitoDialog({
   usuarioActualId,
   preseleccionMiembroId,
   habitoAEditar = null,
+  habitoElegidoId = null,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -82,6 +83,8 @@ export function HabitoDialog({
   usuarioActualId: number;
   preseleccionMiembroId?: number | null;
   habitoAEditar?: EstadoHabito | null;
+  /** Hábito del catálogo ya elegido (carrusel o comunitarios): abre directo en la receta */
+  habitoElegidoId?: number | null;
 }) {
   const router = useRouter();
   const [isDesktop, setIsDesktop] = useState(true);
@@ -114,6 +117,8 @@ export function HabitoDialog({
   const [nuevaCategoria, setNuevaCategoria] = useState<Categoria>("orden");
   const [nuevaFranja, setNuevaFranja] = useState<Franja>("manana");
   const [nuevoAncla, setNuevoAncla] = useState("Al levantarme");
+  const [nuevaImagen, setNuevaImagen] = useState<string | null>(null);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
 
   // Paso 2: Recetas por hábito seleccionado
   // Map de habitoId -> { ancla: string, diasTipo: "todos" | "lun-vie" | "custom", diasBits: number }
@@ -121,12 +126,18 @@ export function HabitoDialog({
     Record<number, { ancla: string; diasTipo: string; diasBits: number }>
   >({});
 
+  // Paso 2: libro con el que empieza "Leer un libro"
+  const [libroTitulo, setLibroTitulo] = useState("");
+  const [libroPaginas, setLibroPaginas] = useState("");
+
   // Reset del diálogo al abrirse o cambiar habitoAEditar
   useEffect(() => {
     if (!isOpen) return;
     setPaso(1);
     setGuardando(false);
     setUsuarioObjetivoId(preseleccionMiembroId ?? usuarioActualId);
+    setLibroTitulo("");
+    setLibroPaginas("");
 
     if (habitoAEditar) {
       // Modo edición de hábito propio
@@ -145,9 +156,21 @@ export function HabitoDialog({
           diasBits: habitoAEditar.dias,
         },
       });
+      setNuevaImagen(habitoAEditar.imagen ?? null);
+    } else if (habitoElegidoId !== null) {
+      // Viene del carrusel o de los comunitarios: directo a la receta
+      setSeleccionados([habitoElegidoId]);
+      setMostrarCrearNuevo(false);
+      setNuevoNombre("");
+      setNuevoMinimo("");
+      setNuevaImagen(null);
+      const h = catalogo.find((x) => x.id === habitoElegidoId);
+      setRecetas({ [habitoElegidoId]: { ancla: h?.ancla || "Al levantarme", diasTipo: "todos", diasBits: DIAS_TODOS } });
+      setPaso(2);
     } else {
       setSeleccionados([]);
-      setMostrarCrearNuevo(false);
+      setNuevaImagen(null);
+      setMostrarCrearNuevo(true);
       setNuevoNombre("");
       setNuevoMinimo("");
       setNuevaCategoria("orden");
@@ -155,7 +178,8 @@ export function HabitoDialog({
       setNuevoAncla("Al levantarme");
       setRecetas({});
     }
-  }, [isOpen, habitoAEditar, preseleccionMiembroId, usuarioActualId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, habitoAEditar, habitoElegidoId, preseleccionMiembroId, usuarioActualId]);
 
   // Inicializar recetas cuando se avanza al paso 2
   const avanzarAPaso2 = () => {
@@ -184,16 +208,16 @@ export function HabitoDialog({
     setPaso(2);
   };
 
-  const alternarSeleccion = (id: number) => {
-    setSeleccionados((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
   // Cantidad total a empezar en etapa Inicio
   const enInicio = habitosActivos.filter((h) => h.etapa === "inicio").length;
   const totalNuevos = seleccionados.length + (mostrarCrearNuevo && nuevoNombre.trim() ? 1 : 0);
   const avisoDemasiados = !habitoAEditar && totalNuevos + enInicio > 2;
+
+  const libroId = catalogo.find((h) => h.clave === CLAVE_LIBRO)?.id;
+  const pideLibro = !habitoAEditar && libroId !== undefined && seleccionados.includes(libroId);
+  const paginasLibro = Number(libroPaginas);
+  const libroValido =
+    libroTitulo.trim().length > 0 && Number.isInteger(paginasLibro) && paginasLibro >= 1 && paginasLibro <= MAX_PAGINAS_LIBRO;
 
   // Submit final
   const handleGuardar = async () => {
@@ -210,6 +234,7 @@ export function HabitoDialog({
             categoria: nuevaCategoria,
             franja: nuevaFranja,
             ancla: recetas[habitoAEditar.habitoId]?.ancla || nuevoAncla,
+            ...(nuevaImagen ? { imagen: nuevaImagen } : {}),
           }),
         });
         if (!res.ok) {
@@ -231,7 +256,12 @@ export function HabitoDialog({
           });
         }
       } else {
-        const itemsAAdoptar: { habitoId: number; dias: number; ancla: string }[] = [];
+        const itemsAAdoptar: {
+          habitoId: number;
+          dias: number;
+          ancla: string;
+          libro?: { titulo: string; paginas: number };
+        }[] = [];
 
         // 1. Si creó uno nuevo: POST /api/habitos
         if (mostrarCrearNuevo && nuevoNombre.trim()) {
@@ -245,6 +275,7 @@ export function HabitoDialog({
               categoria: nuevaCategoria,
               franja: nuevaFranja,
               ancla: recNuevo?.ancla || nuevoAncla,
+              imagen: nuevaImagen,
             }),
           });
           const json = await res.json();
@@ -264,6 +295,7 @@ export function HabitoDialog({
             habitoId: id,
             dias: rec?.diasBits ?? DIAS_TODOS,
             ancla: rec?.ancla || "Al levantarme",
+            ...(id === libroId ? { libro: { titulo: libroTitulo.trim(), paginas: paginasLibro } } : {}),
           });
         }
 
@@ -293,11 +325,9 @@ export function HabitoDialog({
     }
   };
 
-  // Contenido de los 2 pasos
-  const renderPaso1 = () => (
-    <div className="space-y-6 py-2">
-      {/* Selector de miembro para padres */}
-      {esPadre && miembros.length > 1 && !habitoAEditar && (
+  // Selector de miembro para padres (visible en ambos pasos)
+  const selectorMiembro = (
+    esPadre && miembros.length > 1 && !habitoAEditar && (
         <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
           <Label htmlFor="para-miembro" className="font-medium text-sm">
             Para:
@@ -316,8 +346,12 @@ export function HabitoDialog({
             </NativeSelect>
           </div>
         </div>
-      )}
+      )
+  );
 
+  // Contenido de los 2 pasos
+  const renderPaso1 = () => (
+    <div className="space-y-6 py-2">
       {/* Aviso suave de demasiados hábitos simultáneos */}
       {avisoDemasiados && (
         <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
@@ -328,96 +362,16 @@ export function HabitoDialog({
         </Alert>
       )}
 
-      {!habitoAEditar && (
-        <div className="space-y-4">
-          {(["oracion", "orden", "cuidado"] as Categoria[]).map((cat) => {
-            const items = catalogo.filter((h) => h.categoria === cat);
-            if (items.length === 0) return null;
-
-            return (
-              <div key={cat} className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {CATEGORIAS[cat]}
-                </h4>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {items.map((h) => {
-                    const yaPractica = habitosActivos.some((x) => x.habitoId === h.id);
-                    const estaSeleccionado = seleccionados.includes(h.id);
-
-                    return (
-                      <div
-                        key={h.id}
-                        onClick={() => !yaPractica && alternarSeleccion(h.id)}
-                        className={cn(
-                          "relative flex flex-col justify-between rounded-lg border p-3 transition-all",
-                          yaPractica && "opacity-50 cursor-not-allowed bg-muted/30",
-                          !yaPractica && "cursor-pointer hover:border-primary/50",
-                          estaSeleccionado && "border-primary bg-primary/5 ring-1 ring-primary"
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <div className="flex size-6 items-center justify-center rounded bg-muted">
-                              <HabitoIcon name={h.icono} className="size-3.5" />
-                            </div>
-                            <span className="font-medium text-sm leading-tight">{h.nombre}</span>
-                          </div>
-                          {!yaPractica && (
-                            <Checkbox
-                              checked={estaSeleccionado}
-                              onCheckedChange={() => alternarSeleccion(h.id)}
-                              className="size-4"
-                            />
-                          )}
-                        </div>
-
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                          {h.recomendado && (
-                            <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
-                              Recomendado para empezar
-                            </Badge>
-                          )}
-                          {yaPractica && (
-                            <span className="text-[11px] font-medium text-muted-foreground">
-                              Ya lo practicás
-                            </span>
-                          )}
-                          {h.creador && h.creador.id !== usuarioActualId && (
-                            <span className="text-[11px] text-muted-foreground">
-                              Creado por {h.creador.nombre}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* Sección Crear / Editar Hábito Propio */}
       <div className="rounded-lg border p-4 space-y-4 bg-card">
-        {!habitoAEditar ? (
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-sm">¿Querés crear un hábito nuevo?</p>
-              <p className="text-xs text-muted-foreground">Toda la familia podrá verlo y adoptarlo.</p>
-            </div>
-            <Button
-              type="button"
-              variant={mostrarCrearNuevo ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setMostrarCrearNuevo(!mostrarCrearNuevo)}
-            >
-              {mostrarCrearNuevo ? "Cancelar" : <><Plus className="size-4" /> Crear nuevo</>}
-            </Button>
-          </div>
-        ) : (
-          <h4 className="font-medium text-sm">Editar definición del hábito</h4>
-        )}
+        <div>
+          <h4 className="font-medium text-sm">
+            {habitoAEditar ? "Editar definición del hábito" : "Crear un hábito comunitario"}
+          </h4>
+          {!habitoAEditar && (
+            <p className="text-xs text-muted-foreground">Toda la familia podrá verlo y adoptarlo.</p>
+          )}
+        </div>
 
         {(mostrarCrearNuevo || habitoAEditar) && (
           <div className="space-y-3 pt-2">
@@ -430,6 +384,32 @@ export function HabitoDialog({
                 maxLength={80}
                 onChange={(e) => setNuevoNombre(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="nuevo-imagen" className="text-xs">Imagen del hábito</Label>
+              <Input
+                id="nuevo-imagen"
+                type="file"
+                accept="image/*"
+                disabled={subiendoImagen}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setSubiendoImagen(true);
+                  try {
+                    setNuevaImagen((await subirImagen(file)).url);
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : "No se pudo subir la imagen");
+                  } finally {
+                    setSubiendoImagen(false);
+                  }
+                }}
+              />
+              {nuevaImagen && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={nuevaImagen} alt="Vista previa" className="mt-2 h-24 w-24 rounded-lg object-cover" />
+              )}
             </div>
 
             <div className="space-y-1">
@@ -487,6 +467,7 @@ export function HabitoDialog({
         const def = catalogo.find((x) => x.id === id)!;
         return {
           id,
+          clave: def.clave,
           nombre: def.nombre,
           icono: def.icono,
           franja: def.franja,
@@ -498,6 +479,7 @@ export function HabitoDialog({
         ? [
             {
               id: -1,
+              clave: null,
               nombre: nuevoNombre.trim(),
               icono: "Sparkles",
               franja: nuevaFranja,
@@ -574,6 +556,35 @@ export function HabitoDialog({
                   </div>
                 </div>
 
+                {/* "Leer un libro": con qué libro empieza */}
+                {item.clave === CLAVE_LIBRO && (
+                  <div className="grid gap-3 border-t pt-3 sm:grid-cols-[1fr_8rem]">
+                    <div className="space-y-1">
+                      <Label htmlFor="libro-titulo" className="text-xs">Libro que vas a leer</Label>
+                      <Input
+                        id="libro-titulo"
+                        placeholder="Ej. Las Crónicas de Narnia"
+                        value={libroTitulo}
+                        maxLength={200}
+                        onChange={(e) => setLibroTitulo(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="libro-paginas" className="text-xs">Páginas</Label>
+                      <Input
+                        id="libro-paginas"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={MAX_PAGINAS_LIBRO}
+                        placeholder="Ej. 180"
+                        value={libroPaginas}
+                        onChange={(e) => setLibroPaginas(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Días programados */}
                 <div className="space-y-2 pt-2 border-t">
                   <div className="flex items-center justify-between">
@@ -633,7 +644,7 @@ export function HabitoDialog({
   const puedeAvanzar =
     habitoAEditar
       ? nuevoNombre.trim().length > 0
-      : seleccionados.length > 0 || (mostrarCrearNuevo && nuevoNombre.trim().length > 0);
+      : seleccionados.length > 0 || (nuevoNombre.trim().length > 0 && !!nuevaImagen && !subiendoImagen);
 
   const dialogTitle = habitoAEditar
     ? "Editar hábito"
@@ -644,7 +655,7 @@ export function HabitoDialog({
   const dialogDesc = habitoAEditar
     ? "Modificá la definición y receta de tu hábito."
     : paso === 1
-    ? "Elegí uno o más hábitos del catálogo, o creá uno nuevo para la familia."
+    ? "Creá un hábito nuevo para la familia, con su imagen."
     : "Personalizá el ancla y los días de práctica para empezar con éxito.";
 
   const renderFooter = () => (
@@ -677,7 +688,7 @@ export function HabitoDialog({
           <Button
             type="button"
             size="sm"
-            disabled={guardando}
+            disabled={guardando || (pideLibro && !libroValido)}
             onClick={handleGuardar}
           >
             {guardando ? <Spinner /> : <Check className="size-4" />}
@@ -697,6 +708,7 @@ export function HabitoDialog({
             <DialogDescription>{dialogDesc}</DialogDescription>
           </DialogHeader>
 
+          {selectorMiembro}
           {paso === 1 ? renderPaso1() : renderPaso2()}
 
           <DialogFooter className="border-t pt-3">
@@ -716,6 +728,7 @@ export function HabitoDialog({
         </DrawerHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1">
+          {selectorMiembro}
           {paso === 1 ? renderPaso1() : renderPaso2()}
         </div>
 

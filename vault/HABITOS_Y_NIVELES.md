@@ -169,7 +169,7 @@ Usuario.experienciaHabitos Int @default(0) @map("Experiencia_Habitos")
 - Leer `AGENTS.md`: Next 16 tiene cambios. Consultar `node_modules/next/dist/docs/` antes de usar una API de Next.
 - **UI solo con componentes prearmados** (shadcn `radix-nova`, MagicUI, Aceternity), sin duplicar elementos ni cambiar comportamiento ajeno a la lane. Si el CLI de shadcn agrega imports desde `"cn"`, corregirlos a `@/lib/utils` y desinstalar el paquete `cn`.
 - **Reutilizar open source** antes que programar: XState, date-fns + `@date-fns/tz`, Recharts (shadcn chart), react-activity-calendar, `vaul` (shadcn drawer).
-- Base de datos: Supabase, schema `family_tasker`, cambios con `npx prisma db push`. Solo aditivo, salvo la lane 22 al borrar las tablas viejas de oración, y únicamente si están vacías.
+- Base de datos: Supabase, schema `family_tasker`. **No usar `prisma db push`** (prohibido, ver regla 6 de `AGENTS.md`): generar el SQL con `prisma migrate diff`, aplicarlo con `prisma db execute` solo si no tiene `DROP`.
 - Textos en español rioplatense, como el resto de la app.
 - Verificación: `npm test`, `npx tsc --noEmit`, `npx eslint` sobre lo tocado, `npx next build` y prueba en el navegador.
 - Commits en la rama de la lane, con un registro en la tabla §8. Sin merge ni PR: eso lo hace el orquestador.

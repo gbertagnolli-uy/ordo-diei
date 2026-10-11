@@ -15,6 +15,7 @@ function fakeHabito(partial: Partial<EstadoHabito>): EstadoHabito {
     dias: 127,
     identidad: "Soy ordenado",
     creadorId: 1,
+    imagen: null,
     activo: true,
     desde: "2026-10-01",
     etapa: "inicio",
@@ -29,6 +30,9 @@ function fakeHabito(partial: Partial<EstadoHabito>): EstadoHabito {
     recaidaEl: null,
     trayectoria: [],
     programadoHoy: true,
+    libro: null,
+    libroTerminado: null,
+    paginasHoy: null,
     ...partial,
   };
 }
@@ -180,4 +184,56 @@ test("ordenamiento: logros obtenidos van al principio", () => {
   for (let i = primerNoObtenido; i < resultados.length; i++) {
     assert.equal(resultados[i].obtenido, false);
   }
+});
+
+test("logros de cartas católicas: primera carta, coleccionista de 10, primera celestial y gloriosa", () => {
+  // 1. Usuario sin cartas
+  const dVacio: DatosLogros = {
+    usuario: {},
+    habitos: [],
+    cartas: [],
+  };
+  const resVacio = evaluarLogros(dVacio);
+  assert.equal(resVacio.find((r) => r.id === "carta-primera")?.obtenido, false);
+  assert.equal(resVacio.find((r) => r.id === "cartas-10")?.obtenido, false);
+  assert.equal(resVacio.find((r) => r.id === "carta-primera-celestial")?.obtenido, false);
+  assert.equal(resVacio.find((r) => r.id === "carta-primera-gloriosa")?.obtenido, false);
+
+  // 2. Usuario con 1 carta común desbloqueada
+  const d1: DatosLogros = {
+    usuario: {},
+    habitos: [],
+    cartas: [
+      { desbloqueada: true, rareza: "Comun", grado: 1 },
+      { desbloqueada: false, rareza: "Celestial", grado: 0 },
+    ],
+  };
+  const res1 = evaluarLogros(d1);
+  assert.equal(res1.find((r) => r.id === "carta-primera")?.obtenido, true);
+  assert.equal(res1.find((r) => r.id === "cartas-10")?.obtenido, false);
+  assert.equal(res1.find((r) => r.id === "carta-primera-celestial")?.obtenido, false);
+  assert.equal(res1.find((r) => r.id === "carta-primera-gloriosa")?.obtenido, false);
+
+  // 3. Usuario con 10 cartas desbloqueadas, 1 Celestial y 1 en Grado IV (Gloriosa)
+  const diezCartas = Array.from({ length: 9 }, () => ({
+    desbloqueada: true,
+    rareza: "Comun",
+    grado: 1,
+  }));
+  diezCartas.push({
+    desbloqueada: true,
+    rareza: "Celestial",
+    grado: 4, // Gloriosa
+  });
+
+  const dCompleto: DatosLogros = {
+    usuario: {},
+    habitos: [],
+    cartas: diezCartas,
+  };
+  const resCompleto = evaluarLogros(dCompleto);
+  assert.equal(resCompleto.find((r) => r.id === "carta-primera")?.obtenido, true);
+  assert.equal(resCompleto.find((r) => r.id === "cartas-10")?.obtenido, true);
+  assert.equal(resCompleto.find((r) => r.id === "carta-primera-celestial")?.obtenido, true);
+  assert.equal(resCompleto.find((r) => r.id === "carta-primera-gloriosa")?.obtenido, true);
 });

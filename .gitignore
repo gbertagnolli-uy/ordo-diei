@@ -44,3 +44,10 @@ next-env.d.ts
 
 # fotos subidas por usuarios
 /public/uploads/
+
+# Fotos originales de los hábitos (129 MB): solo fuente de `npm run imagenes`, que genera public/habitos/*.avif
+/public/Imagenes/
+
+# Credenciales: nunca en git (el repo es público)
+SUPABASE_INFO.md
+.env.backup*

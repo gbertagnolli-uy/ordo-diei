@@ -25,6 +25,7 @@ import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
 import { evaluarLogros, type CategoriaLogro } from "@/lib/logros";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { LogroIcon } from "./LogroIcon";
+import { subirImagen } from "@/lib/subirImagen";
 
 interface PerfilResumenProps {
   usuario: {
@@ -64,13 +65,7 @@ export function PerfilResumen({
     setSubiendo(true);
     setErrorFoto(null);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/users/foto", { method: "POST", body: fd });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(d?.error ?? "No se pudo guardar la foto");
-      }
+      await subirImagen(file, "/api/users/foto");
       router.refresh();
     } catch (e) {
       setErrorFoto(e instanceof Error ? e.message : "No se pudo guardar la foto");
@@ -103,6 +98,24 @@ export function PerfilResumen({
     };
   }, [usuario.id, habitosIniciales]);
 
+  const [cartasUsuario, setCartasUsuario] = useState<Array<{ desbloqueada: boolean; rareza?: string; grado?: number }>>([]);
+
+  useEffect(() => {
+    let cancelado = false;
+    fetch("/api/cartas")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelado && data?.cartas) {
+          setCartasUsuario(data.cartas);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const totalXp = xpTotal(usuario);
   const infoNivel = nivelDe(totalXp);
 
@@ -115,6 +128,7 @@ export function PerfilResumen({
   const todosLogros = evaluarLogros({
     usuario,
     habitos,
+    cartas: cartasUsuario,
   });
 
   const logrosFiltrados =
@@ -318,6 +332,9 @@ export function PerfilResumen({
               </TabsTrigger>
               <TabsTrigger value="nivel" className="text-xs">
                 Nivel
+              </TabsTrigger>
+              <TabsTrigger value="cartas" className="text-xs">
+                Cartas
               </TabsTrigger>
             </TabsList>
           </Tabs>

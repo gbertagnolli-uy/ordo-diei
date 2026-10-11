@@ -1,0 +1,200 @@
+[
+  {
+    "clave": "arcangel-san-miguel",
+    "nombre": "San Miguel Arcángel",
+    "subtitulo": "Príncipe de la Milicia Celestial",
+    "categoria": "Angel",
+    "rareza": "Celestial",
+    "celebracion": "09-29",
+    "historia": "San Miguel Arcángel es el príncipe supremo de la milicia celeste y el defensor del pueblo de Dios ante el dragón infernal. Cuando Lucifer se rebeló con soberbia diciendo que no serviría al Creador, Miguel se alzó con santo celo proclamando: «¿Quién como Dios?», arrojando a los ángeles rebeldes a los abismos de la perdición.\n\nA lo largo de la historia sagrada, la Santa Iglesia invoca a San Miguel como custodio fiel en el combate espiritual, protector en la hora de la muerte y conductor de las almas purificadas ante el trono divino. El Papa León XIII compuso su célebre oración pidiendo su auxilio perpetuo contra el maligno.",
+    "oracion": "San Miguel Arcángel, defiéndenos en la batalla. Sé nuestro amparo contra la perversidad y las asechanzas del demonio. Que Dios manifieste sobre él su poder, es nuestra humilde súplica; y tú, Príncipe de la milicia celestial, arroja al infierno con el divino poder a Satanás y a los demás espíritus malignos que vagan por el mundo para la perdición de las almas. Amén.",
+    "frase": "¿Quién como Dios?",
+    "fraseAutor": "San Miguel Arcángel (Quis ut Deus)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Arcángel supremo" },
+      { "etiqueta": "Misión primordial", "valor": "Defensor de la Iglesia y vencedor del dragón" },
+      { "etiqueta": "Atributos sagrados", "valor": "Balanza del juicio y espada flamígera" },
+      { "etiqueta": "Patronazgo", "valor": "Soldados, policías, médicos y los moribundos" }
+    ],
+    "imagenes": {
+      "1": "/cartas/arcangel-san-miguel/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional"
+  },
+  {
+    "clave": "arcangel-san-gabriel",
+    "nombre": "San Gabriel Arcángel",
+    "subtitulo": "Mensajero de la Encarnación y la Gracia",
+    "categoria": "Angel",
+    "rareza": "Celestial",
+    "celebracion": "09-29",
+    "historia": "San Gabriel Arcángel es el mensajero de los misterios divinos más sublimes. Fue enviado por el Altísimo al profeta Daniel para revelarle el tiempo del Mesías, y al templo de Jerusalén para anunciar al anciano Zacarías la concepción de San Juan Bautista.\n\nSu misión suprema tuvo lugar en la humilde casa de Nazaret, donde llevó el saludo del Cielo a la Santísima Virgen María anunciándole la Encarnación del Verbo. Con profunda reverencia pronunció las palabras sagradas que la cristiandad reza sin cesar: «Alégrate, llena de gracia, el Señor está contigo».",
+    "oracion": "Dios te salve, María, llena eres de gracia, el Señor es contigo. Bendita tú eres entre todas las mujeres y bendito es el fruto de tu vientre, Jesús.",
+    "frase": "Alégrate, llena de gracia, el Señor está contigo.",
+    "fraseAutor": "San Gabriel Arcángel (Lc 1, 28)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Arcángel mensajero" },
+      { "etiqueta": "Anuncio supremo", "valor": "La Encarnación del Hijo de Dios" },
+      { "etiqueta": "Atributos sagrados", "valor": "Vara de azucenas y filacteria" },
+      { "etiqueta": "Patronazgo", "valor": "Comunicadores, carteros y diplomáticos" }
+    ],
+    "imagenes": {
+      "1": "/cartas/arcangel-san-gabriel/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional"
+  },
+  {
+    "clave": "arcangel-san-rafael",
+    "nombre": "San Rafael Arcángel",
+    "subtitulo": "Medicina de Dios y Guía de Caminantes",
+    "categoria": "Angel",
+    "rareza": "Celestial",
+    "celebracion": "09-29",
+    "historia": "San Rafael es uno de los siete santos ángeles que asisten continuamente ante la majestad divina. Su santa misión se relata en el libro bíblico de Tobías, donde tomó apariencia de peregrino con el nombre de Azarías para guiar y amparar al joven Tobías en su peligroso viaje por tierras lejanas.\n\nSan Rafael liberó a Sara de la opresión del demonio Asmodeo, unió en santa bendición el matrimonio de los jóvenes, y con la hiel del pez curó la ceguera del anciano Tobit. Antes de manifestar su gloria celeste, exhortó a los hombres a proclamar con gratitud las obras admirables del Señor.",
+    "oracion": "Glorioso Arcángel San Rafael, medicina de Dios y guía de caminantes, acompáñanos en la peregrinación de esta vida terrena, sana nuestras heridas del alma y del cuerpo, y alcánzanos la gracia de caminar con rectitud hacia la patria celestial. Amén.",
+    "frase": "Alaben a Dios y proclamen ante todos los vivientes los bienes que Él les ha concedido.",
+    "fraseAutor": "San Rafael Arcángel (Tob 12, 6)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Arcángel sanador" },
+      { "etiqueta": "Significado de su nombre", "valor": "Medicina de Dios (Rafa-El)" },
+      { "etiqueta": "Acompañamiento bíblico", "valor": "Guía protector del joven Tobías" },
+      { "etiqueta": "Patronazgo", "valor": "Médicos, ciegos, farmacéuticos y viajeros" }
+    ],
+    "imagenes": {
+      "1": "/cartas/arcangel-san-rafael/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional"
+  },
+  {
+    "clave": "angeles-custodios",
+    "nombre": "Santos Ángeles Custodios",
+    "subtitulo": "Compañeros y Protectores de Nuestras Almas",
+    "categoria": "Angel",
+    "rareza": "Buena",
+    "celebracion": "10-02",
+    "historia": "La bondad providencial de Dios asigna a cada alma humana, desde el instante de su concepción, un santo ángel de la guarda para que sea su guía, amparo y maestro interior en el camino de la salvación.\n\nEstos espíritus celestiales nos acompañan con fidelidad incansable, inspirándonos pensamientos piadosos, advirtiéndonos de los peligros espirituales y llevando nuestras humildes oraciones ante el trono del Altísimo. La Iglesia honra su protección con fiesta solemne cada 2 de octubre.",
+    "oracion": "Ángel de Dios, que eres mi custodio, pues la piedad divina me encomendó a ti, ilumíname, guárdame, rígeme y gobiérname en este día. Amén.",
+    "frase": "Miren que no desprecien a uno de estos pequeños; porque les digo que sus ángeles en los cielos ven siempre el rostro de mi Padre.",
+    "fraseAutor": "Jesucristo Nuestro Señor (Mt 18, 10)",
+    "datasheet": [
+      { "etiqueta": "Oficio divino", "valor": "Custodia y guía constante del alma humana" },
+      { "etiqueta": "Don providencial", "valor": "Asignado por Dios a cada persona desde su concepción" },
+      { "etiqueta": "Acción espiritual", "valor": "Inspirar la virtud, alejar el pecado e interceder" },
+      { "etiqueta": "Fundamento bíblico", "valor": "Salmo 90 («Mandará a sus ángeles para que te cuiden»)" }
+    ],
+    "imagenes": {
+      "1": "/cartas/angeles-custodios/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro cristiano"
+  },
+  {
+    "clave": "coro-serafines",
+    "nombre": "Los Santos Serafines",
+    "subtitulo": "Primer Coro Celestial del Amor Divino",
+    "categoria": "Angel",
+    "rareza": "Buena",
+    "celebracion": null,
+    "historia": "Los Serafines conforman el coro más elevado de las jerarquías angélicas, situándose en la contemplación inmediata del Trono de la Santísima Trinidad. Su nombre bíblico significa «los ardientes», pues se hallan inflamados en el fuego perpetuo de la divina caridad.\n\nEl profeta Isaías contempló a estos santos espíritus provistos de seis alas: con dos cubrían su rostro en santa adoración, con dos cubrían sus pies y con dos volaban, cantando sin cesar el cántico del Trisagio celestial: «Santo, Santo, Santo es el Señor Dios de los ejércitos».",
+    "oracion": "Santo, Santo, Santo es el Señor Dios del Universo. Llenos están el cielo y la tierra de tu gloria. Hosanna en el cielo. Bendito el que viene en nombre del Señor. Hosanna en el cielo.",
+    "frase": "Santo, Santo, Santo es el Señor de los ejércitos; la tierra entera está llena de su gloria.",
+    "fraseAutor": "Canto de los Serafines (Is 6, 3)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Primera jerarquía, supremo coro angelical" },
+      { "etiqueta": "Significado sagrado", "valor": "Los que arden en el fuego del amor de Dios" },
+      { "etiqueta": "Visión del profeta Isaías", "valor": "Seis alas resplandecientes ante el Trono divino" },
+      { "etiqueta": "Oficio eterno", "valor": "Adoración perpetua y cántico del Trisagio celestial" }
+    ],
+    "imagenes": {
+      "1": "/cartas/coro-serafines/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía bizantina y medieval"
+  },
+  {
+    "clave": "coro-querubines",
+    "nombre": "Los Santos Querubines",
+    "subtitulo": "Plenitud de Sabiduría y Contemplación Divina",
+    "categoria": "Angel",
+    "rareza": "Buena",
+    "celebracion": null,
+    "historia": "Los Querubines integran el segundo coro de la más alta jerarquía angélica. Su nombre expresa la plenitud del conocimiento santo y la contemplación de la infinita belleza y sabiduría del Altísimo.\n\nEn el Antiguo Testamento, Dios mandó erigir figuras de querubines de oro puro extendiendo sus alas protectoras sobre el propiciatorio del Arca de la Alianza, velando el misterio de la divina presencia y manifestando la gloria inefable del Creador en el Santo de los Santos.",
+    "oracion": "Tú que estás sentado sobre los querubines, resplandece; despierta tu poder y ven a salvarnos, Señor Dios todopoderoso.",
+    "frase": "El Señor reina, tiemblen los pueblos; está sentado sobre querubines, vacile la tierra.",
+    "fraseAutor": "Salterio Davídico (Sal 98, 1)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Primera jerarquía, segundo coro angelical" },
+      { "etiqueta": "Significado sagrado", "valor": "Plenitud del conocimiento y contemplación de la Verdad" },
+      { "etiqueta": "Representación bíblica", "valor": "Figuras de oro extendidas sobre el Arca de la Alianza" },
+      { "etiqueta": "Oficio eterno", "valor": "Custodios de la divina majestad y la gloria de Dios" }
+    ],
+    "imagenes": {
+      "1": "/cartas/coro-querubines/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte cristiano tradicional"
+  },
+  {
+    "clave": "coro-tronos",
+    "nombre": "Los Santos Tronos",
+    "subtitulo": "Sede de la Justicia y Paz Celestial",
+    "categoria": "Angel",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Los Tronos completan la primera de las tres jerarquías angélicas. Son espíritus puros en los cuales la majestad divina reside con serena paz, transmitiendo a las órdenes angélicas inferiores los decretos de su recta justicia y benevolencia paternal.\n\nSan Gregorio Magno enseña que son llamados Tronos porque Dios asienta en ellos espiritualmente sus juicios providenciales, llenándolos de una quietud santa que nada terrenal puede turbar ni quebrantar.",
+    "oracion": "Oh Señor y Creador nuestro, que fundaste tu trono en la justicia y la misericordia, concédenos un corazón apacible para acoger siempre tu santa voluntad.",
+    "frase": "En Él fueron creadas todas las cosas, en los cielos y sobre la tierra, las visibles y las invisibles, tronos, dominaciones, principados y potestades.",
+    "fraseAutor": "San Pablo Apóstol (Col 1, 16)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Primera jerarquía, tercer coro angelical" },
+      { "etiqueta": "Virtud celestial", "valor": "Paz inconmovible y reverente justicia" },
+      { "etiqueta": "Oficio sagrado", "valor": "Sede espiritual de los rectos juicios divinos" },
+      { "etiqueta": "Mención apostólica", "valor": "Epístola de San Pablo a los Colosenses" }
+    ],
+    "imagenes": {
+      "1": "/cartas/coro-tronos/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional"
+  },
+  {
+    "clave": "coro-dominaciones",
+    "nombre": "Las Santas Dominaciones",
+    "subtitulo": "Ministros del Señorío y Gobierno Divino",
+    "categoria": "Angel",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Las Dominaciones encabezan la segunda tríada de coros celestiales. Su santa función es regular las tareas y ministerios de los ángeles inferiores, manifestando la dignidad y nobleza del Reino de los Cielos.\n\nEnseñan al hombre la verdadera libertad del espíritu cristiano, que no consiste en dominar a los demás por la fuerza, sino en gobernar con rectitud los propios apetitos y someter el corazón al dulce yugo de Cristo Rey.",
+    "oracion": "Dios todopoderoso, Rey soberano de vivos y muertos, concédenos por la guía de tus santas órdenes celestiales servirte con espíritu libre y amar tu ley santa.",
+    "frase": "Cristo fue constituido por encima de todo principado, potestad, poder y dominación, y de todo nombre proclamado en este mundo y en el venidero.",
+    "fraseAutor": "San Pablo Apóstol (Ef 1, 21)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Segunda jerarquía, primer coro" },
+      { "etiqueta": "Virtud espiritual", "valor": "Libertad interior y señorío sobre las pasiones" },
+      { "etiqueta": "Oficio sagrado", "valor": "Coordinación y guía de los ministerios angelicales" },
+      { "etiqueta": "Mención apostólica", "valor": "Epístola de San Pablo a los Efesios" }
+    ],
+    "imagenes": {
+      "1": "/cartas/coro-dominaciones/1.webp"
+    },
+    "creditoImagen": "Dominio público / Arte sacro medieval"
+  },
+  {
+    "clave": "coro-potestades",
+    "nombre": "Las Santas Potestades",
+    "subtitulo": "Defensores del Orden Divino contra las Fuerzas del Mal",
+    "categoria": "Angel",
+    "rareza": "Comun",
+    "celebracion": null,
+    "historia": "Las Potestades pertenecen a la segunda jerarquía de los espíritus angélicos. Tienen la misión providencial de contener y desbaratar las asechanzas del maligno, impidiendo que el diablo ejerza sobre los hombres y el universo más daño del que Dios permite para nuestra purificación.\n\nCombaten con fortaleza incansable en las batallas invisibles del orden cósmico y auxilian a las almas tentadas, recordándoles que por la Cruz de Jesucristo las tinieblas han sido vencidas para siempre.",
+    "oracion": "Señor Dios fuerte y refugio nuestro, que diste a tus santas potestades la misión de refrenar al enemigo infernal, defiende a tu Santa Iglesia y custodia nuestros hogares.",
+    "frase": "Fortalézcanse en el Señor y en la fuerza de su poder; vístanse con la armadura de Dios para poder resistir las asechanzas del adversario.",
+    "fraseAutor": "San Pablo Apóstol (Ef 6, 10-11)",
+    "datasheet": [
+      { "etiqueta": "Jerarquía celeste", "valor": "Segunda jerarquía, tercer coro" },
+      { "etiqueta": "Virtud celestial", "valor": "Fortaleza santa y autoridad sobre los espíritus rebeldes" },
+      { "etiqueta": "Oficio sagrado", "valor": "Freno a las potencias infernales y auxilio al tentado" },
+      { "etiqueta": "Armadura espiritual", "valor": "Escudo de la fe y espada del Espíritu Santo" }
+    ],
+    "imagenes": {
+      "1": "/cartas/coro-potestades/1.webp"
+    },
+    "creditoImagen": "Dominio público / Iconografía tradicional"
+  }
+]

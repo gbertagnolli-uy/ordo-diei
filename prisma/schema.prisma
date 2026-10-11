@@ -1,7 +1,5 @@
 datasource db {
-  provider  = "postgresql"
-
-
+  provider = "postgresql"
 }
 
 generator client {
@@ -17,7 +15,7 @@ enum RolFamiliar {
 
 enum EstadoTarea {
   Pendiente
-  En_progreso @map("En progreso")
+  En_progreso          @map("En progreso")
   Pausada
   Completada
   Vencida
@@ -37,89 +35,98 @@ enum TipoRecurrencia {
 }
 
 model Usuario {
-  id                        Int         @id @default(autoincrement())
-  nombre                    String
-  pinSecretoHash            String      @map("PIN_Secreto")
-  fechaNacimiento           DateTime    @map("Fecha_Nacimiento")
-  rolFamiliar               RolFamiliar @map("Rol_Familiar")
-  puntosAcumulados          Int         @default(0) @map("Puntos_Acumulados")
-  availablePoints           Int         @default(0) @map("Available_Points")
-  lockedPoints              Int         @default(0) @map("Locked_Points")
-  stars                     Int         @default(0) @map("Stars")
-  surprises                 Int         @default(0) @map("Surprises")
-  completionPercentage      Float       @default(0.0) @map("Completion_Percentage")
-  fotoUrl                   String?     @map("Foto_URL")
-  penalizacionesReparacion  Int         @default(0) @map("Penalizaciones_Reparacion")
+  id                       Int         @id @default(autoincrement())
+  nombre                   String
+  pinSecretoHash           String      @map("PIN_Secreto")
+  fechaNacimiento          DateTime    @map("Fecha_Nacimiento")
+  rolFamiliar              RolFamiliar @map("Rol_Familiar")
+  puntosAcumulados         Int         @default(0) @map("Puntos_Acumulados")
+  availablePoints          Int         @default(0) @map("Available_Points")
+  lockedPoints             Int         @default(0) @map("Locked_Points")
+  stars                    Int         @default(0) @map("Stars")
+  surprises                Int         @default(0) @map("Surprises")
+  completionPercentage     Float       @default(0.0) @map("Completion_Percentage")
+  fotoUrl                  String?     @map("Foto_URL")
+  penalizacionesReparacion Int         @default(0) @map("Penalizaciones_Reparacion")
 
-  moodEmoji                 String?     @map("Mood_Emoji")
-  moodSetAt                 DateTime?   @map("Mood_Set_At")
+  moodEmoji String?   @map("Mood_Emoji")
+  moodSetAt DateTime? @map("Mood_Set_At")
 
-  streakDays                Int         @default(0) @map("Streak_Days")
-  lastTaskCompletedDate     DateTime?   @map("Last_Task_Completed_Date")
-  totalTasksCompleted       Int         @default(0) @map("Total_Tasks_Completed")
+  streakDays            Int       @default(0) @map("Streak_Days")
+  lastTaskCompletedDate DateTime? @map("Last_Task_Completed_Date")
+  totalTasksCompleted   Int       @default(0) @map("Total_Tasks_Completed")
 
-  tareasCreadas             Tarea[]     @relation("TareasCreadas")
-  tareasAsignadas           Tarea[]     @relation("TareasAsignadas")
-  historialAcciones         HistorialAccion[]
-  registrosAnimo            RegistroAnimo[]
-  premiosEntregados        PremioEntregado[]
+  tareasCreadas     Tarea[]           @relation("TareasCreadas")
+  tareasAsignadas   Tarea[]           @relation("TareasAsignadas")
+  historialAcciones HistorialAccion[]
+  registrosAnimo    RegistroAnimo[]
+  premiosEntregados PremioEntregado[]
 
-  experienciaHabitos        Int               @default(0) @map("Experiencia_Habitos")
-  habitosCreados            Habito[]          @relation("HabitosCreados")
-  habitosUsuario            HabitoUsuario[]
-  registrosHabito           RegistroHabito[]  @relation("RegistrosHabito")
-  registrosHabitoHechos     RegistroHabito[]  @relation("RegistrosHabitoHechos")
+  experienciaHabitos    Int              @default(0) @map("Experiencia_Habitos")
+  habitosCreados        Habito[]         @relation("HabitosCreados")
+  habitosUsuario        HabitoUsuario[]
+  registrosHabito       RegistroHabito[] @relation("RegistrosHabito")
+  registrosHabitoHechos RegistroHabito[] @relation("RegistrosHabitoHechos")
+  libros                Libro[]
+  recompensas           Recompensa[]     @relation("Recompensas")
+  recompensasEntregadas Recompensa[]     @relation("RecompensasEntregadas")
+
+  incienso             Int                   @default(0) @map("Incienso")
+  cartasCreadas        Carta[]               @relation("CartasCreadas")
+  cartasUsuario        CartaUsuario[]
+  movimientosFragmento MovimientoFragmento[]
+  reclamosCarta        ReclamoCarta[]
 
   @@map("Usuarios")
 }
 
 model Tarea {
-  id                               Int             @id @default(autoincrement())
-  titulo                           String          @map("Titulo")
-  descripcion                      String?         @map("Descripcion")
-  creadorId                        Int             @map("Creador_ID")
-  asignadoId                       Int             @map("Asignado_ID")
-  tiempoEjecucionEstimadoSeg       Int             @map("Tiempo_Ejecucion_Estimado_Segundos")
-  tiempoConsumidoTotalSeg         Int             @default(0) @map("Tiempo_Consumido_Total_Segundos")
-  generaPuntosYRecompensa          Boolean         @default(false) @map("Genera_Puntos_Y_Recompensa")
-  tipoRecurrencia                  TipoRecurrencia @default(Unica) @map("Tipo_Recurrencia")
-  fechaVencimiento                 DateTime?       @map("Fecha_Vencimiento")
-  horaEjecucion                    DateTime?       @map("Hora_Ejecucion")
-  estado                           EstadoTarea     @default(Pendiente)
-  
+  id                         Int             @id @default(autoincrement())
+  titulo                     String          @map("Titulo")
+  descripcion                String?         @map("Descripcion")
+  creadorId                  Int             @map("Creador_ID")
+  asignadoId                 Int             @map("Asignado_ID")
+  tiempoEjecucionEstimadoSeg Int             @map("Tiempo_Ejecucion_Estimado_Segundos")
+  tiempoConsumidoTotalSeg    Int             @default(0) @map("Tiempo_Consumido_Total_Segundos")
+  generaPuntosYRecompensa    Boolean         @default(false) @map("Genera_Puntos_Y_Recompensa")
+  tipoRecurrencia            TipoRecurrencia @default(Unica) @map("Tipo_Recurrencia")
+  fechaVencimiento           DateTime?       @map("Fecha_Vencimiento")
+  horaEjecucion              DateTime?       @map("Hora_Ejecucion")
+  estado                     EstadoTarea     @default(Pendiente)
+
   // Recurrencia avanzada
-  diaDelMes                        Int?            @map("Dia_Del_Mes")
-  ordinalSemana                    Int?            @map("Ordinal_Semana")
-  diaDeLaSemana                    Int?            @map("Dia_De_La_Semana")
-  
+  diaDelMes     Int? @map("Dia_Del_Mes")
+  ordinalSemana Int? @map("Ordinal_Semana")
+  diaDeLaSemana Int? @map("Dia_De_La_Semana")
+
   // Seguimiento de clones
-  parentTaskId                     Int?            @map("Parent_Task_ID")
-  parentTask                       Tarea?          @relation("TaskHistory", fields: [parentTaskId], references: [id])
-  clonedTasks                      Tarea[]         @relation("TaskHistory")
+  parentTaskId Int?    @map("Parent_Task_ID")
+  parentTask   Tarea?  @relation("TaskHistory", fields: [parentTaskId], references: [id])
+  clonedTasks  Tarea[] @relation("TaskHistory")
 
   // Novedades Gamificación
-  tiempoRealEjecucionSeg           Int?            @map("Tiempo_Real_Ejecucion_Segundos")
-  puntosGanadosPerdidos            Float?          @map("Puntos_Ganados_Perdidos")
-  retroalimentacionAlgoritmo       String?         @map("Retroalimentacion_Algoritmo")
-  grupoTareaId                     String?         @map("Grupo_Tarea_ID")
-  
-  isSurpriseEligible               Boolean         @default(false) @map("Is_Surprise_Eligible")
-  puntosGenerados                  Int             @default(0) @map("Puntos_Generados")
-  fechaCompletado                  DateTime?       @map("Fecha_Completado")
-  
-  isChecklist                      Boolean         @default(false) @map("Is_Checklist")
-  checklistItems                   ChecklistItem[]
+  tiempoRealEjecucionSeg     Int?    @map("Tiempo_Real_Ejecucion_Segundos")
+  puntosGanadosPerdidos      Float?  @map("Puntos_Ganados_Perdidos")
+  retroalimentacionAlgoritmo String? @map("Retroalimentacion_Algoritmo")
+  grupoTareaId               String? @map("Grupo_Tarea_ID")
+
+  isSurpriseEligible Boolean   @default(false) @map("Is_Surprise_Eligible")
+  puntosGenerados    Int       @default(0) @map("Puntos_Generados")
+  fechaCompletado    DateTime? @map("Fecha_Completado")
+
+  isChecklist    Boolean         @default(false) @map("Is_Checklist")
+  checklistItems ChecklistItem[]
 
   // Cronómetro persistente
-  timerStartedAt                   DateTime?       @map("Timer_Started_At")
-  tiempoAcumuladoTimer             Int             @default(0) @map("Tiempo_Acumulado_Timer_Seg")
+  timerStartedAt       DateTime? @map("Timer_Started_At")
+  tiempoAcumuladoTimer Int       @default(0) @map("Tiempo_Acumulado_Timer_Seg")
 
   // Identificador de tarea generada por cron
-  generadaPorCron                 Boolean         @default(false) @map("Generada_Por_Cron")
+  generadaPorCron Boolean @default(false) @map("Generada_Por_Cron")
 
-  creador                          Usuario         @relation("TareasCreadas", fields: [creadorId], references: [id])
-  asignado                         Usuario         @relation("TareasAsignadas", fields: [asignadoId], references: [id])
-  historialAcciones                HistorialAccion[]
+  creador           Usuario           @relation("TareasCreadas", fields: [creadorId], references: [id])
+  asignado          Usuario           @relation("TareasAsignadas", fields: [asignadoId], references: [id])
+  historialAcciones HistorialAccion[]
 
   @@index([estado])
   @@index([asignadoId])
@@ -128,52 +135,52 @@ model Tarea {
 }
 
 model HistorialAccion {
-  id                  Int          @id @default(autoincrement())
-  tareaId             Int          @map("Tarea_ID")
-  actorId             Int          @map("Actor_ID")
-  estadoAnterior      EstadoTarea? @map("Estado_Anterior")
-  estadoNuevo         EstadoTarea  @map("Estado_Nuevo")
-  duracionSesionSeg   Int?         @map("Duracion_Sesion_Segundos")
-  timestamp           DateTime     @default(now())
+  id                Int          @id @default(autoincrement())
+  tareaId           Int          @map("Tarea_ID")
+  actorId           Int          @map("Actor_ID")
+  estadoAnterior    EstadoTarea? @map("Estado_Anterior")
+  estadoNuevo       EstadoTarea  @map("Estado_Nuevo")
+  duracionSesionSeg Int?         @map("Duracion_Sesion_Segundos")
+  timestamp         DateTime     @default(now())
 
-  tarea               Tarea        @relation(fields: [tareaId], references: [id])
-  actor               Usuario      @relation(fields: [actorId], references: [id])
+  tarea Tarea   @relation(fields: [tareaId], references: [id])
+  actor Usuario @relation(fields: [actorId], references: [id])
 
   @@map("Historial_Acciones")
 }
 
 // Cada vez que alguien elige su estado de ánimo se guarda una fila, para graficar la evolución.
 model RegistroAnimo {
-  id          Int      @id @default(autoincrement())
-  usuarioId   Int      @map("Usuario_ID")
-  animo       String   @map("Animo")
-  puntaje     Int      @map("Puntaje")
-  creadoEn    DateTime @default(now()) @map("Creado_En")
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("Usuario_ID")
+  animo     String   @map("Animo")
+  puntaje   Int      @map("Puntaje")
+  creadoEn  DateTime @default(now()) @map("Creado_En")
 
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, creadoEn])
   @@map("Registros_Animo")
 }
 
 model ReglaHogar {
-  id                  Int      @id @default(autoincrement())
-  textoEstricto       String   @map("Texto_Estricto")
-  actualizadoPorId    Int      @map("Actualizado_Por_ID")
-  fechaActualizacion  DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  textoEstricto      String   @map("Texto_Estricto")
+  actualizadoPorId   Int      @map("Actualizado_Por_ID")
+  fechaActualizacion DateTime @updatedAt
 
   @@map("Reglas_Hogar")
 }
 
 model ChecklistItem {
-  id          Int     @id @default(autoincrement())
-  tareaId     Int     @map("Tarea_ID")
-  texto       String
-  completado  Boolean @default(false)
-  orden       Int     @default(0)
-  
-  tarea       Tarea   @relation(fields: [tareaId], references: [id], onDelete: Cascade)
-  
+  id         Int     @id @default(autoincrement())
+  tareaId    Int     @map("Tarea_ID")
+  texto      String
+  completado Boolean @default(false)
+  orden      Int     @default(0)
+
+  tarea Tarea @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+
   @@map("Checklist_Items")
 }
 
@@ -189,18 +196,18 @@ enum EstadoPremio {
 }
 
 model Premio {
-  id                    Int           @id @default(autoincrement())
-  titulo                String        @map("Titulo")
-  cantidad             Int            @map("Cantidad")
-  tipoFrecuencia        TipoFrecuencia @map("Tipo_Frecuencia")
-  diaEntregaSemana       Int?          @map("Dia_Entrega_Semana")
-  diaDelMes             Int?          @map("Dia_Del_Mes")
-  tareasRequeridasIds    String        @map("Tareas_Requeridas_Ids")
-  activo               Boolean       @default(true) @map("Activo")
-  createdAt            DateTime      @default(now()) @map("Created_At")
-  updatedAt            DateTime      @updatedAt @map("Updated_At")
+  id                  Int            @id @default(autoincrement())
+  titulo              String         @map("Titulo")
+  cantidad            Int            @map("Cantidad")
+  tipoFrecuencia      TipoFrecuencia @map("Tipo_Frecuencia")
+  diaEntregaSemana    Int?           @map("Dia_Entrega_Semana")
+  diaDelMes           Int?           @map("Dia_Del_Mes")
+  tareasRequeridasIds String         @map("Tareas_Requeridas_Ids")
+  activo              Boolean        @default(true) @map("Activo")
+  createdAt           DateTime       @default(now()) @map("Created_At")
+  updatedAt           DateTime       @updatedAt @map("Updated_At")
 
-  entregas              PremioEntregado[]
+  entregas PremioEntregado[]
 
   @@map("Premios")
 }
@@ -210,10 +217,10 @@ model PremioEntregado {
   premioId     Int          @map("Premio_ID")
   usuarioId    Int          @map("Usuario_ID")
   estado       EstadoPremio @default(Pendiente) @map("Estado")
-  fechaEntrega  DateTime     @default(now()) @map("Fecha_Entrega")
+  fechaEntrega DateTime     @default(now()) @map("Fecha_Entrega")
 
-  premio       Premio      @relation(fields: [premioId], references: [id], onDelete: Cascade)
-  usuario      Usuario     @relation(fields: [usuarioId], references: [id])
+  premio  Premio  @relation(fields: [premioId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
 
   @@unique([premioId, usuarioId])
   @@map("Premios_Entregados")
@@ -248,14 +255,16 @@ model Habito {
   ancla       String          @map("Ancla")
   icono       String          @map("Icono")
   minimo      String?         @map("Minimo")
+  imagen      String?         @map("Imagen")
   creadorId   Int?            @map("Creador_ID")
   archivado   Boolean         @default(false) @map("Archivado")
   createdAt   DateTime        @default(now()) @map("Created_At")
   updatedAt   DateTime        @updatedAt @map("Updated_At")
 
-  creador     Usuario?        @relation("HabitosCreados", fields: [creadorId], references: [id])
-  adopciones  HabitoUsuario[]
-  registros   RegistroHabito[]
+  creador    Usuario?         @relation("HabitosCreados", fields: [creadorId], references: [id])
+  adopciones HabitoUsuario[]
+  registros  RegistroHabito[]
+  libros     Libro[]
 
   @@map("Habitos")
 }
@@ -264,14 +273,14 @@ model HabitoUsuario {
   id        Int      @id @default(autoincrement())
   usuarioId Int      @map("Usuario_ID")
   habitoId  Int      @map("Habito_ID")
-  desde     DateTime @db.Date @map("Desde")
+  desde     DateTime @map("Desde") @db.Date
   dias      Int      @default(127) @map("Dias")
   ancla     String?  @map("Ancla")
   activo    Boolean  @default(true) @map("Activo")
   createdAt DateTime @default(now()) @map("Created_At")
 
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  habito    Habito   @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito  Habito  @relation(fields: [habitoId], references: [id], onDelete: Cascade)
 
   @@unique([usuarioId, habitoId])
   @@map("Habitos_Usuario")
@@ -281,19 +290,207 @@ model RegistroHabito {
   id              Int         @id @default(autoincrement())
   usuarioId       Int         @map("Usuario_ID")
   habitoId        Int         @map("Habito_ID")
-  fecha           DateTime    @db.Date @map("Fecha")
+  fecha           DateTime    @map("Fecha") @db.Date
   marca           MarcaHabito @map("Marca")
   nota            String?     @map("Nota")
   puntos          Int         @default(0) @map("Puntos")
   xp              Int         @default(0) @map("XP")
   registradoPorId Int         @map("Registrado_Por_ID")
+  paginas         Int?        @map("Paginas")
+  libroId         Int?        @map("Libro_ID")
   createdAt       DateTime    @default(now()) @map("Created_At")
 
-  usuario         Usuario     @relation("RegistrosHabito", fields: [usuarioId], references: [id], onDelete: Cascade)
-  registradoPor   Usuario     @relation("RegistrosHabitoHechos", fields: [registradoPorId], references: [id])
-  habito          Habito      @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  usuario       Usuario @relation("RegistrosHabito", fields: [usuarioId], references: [id], onDelete: Cascade)
+  registradoPor Usuario @relation("RegistrosHabitoHechos", fields: [registradoPorId], references: [id])
+  habito        Habito  @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  libro         Libro?  @relation(fields: [libroId], references: [id], onDelete: SetNull)
 
   @@unique([usuarioId, habitoId, fecha])
   @@map("Registros_Habito")
 }
 
+// Hábito "Leer un libro" y premios reclamables (vault/HABITO_LIBRO.md)
+enum EstadoRecompensa {
+  disponible
+  reclamado
+  entregado
+}
+
+model Libro {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int       @map("Usuario_ID")
+  habitoId    Int       @map("Habito_ID")
+  titulo      String    @map("Titulo")
+  paginas     Int       @map("Paginas")
+  iniciadoEn  DateTime  @default(now()) @map("Iniciado_En")
+  terminadoEn DateTime? @map("Terminado_En")
+
+  usuario    Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito     Habito           @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  registros  RegistroHabito[]
+  recompensa Recompensa?
+
+  @@index([usuarioId, habitoId])
+  @@map("Libros")
+}
+
+model Recompensa {
+  id             Int              @id @default(autoincrement())
+  usuarioId      Int              @map("Usuario_ID")
+  tipo           String           @map("Tipo")
+  titulo         String           @map("Titulo")
+  origen         String?          @map("Origen")
+  libroId        Int?             @unique @map("Libro_ID")
+  estado         EstadoRecompensa @default(disponible) @map("Estado")
+  pedido         String?          @map("Pedido")
+  ganadaEn       DateTime         @default(now()) @map("Ganada_En")
+  reclamadaEn    DateTime?        @map("Reclamada_En")
+  entregadaEn    DateTime?        @map("Entregada_En")
+  entregadaPorId Int?             @map("Entregada_Por_ID")
+
+  usuario      Usuario  @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
+  entregadaPor Usuario? @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
+  libro        Libro?   @relation(fields: [libroId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId, estado])
+  @@map("Recompensas")
+}
+
+// ==========================================
+// Cartas católicas coleccionables (vault/CARTAS_CATOLICAS.md)
+// ==========================================
+
+enum RarezaCarta {
+  Comun
+  Buena
+  Perfecta
+  Celestial
+}
+
+enum CategoriaCarta {
+  Santo
+  Angel
+  Misterio
+  Tema
+  Persona
+}
+
+enum OrigenCarta {
+  Sistema
+  Manual
+}
+
+enum TipoMovFragmento {
+  Sobre
+  Compra
+  CompraIncienso
+  Fiesta
+  Cumpleanos
+  ConversionIncienso
+  Ajuste
+  Bienvenida
+}
+
+enum TipoReclamo {
+  Fiesta
+  Cumpleanos
+  Bienvenida
+}
+
+model Carta {
+  id                   Int            @id @default(autoincrement())
+  clave                String         @unique @map("Clave")
+  nombre               String         @map("Nombre")
+  subtitulo            String?        @map("Subtitulo")
+  categoria            CategoriaCarta @map("Categoria")
+  rareza               RarezaCarta    @map("Rareza")
+  celebracion          String?        @map("Celebracion") // "MM-DD" o null si no tiene fecha fija
+  historia             String         @map("Historia") @db.Text
+  oracion              String         @map("Oracion") @db.Text
+  frase                String         @map("Frase")
+  fraseAutor           String?        @map("Frase_Autor")
+  datasheet            Json           @map("Datasheet") // [{ etiqueta, valor }] en orden de revelación, mín. 4
+  imagenUrl            String         @map("Imagen_URL") // Grado I (obligatoria)
+  imagenGrado2Url      String?        @map("Imagen_Grado_2_URL")
+  imagenGrado3Url      String?        @map("Imagen_Grado_3_URL")
+  imagenGrado4Url      String?        @map("Imagen_Grado_4_URL")
+  creditoImagen        String?        @map("Credito_Imagen")
+  fragmentosRequeridos Int            @map("Fragmentos_Requeridos")
+  origen               OrigenCarta    @default(Sistema) @map("Origen")
+  editadaManual        Boolean        @default(false) @map("Editada_Manual")
+  activa               Boolean        @default(true) @map("Activa")
+  creadorId            Int?           @map("Creador_ID")
+  createdAt            DateTime       @default(now()) @map("Created_At")
+  updatedAt            DateTime       @updatedAt @map("Updated_At")
+
+  creador       Usuario?              @relation("CartasCreadas", fields: [creadorId], references: [id])
+  cartasUsuario CartaUsuario[]
+  movimientos   MovimientoFragmento[]
+
+  @@map("Cartas")
+}
+
+model CartaUsuario {
+  id             Int       @id @default(autoincrement())
+  usuarioId      Int       @map("Usuario_ID")
+  cartaId        Int       @map("Carta_ID")
+  fragmentos     Int       @default(0) @map("Fragmentos") // tope requeridos × 3
+  desbloqueadaEn DateTime? @map("Desbloqueada_En")
+  gradoReclamado Int       @default(0) @map("Grado_Reclamado") // 0-4; el grado sube solo al reclamarlo (vault/ECONOMIA_CARTAS.md D20)
+  createdAt      DateTime  @default(now()) @map("Created_At")
+  updatedAt      DateTime  @updatedAt @map("Updated_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  carta   Carta   @relation(fields: [cartaId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, cartaId])
+  @@map("Cartas_Usuario")
+}
+
+model MovimientoFragmento {
+  id             Int              @id @default(autoincrement())
+  usuarioId      Int              @map("Usuario_ID")
+  cartaId        Int?             @map("Carta_ID")
+  tipo           TipoMovFragmento @map("Tipo")
+  cantidad       Int              @map("Cantidad")
+  puntosGastados Int              @default(0) @map("Puntos_Gastados")
+  inciensoDelta  Int              @default(0) @map("Incienso_Delta")
+  detalle        String?          @map("Detalle")
+  createdAt      DateTime         @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  carta   Carta?  @relation(fields: [cartaId], references: [id], onDelete: SetNull)
+
+  @@map("Movimientos_Fragmento")
+}
+
+model ReclamoCarta {
+  id        Int         @id @default(autoincrement())
+  usuarioId Int         @map("Usuario_ID")
+  cartaId   Int         @default(0) @map("Carta_ID") // 0 si no aplica a una carta específica
+  tipo      TipoReclamo @map("Tipo")
+  periodo   String      @map("Periodo") // "2026", o "inicio" para la bienvenida
+  createdAt DateTime    @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, tipo, cartaId, periodo])
+  @@map("Reclamos_Carta")
+}
+
+// Imágenes subidas por los usuarios (fotos de perfil, hábitos, arte de cartas). Vercel no deja escribir
+// en disco, así que se guardan acá en WebP comprimido y se sirven por /api/archivos/<clave>.
+model Archivo {
+  id           Int      @id @default(autoincrement())
+  clave        String   @unique @map("Clave") // UUID: va en la URL y no se puede adivinar
+  tipo         String   @map("Tipo") // MIME, p. ej. image/webp
+  datos        Bytes    @map("Datos")
+  bytes        Int      @map("Bytes")
+  ancho        Int?     @map("Ancho")
+  alto         Int?     @map("Alto")
+  nombreOrigen String?  @map("Nombre_Origen")
+  subidoPorId  Int?     @map("Subido_Por_ID")
+  createdAt    DateTime @default(now()) @map("Created_At")
+
+  @@map("Archivos")
+}

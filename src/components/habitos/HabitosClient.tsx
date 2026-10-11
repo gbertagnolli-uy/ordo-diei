@@ -22,6 +22,8 @@ import { HabitoCard } from "./HabitoCard";
 import { Escalera } from "./Escalera";
 import { CalendarioHabitos } from "./CalendarioHabitos";
 import { TrayectoriaHabitos } from "./TrayectoriaHabitos";
+import { HabitosCarrusel } from "./HabitosCarrusel";
+import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";
 
 const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: React.ElementType }[] = [
@@ -56,6 +58,7 @@ export function HabitosClient({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [habitoAEditar, setHabitoAEditar] = useState<EstadoHabito | null>(null);
   const [preseleccionMiembro, setPreseleccionMiembro] = useState<number | null>(null);
+  const [habitoElegidoId, setHabitoElegidoId] = useState<number | null>(null);
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
 
   const habitos = estado.habitos;
@@ -64,11 +67,14 @@ export function HabitosClient({
   const porcentajeHoy =
     programadosHoy.length > 0 ? Math.round((hechosHoy.length / programadosHoy.length) * 100) : 0;
 
+  const predeterminados = catalogo.filter((h) => h.clave !== null);
+  const comunitarios = catalogo.filter((h) => h.clave === null);
+
   // Hábitos en etapa Retomando (G3)
   const enRetomando = habitos.filter((h) => h.etapa === "retomando");
 
   // Registrar hábito
-  const handleRegistrar = async (habitoId: number, marca: Marca | null, nota?: string) => {
+  const handleRegistrar = async (habitoId: number, marca: Marca | null, nota?: string, paginas?: number) => {
     setOcupadoId(habitoId);
     try {
       const res = await fetch("/api/habitos/registro", {
@@ -78,6 +84,7 @@ export function HabitosClient({
           habitoId,
           marca,
           nota,
+          paginas,
           usuarioIds: [estado.usuarioId],
         }),
       });
@@ -100,10 +107,40 @@ export function HabitosClient({
         });
       }
 
+      // Libro terminado: premio "Un libro nuevo" (vault/HABITO_LIBRO.md)
       const rec = json.recompensas?.[0];
+      if (rec?.libroTerminado) {
+        openModal("HABITO", { tipo: "libro", habito: rec.libroTerminado, paso: null, categoria: "cuidado" });
+      }
       return rec ? { puntos: rec.puntos, xp: rec.xp } : undefined;
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al registrar");
+    } finally {
+      setOcupadoId(null);
+    }
+  };
+
+  // Cargar el libro que se empieza a leer (o corregir el actual)
+  const handleCargarLibro = async (habitoId: number, datos: { titulo: string; paginas: number }) => {
+    setOcupadoId(habitoId);
+    try {
+      const res = await fetch("/api/habitos/libros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habitoId, ...datos, usuarioIds: [estado.usuarioId] }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Error al guardar el libro");
+      setEstado(json.estados[0]);
+      router.refresh();
+      const terminado = json.terminados?.[0];
+      if (terminado) {
+        openModal("HABITO", { tipo: "libro", habito: terminado.titulo, paso: null, categoria: "cuidado" });
+      }
+      return true;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al guardar el libro");
+      return false;
     } finally {
       setOcupadoId(null);
     }
@@ -147,7 +184,25 @@ export function HabitosClient({
 
   return (
     <div className="space-y-8">
-      {/* 1. Resumen de hoy: Anillo Streaks y bienvenida */}
+      {/* 1. Hábitos predeterminados: carrusel; al tocar uno se abre su configuración */}
+      {predeterminados.length > 0 && (
+        <section className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="font-heading text-lg font-bold">Hábitos predeterminados</h3>
+            <p className="text-xs text-muted-foreground">Tocá uno para configurarlo y empezar.</p>
+          </div>
+          <HabitosCarrusel
+            habitos={predeterminados}
+            onElegir={(id) => {
+              setHabitoAEditar(null);
+              setHabitoElegidoId(id);
+              setDialogOpen(true);
+            }}
+          />
+        </section>
+      )}
+
+      {/* 2. Resumen de hoy: Anillo Streaks y bienvenida */}
       {habitos.length > 0 && (
         <Card className="overflow-hidden bg-card/60 backdrop-blur-xs">
           <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6">
@@ -166,6 +221,7 @@ export function HabitosClient({
                   variant="outline"
                   onClick={() => {
                     setHabitoAEditar(null);
+                    setHabitoElegidoId(null);
                     setPreseleccionMiembro(null);
                     setDialogOpen(true);
                   }}
@@ -196,7 +252,7 @@ export function HabitosClient({
         </Card>
       )}
 
-      {/* 2. Alertas de recaída compasiva (G3) */}
+      {/* 3. Alertas de recaída compasiva (G3) */}
       {enRetomando.map((h) => (
         <Alert key={h.habitoId} className="border-primary/30 bg-primary/5">
           <HeartHandshake className="size-5 text-primary" />
@@ -212,7 +268,7 @@ export function HabitosClient({
         </Alert>
       ))}
 
-      {/* 3. Secciones por franja o estado vacío */}
+      {/* 4. Secciones por franja o estado vacío */}
       {habitos.length === 0 ? (
         <Empty className="py-12 border bg-card">
           <EmptyHeader>
@@ -228,6 +284,7 @@ export function HabitosClient({
             <Button
               onClick={() => {
                 setHabitoAEditar(null);
+                setHabitoElegidoId(null);
                 setPreseleccionMiembro(null);
                 setDialogOpen(true);
               }}
@@ -268,6 +325,7 @@ export function HabitosClient({
                         setDialogOpen(true);
                       }}
                       onArchivar={handleArchivar}
+                      onCargarLibro={handleCargarLibro}
                     />
                   ))}
                 </div>
@@ -277,15 +335,34 @@ export function HabitosClient({
         </div>
       )}
 
-      {/* 4. Escalera de progreso (para hábitos con más de 1 paso) */}
+      {/* 5. Escalera de progreso (para hábitos con más de 1 paso) */}
       <Escalera habitos={habitos} misterios={estado.misterios?.misterios || []} />
 
-      {/* 5. Trayectoria y mapa de calor */}
+      {/* 6. Trayectoria y mapa de calor */}
       {habitos.length > 0 && (
         <div className="space-y-6">
           <TrayectoriaHabitos habitos={habitos} />
           <CalendarioHabitos habitos={habitos} hoy={estado.hoy} />
         </div>
+      )}
+
+      {/* 7. Hábitos comunitarios: creados por otros usuarios */}
+      {comunitarios.length > 0 && (
+        <section className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="font-heading text-lg font-bold">Hábitos comunitarios</h3>
+            <p className="text-xs text-muted-foreground">Creados por la familia. Tocá uno para verlo y adoptarlo.</p>
+          </div>
+          <HabitosComunitarios
+            habitos={comunitarios}
+            habitosActivos={habitos}
+            onElegir={(id) => {
+              setHabitoAEditar(null);
+              setHabitoElegidoId(id);
+              setDialogOpen(true);
+            }}
+          />
+        </section>
       )}
 
       {/* Diálogo de 2 pasos para crear, adoptar o editar hábitos */}
@@ -294,7 +371,9 @@ export function HabitosClient({
         onClose={() => {
           setDialogOpen(false);
           setHabitoAEditar(null);
+          setHabitoElegidoId(null);
         }}
+        habitoElegidoId={habitoElegidoId}
         catalogo={catalogo}
         habitosActivos={habitos}
         miembros={miembros}

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { nombre, categoria, franja, ancla, minimo, icono, adoptar } = body;
+    const { nombre, categoria, franja, ancla, minimo, icono, imagen, adoptar } = body;
 
     if (!nombre || typeof nombre !== "string" || nombre.trim().length === 0 || nombre.trim().length > 80) {
       return NextResponse.json({ error: "El nombre debe tener entre 1 y 80 caracteres" }, { status: 400 });
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       ancla,
       minimo,
       icono,
+      imagen,
       adoptar,
     });
 
