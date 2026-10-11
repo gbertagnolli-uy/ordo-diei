@@ -1,7 +1,7 @@
 // Arte de las cartas (D19, sin spoilers). Los archivos del catálogo viven en `arte-cartas/` (fuera de `public/`)
 // y se sirven solo por /api/cartas/arte, que verifica el grado del usuario. En la base las rutas siguen siendo
 // lógicas: "/cartas/<clave>/<N>.webp". Las subidas por el panel están en la base ("/api/archivos/<uuid>", no adivinable).
-import { gradoDe, imagenDeGrado, type CartaConImagenes } from "./fragmentos.ts";
+import { gradoVisible, imagenDeGrado, type CartaConImagenes } from "./fragmentos.ts";
 
 const PREFIJO_CATALOGO = "/cartas/";
 
@@ -29,8 +29,14 @@ export function parsearGrado(valor: string | null): 0 | 1 | 2 | 3 | 4 | null {
 
 /**
  * La única ruta de arte que puede ver un usuario sin permisos de administración:
- * la de su grado actual (grado I, en blanco y negro, si todavía no la desbloqueó).
+ * la de su grado reclamado (grado I, en blanco y negro, si todavía no la desbloqueó).
  */
-export function rutaPermitida(carta: CartaConImagenes & { fragmentosRequeridos: number }, fragmentos: number) {
-  return imagenDeGrado(carta, Math.max(1, gradoDe(fragmentos, carta.fragmentosRequeridos)) as 1 | 2 | 3 | 4);
+export function rutaPermitida(
+  carta: CartaConImagenes & { fragmentosRequeridos: number },
+  fragmentos: number,
+  gradoReclamado: number
+) {
+  // D20: el grado alcanzado y sin reclamar todavía no se ve
+  const grado = gradoVisible(fragmentos, carta.fragmentosRequeridos, gradoReclamado);
+  return imagenDeGrado(carta, Math.max(1, grado) as 1 | 2 | 3 | 4);
 }

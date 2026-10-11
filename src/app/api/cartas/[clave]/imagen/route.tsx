@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { gradoDe, imagenDeGrado } from "@/lib/cartas/fragmentos";
+import { gradoVisible, imagenDeGrado } from "@/lib/cartas/fragmentos";
 import { parsearGrado, rutaEnDiscoArte } from "@/lib/cartas/arte";
 import { leerArchivo } from "@/lib/archivos";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
@@ -84,7 +84,7 @@ export async function GET(
         const cu = await prisma.cartaUsuario.findUnique({
           where: { usuarioId_cartaId: { usuarioId, cartaId: carta.id } },
         });
-        gradoUsuario = gradoDe(cu?.fragmentos ?? 0, carta.fragmentosRequeridos);
+        gradoUsuario = gradoVisible(cu?.fragmentos ?? 0, carta.fragmentosRequeridos, cu?.gradoReclamado ?? 0);
       }
 
       if (gradoPedido > gradoUsuario) {

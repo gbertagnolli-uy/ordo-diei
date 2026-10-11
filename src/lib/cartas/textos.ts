@@ -56,13 +56,13 @@ export const TEXTOS_CARTAS = {
   sobres: {
     meditacion: {
       nombre: "Sobre de Meditación",
-      descripcion: "5 fragmentos de cartas comunes o buenas.",
+      descripcion: "8 fragmentos de cartas comunes o buenas.",
       precio: "40 puntos",
     },
     revelacion: {
       nombre: "Sobre de Revelación",
-      descripcion: "8 fragmentos, con al menos 4 de una carta Perfecta o Celestial garantizada.",
-      precio: "160 puntos",
+      descripcion: "12 fragmentos, con al menos 6 de una carta Perfecta o Celestial garantizada.",
+      precio: "100 puntos",
     },
   },
 
@@ -75,14 +75,34 @@ export const TEXTOS_CARTAS = {
     datasheetHito: (pct: number) => `Se revela al ${pct} % de fragmentos`,
   },
 
-  // Eventos festivos (D5, D6, D17)
+  // Eventos festivos (vault/ECONOMIA_CARTAS.md D21, D22, D23; D17)
   eventos: {
     fiestaAviso: (nombre: string) => `Hoy se celebra ${nombre}`,
-    fiestaPremio: "Reclamar 50 % de fragmentos",
-    fiestaReclamado: "Premio de la festividad reclamado",
-    cumpleAviso: "¡Feliz cumpleaños! Hoy la Iglesia celebra a tus santos patronos del día",
+    fiestaPremio: "Reclamar la carta",
+    fiestaPremioRepetida: "Reclamar +100 %",
+    fiestaDetalle: "Si no la reclamás hoy, no la ganás.",
+    fiestaReclamado: "Regalo de la fiesta reclamado",
+    cumpleAviso: "¡Feliz cumpleaños! Elegí una carta de regalo",
+    cumpleDetalle: "Cualquier carta Común, Buena o Perfecta que todavía no tengas, entera.",
+    cumpleSinElegibles: "Ya tenés todas las cartas elegibles: te regalamos un Sobre de Revelación.",
     cumplePremio: "Reclamar regalo de cumpleaños",
     cumpleReclamado: "Regalo de cumpleaños reclamado",
+    bienvenidaAviso: "Tu regalo de bienvenida",
+    bienvenidaDetalle: "3 cartas Comunes al azar para empezar tu colección.",
+    bienvenidaPremio: "Abrir regalo",
     bonoTienda: (nombre: string) => `Hoy ×1,5 en fragmentos de ${nombre}`,
+  },
+
+  // Reclamar desbloqueo y grados (D20)
+  reclamos: {
+    reclamar: "Reclamar",
+    listaParaReclamar: "¡Lista para reclamar!",
+    /** Sin grado: la carta todavía no se desbloqueó */
+    reclamarGrado: (grado: string) => (grado ? `Reclamar Grado ${grado}` : "Reclamar carta"),
+    alcanzado: (grado: string) =>
+      grado === "I"
+        ? "Juntaste todos los fragmentos: reclamala para consagrarla."
+        : `Alcanzaste el Grado ${grado}: reclamalo para verlo.`,
+    fiestaHoy: "Hoy es su fiesta",
   },
 } as const;

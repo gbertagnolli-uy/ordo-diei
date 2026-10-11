@@ -43,6 +43,14 @@ export function gradoDe(fragmentos: number, requeridos: number): GradoCarta {
 }
 
 /**
+ * Grado con el que se muestra la carta (D20): el que el usuario ya reclamó, sin pasar
+ * del que alcanzan sus fragmentos. Si la diferencia es positiva, hay un grado por reclamar.
+ */
+export function gradoVisible(fragmentos: number, requeridos: number, gradoReclamado: number): GradoCarta {
+  return Math.max(0, Math.min(gradoDe(fragmentos, requeridos), gradoReclamado)) as GradoCarta;
+}
+
+/**
  * Suma fragmentos a una carta con tope (requeridos × 3).
  * Si excede el tope, el sobrante se convierte en Granos de Incienso según el valor de la rareza (D4, D15).
  */

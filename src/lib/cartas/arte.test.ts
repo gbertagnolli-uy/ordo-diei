@@ -20,11 +20,13 @@ test("parsearGrado: solo enteros 0 a 4 (antes ?grado=abc daba el grado IV)", () 
 });
 
 test("rutaPermitida: solo el arte del grado actual; bloqueada ve el grado I", () => {
-  assert.equal(rutaPermitida(carta, 0), "/cartas/san-jose/1.webp");
-  assert.equal(rutaPermitida(carta, 10), "/cartas/san-jose/1.webp");
-  assert.equal(rutaPermitida(carta, 15), "/cartas/san-jose/2.webp");
-  assert.equal(rutaPermitida(carta, 20), "/cartas/san-jose/2.webp"); // grado III sin imagen propia → la del II
-  assert.equal(rutaPermitida(carta, 30), "/cartas/san-jose/4.webp");
+  assert.equal(rutaPermitida(carta, 0, 0), "/cartas/san-jose/1.webp");
+  assert.equal(rutaPermitida(carta, 10, 1), "/cartas/san-jose/1.webp");
+  assert.equal(rutaPermitida(carta, 15, 2), "/cartas/san-jose/2.webp");
+  assert.equal(rutaPermitida(carta, 20, 3), "/cartas/san-jose/2.webp"); // grado III sin imagen propia → la del II
+  assert.equal(rutaPermitida(carta, 30, 4), "/cartas/san-jose/4.webp");
+  // D20: con fragmentos para el grado IV pero solo el II reclamado, se ve el II
+  assert.equal(rutaPermitida(carta, 30, 2), "/cartas/san-jose/2.webp");
 });
 
 test("rutaEnDiscoArte y urlArte: arte fuera de public/, sin salir de su carpeta", () => {

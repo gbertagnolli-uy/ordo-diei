@@ -26,11 +26,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CartaVista } from "@/components/cartas/CartaVista";
+import { BordeReclamable } from "@/components/cartas/BordeReclamable";
+import { useReclamoCarta } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { ContenidoCartaVisible } from "@/lib/cartas/revelado";
 import type { GradoCarta } from "@/lib/cartas/economia";
 
 interface DetalleCartaDTO extends ContenidoCartaVisible {
+  fiestaHoy: boolean;
   topeFragmentos: number;
   siguienteGrado: number | null;
   fragmentosParaSiguienteGrado: number;
@@ -48,6 +51,14 @@ interface DetalleCartaViewProps {
 }
 
 export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
+  // D20/D21: al reclamar, router.refresh() vuelve a pedir la carta con el grado nuevo
+  const { reclamar, reclamando, modal } = useReclamoCarta();
+  const reclamo =
+    carta.id && carta.fiestaHoy
+      ? ({ tipo: "fiesta", cartaId: carta.id } as const)
+      : carta.id && carta.reclamable
+        ? ({ tipo: "grado", cartaId: carta.id } as const)
+        : null;
   const gradoRomano = TEXTOS_CARTAS.gradosRomanos[carta.grado] || "I";
   const gradoTexto = TEXTOS_CARTAS.grados[carta.grado];
 
@@ -101,18 +112,20 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Columna Izquierda: Carta Holo y Créditos (5 cols) */}
         <div className="lg:col-span-5 flex flex-col items-center gap-4">
-          <div className="w-full max-w-[340px] aspect-[63/88] rounded-2xl overflow-hidden shadow-2xl">
-            <CartaVista
-              carta={carta}
-              modo={carta.desbloqueada ? "holo" : "bloqueada"}
-              grado={carta.grado}
-              fragmentos={carta.fragmentos}
-              mostrarProgreso
-              ancho={340}
-              className="w-full h-full object-cover"
-              prioridad
-            />
-          </div>
+          <BordeReclamable activo={reclamo !== null} radio={16} className="w-full max-w-[340px]">
+            <div className="w-full max-w-[340px] aspect-[63/88] rounded-2xl overflow-hidden shadow-2xl">
+              <CartaVista
+                carta={carta}
+                modo={carta.desbloqueada ? "holo" : "bloqueada"}
+                grado={carta.grado}
+                fragmentos={carta.fragmentos}
+                mostrarProgreso
+                ancho={340}
+                className="w-full h-full object-cover"
+                prioridad
+              />
+            </div>
+          </BordeReclamable>
 
           {carta.creditoImagen && (
             <p className="text-[11px] text-muted-foreground text-center italic max-w-xs">
@@ -121,6 +134,26 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
           )}
 
           <div className="w-full max-w-[340px] flex flex-col gap-2 pt-2">
+            {reclamo && (
+              <Button
+                type="button"
+                onClick={() => reclamar(reclamo)}
+                disabled={reclamando !== null}
+                className="w-full gap-2 bg-amber-500 text-amber-950 font-bold hover:bg-amber-600"
+              >
+                <Sparkles className="size-4" />
+                {reclamando !== null
+                  ? "Reclamando..."
+                  : reclamo.tipo === "fiesta"
+                    ? carta.desbloqueada
+                      ? TEXTOS_CARTAS.eventos.fiestaPremioRepetida
+                      : TEXTOS_CARTAS.eventos.fiestaPremio
+                    : TEXTOS_CARTAS.reclamos.reclamarGrado(carta.desbloqueada ? TEXTOS_CARTAS.gradosRomanos[carta.gradoDisponible] : "")}
+              </Button>
+            )}
+            {reclamo?.tipo === "fiesta" && (
+              <p className="text-[11px] text-center text-muted-foreground">{TEXTOS_CARTAS.eventos.fiestaDetalle}</p>
+            )}
             <Button asChild variant="outline" className="w-full gap-2">
               <Link href="/dashboard/cartas?tab=tienda">
                 <ShoppingBag className="size-4" />
@@ -189,7 +222,9 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
                 </span>
               </div>
               <CardDescription className="text-xs">
-                {carta.desbloqueada ? (
+                {carta.reclamable ? (
+                  TEXTOS_CARTAS.reclamos.alcanzado(TEXTOS_CARTAS.gradosRomanos[carta.gradoDisponible])
+                ) : carta.desbloqueada ? (
                   carta.siguienteGrado !== null ? (
                     `Faltan ${carta.fragmentosParaSiguienteGrado} fragmentos para Grado ${TEXTOS_CARTAS.gradosRomanos[carta.siguienteGrado as GradoCarta]}`
                   ) : (
@@ -410,6 +445,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
           </div>
         </div>
       </div>
+      {modal}
     </div>
   );
 }

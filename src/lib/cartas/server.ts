@@ -1,26 +1,37 @@
 // Servicios del servidor para cartas católicas (Lane 31)
 // Persistencia, transacciones atómicas, D13 y eventos litúrgicos
 
+import type { Prisma } from "@prisma/client";
 import prisma from "../prisma.ts";
 import {
+  CARTAS_BIENVENIDA,
+  RAREZAS_CUMPLE,
   SOBRE_MEDITACION,
   SOBRE_REVELACION,
   TOPE_DIARIO_FRAGMENTOS_PUNTOS,
   precioFragmentoEnPuntos,
   precioFragmentoEnIncienso,
   type CategoriaCarta,
+  type GradoCarta,
   type RarezaCarta,
 } from "./economia.ts";
-import { aplicarFragmentos } from "./fragmentos.ts";
+import {
+  aplicarFragmentos,
+  gradoDe,
+  gradoVisible,
+  imagenDeGrado,
+  type CartaConImagenes,
+} from "./fragmentos.ts";
 import {
   contenidoVisible,
   type ContenidoCartaVisible,
   type CartaCompletaEntrada,
 } from "./revelado.ts";
 import {
+  sortearBienvenida,
   sortearSobreMeditacion,
   sortearSobreRevelacion,
-  type CartaSorteable,
+  type FragmentoOtorgado,
   type RngFn,
 } from "./sorteo.ts";
 import {
@@ -37,6 +48,54 @@ import {
 } from "./eventos.ts";
 import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
 import { ordenarCartas } from "./orden.ts";
+import { TEXTOS_CARTAS } from "./textos.ts";
+
+/** Período del reclamo de bienvenida (D23): uno solo por usuario, para siempre */
+const PERIODO_BIENVENIDA = "inicio";
+
+type TipoMovimiento = "Sobre" | "Compra" | "CompraIncienso" | "Fiesta" | "Cumpleanos" | "Bienvenida";
+
+/** Lo que hace falta de una carta para sumarle fragmentos */
+const SELECT_OTORGABLE = {
+  id: true,
+  clave: true,
+  nombre: true,
+  rareza: true,
+  fragmentosRequeridos: true,
+  celebracion: true,
+  imagenUrl: true,
+  imagenGrado2Url: true,
+  imagenGrado3Url: true,
+  imagenGrado4Url: true,
+} as const;
+
+interface CartaOtorgable extends CartaConImagenes {
+  id: number;
+  clave: string;
+  nombre: string;
+  rareza: RarezaCarta;
+  fragmentosRequeridos: number;
+}
+
+/** Resultado de sumar fragmentos a una carta; misma forma que espera el modal de apertura */
+export interface FragmentosOtorgados {
+  cartaId: number;
+  cartaClave: string;
+  nombre: string;
+  rareza: RarezaCarta;
+  cantidadBase: number;
+  cantidadFinal: number;
+  bonoFiestaAplicado: boolean;
+  fragmentosAntes: number;
+  fragmentosDespues: number;
+  desbloquea: boolean;
+  gradoAntes: GradoCarta;
+  gradoDespues: GradoCarta;
+  imagenUrl: string; // arte del grado que se ve (D19), nunca el de un grado sin reclamar
+  reclamable: boolean; // quedó un grado alcanzado sin reclamar (D20)
+  excedente: number;
+  inciensoGanado: number;
+}
 
 interface CartaPrismaRow {
   id: number;
@@ -85,12 +144,15 @@ function adaptarCartaPrisma(carta: CartaPrismaRow): CartaCompletaEntrada {
   };
 }
 
+/** Carta del álbum: contenido redactado (D13) y si hoy es su fiesta sin reclamar (D21) */
+export type CartaListada = ContenidoCartaVisible & { fiestaHoy: boolean };
+
 /**
  * 1. Obtener catálogo completo con progreso para un usuario (D13).
  * SEGURIDAD: Todos los contenidos son redactados según los fragmentos del usuario.
  */
 export async function listarCartasUsuario(usuarioId: number) {
-  const [cartasDb, coleccionUsuario, usuario] = await Promise.all([
+  const [cartasDb, coleccionUsuario, usuario, reclamosFiesta] = await Promise.all([
     prisma.carta.findMany({
       where: { activa: true },
       orderBy: [{ rareza: "asc" }, { nombre: "asc" }],
@@ -102,19 +164,26 @@ export async function listarCartasUsuario(usuarioId: number) {
       where: { id: usuarioId },
       select: { availablePoints: true, incienso: true },
     }),
+    prisma.reclamoCarta.findMany({
+      where: { usuarioId, tipo: "Fiesta", periodo: hoyAnioEnTz(new Date(), APP_TZ) },
+      select: { cartaId: true },
+    }),
   ]);
+  const fiestasReclamadas = new Set(reclamosFiesta.map((r) => r.cartaId));
 
-  const fragmentosPorCarta = new Map<number, number>();
-  for (const cu of coleccionUsuario) {
-    fragmentosPorCarta.set(cu.cartaId, cu.fragmentos);
-  }
+  const progresoPorCarta = new Map(coleccionUsuario.map((cu) => [cu.cartaId, cu]));
+  const ahora = new Date();
 
   const cartasOrdenadas = ordenarCartas(cartasDb);
 
-  const cartasVisibles: ContenidoCartaVisible[] = cartasOrdenadas.map((carta) => {
-    const fragmentos = fragmentosPorCarta.get(carta.id) ?? 0;
+  const cartasVisibles: CartaListada[] = cartasOrdenadas.map((carta) => {
+    const progreso = progresoPorCarta.get(carta.id);
     const adaptada = adaptarCartaPrisma(carta);
-    return contenidoVisible(adaptada, fragmentos);
+    return {
+      ...contenidoVisible(adaptada, progreso?.fragmentos ?? 0, progreso?.gradoReclamado ?? 0),
+      // D21: la fiesta de hoy se reclama aparte; si ya se reclamó, el banner no la muestra
+      fiestaHoy: esFiestaHoy(carta.celebracion, ahora, APP_TZ) && !fiestasReclamadas.has(carta.id),
+    };
   });
 
   return {
@@ -168,7 +237,20 @@ export async function obtenerDetalleCarta(
 
   const fragmentos = cartaUsuario?.fragmentos ?? 0;
   const adaptada = adaptarCartaPrisma(cartaDb);
-  const visible = contenidoVisible(adaptada, fragmentos);
+  const visible = contenidoVisible(adaptada, fragmentos, cartaUsuario?.gradoReclamado ?? 0);
+  const ahora = new Date();
+  const fiestaHoy =
+    esFiestaHoy(cartaDb.celebracion, ahora, APP_TZ) &&
+    !(await prisma.reclamoCarta.findUnique({
+      where: {
+        usuarioId_tipo_cartaId_periodo: {
+          usuarioId,
+          tipo: "Fiesta",
+          cartaId: cartaDb.id,
+          periodo: hoyAnioEnTz(ahora, APP_TZ),
+        },
+      },
+    }));
 
   // Navegación secuencial dentro del catálogo siguiendo el orden litúrgico
   const listaOrdenada = ordenarCartas(cartasLista);
@@ -220,6 +302,7 @@ export async function obtenerDetalleCarta(
 
   const detalleEnriquecido = {
     ...visible,
+    fiestaHoy,
     topeFragmentos,
     siguienteGrado,
     fragmentosParaSiguienteGrado,
@@ -245,6 +328,122 @@ export async function obtenerDetalleCarta(
   }
 
   return detalleEnriquecido;
+}
+
+/**
+ * Suma fragmentos a una carta del usuario dentro de una transacción y registra el movimiento.
+ * D20: el grado solo sube si `reclamar` (fiesta, cumpleaños, bienvenida). En sobres y compras
+ * queda pendiente y la carta pasa a "lista para reclamar". El excedente sobre el tope va al Incienso.
+ */
+async function otorgarFragmentos(
+  tx: Prisma.TransactionClient,
+  usuarioId: number,
+  carta: CartaOtorgable,
+  cantidad: number,
+  movimiento: {
+    tipo: TipoMovimiento;
+    detalle: string;
+    puntosGastados?: number;
+    inciensoGastado?: number;
+    cantidadBase?: number;
+    bonoFiestaAplicado?: boolean;
+  },
+  reclamar: boolean
+): Promise<FragmentosOtorgados> {
+  const actual = await tx.cartaUsuario.findUnique({
+    where: { usuarioId_cartaId: { usuarioId, cartaId: carta.id } },
+  });
+  const req = carta.fragmentosRequeridos;
+  const fragmentosAntes = actual?.fragmentos ?? 0;
+  const reclamadoAntes = actual?.gradoReclamado ?? 0;
+  const res = aplicarFragmentos(fragmentosAntes, req, carta.rareza, cantidad);
+
+  const gradoReclamado = reclamar ? Math.max(reclamadoAntes, res.gradoDespues) : reclamadoAntes;
+  const gradoAntes = gradoVisible(fragmentosAntes, req, reclamadoAntes);
+  const gradoDespues = gradoVisible(res.nuevo, req, gradoReclamado);
+  const desbloqueadaEn = actual?.desbloqueadaEn ?? (gradoDespues >= 1 ? new Date() : null);
+
+  await tx.cartaUsuario.upsert({
+    where: { usuarioId_cartaId: { usuarioId, cartaId: carta.id } },
+    create: { usuarioId, cartaId: carta.id, fragmentos: res.nuevo, gradoReclamado, desbloqueadaEn },
+    update: { fragmentos: res.nuevo, gradoReclamado, desbloqueadaEn },
+  });
+
+  await tx.movimientoFragmento.create({
+    data: {
+      usuarioId,
+      cartaId: carta.id,
+      tipo: movimiento.tipo,
+      cantidad,
+      puntosGastados: movimiento.puntosGastados ?? 0,
+      inciensoDelta: res.incienso - (movimiento.inciensoGastado ?? 0),
+      detalle: movimiento.detalle,
+    },
+  });
+
+  if (res.incienso > 0) {
+    await tx.usuario.update({
+      where: { id: usuarioId },
+      data: { incienso: { increment: res.incienso } },
+    });
+  }
+
+  return {
+    cartaId: carta.id,
+    cartaClave: carta.clave,
+    nombre: carta.nombre,
+    rareza: carta.rareza,
+    cantidadBase: movimiento.cantidadBase ?? cantidad,
+    cantidadFinal: cantidad,
+    bonoFiestaAplicado: movimiento.bonoFiestaAplicado ?? false,
+    fragmentosAntes,
+    fragmentosDespues: res.nuevo,
+    desbloquea: gradoAntes === 0 && gradoDespues >= 1,
+    gradoAntes,
+    gradoDespues,
+    imagenUrl: imagenDeGrado(carta, gradoDespues),
+    reclamable: res.gradoDespues > gradoReclamado,
+    excedente: res.excedente,
+    inciensoGanado: res.incienso,
+  };
+}
+
+/** Aplica los fragmentos de un sobre ya sorteado. Los grados quedan pendientes de reclamar (D20). */
+async function aplicarSobre(
+  tx: Prisma.TransactionClient,
+  usuarioId: number,
+  items: FragmentoOtorgado[],
+  pool: Array<CartaOtorgable & { celebracion: string | null }>,
+  nombreSobre: string,
+  costo: number
+): Promise<FragmentosOtorgados[]> {
+  const ahora = new Date();
+  const cartasAfectadas: FragmentosOtorgados[] = [];
+  for (const item of items) {
+    const carta = pool.find((c) => c.id === item.cartaId)!;
+    // D17: Bono de fiesta en tienda (×1.5 redondeo hacia arriba)
+    const esFiesta = esFiestaHoy(carta.celebracion, ahora, APP_TZ);
+    const cantidadFinal = esFiesta
+      ? Math.ceil(item.cantidad * multiplicadorTienda(carta.celebracion, ahora, APP_TZ))
+      : item.cantidad;
+    cartasAfectadas.push(
+      await otorgarFragmentos(
+        tx,
+        usuarioId,
+        carta,
+        cantidadFinal,
+        {
+          tipo: "Sobre",
+          detalle: `${nombreSobre} (${esFiesta ? "Bono festividad ×1,5" : "Base"})`,
+          puntosGastados: Math.round(costo / items.length),
+          cantidadBase: item.cantidad,
+          bonoFiestaAplicado: esFiesta,
+        },
+        false
+      )
+    );
+  }
+  return cartasAfectadas;
 }
 
 /**
@@ -276,25 +475,18 @@ export async function comprarSobre(
     // 2. Obtener pool de cartas activas para el sorteo
     const cartasPoolDb = await tx.carta.findMany({
       where: { activa: true },
-      select: { id: true, clave: true, rareza: true, celebracion: true, fragmentosRequeridos: true, nombre: true },
+      select: SELECT_OTORGABLE,
     });
 
     if (cartasPoolDb.length === 0) {
       throw new Error("No hay cartas disponibles en la tienda");
     }
 
-    const poolSorteo: CartaSorteable[] = cartasPoolDb.map((c) => ({
-      id: c.id,
-      clave: c.clave,
-      rareza: c.rareza,
-      activa: true,
-    }));
-
     // 3. Ejecutar sorteo puro
     const resultadoSobre =
       tipoSobre === "meditacion"
-        ? sortearSobreMeditacion(poolSorteo, rng)
-        : sortearSobreRevelacion(poolSorteo, rng);
+        ? sortearSobreMeditacion(cartasPoolDb, rng)
+        : sortearSobreRevelacion(cartasPoolDb, rng);
 
     // 4. Descontar puntos solo si todavía alcanzan (dos compras simultáneas no dejan el saldo en negativo)
     const descuento = await tx.usuario.updateMany({
@@ -305,106 +497,15 @@ export async function comprarSobre(
       throw new Error(`Puntos insuficientes. Necesitás ${costo} puntos.`);
     }
 
-    const ahora = new Date();
-    let totalInciensoGanado = 0;
-    const cartasAfectadas: Array<{
-      cartaId: number;
-      cartaClave: string;
-      nombre: string;
-      rareza: string;
-      cantidadBase: number;
-      cantidadFinal: number;
-      bonoFiestaAplicado: boolean;
-      fragmentosAntes: number;
-      fragmentosDespues: number;
-      desbloquea: boolean;
-      gradoAntes: number;
-      gradoDespues: number;
-      excedente: number;
-      inciensoGanado: number;
-    }> = [];
-
     // 5. Aplicar cada fragmento otorgado
-    for (const item of resultadoSobre.items) {
-      const cartaInfo = cartasPoolDb.find((c) => c.id === item.cartaId)!;
-      // D17: Bono de fiesta en tienda (×1.5 redondeo hacia arriba)
-      const esFiesta = esFiestaHoy(cartaInfo.celebracion, ahora, APP_TZ);
-      const cantidadFinal = esFiesta
-        ? Math.ceil(item.cantidad * multiplicadorTienda(cartaInfo.celebracion, ahora, APP_TZ))
-        : item.cantidad;
-
-      // Obtener o inicializar registro en Cartas_Usuario
-      const actualUserCard = await tx.cartaUsuario.findUnique({
-        where: { usuarioId_cartaId: { usuarioId, cartaId: item.cartaId } },
-      });
-
-      const fragmentosActuales = actualUserCard?.fragmentos ?? 0;
-      const res = aplicarFragmentos(
-        fragmentosActuales,
-        cartaInfo.fragmentosRequeridos,
-        item.rareza,
-        cantidadFinal
-      );
-
-      if (res.incienso > 0) {
-        totalInciensoGanado += res.incienso;
-      }
-
-      await tx.cartaUsuario.upsert({
-        where: { usuarioId_cartaId: { usuarioId, cartaId: item.cartaId } },
-        create: {
-          usuarioId,
-          cartaId: item.cartaId,
-          fragmentos: res.nuevo,
-          desbloqueadaEn: res.desbloquea ? ahora : null,
-        },
-        update: {
-          fragmentos: res.nuevo,
-          desbloqueadaEn:
-            res.desbloquea && !actualUserCard?.desbloqueadaEn ? ahora : actualUserCard?.desbloqueadaEn,
-        },
-      });
-
-      // Registrar movimiento individual
-      await tx.movimientoFragmento.create({
-        data: {
-          usuarioId,
-          cartaId: item.cartaId,
-          tipo: "Sobre",
-          cantidad: cantidadFinal,
-          puntosGastados: Math.round(costo / resultadoSobre.items.length),
-          inciensoDelta: res.incienso,
-          detalle: `${config.nombre} (${esFiesta ? "Bono festividad ×1,5" : "Base"})`,
-        },
-      });
-
-      cartasAfectadas.push({
-        cartaId: item.cartaId,
-        cartaClave: item.cartaClave,
-        nombre: cartaInfo.nombre,
-        rareza: item.rareza,
-        cantidadBase: item.cantidad,
-        cantidadFinal,
-        bonoFiestaAplicado: esFiesta,
-        fragmentosAntes: fragmentosActuales,
-        fragmentosDespues: res.nuevo,
-        desbloquea: res.desbloquea,
-        gradoAntes: res.gradoAntes,
-        gradoDespues: res.gradoDespues,
-        excedente: res.excedente,
-        inciensoGanado: res.incienso,
-      });
-    }
-
-    // 6. Si hubo conversión de fragmentos a Incienso, acreditar al usuario
-    if (totalInciensoGanado > 0) {
-      await tx.usuario.update({
-        where: { id: usuarioId },
-        data: {
-          incienso: { increment: totalInciensoGanado },
-        },
-      });
-    }
+    const cartasAfectadas = await aplicarSobre(
+      tx,
+      usuarioId,
+      resultadoSobre.items,
+      cartasPoolDb,
+      config.nombre,
+      costo
+    );
 
     const usuarioActualizado = await tx.usuario.findUnique({
       where: { id: usuarioId },
@@ -417,7 +518,7 @@ export async function comprarSobre(
       puntosGastados: costo,
       nuevoSaldoPuntos: usuarioActualizado?.availablePoints ?? 0,
       nuevoSaldoIncienso: usuarioActualizado?.incienso ?? 0,
-      totalInciensoGanado,
+      totalInciensoGanado: cartasAfectadas.reduce((s, c) => s + c.inciensoGanado, 0),
       cartasAfectadas,
     };
   });
@@ -518,53 +619,21 @@ export async function comprarFragmentosDirectos(
       ? Math.ceil(cantidad * multiplicadorTienda(carta.celebracion, ahora, APP_TZ))
       : cantidad;
 
-    const actualUserCard = await tx.cartaUsuario.findUnique({
-      where: { usuarioId_cartaId: { usuarioId, cartaId } },
-    });
-
-    const fragmentosActuales = actualUserCard?.fragmentos ?? 0;
-    const res = aplicarFragmentos(
-      fragmentosActuales,
-      carta.fragmentosRequeridos,
-      carta.rareza,
-      cantidadFinal
-    );
-
-    await tx.cartaUsuario.upsert({
-      where: { usuarioId_cartaId: { usuarioId, cartaId } },
-      create: {
-        usuarioId,
-        cartaId,
-        fragmentos: res.nuevo,
-        desbloqueadaEn: res.desbloquea ? ahora : null,
-      },
-      update: {
-        fragmentos: res.nuevo,
-        desbloqueadaEn:
-          res.desbloquea && !actualUserCard?.desbloqueadaEn ? ahora : actualUserCard?.desbloqueadaEn,
-      },
-    });
-
-    // Registrar en Movimientos_Fragmento
-    await tx.movimientoFragmento.create({
-      data: {
-        usuarioId,
-        cartaId,
+    const otorgado = await otorgarFragmentos(
+      tx,
+      usuarioId,
+      carta,
+      cantidadFinal,
+      {
         tipo: moneda === "puntos" ? "Compra" : "CompraIncienso",
-        cantidad: cantidadFinal,
-        puntosGastados: moneda === "puntos" ? costoTotal : 0,
-        inciensoDelta: (moneda === "incienso" ? -costoTotal : 0) + res.incienso,
         detalle: `Compra directa (${moneda})${esFiesta ? " · Bono fiesta ×1,5" : ""}`,
+        puntosGastados: moneda === "puntos" ? costoTotal : 0,
+        inciensoGastado: moneda === "incienso" ? costoTotal : 0,
+        cantidadBase: cantidad,
+        bonoFiestaAplicado: esFiesta,
       },
-    });
-
-    // Si la compra generó excedente convertido en Incienso:
-    if (res.incienso > 0) {
-      await tx.usuario.update({
-        where: { id: usuarioId },
-        data: { incienso: { increment: res.incienso } },
-      });
-    }
+      false
+    );
 
     const usuarioFinal = await tx.usuario.findUnique({
       where: { id: usuarioId },
@@ -580,13 +649,15 @@ export async function comprarFragmentosDirectos(
       cantidadComprada: cantidad,
       cantidadFinal,
       bonoFiestaAplicado: esFiesta,
-      fragmentosAntes: fragmentosActuales,
-      fragmentosDespues: res.nuevo,
-      desbloquea: res.desbloquea,
-      gradoAntes: res.gradoAntes,
-      gradoDespues: res.gradoDespues,
-      excedente: res.excedente,
-      inciensoGanado: res.incienso,
+      fragmentosAntes: otorgado.fragmentosAntes,
+      fragmentosDespues: otorgado.fragmentosDespues,
+      imagenUrl: otorgado.imagenUrl,
+      desbloquea: otorgado.desbloquea,
+      gradoAntes: otorgado.gradoAntes,
+      gradoDespues: otorgado.gradoDespues,
+      reclamable: otorgado.reclamable,
+      excedente: otorgado.excedente,
+      inciensoGanado: otorgado.inciensoGanado,
       nuevoSaldoPuntos: usuarioFinal?.availablePoints ?? 0,
       nuevoSaldoIncienso: usuarioFinal?.incienso ?? 0,
     };
@@ -594,8 +665,8 @@ export async function comprarFragmentosDirectos(
 }
 
 /**
- * 5. Reclamar el premio de festividad litúrgica (D5) de una carta celebrada hoy.
- * Idempotente: una vez por (usuario, carta, año).
+ * 5. Reclamar el regalo de la fiesta litúrgica (D21) de una carta celebrada hoy: la carta
+ * entera (+100 %), ya reclamada. Una vez por (usuario, carta, año).
  */
 export async function reclamarFiesta(usuarioId: number, cartaId: number) {
   const ahora = new Date();
@@ -614,106 +685,69 @@ export async function reclamarFiesta(usuarioId: number, cartaId: number) {
       throw new Error("Hoy no se celebra la festividad de esta carta");
     }
 
-    // Verificar si ya fue reclamada este año
     const reclamoPrevio = await tx.reclamoCarta.findUnique({
       where: {
-        usuarioId_tipo_cartaId_periodo: {
-          usuarioId,
-          tipo: "Fiesta",
-          cartaId,
-          periodo,
-        },
+        usuarioId_tipo_cartaId_periodo: { usuarioId, tipo: "Fiesta", cartaId, periodo },
       },
     });
 
     if (reclamoPrevio) {
-      throw new Error("El premio de festividad para esta carta ya fue reclamado este año");
+      throw new Error("El regalo de esta fiesta ya fue reclamado este año");
     }
 
-    // Registrar reclamo de forma idempotente
+    // La clave única hace fallar un segundo reclamo simultáneo
     await tx.reclamoCarta.create({
-      data: {
-        usuarioId,
-        cartaId,
-        tipo: "Fiesta",
-        periodo,
-      },
+      data: { usuarioId, cartaId, tipo: "Fiesta", periodo },
     });
 
-    // Otorgar el 50% de los fragmentos requeridos
-    const cantidadRegalo = regaloFiesta(carta.fragmentosRequeridos);
-
-    const actualUserCard = await tx.cartaUsuario.findUnique({
-      where: { usuarioId_cartaId: { usuarioId, cartaId } },
-    });
-
-    const fragmentosActuales = actualUserCard?.fragmentos ?? 0;
-    const res = aplicarFragmentos(
-      fragmentosActuales,
-      carta.fragmentosRequeridos,
-      carta.rareza,
-      cantidadRegalo
+    const otorgado = await otorgarFragmentos(
+      tx,
+      usuarioId,
+      carta,
+      regaloFiesta(carta.fragmentosRequeridos),
+      { tipo: "Fiesta", detalle: `Regalo de la fiesta litúrgica (${periodo})` },
+      true
     );
-
-    await tx.cartaUsuario.upsert({
-      where: { usuarioId_cartaId: { usuarioId, cartaId } },
-      create: {
-        usuarioId,
-        cartaId,
-        fragmentos: res.nuevo,
-        desbloqueadaEn: res.desbloquea ? ahora : null,
-      },
-      update: {
-        fragmentos: res.nuevo,
-        desbloqueadaEn:
-          res.desbloquea && !actualUserCard?.desbloqueadaEn ? ahora : actualUserCard?.desbloqueadaEn,
-      },
-    });
-
-    await tx.movimientoFragmento.create({
-      data: {
-        usuarioId,
-        cartaId,
-        tipo: "Fiesta",
-        cantidad: cantidadRegalo,
-        puntosGastados: 0,
-        inciensoDelta: res.incienso,
-        detalle: `Premio festividad litúrgica (${periodo})`,
-      },
-    });
-
-    if (res.incienso > 0) {
-      await tx.usuario.update({
-        where: { id: usuarioId },
-        data: { incienso: { increment: res.incienso } },
-      });
-    }
 
     return {
       tipo: "fiesta" as const,
-      mensaje: "Premio festividad litúrgica reclamado",
-      cartaId,
-      nombre: carta.nombre,
-      cantidadRegalo,
-      fragmentosGanados: cantidadRegalo,
-      fragmentosAntes: fragmentosActuales,
-      fragmentosDespues: res.nuevo,
-      desbloquea: res.desbloquea,
-      gradoAntes: res.gradoAntes,
-      gradoDespues: res.gradoDespues,
-      excedente: res.excedente,
-      inciensoGanado: res.incienso,
+      mensaje: `¡Gloria a Dios! Recibiste la carta de ${carta.nombre}.`,
+      ...otorgado,
+      fragmentosGanados: otorgado.cantidadFinal,
+      cartasAfectadas: [otorgado],
     };
   });
 }
 
+/** Cartas que el usuario puede elegir en su cumpleaños (D22): sin desbloquear, hasta Perfecta */
+async function cartasElegiblesCumple(tx: Prisma.TransactionClient | typeof prisma, usuarioId: number) {
+  const [cartas, propias] = await Promise.all([
+    tx.carta.findMany({
+      where: { activa: true, rareza: { in: [...RAREZAS_CUMPLE] } },
+      select: { ...SELECT_OTORGABLE, categoria: true, celebracion: true, imagenUrl: true },
+    }),
+    tx.cartaUsuario.findMany({
+      where: { usuarioId },
+      select: { cartaId: true, fragmentos: true },
+    }),
+  ]);
+  const fragmentos = new Map(propias.map((p) => [p.cartaId, p.fragmentos]));
+  return ordenarCartas(
+    cartas.filter((c) => gradoDe(fragmentos.get(c.id) ?? 0, c.fragmentosRequeridos) === 0)
+  ).map((c) => ({ ...c, fragmentos: fragmentos.get(c.id) ?? 0 }));
+}
+
 /**
- * 6. Reclamar regalo de cumpleaños (D6).
- * Idempotente: una vez por año.
- * - Si hay cartas del día no completadas: otorga todos los fragmentos para el 100%.
- * - Si no hay cartas o ya están todas al 100%: regala un Sobre de Revelación gratis.
+ * 6. Reclamar el regalo de cumpleaños (D22). Una vez por año.
+ * - El usuario elige `cartaId` entre las que no tiene desbloqueadas (Común, Buena o Perfecta)
+ *   y recibe los fragmentos que le faltan para el 100 %, ya reclamada.
+ * - Si no le queda ninguna elegible: un Sobre de Revelación gratis.
  */
-export async function reclamarCumpleanos(usuarioId: number, rng?: RngFn) {
+export async function reclamarCumpleanos(
+  usuarioId: number,
+  cartaId?: number | null,
+  rng?: RngFn
+) {
   const ahora = new Date();
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
@@ -731,226 +765,210 @@ export async function reclamarCumpleanos(usuarioId: number, rng?: RngFn) {
       throw new Error("Hoy no es tu cumpleaños");
     }
 
-    // Verificar si ya reclamó su cumpleaños este año (verificando cualquier reclamo con tipo Cumpleanos en este periodo)
     const yaReclamo = await tx.reclamoCarta.findFirst({
-      where: {
-        usuarioId,
-        tipo: "Cumpleanos",
-        periodo,
-      },
+      where: { usuarioId, tipo: "Cumpleanos", periodo },
     });
 
     if (yaReclamo) {
       throw new Error("El regalo de cumpleaños ya fue reclamado este año");
     }
 
-    const hoyMMdd = hoyMesDiaEnTz(ahora, APP_TZ);
-    const cartasDelDia = await tx.carta.findMany({
-      where: { celebracion: hoyMMdd, activa: true },
-    });
+    const elegibles = await cartasElegiblesCumple(tx, usuarioId);
 
-    // Obtener cartas de hoy del usuario
-    const cartasUsuarioHoy = await tx.cartaUsuario.findMany({
-      where: {
-        usuarioId,
-        cartaId: { in: cartasDelDia.map((c) => c.id) },
-      },
-    });
-
-    const fragsMap = new Map<number, number>();
-    for (const cu of cartasUsuarioHoy) {
-      fragsMap.set(cu.cartaId, cu.fragmentos);
-    }
-
-    // Cartas a las que les falte fragmentos para llegar al 100%
-    const cartasIncompletas = cartasDelDia.filter((c) => {
-      const frags = fragsMap.get(c.id) ?? 0;
-      return frags < c.fragmentosRequeridos;
-    });
-
-    if (cartasIncompletas.length > 0) {
-      const resultadosCartas: Array<{
-        cartaId: number;
-        nombre: string;
-        fragmentosRegalados: number;
-        desbloqueada: boolean;
-        grado: number;
-      }> = [];
-
-      for (const carta of cartasIncompletas) {
-        const fragsActuales = fragsMap.get(carta.id) ?? 0;
-        const faltantes = regaloCumple(carta.fragmentosRequeridos, fragsActuales);
-
-        await tx.reclamoCarta.create({
-          data: {
-            usuarioId,
-            cartaId: carta.id,
-            tipo: "Cumpleanos",
-            periodo,
-          },
-        });
-
-        const res = aplicarFragmentos(
-          fragsActuales,
-          carta.fragmentosRequeridos,
-          carta.rareza,
-          faltantes
-        );
-
-        await tx.cartaUsuario.upsert({
-          where: { usuarioId_cartaId: { usuarioId, cartaId: carta.id } },
-          create: {
-            usuarioId,
-            cartaId: carta.id,
-            fragmentos: res.nuevo,
-            desbloqueadaEn: ahora,
-          },
-          update: {
-            fragmentos: res.nuevo,
-            desbloqueadaEn: ahora,
-          },
-        });
-
-        await tx.movimientoFragmento.create({
-          data: {
-            usuarioId,
-            cartaId: carta.id,
-            tipo: "Cumpleanos",
-            cantidad: faltantes,
-            puntosGastados: 0,
-            inciensoDelta: 0,
-            detalle: `Regalo de cumpleaños (${periodo})`,
-          },
-        });
-
-        resultadosCartas.push({
-          cartaId: carta.id,
-          nombre: carta.nombre,
-          fragmentosRegalados: faltantes,
-          desbloqueada: true,
-          grado: res.gradoDespues,
-        });
+    if (elegibles.length > 0) {
+      const elegida = elegibles.find((c) => c.id === cartaId);
+      if (!elegida) {
+        throw new Error("Elegí una carta que todavía no tengas (Común, Buena o Perfecta)");
       }
 
-      return {
-        tipo: "santos_del_dia" as const,
-        mensaje: "¡Feliz cumpleaños! Se han desbloqueado los santos de tu día.",
-        cartas: resultadosCartas,
-      };
-    } else {
-      // Regalo alternativo: Sobre de Revelación gratis
       await tx.reclamoCarta.create({
-        data: {
-          usuarioId,
-          cartaId: 0, // Centinela 0
-          tipo: "Cumpleanos",
-          periodo,
-        },
+        data: { usuarioId, cartaId: elegida.id, tipo: "Cumpleanos", periodo },
       });
 
-      const poolSorteoDb = await tx.carta.findMany({
-        where: { activa: true },
-        select: { id: true, clave: true, rareza: true, celebracion: true, fragmentosRequeridos: true, nombre: true },
-      });
-
-      const poolSorteo: CartaSorteable[] = poolSorteoDb.map((c) => ({
-        id: c.id,
-        clave: c.clave,
-        rareza: c.rareza,
-        activa: true,
-      }));
-
-      const resSobre = sortearSobreRevelacion(poolSorteo, rng);
-      let totalIncienso = 0;
-      const cartasAfectadas: Array<{
-        cartaId: number;
-        nombre: string;
-        rareza: RarezaCarta;
-        cantidad: number;
-        fragmentosDespues: number;
-        desbloquea: boolean;
-      }> = [];
-
-      for (const item of resSobre.items) {
-        const cartaInfo = poolSorteoDb.find((c) => c.id === item.cartaId)!;
-        const actualUserCard = await tx.cartaUsuario.findUnique({
-          where: { usuarioId_cartaId: { usuarioId, cartaId: item.cartaId } },
-        });
-
-        const fragsActuales = actualUserCard?.fragmentos ?? 0;
-        const res = aplicarFragmentos(
-          fragsActuales,
-          cartaInfo.fragmentosRequeridos,
-          item.rareza,
-          item.cantidad
-        );
-
-        if (res.incienso > 0) totalIncienso += res.incienso;
-
-        await tx.cartaUsuario.upsert({
-          where: { usuarioId_cartaId: { usuarioId, cartaId: item.cartaId } },
-          create: {
-            usuarioId,
-            cartaId: item.cartaId,
-            fragmentos: res.nuevo,
-            desbloqueadaEn: res.desbloquea ? ahora : null,
-          },
-          update: {
-            fragmentos: res.nuevo,
-            desbloqueadaEn:
-              res.desbloquea && !actualUserCard?.desbloqueadaEn ? ahora : actualUserCard?.desbloqueadaEn,
-          },
-        });
-
-        await tx.movimientoFragmento.create({
-          data: {
-            usuarioId,
-            cartaId: item.cartaId,
-            tipo: "Cumpleanos",
-            cantidad: item.cantidad,
-            puntosGastados: 0,
-            inciensoDelta: res.incienso,
-            detalle: `Regalo de cumpleaños: Sobre de Revelación (${periodo})`,
-          },
-        });
-
-        cartasAfectadas.push({
-          cartaId: item.cartaId,
-          nombre: cartaInfo.nombre,
-          rareza: item.rareza,
-          cantidad: item.cantidad,
-          fragmentosDespues: res.nuevo,
-          desbloquea: res.desbloquea,
-        });
-      }
-
-      if (totalIncienso > 0) {
-        await tx.usuario.update({
-          where: { id: usuarioId },
-          data: { incienso: { increment: totalIncienso } },
-        });
-      }
+      const otorgado = await otorgarFragmentos(
+        tx,
+        usuarioId,
+        elegida,
+        regaloCumple(elegida.fragmentosRequeridos, elegida.fragmentos),
+        { tipo: "Cumpleanos", detalle: `Regalo de cumpleaños (${periodo})` },
+        true
+      );
 
       return {
-        tipo: "sobre_revelacion_gratis" as const,
-        mensaje: "¡Feliz cumpleaños! Recibiste un Sobre de Revelación gratis.",
-        sobre: resSobre.nombreSobre,
-        cartasAfectadas,
-        totalInciensoGanado: totalIncienso,
+        tipo: "carta_elegida" as const,
+        mensaje: `¡Feliz cumpleaños! Recibiste la carta de ${elegida.nombre}.`,
+        cartasAfectadas: [otorgado],
+        totalInciensoGanado: 0,
       };
     }
+
+    // Regalo alternativo: Sobre de Revelación gratis
+    await tx.reclamoCarta.create({
+      data: { usuarioId, cartaId: 0, tipo: "Cumpleanos", periodo },
+    });
+
+    const pool = await tx.carta.findMany({
+      where: { activa: true },
+      select: SELECT_OTORGABLE,
+    });
+    const resSobre = sortearSobreRevelacion(pool, rng);
+    const cartasAfectadas = await aplicarSobre(
+      tx,
+      usuarioId,
+      resSobre.items,
+      pool,
+      `Regalo de cumpleaños: ${resSobre.nombreSobre} (${periodo})`,
+      0
+    );
+
+    return {
+      tipo: "sobre_revelacion_gratis" as const,
+      mensaje: "¡Feliz cumpleaños! Recibiste un Sobre de Revelación gratis.",
+      sobre: resSobre.nombreSobre,
+      cartasAfectadas,
+      totalInciensoGanado: cartasAfectadas.reduce((s, c) => s + c.inciensoGanado, 0),
+    };
   });
 }
 
 /**
- * 7. Consulta de eventos litúrgicos y de cumpleaños pendientes para hoy.
+ * 7. Regalo de bienvenida (D23): 3 cartas Comunes distintas al azar, enteras y ya reclamadas.
+ * Una sola vez por usuario. Se prefieren Comunes que todavía no tenga.
+ */
+export async function reclamarBienvenida(usuarioId: number, rng?: RngFn) {
+  return await prisma.$transaction(async (tx) => {
+    const previo = await tx.reclamoCarta.findUnique({
+      where: {
+        usuarioId_tipo_cartaId_periodo: {
+          usuarioId,
+          tipo: "Bienvenida",
+          cartaId: 0,
+          periodo: PERIODO_BIENVENIDA,
+        },
+      },
+    });
+    if (previo) {
+      throw new Error("Ya reclamaste tu regalo de bienvenida");
+    }
+
+    await tx.reclamoCarta.create({
+      data: { usuarioId, cartaId: 0, tipo: "Bienvenida", periodo: PERIODO_BIENVENIDA },
+    });
+
+    const [comunes, propias] = await Promise.all([
+      tx.carta.findMany({ where: { activa: true, rareza: "Comun" }, select: SELECT_OTORGABLE }),
+      tx.cartaUsuario.findMany({
+        where: { usuarioId, gradoReclamado: { gte: 1 } },
+        select: { cartaId: true },
+      }),
+    ]);
+    const tiene = new Set(propias.map((p) => p.cartaId));
+    const nuevas = comunes.filter((c) => !tiene.has(c.id));
+    const pool = nuevas.length >= CARTAS_BIENVENIDA ? nuevas : comunes;
+    const elegidas = sortearBienvenida(pool, CARTAS_BIENVENIDA, rng);
+    if (elegidas.length === 0) {
+      throw new Error("No hay cartas comunes disponibles");
+    }
+
+    const cartasAfectadas: FragmentosOtorgados[] = [];
+    for (const carta of elegidas) {
+      cartasAfectadas.push(
+        await otorgarFragmentos(
+          tx,
+          usuarioId,
+          carta,
+          carta.fragmentosRequeridos,
+          { tipo: "Bienvenida", detalle: "Regalo de bienvenida" },
+          true
+        )
+      );
+    }
+
+    return {
+      tipo: "bienvenida" as const,
+      mensaje: `¡Bienvenido! Recibiste ${cartasAfectadas.length} cartas.`,
+      cartasAfectadas,
+      totalInciensoGanado: cartasAfectadas.reduce((s, c) => s + c.inciensoGanado, 0),
+    };
+  });
+}
+
+/**
+ * 8. Reclamar los grados que ya alcanzan los fragmentos de una carta (D20). Si saltó varios
+ * grados, se reclaman juntos. Idempotente ante doble clic.
+ */
+export async function reclamarGrado(usuarioId: number, cartaId: number) {
+  return await prisma.$transaction(async (tx) => {
+    const carta = await tx.carta.findUnique({ where: { id: cartaId }, select: { ...SELECT_OTORGABLE, activa: true } });
+    if (!carta || !carta.activa) {
+      throw new Error("Carta no encontrada");
+    }
+
+    const cu = await tx.cartaUsuario.findUnique({
+      where: { usuarioId_cartaId: { usuarioId, cartaId } },
+    });
+    const disponible = gradoDe(cu?.fragmentos ?? 0, carta.fragmentosRequeridos);
+    if (!cu || disponible <= cu.gradoReclamado) {
+      throw new Error("Esta carta no tiene nada para reclamar");
+    }
+
+    const actualizado = await tx.cartaUsuario.updateMany({
+      where: { id: cu.id, gradoReclamado: cu.gradoReclamado },
+      data: { gradoReclamado: disponible, desbloqueadaEn: cu.desbloqueadaEn ?? new Date() },
+    });
+    if (actualizado.count === 0) {
+      throw new Error("Esta carta ya fue reclamada");
+    }
+
+    const otorgado: FragmentosOtorgados = {
+      cartaId,
+      cartaClave: carta.clave,
+      nombre: carta.nombre,
+      rareza: carta.rareza,
+      cantidadBase: 0,
+      cantidadFinal: 0,
+      bonoFiestaAplicado: false,
+      fragmentosAntes: cu.fragmentos,
+      fragmentosDespues: cu.fragmentos,
+      desbloquea: cu.gradoReclamado === 0,
+      gradoAntes: cu.gradoReclamado as GradoCarta,
+      gradoDespues: disponible,
+      imagenUrl: imagenDeGrado(carta, disponible),
+      reclamable: false,
+      excedente: 0,
+      inciensoGanado: 0,
+    };
+
+    return {
+      tipo: "grado" as const,
+      mensaje:
+        cu.gradoReclamado === 0
+          ? `¡Desbloqueaste a ${carta.nombre}!`
+          : `${carta.nombre} subió a Grado ${TEXTOS_CARTAS.gradosRomanos[disponible]}.`,
+      cartasAfectadas: [otorgado],
+      totalInciensoGanado: 0,
+    };
+  });
+}
+
+/** Cartas con un grado alcanzado y sin reclamar (D20) */
+async function contarGradosPendientes(usuarioId: number): Promise<number> {
+  const filas = await prisma.cartaUsuario.findMany({
+    where: { usuarioId, carta: { activa: true } },
+    select: { fragmentos: true, gradoReclamado: true, carta: { select: { fragmentosRequeridos: true } } },
+  });
+  return filas.filter((f) => gradoDe(f.fragmentos, f.carta.fragmentosRequeridos) > f.gradoReclamado).length;
+}
+
+/**
+ * 9. Consulta de regalos pendientes para hoy: fiestas, cumpleaños, bienvenida y grados por reclamar.
  */
 export async function eventosDeHoy(usuarioId: number) {
   const ahora = new Date();
   const hoyMMdd = hoyMesDiaEnTz(ahora, APP_TZ);
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
-  const [usuario, cartasFiesta, reclamosUsuario] = await Promise.all([
+  const [usuario, cartasFiesta, reclamosUsuario, gradosPendientes] = await Promise.all([
     prisma.usuario.findUnique({
       where: { id: usuarioId },
       select: { id: true, nombre: true, fechaNacimiento: true },
@@ -965,11 +983,13 @@ export async function eventosDeHoy(usuarioId: number) {
         rareza: true,
         fragmentosRequeridos: true,
         imagenUrl: true,
+        cartasUsuario: { where: { usuarioId }, select: { gradoReclamado: true } },
       },
     }),
     prisma.reclamoCarta.findMany({
-      where: { usuarioId, periodo },
+      where: { usuarioId, periodo: { in: [periodo, PERIODO_BIENVENIDA] } },
     }),
+    contarGradosPendientes(usuarioId),
   ]);
 
   if (!usuario) {
@@ -977,10 +997,11 @@ export async function eventosDeHoy(usuarioId: number) {
   }
 
   const esCumple = esCumpleHoy(usuario.fechaNacimiento, ahora, APP_TZ);
-  const cumpleReclamado = reclamosUsuario.some((r) => r.tipo === "Cumpleanos");
+  const cumpleReclamado = reclamosUsuario.some((r) => r.tipo === "Cumpleanos" && r.periodo === periodo);
+  const bienvenidaDisponible = !reclamosUsuario.some((r) => r.tipo === "Bienvenida");
 
   const reclamosFiestaSet = new Set(
-    reclamosUsuario.filter((r) => r.tipo === "Fiesta").map((r) => r.cartaId)
+    reclamosUsuario.filter((r) => r.tipo === "Fiesta" && r.periodo === periodo).map((r) => r.cartaId)
   );
 
   const fiestas = cartasFiesta.map((c) => ({
@@ -991,14 +1012,39 @@ export async function eventosDeHoy(usuarioId: number) {
     rareza: c.rareza,
     imagenUrl: c.imagenUrl,
     regaloFragmentos: regaloFiesta(c.fragmentosRequeridos),
+    yaLaTiene: (c.cartasUsuario[0]?.gradoReclamado ?? 0) >= 1,
     reclamado: reclamosFiestaSet.has(c.id),
   }));
+
+  const cumpleElegibles =
+    esCumple && !cumpleReclamado
+      ? (await cartasElegiblesCumple(prisma, usuarioId)).map((c) => ({
+          cartaId: c.id,
+          clave: c.clave,
+          nombre: c.nombre,
+          rareza: c.rareza,
+          categoria: c.categoria,
+          imagenUrl: c.imagenUrl,
+          fragmentos: c.fragmentos,
+          fragmentosRequeridos: c.fragmentosRequeridos,
+        }))
+      : [];
+
+  const hayPendientes =
+    fiestas.some((f) => !f.reclamado) ||
+    (esCumple && !cumpleReclamado) ||
+    bienvenidaDisponible ||
+    gradosPendientes > 0;
 
   return {
     fechaHoy: hoyMMdd,
     periodo,
     esCumple,
     cumpleReclamado,
+    cumpleElegibles,
+    bienvenidaDisponible,
+    gradosPendientes,
+    hayPendientes,
     fiestas,
   };
 }

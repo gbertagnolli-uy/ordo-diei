@@ -1,6 +1,7 @@
 // Sorteo de cartas católicas en dos etapas (D2, D3) — Implementación limpia desde cero
 
 import {
+  CARTAS_BIENVENIDA,
   CONFIG_RAREZAS,
   SOBRE_MEDITACION,
   SOBRE_REVELACION,
@@ -130,8 +131,8 @@ export function particionarFragmentos(
 
 /**
  * Sortea un Sobre de Meditación (D2):
- * - Costo: 40 puntos
- * - 5 fragmentos en 1-3 cartas
+ * - Costo y fragmentos en SOBRE_MEDITACION (40 pts → 8 fragmentos)
+ * - 1-3 cartas
  * - Solo bandas Común y Buena
  */
 export function sortearSobreMeditacion(
@@ -174,17 +175,16 @@ export function sortearSobreMeditacion(
 
 /**
  * Sortea un Sobre de Revelación (D2):
- * - Costo: 160 puntos
- * - 8 fragmentos en 1-3 cartas
- * - Garantiza al menos 4 fragmentos de una carta Perfecta o Celestial (sorteo 10:2)
- * - Los 4 fragmentos restantes salen del sorteo completo (todas las bandas)
+ * - Costo y fragmentos en SOBRE_REVELACION (100 pts → 12 fragmentos)
+ * - Garantiza garantiaMinFragmentos (6) de una carta Perfecta o Celestial (sorteo 10:2)
+ * - El resto sale del sorteo completo (todas las bandas)
  */
 export function sortearSobreRevelacion(
   pool: CartaSorteable[],
   rng: RngFn = Math.random
 ): ResultadoSobre {
-  const garantiaMin = SOBRE_REVELACION.garantiaMinFragmentos; // 4
-  const restoFragmentos = SOBRE_REVELACION.fragmentosTotal - garantiaMin; // 4
+  const garantiaMin = SOBRE_REVELACION.garantiaMinFragmentos;
+  const restoFragmentos = SOBRE_REVELACION.fragmentosTotal - garantiaMin;
 
   // 1. Carta garantizada Perfecta o Celestial
   const cartaGarantizada = sortearCarta(pool, SOBRE_REVELACION.garantiaRarezas, rng);
@@ -224,4 +224,22 @@ export function sortearSobreRevelacion(
     fragmentosTotal: SOBRE_REVELACION.fragmentosTotal,
     items,
   };
+}
+
+/**
+ * Regalo de bienvenida (D23): `cantidad` cartas Comunes distintas, uniformes al azar.
+ * Si hay menos Comunes activas que `cantidad`, devuelve todas.
+ */
+export function sortearBienvenida<T extends CartaSorteable>(
+  pool: T[],
+  cantidad: number = CARTAS_BIENVENIDA,
+  rng: RngFn = Math.random
+): T[] {
+  const comunes = pool.filter((c) => c.activa !== false && c.rareza === "Comun");
+  // Fisher–Yates parcial: solo se mezclan las primeras `cantidad` posiciones
+  for (let i = 0; i < Math.min(cantidad, comunes.length); i++) {
+    const j = i + Math.min(comunes.length - 1 - i, Math.floor(rng() * (comunes.length - i)));
+    [comunes[i], comunes[j]] = [comunes[j], comunes[i]];
+  }
+  return comunes.slice(0, cantidad);
 }

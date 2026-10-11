@@ -104,12 +104,14 @@ test("Lane 37: Eventos temporales, reclamos de fiesta, cumpleaños, 29-feb y top
     });
   });
 
-  // Test 1: Reclamar fiesta 1 (50% de 20 = 10 fragmentos)
+  // Test 1: Reclamar fiesta 1 (D21: la carta entera, 20 fragmentos, ya reclamada)
   const resFiesta1 = await reclamarFiesta(usuario.id, cartaFiesta1.id);
   assert.equal(resFiesta1.tipo, "fiesta");
-  assert.equal(resFiesta1.fragmentosGanados, 10);
-  assert.equal(resFiesta1.fragmentosDespues, 10);
-  assert.equal(resFiesta1.desbloquea, false); // 10 < 20
+  assert.equal(resFiesta1.fragmentosGanados, 20);
+  assert.equal(resFiesta1.fragmentosDespues, 20);
+  assert.equal(resFiesta1.desbloquea, true);
+  assert.equal(resFiesta1.gradoDespues, 1);
+  assert.equal(resFiesta1.reclamable, false);
 
   // Test 2: Segundo reclamo de la misma fiesta en el mismo año DEBE fallar
   await assert.rejects(
@@ -125,19 +127,23 @@ test("Lane 37: Eventos temporales, reclamos de fiesta, cumpleaños, 29-feb y top
       usuarioId: usuario.id,
       cartaId: cartaFiesta2.id,
       fragmentos: 60, // Ya al 100% (Grado I)
+      gradoReclamado: 1,
       desbloqueadaEn: new Date(),
     },
   });
 
-  // Fiesta 2: 50% de 60 = 30 fragmentos. 60 + 30 = 90 (150% = Grado II)
+  // Fiesta 2: +100 % = 60 fragmentos. 60 + 60 = 120 (200% = Grado III, reclamado en el acto)
   const resFiesta2 = await reclamarFiesta(usuario.id, cartaFiesta2.id);
-  assert.equal(resFiesta2.fragmentosGanados, 30);
-  assert.equal(resFiesta2.fragmentosDespues, 90);
+  assert.equal(resFiesta2.fragmentosGanados, 60);
+  assert.equal(resFiesta2.fragmentosDespues, 120);
+  assert.equal(resFiesta2.gradoAntes, 1);
+  assert.equal(resFiesta2.gradoDespues, 3);
 
   const cu2 = await prisma.cartaUsuario.findUnique({
     where: { usuarioId_cartaId: { usuarioId: usuario.id, cartaId: cartaFiesta2.id } },
   });
-  assert.equal(cu2?.fragmentos, 90);
+  assert.equal(cu2?.fragmentos, 120);
+  assert.equal(cu2?.gradoReclamado, 3);
 
   // Test 4: Reclamar fiesta en el tope máximo (300% de 60 = 180 fragmentos)
   // Crear una tercera carta con tope
@@ -169,11 +175,12 @@ test("Lane 37: Eventos temporales, reclamos de fiesta, cumpleaños, 29-feb y top
       usuarioId: usuario.id,
       cartaId: cartaTope.id,
       fragmentos: 60, // En tope máximo exacto
+      gradoReclamado: 4,
       desbloqueadaEn: new Date(),
     },
   });
 
-  // Reclamar fiesta: 50% de 20 = 10 fragmentos. Como ya está en 60, los 10 se convierten a Incienso
+  // Reclamar fiesta: +20 fragmentos. Como ya está en 60, los 20 se convierten a Incienso
   const saldoInciensoAntes = (await prisma.usuario.findUnique({ where: { id: usuario.id } }))?.incienso ?? 0;
   const resTope = await reclamarFiesta(usuario.id, cartaTope.id);
   assert.equal(resTope.fragmentosDespues, 60); // Permanece en 60
@@ -204,14 +211,18 @@ test("Lane 37: Eventos temporales, reclamos de fiesta, cumpleaños, 29-feb y top
     data: { fechaNacimiento: new Date(`1995-${hoyMMdd}T00:00:00.000Z`) },
   });
 
-  const resCumple = await reclamarCumpleanos(usuario.id);
-  // Dado que hay cartas de hoy (cartaFiesta1 está al 50%), debe completar las faltantes para 100%
-  if (resCumple.tipo === "santos_del_dia") {
-    assert.ok(resCumple.cartas.length >= 1);
-    const c1 = resCumple.cartas.find((c) => c.cartaId === cartaFiesta1.id);
-    if (c1) {
-      assert.equal(c1.desbloqueada, true);
-    }
+  // D22: el usuario elige una carta que no tenga (hasta Perfecta)
+  const elegibles = (await eventosDeHoy(usuario.id)).cumpleElegibles;
+  assert.ok(elegibles.every((c) => c.rareza !== "Celestial" && c.cartaId !== cartaFiesta1.id));
+  if (elegibles.length > 0) {
+    await assert.rejects(() => reclamarCumpleanos(usuario.id), { message: /Elegí una carta/ });
+  }
+  const resCumple = await reclamarCumpleanos(usuario.id, elegibles[0]?.cartaId);
+  if (resCumple.tipo === "carta_elegida") {
+    const [c1] = resCumple.cartasAfectadas;
+    assert.equal(c1.cartaId, elegibles[0].cartaId);
+    assert.equal(c1.desbloquea, true);
+    assert.equal(c1.gradoDespues, 1);
   } else {
     // Si ya estuvieran al 100%, entrega sobre de revelación
     assert.equal(resCumple.tipo, "sobre_revelacion_gratis");

@@ -38,8 +38,12 @@ export interface CartaAfectadaCompra {
   desbloquea: boolean;
   gradoAntes: number;
   gradoDespues: number;
+  /** Arte del grado que se ve; lo manda el servidor (D19) */
+  imagenUrl?: string;
   excedente: number;
   inciensoGanado: number;
+  /** Alcanzó un grado que todavía hay que reclamar (D20) */
+  reclamable?: boolean;
 }
 
 export interface ResultadoCompraSobre {
@@ -50,6 +54,8 @@ export interface ResultadoCompraSobre {
   nuevoSaldoIncienso: number;
   totalInciensoGanado: number;
   cartasAfectadas: CartaAfectadaCompra[];
+  /** Los reclamos no gastan puntos: sin saldos que mostrar */
+  mostrarSaldos?: boolean;
 }
 
 interface ModalAperturaSobreProps {
@@ -243,9 +249,11 @@ export function ModalAperturaSobre({
                   nombre: cartaActual.nombre,
                   rareza: cartaActual.rareza as RarezaCarta,
                   fragmentosRequeridos: 100, // proporcional
-                  imagenUrl: `/cartas/${cartaActual.cartaClave}/${Math.max(1, cartaActual.gradoDespues)}.webp`,
+                  imagenUrl:
+                    cartaActual.imagenUrl ??
+                    `/cartas/${cartaActual.cartaClave}/${Math.max(1, cartaActual.gradoDespues)}.webp`,
                 }}
-                modo="holo"
+                modo={cartaActual.gradoDespues >= 1 ? "holo" : "bloqueada"}
                 grado={cartaActual.gradoDespues as GradoCarta}
                 fragmentos={cartaActual.fragmentosDespues}
                 ancho={240}
@@ -260,9 +268,11 @@ export function ModalAperturaSobre({
               </span>
 
               <div className="flex items-center gap-2">
-                <Badge className="bg-primary/20 text-primary border-primary/40 font-semibold text-xs">
-                  +{cartaActual.cantidadFinal} fragmentos
-                </Badge>
+                {cartaActual.cantidadFinal > 0 && (
+                  <Badge className="bg-primary/20 text-primary border-primary/40 font-semibold text-xs">
+                    +{cartaActual.cantidadFinal} fragmentos
+                  </Badge>
+                )}
                 {cartaActual.bonoFiestaAplicado && (
                   <Badge variant="secondary" className="text-[10px] bg-amber-500/20 text-amber-500 border-amber-500/30">
                     Bono fiesta ×1,5
@@ -285,6 +295,13 @@ export function ModalAperturaSobre({
                     ¡Subió a Grado {TEXTOS_CARTAS.gradosRomanos[cartaActual.gradoDespues as GradoCarta]} (
                     {TEXTOS_CARTAS.gradosCortos[cartaActual.gradoDespues as GradoCarta]})!
                   </span>
+                </div>
+              )}
+
+              {cartaActual.reclamable && (
+                <div className="flex items-center gap-1.5 p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-500 font-semibold text-xs mt-1">
+                  <Sparkles className="size-3.5" />
+                  <span>{TEXTOS_CARTAS.reclamos.listaParaReclamar}</span>
                 </div>
               )}
 
@@ -348,9 +365,16 @@ export function ModalAperturaSobre({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs tabular-nums">
-                      +{c.cantidadFinal} frags
-                    </Badge>
+                    {c.cantidadFinal > 0 && (
+                      <Badge variant="secondary" className="text-xs tabular-nums">
+                        +{c.cantidadFinal} frags
+                      </Badge>
+                    )}
+                    {c.reclamable && (
+                      <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
+                        Para reclamar
+                      </Badge>
+                    )}
                     {c.desbloquea && (
                       <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-[10px]">
                         ¡Consagrada!
@@ -380,6 +404,7 @@ export function ModalAperturaSobre({
             )}
 
             {/* Saldos actualizados */}
+            {resultado.mostrarSaldos !== false && (
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Award className="size-3.5 text-amber-500" />
@@ -396,6 +421,7 @@ export function ModalAperturaSobre({
                 </span>
               </div>
             </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               {onAbrirOtro && (
@@ -409,7 +435,7 @@ export function ModalAperturaSobre({
               <Button
                 variant="outline"
                 onClick={() => {
-                  onOpenChange(false);
+                  handleCerrar(false); // vuelve a la etapa inicial para la próxima apertura
                   if (onVerColeccion) onVerColeccion();
                 }}
                 className="flex-1 text-xs"

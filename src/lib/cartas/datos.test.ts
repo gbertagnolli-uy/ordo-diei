@@ -10,6 +10,7 @@ import {
   comprarFragmentosDirectos,
   reclamarFiesta,
   reclamarCumpleanos,
+  reclamarGrado,
   eventosDeHoy,
 } from "./server.ts";
 import { hoyMesDiaEnTz, APP_TZ } from "./eventos.ts";
@@ -171,6 +172,18 @@ test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos re
     where: { usuarioId_cartaId: { usuarioId: usuarioB.id, cartaId: cartaFiesta.id } },
     data: { fragmentos: 10 },
   });
+  // D20: al 100 % sin reclamar sigue bloqueada y sin historia
+  const det100SinReclamar = await obtenerDetalleCarta(usuarioB.id, cartaFiesta.clave);
+  assert.ok(det100SinReclamar);
+  assert.equal(det100SinReclamar.desbloqueada, false);
+  assert.equal(det100SinReclamar.reclamable, true);
+  assert.equal(det100SinReclamar.historia.visible, false);
+  assert.ok(!JSON.stringify(det100SinReclamar).includes("Historia festiva"));
+
+  const resGrado = await reclamarGrado(usuarioB.id, cartaFiesta.id);
+  assert.equal(resGrado.cartasAfectadas[0].desbloquea, true);
+  await assert.rejects(() => reclamarGrado(usuarioB.id, cartaFiesta.id), { message: /nada para reclamar/ });
+
   const det100 = await obtenerDetalleCarta(usuarioB.id, cartaFiesta.clave);
   assert.ok(det100);
   assert.equal(det100.desbloqueada, true);
@@ -203,7 +216,8 @@ test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos re
   // Con bono de fiesta hoy (×1.5): 10 fragmentos comprados se convierten en 15.
   // Base 25 + 15 = 40. Tope = 30 -> Excedente = 10 -> Incienso ganado = 10
   assert.equal(resCompraDirecta.fragmentosDespues, 30); // Tope alcanzado
-  assert.equal(resCompraDirecta.gradoDespues, 4); // Grado IV Gloriosa
+  assert.equal(resCompraDirecta.gradoDespues, 1); // D20: sigue en el grado reclamado
+  assert.equal(resCompraDirecta.reclamable, true); // Grado IV listo para reclamar
   assert.equal(resCompraDirecta.bonoFiestaAplicado, true);
   assert.equal(resCompraDirecta.cantidadFinal, 15);
   assert.equal(resCompraDirecta.excedente, 10);
@@ -225,7 +239,7 @@ test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos re
 
   // Test 6: Reclamo de fiesta litúrgica (D5) e idempotencia
   const resFiesta1 = await reclamarFiesta(usuarioA.id, cartaFiesta.id);
-  assert.ok(resFiesta1.cantidadRegalo >= 5); // 50% de 10 = 5
+  assert.ok(resFiesta1.fragmentosGanados >= 10); // D21: la carta entera
 
   // Segundo reclamo el mismo año DEBE fallar
   await assert.rejects(
@@ -243,8 +257,9 @@ test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos re
     data: { fechaNacimiento: new Date(`${anioNac}-${hoyMMdd}T00:00:00.000Z`) },
   });
 
-  const resCumple1 = await reclamarCumpleanos(usuarioA.id);
-  assert.ok(resCumple1.tipo === "santos_del_dia" || resCumple1.tipo === "sobre_revelacion_gratis");
+  const elegibleA = (await eventosDeHoy(usuarioA.id)).cumpleElegibles[0];
+  const resCumple1 = await reclamarCumpleanos(usuarioA.id, elegibleA?.cartaId);
+  assert.ok(resCumple1.tipo === "carta_elegida" || resCumple1.tipo === "sobre_revelacion_gratis");
 
   // Segundo reclamo de cumpleaños el mismo año DEBE fallar
   await assert.rejects(

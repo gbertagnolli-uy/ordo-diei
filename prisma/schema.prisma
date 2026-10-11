@@ -388,11 +388,13 @@ enum TipoMovFragmento {
   Cumpleanos
   ConversionIncienso
   Ajuste
+  Bienvenida
 }
 
 enum TipoReclamo {
   Fiesta
   Cumpleanos
+  Bienvenida
 }
 
 model Carta {
@@ -434,6 +436,7 @@ model CartaUsuario {
   cartaId        Int       @map("Carta_ID")
   fragmentos     Int       @default(0) @map("Fragmentos") // tope requeridos × 3
   desbloqueadaEn DateTime? @map("Desbloqueada_En")
+  gradoReclamado Int       @default(0) @map("Grado_Reclamado") // 0-4; el grado sube solo al reclamarlo (vault/ECONOMIA_CARTAS.md D20)
   createdAt      DateTime  @default(now()) @map("Created_At")
   updatedAt      DateTime  @updatedAt @map("Updated_At")
 
@@ -466,7 +469,7 @@ model ReclamoCarta {
   usuarioId Int         @map("Usuario_ID")
   cartaId   Int         @default(0) @map("Carta_ID") // 0 si no aplica a una carta específica
   tipo      TipoReclamo @map("Tipo")
-  periodo   String      @map("Periodo") // "2026"
+  periodo   String      @map("Periodo") // "2026", o "inicio" para la bienvenida
   createdAt DateTime    @default(now()) @map("Created_At")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)

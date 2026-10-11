@@ -29,9 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
     eventosDeHoy(Number(session.user.id)).catch(() => null),
   ]);
-  const hayEventosCartas =
-    !!eventosCartas &&
-    (eventosCartas.fiestas.some((f) => !f.reclamado) || (eventosCartas.esCumple && !eventosCartas.cumpleReclamado));
+  const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
   const tasks = myTasks.map((t) => ({
