@@ -113,7 +113,14 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
         {/* Columna Izquierda: Carta Holo y Créditos (5 cols) */}
         <div className="lg:col-span-5 flex flex-col items-center gap-4">
           <BordeReclamable activo={reclamo !== null} radio={16} className="w-full max-w-[340px]">
-            <div className="w-full max-w-[340px] aspect-[63/88] rounded-2xl overflow-hidden shadow-2xl">
+            {/* La holo no se recorta (tilt 3D); la bloqueada llena la caja 63:88 */}
+            <div
+              className={
+                carta.desbloqueada
+                  ? "flex w-full max-w-[340px] justify-center"
+                  : "w-full max-w-[340px] aspect-[63/88] rounded-2xl overflow-hidden shadow-2xl"
+              }
+            >
               <CartaVista
                 carta={carta}
                 modo={carta.desbloqueada ? "holo" : "bloqueada"}
@@ -121,7 +128,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
                 fragmentos={carta.fragmentos}
                 mostrarProgreso
                 ancho={340}
-                className="w-full h-full object-cover"
+                mostrarTitulo={false}
                 prioridad
               />
             </div>
