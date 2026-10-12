@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/Toaster";
+import Script from "next/script";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,8 +41,8 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", newsreader.variable, notoSerif.variable, geistMono.variable, "font-sans", geist.variable)}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `
+      <body className="min-h-full flex flex-col">
+        <Script id="tema-inicial" strategy="beforeInteractive">{`
           (function(){
             try {
               var s = JSON.parse(localStorage.getItem('ordo-diei-theme') || '{}');
@@ -52,9 +53,7 @@ export default function RootLayout({
               }
             } catch(e) { document.documentElement.classList.remove('dark'); }
           })();
-        `}} />
-      </head>
-      <body className="min-h-full flex flex-col">
+        `}</Script>
         <ThemeProvider>
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
           <Toaster />
