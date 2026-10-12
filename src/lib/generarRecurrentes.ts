@@ -54,6 +54,7 @@ export async function generarTareasRecurrentes(prisma: PrismaClient, hoy: Date):
         asignadoId: regla.asignadoId,
         tiempoEjecucionEstimadoSeg: regla.tiempoEjecucionEstimadoSeg,
         generaPuntosYRecompensa: regla.generaPuntosYRecompensa,
+        dificultad: regla.dificultad,
         tipoRecurrencia: "Unica",
         fechaVencimiento: fechaVenc,
         horaEjecucion: horaEjec,

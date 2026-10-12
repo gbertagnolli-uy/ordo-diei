@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { DIFICULTAD_DEFAULT, esDificultad } from "@/lib/recompensaTarea";
 import { getSession } from "@/lib/session";
 import { TipoRecurrencia } from "@prisma/client";
 import { randomUUID } from "crypto";
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
       isSurpriseEligible,
       isChecklist,
       checklistItems,
+      dificultad,
     } = body;
 
     const tiempoEjecucionEstimadoSeg = Number(tiempoMinutos) * 60;
@@ -109,6 +111,7 @@ export async function POST(req: NextRequest) {
             asignadoId: uid,
             tiempoEjecucionEstimadoSeg,
             generaPuntosYRecompensa: Boolean(generaRecompensa),
+            dificultad: esDificultad(dificultad) ? dificultad : DIFICULTAD_DEFAULT,
             tipoRecurrencia: (tipoRecurrencia as any) || "Unica",
             diaDelMes: diaDelMes ? Number(diaDelMes) : null,
             ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,

@@ -26,6 +26,13 @@ enum EstadoTarea {
   No_Realizada
 }
 
+enum DificultadTarea {
+  Facil
+  Media
+  Dificil
+  Ardua
+}
+
 enum TipoRecurrencia {
   Unica
   Diaria
@@ -89,6 +96,7 @@ model Tarea {
   tiempoEjecucionEstimadoSeg Int             @map("Tiempo_Ejecucion_Estimado_Segundos")
   tiempoConsumidoTotalSeg    Int             @default(0) @map("Tiempo_Consumido_Total_Segundos")
   generaPuntosYRecompensa    Boolean         @default(false) @map("Genera_Puntos_Y_Recompensa")
+  dificultad                 DificultadTarea @default(Media) @map("Dificultad")
   tipoRecurrencia            TipoRecurrencia @default(Unica) @map("Tipo_Recurrencia")
   fechaVencimiento           DateTime?       @map("Fecha_Vencimiento")
   horaEjecucion              DateTime?       @map("Hora_Ejecucion")
