@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { AdminTasksClient } from "./AdminTasksClient";
+import { SolicitudesHabitos } from "@/components/habitos/SolicitudesHabitos";
+import { getSolicitudes } from "@/lib/habitos/aprobaciones";
 
 export default async function AdminTasksPage() {
   const session = await getSession();
@@ -18,6 +20,8 @@ export default async function AdminTasksPage() {
     include: { asignado: true, creador: true },
     orderBy: { fechaVencimiento: 'asc' }
   });
+
+  const solicitudes = await getSolicitudes();
 
   const usuarios = await prisma.usuario.findMany({
     select: { id: true, nombre: true, rolFamiliar: true, fotoUrl: true }
@@ -34,6 +38,7 @@ export default async function AdminTasksPage() {
     <div className="flex flex-col">
       <PageHeader group="Administración" title="Agenda master" />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col">
+        <SolicitudesHabitos inicial={solicitudes} />
         <AdminTasksClient tasks={tareasSerialized} users={usuarios} />
       </main>
     </div>

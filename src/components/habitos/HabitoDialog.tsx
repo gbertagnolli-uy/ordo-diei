@@ -318,6 +318,9 @@ export function HabitoDialog({
 
       onClose();
       router.refresh();
+      if (!esPadre && !habitoAEditar) {
+        alert("¡Listo! Un padre tiene que aprobar que empieces este hábito. Cuando lo haga, ya vas a poder marcarlo.");
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al procesar solicitud");
     } finally {

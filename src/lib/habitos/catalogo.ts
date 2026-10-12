@@ -288,6 +288,17 @@ export const RECOMPENSA = {
   puntosDia: 5,
 };
 
+/**
+ * Límites para quienes no son padres (vault/APROBACION_HABITOS.md): evitan que se empiecen
+ * demasiados hábitos a la vez y que se acumulen solicitudes sin revisar.
+ */
+export const LIMITES_HIJOS = {
+  /** Hábitos activos a la vez, contando los que esperan aprobación */
+  habitosActivos: 5,
+  /** Hábitos creados que esperan aprobación */
+  creacionesPendientes: 1,
+};
+
 /** Bit 0 = domingo ... bit 6 = sábado */
 export const DIAS_TODOS = 127;
 /** Lunes a viernes (bits 1 al 5) */
