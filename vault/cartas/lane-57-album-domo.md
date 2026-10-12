@@ -81,3 +81,17 @@ normal (actual)".
 - Error de build «Can't resolve '@use-gesture/react'»: faltaba `npm install` en `ordo-diei/` tras mergear la lane 57.
 
 Verificado con Chromium headless sobre una página temporal (ya borrada): el toggle cambia entre grilla y domo.
+
+## Seguimiento (lane 63): pantalla completa en el Álbum 3D
+
+Pedido (textual): "Ademas quiero agregar un boton en la esquina superior derecha de la vista 3D, para pasar a pantalla
+completa. Cuando pase a pantalla completa que se cambie el icono para contraer la vista."
+
+- `AlbumDomo`: botón arriba a la derecha del domo (`Maximize2` / `Minimize2`) que usa la Fullscreen API sobre el marco
+  del domo; el estado se sincroniza con `fullscreenchange` (Esc también sale). Con `fullscreen:` el marco ocupa toda la
+  pantalla, sin borde.
+- El modal de la carta se monta dentro del marco mientras está en pantalla completa (si no, un portal en `body` queda
+  fuera y no se ve).
+- iPhone no permite pantalla completa en un elemento: ahí el botón no se muestra (`document.fullscreenEnabled`).
+
+Verificado con Chromium headless: entra y sale, cambia el icono y la etiqueta, y el modal de la carta abre en pantalla completa.

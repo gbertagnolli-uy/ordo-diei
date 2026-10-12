@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Maximize2, Minimize2, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +21,26 @@ const FONDO_DOMO = "#0c0a09";
 
 export function AlbumDomo({ cartas }: AlbumDomoProps) {
   const [claveAbierta, setClaveAbierta] = useState<string | null>(null);
+  const [marco, setMarco] = useState<HTMLDivElement | null>(null);
+  const [pantallaCompleta, setPantallaCompleta] = useState(false);
+  // iPhone no permite pantalla completa en un elemento: ahí el botón no se muestra
+  const puedePantallaCompleta = useSyncExternalStore(
+    () => () => {},
+    () => document.fullscreenEnabled === true,
+    () => false
+  );
+
+  // Se sincroniza con el navegador: Esc también sale de pantalla completa
+  useEffect(() => {
+    const sync = () => setPantallaCompleta(document.fullscreenElement === marco);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, [marco]);
+
+  const alternarPantallaCompleta = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void marco?.requestFullscreen();
+  };
 
   const items = useMemo<DomeItem[]>(
     () =>
@@ -38,7 +58,10 @@ export function AlbumDomo({ cartas }: AlbumDomoProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative h-[calc(100dvh-20rem)] min-h-[460px] overflow-hidden rounded-2xl border">
+      <div
+        ref={setMarco}
+        className="relative h-[calc(100dvh-20rem)] min-h-[460px] overflow-hidden rounded-2xl border fullscreen:h-dvh fullscreen:rounded-none fullscreen:border-0"
+      >
         <DomeGallery
           items={items}
           onSelect={(item) => setClaveAbierta(item.id)}
@@ -49,13 +72,26 @@ export function AlbumDomo({ cartas }: AlbumDomoProps) {
           dragDampening={3.6}
           segments={35}
         />
+        {puedePantallaCompleta && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            onClick={alternarPantallaCompleta}
+            aria-label={pantallaCompleta ? "Salir de pantalla completa" : "Pantalla completa"}
+            title={pantallaCompleta ? "Salir de pantalla completa" : "Pantalla completa"}
+            className="absolute top-3 right-3 z-10"
+          >
+            {pantallaCompleta ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          </Button>
+        )}
       </div>
       <p className="text-center text-xs text-muted-foreground">
         Arrastrá para girar el domo. Tocá una carta para verla de cerca.
       </p>
 
       <Dialog open={abierta !== null} onOpenChange={(open) => !open && setClaveAbierta(null)}>
-        <DialogPortal>
+        <DialogPortal container={pantallaCompleta && marco ? marco : undefined}>
           <DialogOverlay className="bg-black/80" />
           <DialogPrimitive.Content
             className="fixed top-1/2 left-1/2 z-50 flex max-h-[100dvh] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-4 outline-none"
