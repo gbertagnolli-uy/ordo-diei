@@ -123,3 +123,43 @@ export function calculateNextOccurrence(tarea: {
       return null;
   }
 }
+
+/**
+ * ¿Le toca a la regla generar una instancia en `dia`?
+ * Solo mira el patrón y el ancla (la fecha de la regla), nunca el reloj ni el estado.
+ * Mensual_Fecha: si el mes no tiene ese día, cae en el último día del mes.
+ */
+export function ocurreEn(regla: {
+  tipoRecurrencia: string;
+  fechaVencimiento: Date | null;
+  diaDelMes?: number | null;
+  ordinalSemana?: number | null;
+  diaDeLaSemana?: number | null;
+}, dia: Date): boolean {
+  const ancla = regla.fechaVencimiento;
+  switch (regla.tipoRecurrencia) {
+    case "Diaria":
+      return true;
+    case "Semanal": {
+      const objetivo = regla.diaDeLaSemana ?? ancla?.getDay();
+      return objetivo === undefined || objetivo === null ? true : dia.getDay() === objetivo;
+    }
+    case "Mensual_Fecha": {
+      const objetivo = regla.diaDelMes ?? ancla?.getDate();
+      if (!objetivo) return false;
+      const ultimo = new Date(dia.getFullYear(), dia.getMonth() + 1, 0).getDate();
+      return dia.getDate() === Math.min(objetivo, ultimo);
+    }
+    case "Mensual_Ordinal": {
+      if (regla.ordinalSemana == null || regla.diaDeLaSemana == null) return false;
+      if (dia.getDay() !== regla.diaDeLaSemana) return false;
+      if (regla.ordinalSemana === -1) {
+        const ultimo = new Date(dia.getFullYear(), dia.getMonth() + 1, 0).getDate();
+        return dia.getDate() + 7 > ultimo;
+      }
+      return Math.ceil(dia.getDate() / 7) === regla.ordinalSemana;
+    }
+    default:
+      return false;
+  }
+}

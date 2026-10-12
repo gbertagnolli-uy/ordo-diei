@@ -1,3 +1,4 @@
+import { generarTareasRecurrentes } from "@/lib/generarRecurrentes";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
@@ -49,83 +50,8 @@ export async function GET(req: Request) {
 
     console.log(`[Cron Daily] ${expiradasCount} expiradas`);
 
-    // =====================
-    // B) GENERAR TAREAS PARA HOY
-    // =====================
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const manana = new Date(hoy);
-    manana.setDate(hoy.getDate() + 1);
-
-    // Solo tareas recurrentes "cabeza" (no generadas por cron)
-    const plantillas = await prisma.tarea.findMany({
-      where: { tipoRecurrencia: { not: "Unica" }, generadaPorCron: false },
-      take: 20
-    });
-
-    let generadasCount = 0;
-    for (const plantilla of plantillas) {
-      // Solo crear si está completada/aprobada o vencida
-      if (!["Completada", "Aprobada", "Vencida", "Expirada", "No_Realizada"].includes(plantilla.estado)) {
-        continue;
-      }
-
-      // Verificar si ya existe tarea para HOY
-      const yaExiste = await prisma.tarea.findFirst({
-        where: {
-          asignadoId: plantilla.asignadoId,
-          titulo: { equals: plantilla.titulo, mode: "insensitive" },
-          fechaVencimiento: { gte: hoy, lt: manana },
-          estado: { notIn: ["Vencida", "Expirada", "No_Realizada"] },
-        }
-      });
-      if (yaExiste) continue;
-
-      // Crear la tarea para HOY
-      let nuevaFechaVenc = new Date(hoy);
-      let nuevaHoraEjec: Date | null = null;
-
-      if (plantilla.horaEjecucion) {
-        nuevaHoraEjec = new Date(hoy);
-        const horaOrig = new Date(plantilla.horaEjecucion);
-        nuevaHoraEjec.setHours(horaOrig.getHours(), horaOrig.getMinutes(), 0, 0);
-        nuevaFechaVenc = new Date(nuevaHoraEjec.getTime() + plantilla.tiempoEjecucionEstimadoSeg * 1000);
-      }
-
-      const nueva = await prisma.tarea.create({
-        data: {
-          titulo: plantilla.titulo,
-          descripcion: plantilla.descripcion,
-          creadorId: plantilla.creadorId,
-          asignadoId: plantilla.asignadoId,
-          tiempoEjecucionEstimadoSeg: plantilla.tiempoEjecucionEstimadoSeg,
-          generaPuntosYRecompensa: plantilla.generaPuntosYRecompensa,
-          tipoRecurrencia: "Unica",
-          fechaVencimiento: nuevaFechaVenc,
-          horaEjecucion: nuevaHoraEjec,
-          estado: "Pendiente",
-          parentTaskId: plantilla.id,
-          diaDelMes: plantilla.diaDelMes,
-          isSurpriseEligible: plantilla.isSurpriseEligible,
-          isChecklist: plantilla.isChecklist,
-          generadaPorCron: true,
-          grupoTareaId: plantilla.grupoTareaId
-        }
-      });
-
-      const items = await prisma.checklistItem.findMany({ where: { tareaId: plantilla.id }, orderBy: { orden: "asc" } });
-      if (items.length > 0) {
-        await prisma.checklistItem.createMany({ data: items.map(i => ({ tareaId: nueva.id, texto: i.texto, orden: i.orden })) });
-      }
-
-      await prisma.tarea.update({
-        where: { id: plantilla.id },
-        data: { tipoRecurrencia: "Unica" }
-      });
-
-      generadasCount++;
-    }
-
+    // B) GENERAR TAREAS PARA HOY (la regla recurrente se conserva)
+    const generadasCount = await generarTareasRecurrentes(prisma, new Date());
     console.log(`[Cron Daily] ${generadasCount} generadas`);
 
     // =====================
