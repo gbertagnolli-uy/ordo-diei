@@ -1,4 +1,4 @@
-# Lane 71 — Creación de tareas con Stepper (formulario multipaso)
+# Lane 74 — Creación de tareas con Stepper (formulario multipaso)
 
 Pedido (textual): "para la creacion de tareas quiero usar un steper, para que sea un "formulario multipaso". [...] La idea principal es facilitar la creación de tareas y no pedir toda la información de una."
 Componente provisto por el usuario (pegado en el chat): Stepper con `Step`, props `step/onStepChange/linear/frame/theme/nextButtonProps…` (@hugeicons).
