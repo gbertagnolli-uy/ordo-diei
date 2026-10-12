@@ -12,7 +12,10 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import SloshGauge from "@/components/SloshGauge";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
+
+const COLOR_DIFICULTAD: Record<Dificultad, string> = { Facil: "#4ade80", Media: "#facc15", Dificil: "#fb923c", Ardua: "#f87171" };
 
 interface TaskFormProps {
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[];
@@ -290,11 +293,28 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
           <Field className="sm:col-span-2">
             <FieldLabel htmlFor={fid("dificultad")} className="flex items-center gap-2"><Trophy className="size-4 text-primary" /> Dificultad</FieldLabel>
-            <NativeSelect id={fid("dificultad")} value={dificultad} onChange={(e) => setDificultad(e.target.value as Dificultad)} className="w-full">
-              {DIFICULTADES.map((d) => (
-                <NativeSelectOption key={d} value={d}>{DIFICULTAD_INFO[d].etiqueta} — {DIFICULTAD_INFO[d].ejemplo}</NativeSelectOption>
-              ))}
-            </NativeSelect>
+            <div id={fid("dificultad")} className="flex items-center gap-4">
+              <SloshGauge
+                value={(DIFICULTADES.indexOf(dificultad) + 1) * 25}
+                onChange={(v) => setDificultad(DIFICULTADES[Math.min(3, Math.max(0, Math.ceil(v / 25) - 1))])}
+                interactive
+                showValue={false}
+                liquidColor={COLOR_DIFICULTAD[dificultad]}
+                glassColor="#27272a"
+                width={64}
+                height={128}
+                radius={16}
+                ticks={4}
+                ariaLabel="Dificultad de la tarea"
+              />
+              <ul className="flex flex-col-reverse gap-1 text-sm">
+                {DIFICULTADES.map((d) => (
+                  <li key={d} className={d === dificultad ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                    {DIFICULTAD_INFO[d].etiqueta} <span className="text-xs">— {DIFICULTAD_INFO[d].ejemplo}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
             <FieldDescription>
               {Number(minutos) > 0
                 ? `Recompensa base: ${puntosBase(dificultad, Number(minutos) * 60)} pts (más bonos de racha, checklist y horario).`
