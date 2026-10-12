@@ -27,9 +27,13 @@ enum EstadoTarea {
 }
 
 enum DificultadTarea {
+  Trivial
+  MuyFacil
   Facil
   Media
+  Exigente
   Dificil
+  MuyDificil
   Ardua
 }
 

@@ -35,7 +35,7 @@ export interface CartaVistaProps {
 }
 
 // Holo igual para todas las cartas (lane 49)
-const INTENSIDAD_HOLO = 0.5;
+const INTENSIDAD_HOLO = 0.34;
 const GLARE_HOLO = 0.5;
 
 // Colores de marco y brillo por rareza
