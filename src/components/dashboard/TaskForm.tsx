@@ -12,13 +12,15 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useThemeStore } from "@/store/themeStore";
 import SloshGauge from "@/components/SloshGauge";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
 import { toast } from "@/lib/toast";
 
-const COLOR_DIFICULTAD: Record<Dificultad, string> = {
-  Trivial: "#86efac", MuyFacil: "#4ade80", Facil: "#a3e635", Media: "#facc15",
-  Exigente: "#fbbf24", Dificil: "#fb923c", MuyDificil: "#f87171", Ardua: "#ef4444",
+// Rampa verde → ámbar → rojo, derivada de los tokens success/warning/destructive de cada tema.
+const COLORES_DIFICULTAD = {
+  claro: ["#2D6A2E", "#557224", "#7C7A1A", "#A48210", "#B27809", "#A55C06", "#984103", "#8B2500"],
+  oscuro: ["#6AAF6A", "#85AD61", "#A0AB59", "#BBA950", "#CB9E4A", "#CE8947", "#D17543", "#D46040"],
 };
 const ALTO_GAUGE = 176;
 const TRAMO = 100 / DIFICULTADES.length;
@@ -53,6 +55,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   );
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [dificultad, setDificultad] = useState<Dificultad>(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT);
+  const darkMode = useThemeStore((st) => st.darkMode);
   const [nivel, setNivel] = useState(() => nivelDe(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT));
   const [minutos, setMinutos] = useState<string>(isEdit ? String(Math.floor(task.tiempoEjecucionEstimadoSeg / 60)) : "");
 
@@ -338,8 +341,9 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
                 onChange={(v) => { setNivel(v); setDificultad(dificultadDe(v)); }}
                 interactive
                 showValue={false}
-                liquidColor={COLOR_DIFICULTAD[dificultad]}
-                glassColor="#27272a"
+                liquidColor={COLORES_DIFICULTAD[darkMode ? "oscuro" : "claro"][DIFICULTADES.indexOf(dificultad)]}
+                glassColor="var(--muted)"
+                className="ring-1 ring-border"
                 width={64}
                 height={ALTO_GAUGE}
                 radius={16}
