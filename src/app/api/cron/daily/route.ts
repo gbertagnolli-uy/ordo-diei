@@ -72,7 +72,12 @@ export async function GET(req: Request) {
 
       // Verificar si ya existe tarea para HOY
       const yaExiste = await prisma.tarea.findFirst({
-        where: { parentTaskId: plantilla.id, fechaVencimiento: { gte: hoy, lt: manana } }
+        where: {
+          asignadoId: plantilla.asignadoId,
+          titulo: { equals: plantilla.titulo, mode: "insensitive" },
+          fechaVencimiento: { gte: hoy, lt: manana },
+          estado: { notIn: ["Vencida", "Expirada", "No_Realizada"] },
+        }
       });
       if (yaExiste) continue;
 
@@ -87,7 +92,7 @@ export async function GET(req: Request) {
         nuevaFechaVenc = new Date(nuevaHoraEjec.getTime() + plantilla.tiempoEjecucionEstimadoSeg * 1000);
       }
 
-      await prisma.tarea.create({
+      const nueva = await prisma.tarea.create({
         data: {
           titulo: plantilla.titulo,
           descripcion: plantilla.descripcion,
@@ -103,9 +108,15 @@ export async function GET(req: Request) {
           diaDelMes: plantilla.diaDelMes,
           isSurpriseEligible: plantilla.isSurpriseEligible,
           isChecklist: plantilla.isChecklist,
-          generadaPorCron: true
+          generadaPorCron: true,
+          grupoTareaId: plantilla.grupoTareaId
         }
       });
+
+      const items = await prisma.checklistItem.findMany({ where: { tareaId: plantilla.id }, orderBy: { orden: "asc" } });
+      if (items.length > 0) {
+        await prisma.checklistItem.createMany({ data: items.map(i => ({ tareaId: nueva.id, texto: i.texto, orden: i.orden })) });
+      }
 
       await prisma.tarea.update({
         where: { id: plantilla.id },
