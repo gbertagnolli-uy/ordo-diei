@@ -15,11 +15,13 @@ import {
   ShieldCheck,
   Star,
   Orbit,
+  LayoutGrid,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Progress } from "@/components/ui/progress";
 import {
   Empty,
@@ -30,6 +32,7 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { CartaVista } from "@/components/cartas/CartaVista";
+import { AlbumDomo } from "@/components/cartas/AlbumDomo";
 import { TiendaCartasView } from "@/components/cartas/TiendaCartasView";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 import { ModalAperturaSobre, type ResultadoCompraSobre, type CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
@@ -59,6 +62,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   const tabInicial = tabParam === "tienda" || tabParam === "album" ? tabParam : "coleccion";
 
   const [tab, setTab] = useState<string>(tabInicial);
+  const [vistaAlbum, setVistaAlbum] = useState<"normal" | "3d">(searchParams?.get("vista") === "3d" ? "3d" : "normal");
   const [busqueda, setBusqueda] = useState<string>("");
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("Todas");
   const [rarezaFiltro, setRarezaFiltro] = useState<string>("Todas");
@@ -523,14 +527,27 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
         {/* ============================================================ */}
         <TabsContent value="album" className="mt-6 flex flex-col gap-6">
           <div className="flex justify-end">
-            <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs">
-              <Link href="/dashboard/cartas/album">
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={vistaAlbum}
+              onValueChange={(v) => v && setVistaAlbum(v as "normal" | "3d")}
+              aria-label="Vista del álbum"
+            >
+              <ToggleGroupItem value="normal" className="gap-1.5 text-xs">
+                <LayoutGrid className="size-3.5" />
+                <span>Normal</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="3d" className="gap-1.5 text-xs">
                 <Orbit className="size-3.5" />
-                <span>Explorar en 3D</span>
-              </Link>
-            </Button>
+                <span>Álbum 3D</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          {cartasFiltradas.length === 0 ? (
+          {cartasFiltradas.length > 0 && vistaAlbum === "3d" ? (
+            <AlbumDomo cartas={cartasFiltradas} />
+          ) : cartasFiltradas.length === 0 ? (
             <Empty className="border rounded-2xl bg-muted/20 py-16">
               <EmptyMedia variant="icon">
                 <Filter className="size-6 text-muted-foreground" />

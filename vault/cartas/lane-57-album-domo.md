@@ -67,3 +67,17 @@ arrastrar para que los enlaces del dorso sigan funcionando. El destino del giro 
 
 Verificado con Chromium headless: click voltea y desvuelve, arrastre de 30 px vuelve, de 200 px voltea una sola vez, el
 enlace del dorso no voltea.
+
+## Seguimiento (lane 62): toggle Normal / Álbum 3D
+
+Pedido (textual): "Además en /dashboard/cartas no está el vinculo al Albul 3D como lo quiero llamar. Quiero que se
+mantenga la vista original del album y que haya un toggle para cambiar entre la vista 3D (DomeGallery) y la vista
+normal (actual)".
+
+- Se eliminó la ruta aparte `/dashboard/cartas/album` y el botón «Explorar en 3D».
+- En la pestaña Álbum de `ColeccionView` hay un `ToggleGroup` «Normal» / «Álbum 3D». Normal es la vista original sin
+  cambios; Álbum 3D muestra el domo en el mismo lugar (`AlbumDomo`, antes `AlbumDomoView` sin cabecera), con los filtros
+  y la búsqueda aplicados. `?tab=album&vista=3d` abre directo el domo.
+- Error de build «Can't resolve '@use-gesture/react'»: faltaba `npm install` en `ordo-diei/` tras mergear la lane 57.
+
+Verificado con Chromium headless sobre una página temporal (ya borrada): el toggle cambia entre grilla y domo.
