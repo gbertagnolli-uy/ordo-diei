@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
 import './HoloCard.css';
 
@@ -10,6 +10,13 @@ type HoloPreset = 'bursts' | 'stars' | 'shards' | 'cosmos' | 'rainbow' | 'swirl'
 export interface HoloCardProps {
   image?: string;
   backImage?: string;
+  /** Reverso como contenido React (texto, botones). Si hay `back` o `backImage`, la carta se voltea. */
+  back?: ReactNode;
+  /** Voltear con click o tap (default true). Con false, solo se voltea con `flipped`. */
+  flipOnClick?: boolean;
+  /** Estado de volteo controlado; si se omite, la carta lo maneja sola. */
+  flipped?: boolean;
+  onFlipChange?: (flipped: boolean) => void;
   alt?: string;
   preset?: HoloPreset;
   intensity?: number;
@@ -349,6 +356,10 @@ const compile = (gl: WebGL2RenderingContext, type: number, source: string): WebG
 export default function HoloCard({
   image,
   backImage,
+  back,
+  flipOnClick = true,
+  flipped: flippedProp,
+  onFlipChange,
   alt = '',
   preset = 'bursts',
   intensity = 0.85,
@@ -378,8 +389,9 @@ export default function HoloCard({
   const flipRef = useRef(false);
   const [ratio, setRatio] = useState(CARD_RATIO);
   const [ready, setReady] = useState(false);
-  const [flipped, setFlipped] = useState(false);
-  const flippable = Boolean(backImage);
+  const [flippedState, setFlippedState] = useState(false);
+  const flipped = flippedProp ?? flippedState;
+  const flippable = Boolean(backImage || back);
 
   settingsRef.current = {
     preset: Math.max(0, PRESETS.indexOf(preset)),
@@ -683,26 +695,34 @@ export default function HoloCard({
   };
 
   const toggle = () => {
-    if (flippable) setFlipped(value => !value);
+    if (!flippable || !flipOnClick) return;
+    const next = !flipped;
+    setFlippedState(next);
+    onFlipChange?.(next);
   };
 
   return (
     <div
       ref={rootRef}
       className={`holo-card${className ? ` ${className}` : ''}`}
-      role={flippable ? 'button' : 'img'}
-      tabIndex={flippable ? 0 : undefined}
+      role={back ? 'group' : flippable ? 'button' : 'img'}
+      tabIndex={flippable && flipOnClick ? 0 : undefined}
       aria-label={alt || undefined}
-      aria-pressed={flippable ? flipped : undefined}
+      aria-pressed={flippable && !back ? flipped : undefined}
       data-ready={ready ? '' : undefined}
-      data-flippable={flippable ? '' : undefined}
+      data-flippable={flippable && flipOnClick ? '' : undefined}
       onPointerEnter={track}
       onPointerMove={track}
       onPointerDown={track}
       onPointerLeave={leave}
       onPointerCancel={leave}
-      onClick={toggle}
+      onClick={e => {
+        // Botones y enlaces del reverso (ej. «Abrir carta») no voltean la carta
+        if ((e.target as HTMLElement).closest('a, button, [data-no-flip]')) return;
+        toggle();
+      }}
       onKeyDown={e => {
+        if (e.target !== e.currentTarget) return;
         if (!flippable || (e.key !== 'Enter' && e.key !== ' ')) return;
         e.preventDefault();
         if (!e.repeat) toggle();
@@ -723,8 +743,12 @@ export default function HoloCard({
           <canvas ref={canvasRef} />
         </div>
         {flippable ? (
-          <div className="holo-card__face holo-card__face--back">
-            <img src={backImage} alt="" draggable={false} />
+          <div
+            className="holo-card__face holo-card__face--back"
+            inert={!flipped}
+            aria-hidden={!flipped}
+          >
+            {back ?? <img src={backImage} alt="" draggable={false} />}
           </div>
         ) : null}
       </div>
