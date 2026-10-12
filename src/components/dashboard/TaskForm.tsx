@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,12 +30,26 @@ const TRAMO = 100 / DIFICULTADES.length;
 const nivelDe = (d: Dificultad) => (DIFICULTADES.indexOf(d) + 1) * TRAMO;
 const dificultadDe = (v: number): Dificultad => DIFICULTADES[Math.min(DIFICULTADES.length - 1, Math.max(0, Math.ceil(v / TRAMO) - 1))];
 
-const leerTema = () => (document.documentElement.classList.contains("dark") ? "dark" : "light") as "dark" | "light";
-const suscribirTema = (cb: () => void) => {
-  const obs = new MutationObserver(cb);
-  obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  return () => obs.disconnect();
-};
+// El Stepper toma los tokens de la app (cambian solos con la clase .dark), no sus temas propios.
+const tinta = (pct: number) => `color-mix(in srgb, var(--foreground) ${pct}%, transparent)`;
+const STEPPER_VARS = {
+  "--stepper-ink": "var(--foreground)",
+  "--stepper-muted": tinta(60),
+  "--stepper-faint": tinta(25),
+  "--stepper-ring": tinta(30),
+  "--stepper-well": "var(--muted)",
+  "--stepper-track": tinta(12),
+  "--stepper-tile": "var(--card)",
+  "--stepper-tile-edge": "var(--border)",
+  "--stepper-tile-highlight": "transparent",
+  "--stepper-tile-shadow": `0 1px 3px ${tinta(22)}`,
+  "--stepper-solid": "var(--primary)",
+  "--stepper-solid-ink": "var(--primary-foreground)",
+  "--stepper-hover": "brightness(0.95)",
+  "--stepper-hover-fill": tinta(5),
+  "--stepper-solid-hover": "brightness(0.9)",
+  "--stepper-press": "brightness(0.85)",
+} as React.CSSProperties;
 
 interface TaskFormProps {
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[];
@@ -80,7 +94,6 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   const [ordinal, setOrdinal] = useState<string>(String(isEdit ? (task.ordinalSemana ?? 1) : 1));
   const [sorpresa, setSorpresa] = useState<boolean>(isEdit ? Boolean(task.isSurpriseEligible) : false);
   const [paso, setPaso] = useState(1);
-  const tema = useSyncExternalStore(suscribirTema, leerTema, () => "light" as const);
 
   const toggleUser = (id: number) => {
     setSelectedUserIds(prev =>
@@ -484,8 +497,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
       linear
       frame={false}
       width="100%"
-      theme={tema}
-      style={{ "--stepper-solid": "var(--primary)", "--stepper-solid-ink": "var(--primary-foreground)" } as React.CSSProperties}
+      style={STEPPER_VARS}
       backButtonText="Atrás"
       nextButtonText="Siguiente"
       completeButtonText={loading ? "Creando..." : "Registrar Tarea"}
