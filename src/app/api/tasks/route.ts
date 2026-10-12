@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
       diaDelMes,
       ordinalSemana,
       diaDeLaSemana,
+      intervalo,
+      anclaCompletado,
       generaRecompensa,
       esGlobal,      // Boolean: assign to all users
       isSurpriseEligible,
@@ -116,6 +118,9 @@ export async function POST(req: NextRequest) {
             diaDelMes: diaDelMes ? Number(diaDelMes) : null,
             ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
             diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
+            intervalo: Math.max(1, Math.min(365, Math.round(Number(intervalo)) || 1)),
+            anclaCompletado: Boolean(anclaCompletado) && tipoRecurrencia !== "Unica",
+            anclaFecha: fechaVencimiento,
             fechaVencimiento,
             horaEjecucion,
             grupoTareaId,
