@@ -56,6 +56,7 @@ import {
 import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
 import { ordenarPorCelebracion } from "./orden.ts";
 import { TEXTOS_CARTAS } from "./textos.ts";
+import { listarVersiones, tieneVersionesDistintas } from "./versiones.ts";
 
 /** Lo que hace falta del usuario para cobrar, descontar y pedir requisitos (vault/ECONOMIA_CARTAS.md §8) */
 const SELECT_ECONOMIA = {
@@ -350,6 +351,8 @@ export async function obtenerDetalleCarta(
       anterior,
       siguiente,
     },
+    // Carrusel de versiones (lane 58): null si todos los grados comparten arte
+    versiones: tieneVersionesDistintas(adaptada) ? listarVersiones(clave, visible.grado) : null,
   };
 
   if (opciones?.esAdmin) {

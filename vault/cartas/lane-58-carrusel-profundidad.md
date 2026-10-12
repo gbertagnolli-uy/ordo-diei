@@ -12,7 +12,7 @@
 >
 > Ya hay un agente trabajando justamente en la vista de cartas. Por eso debes verificar que no te pises el trabajo.
 
-## Estado: PLAN (sin código todavía)
+## Estado: IMPLEMENTADA (pendiente de revisión y merge a `dev`)
 
 ## Hallazgos
 
@@ -47,3 +47,16 @@ D19 prohíbe exponer imágenes de grados superiores al reclamado. Mostrarlos en 
 
 - Rama: `task/lane-58-carrusel-profundidad`; worktree: `../ordo-diei-lanes/lane-58` (desde `dev` 646c54b).
 - Integra el orquestador con `git merge --no-ff` a `dev`; luego `git worktree remove` + `git branch -d`.
+
+## Implementación (decisiones finales)
+
+- Opción elegida: **A** (el usuario respondió «implementa» sin elegir; se tomó la recomendada), pero **sin enviar nunca la URL real** de un grado no alcanzado: el navegador pide `/api/cartas/<clave>/version?grado=N` y el servidor responde el arte real hasta el grado reclamado (la bloqueada ve el I en B/N, como hoy) o una **silueta** (B/N, desenfocada, oscura, vía sharp) para los superiores. Padre/Madre ven siempre el real. Respeta D19 y sirve también para arte subido (`/api/archivos/<uuid>`, que es público).
+- `src/lib/cartas/versiones.ts` (+ test): `listarVersiones`, `tieneVersionesDistintas`. `obtenerDetalleCarta` agrega `versiones` (null si los 4 grados comparten arte); `contenidoVisible` no se tocó.
+- `src/components/DepthCarousel.tsx`: React Bits `DepthCarousel-TS-TW` con 3 retoques: `contenido` (nodo en vez de `<img>`), `initialIndex`, `ariaLabel`; los refs se actualizan en `useLayoutEffect` (lint react-hooks/refs).
+- `src/components/cartas/CarruselVersionesCarta.tsx`: slides con `CartaVista` (`plana` o `bloqueada`); abre en el grado actual; leyenda «Tu versión actual / Versión superada / Aún no alcanzada».
+- `DetalleCartaView`: en vez de duplicar 458 líneas, se agregó un selector **Carta | Versiones** (solo si hay versiones). Por defecto sigue la vista de siempre (holo + borde reclamable + botón); «Versiones» cambia solo la columna de la carta. No se tocaron `HoloCard`, `CartaVista` ni `ColeccionView` (lane 57).
+- Los slides son planos (no holo): la inclinación 3D de la holo choca con el arrastre y con el `blur`/`overflow` del carrusel.
+
+## Verificación
+
+`tsc` sin errores, eslint limpio en los archivos tocados, tests de `versiones` y `arte` en verde. Capturas con Chromium (puppeteer-core) sobre una página temporal (borrada) a 1300×800 y 390×800: slide actual, siguiente bloqueado con candado, indicadores. **No probado con sesión real** (la ruta y el endpoint requieren login): revisar en `/dashboard/cartas/<clave>` con una carta con arte distinto por grado.
