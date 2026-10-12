@@ -8,6 +8,7 @@ import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/compon
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { subirImagen } from "@/lib/subirImagen";
+import { toast } from "@/lib/toast";
 
 export default function NewUserPage() {
   const router = useRouter();
@@ -38,13 +39,13 @@ export default function NewUserPage() {
       });
 
       if (res.ok) {
-        alert("Miembro familiar añadido exitosamente");
+        toast.success("Miembro familiar añadido exitosamente");
         router.push("/dashboard");
       } else {
-        alert("Error creando la cuenta.");
+        toast.error("Error creando la cuenta.");
       }
     } catch (err) {
-      alert("Error en la conexión.");
+      toast.error("Error en la conexión.");
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ETAPAS } from "@/lib/habitos/catalogo";
 import type { EstadoUsuario, HabitoVista } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
+import { toast } from "@/lib/toast";
 
 export interface Miembro {
   id: number;
@@ -81,7 +82,7 @@ export function FamiliaHabitos({
       }
       router.refresh();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Error de conexión");
+      toast.error(e instanceof Error ? e.message : "Error de conexión");
     } finally {
       setOcupado(false);
     }

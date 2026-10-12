@@ -11,6 +11,7 @@ import { LeaderboardModal } from "./LeaderboardModal";
 import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 
 // Único confeti de la app (MagicUI). Los popups lo disparan vía contexto.
@@ -281,7 +282,7 @@ function RulesPopup() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ textoEstricto: rules }),
       });
-      if (res.ok) alert("Reglas guardadas.");
+      if (res.ok) toast.success("Reglas guardadas.");
     } finally {
       setLoading(false);
     }

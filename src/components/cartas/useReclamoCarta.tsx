@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ModalAperturaSobre, type ResultadoCompraSobre } from "@/components/cartas/ModalAperturaSobre";
+import { toast } from "@/lib/toast";
 
 export type CuerpoReclamo =
   | { tipo: "fiesta" | "grado"; cartaId: number }
@@ -52,7 +53,7 @@ export function useReclamoCarta(onExito?: () => void) {
       router.refresh(); // aviso de la barra lateral
       onExito?.();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error inesperado");
+      toast.error(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setReclamando(null);
     }

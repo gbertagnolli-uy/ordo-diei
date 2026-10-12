@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
 import { subirImagen } from "@/lib/subirImagen";
+import { toast } from "@/lib/toast";
 
 export function FirstSetupForm() {
   const [loading, setLoading] = useState(false);
@@ -36,13 +37,13 @@ export function FirstSetupForm() {
       });
 
       if (res.ok) {
-        alert("¡Administrador creado con éxito! Refrescando...");
+        toast.success("¡Administrador creado con éxito! Refrescando...");
         window.location.reload();
       } else {
-        alert("Error creando el administrador.");
+        toast.error("Error creando el administrador.");
       }
     } catch (err) {
-      alert("Error en la conexión.");
+      toast.error("Error en la conexión.");
     }
     setLoading(false);
   }

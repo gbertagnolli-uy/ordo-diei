@@ -25,6 +25,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { RecompensaVista } from "@/lib/recompensas/server";
+import { toast } from "@/lib/toast";
 
 type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[] };
 
@@ -57,7 +58,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       router.refresh(); // insignia de la barra lateral
       return true;
     } catch (err) {
-      alert(err instanceof Error ? err.message : "No se pudo actualizar el premio");
+      toast.error(err instanceof Error ? err.message : "No se pudo actualizar el premio");
       return false;
     } finally {
       setOcupadoId(null);

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import SloshGauge from "@/components/SloshGauge";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
+import { toast } from "@/lib/toast";
 
 const COLOR_DIFICULTAD: Record<Dificultad, string> = { Facil: "#4ade80", Media: "#facc15", Dificil: "#fb923c", Ardua: "#f87171" };
 
@@ -54,7 +55,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isGlobal && selectedUserIds.length === 0) {
-      alert("Selecciona al menos un usuario o activa la tarea global.");
+      toast.error("Selecciona al menos un usuario o activa la tarea global.");
       return;
     }
     setLoading(true);
@@ -93,10 +94,10 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           if (onSuccess) onSuccess();
           else window.location.reload();
         } else {
-          alert("Error al actualizar la tarea");
+          toast.error("Error al actualizar la tarea");
         }
       } catch {
-        alert("Error de conexión");
+        toast.error("Error de conexión");
       } finally {
         setLoading(false);
       }
@@ -136,10 +137,10 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           else window.location.reload();
         } else {
           const error = await res.json();
-          alert(error.error || "Error al crear la tarea");
+          toast.error(error.error || "Error al crear la tarea");
         }
       } catch {
-        alert("Hubo un error de conexión");
+        toast.error("Hubo un error de conexión");
       } finally {
         setLoading(false);
       }
