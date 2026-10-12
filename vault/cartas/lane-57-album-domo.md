@@ -95,3 +95,16 @@ completa. Cuando pase a pantalla completa que se cambie el icono para contraer l
 - iPhone no permite pantalla completa en un elemento: ahí el botón no se muestra (`document.fullscreenEnabled`).
 
 Verificado con Chromium headless: entra y sale, cambia el icono y la etiqueta, y el modal de la carta abre en pantalla completa.
+
+## Seguimiento (lane 64): botón del sidebar en las cartas
+
+Pedido (textual): "recupera el boton del sidebar, que lo hace colapsible y expandible, porque lo borraste y ahora -por lo
+menos en movil- no aparece en la pagina de las cartas."
+
+Diagnóstico: el botón (`SidebarTrigger`) vive en `PageHeader`, y ni `ColeccionView` ni `DetalleCartaView` lo usaron nunca
+(`git log -S PageHeader` solo lo muestra en la página admin de cartas). No se borró en la lane 57; en móvil, sin la barra
+de cabecera, no había cómo abrir el menú. Se agregó `PageHeader` (grupo «Colección») arriba de ambas vistas, igual que el
+resto de las páginas del dashboard. En la colección el título es «Cartas»; en el detalle, el nombre de la carta.
+
+Además se mergeó la lane 58 (carrusel de profundidad): `git merge dev` en su rama no tuvo conflictos (el de
+`package.json` ya estaba resuelto), tests de versiones, arte y orden en verde.
