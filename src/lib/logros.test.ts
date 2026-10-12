@@ -17,6 +17,8 @@ function fakeHabito(partial: Partial<EstadoHabito>): EstadoHabito {
     creadorId: 1,
     imagen: null,
     activo: true,
+    aprobado: true,
+    hoyPendiente: false,
     desde: "2026-10-01",
     etapa: "inicio",
     paso: 1,

@@ -258,6 +258,8 @@ model Habito {
   imagen      String?         @map("Imagen")
   creadorId   Int?            @map("Creador_ID")
   archivado   Boolean         @default(false) @map("Archivado")
+  // false = creado por un hijo y esperando aprobación de un padre (vault/APROBACION_HABITOS.md)
+  aprobado    Boolean         @default(true) @map("Aprobado")
   createdAt   DateTime        @default(now()) @map("Created_At")
   updatedAt   DateTime        @updatedAt @map("Updated_At")
 
@@ -277,6 +279,8 @@ model HabitoUsuario {
   dias      Int      @default(127) @map("Dias")
   ancla     String?  @map("Ancla")
   activo    Boolean  @default(true) @map("Activo")
+  // false = empezar este hábito espera aprobación de un padre
+  aprobado  Boolean  @default(true) @map("Aprobado")
   createdAt DateTime @default(now()) @map("Created_At")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -298,6 +302,8 @@ model RegistroHabito {
   registradoPorId Int         @map("Registrado_Por_ID")
   paginas         Int?        @map("Paginas")
   libroId         Int?        @map("Libro_ID")
+  // false = "hecho" esperando aprobación de un padre; hasta entonces no da puntos ni XP
+  aprobado        Boolean     @default(true) @map("Aprobado")
   createdAt       DateTime    @default(now()) @map("Created_At")
 
   usuario       Usuario @relation("RegistrosHabito", fields: [usuarioId], references: [id], onDelete: Cascade)

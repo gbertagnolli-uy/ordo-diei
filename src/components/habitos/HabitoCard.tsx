@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, MoreHorizontal, Undo2, X, AlertCircle } from "lucide-react";
+import { Check, ChevronDown, Clock, MoreHorizontal, Undo2, X, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,14 +54,14 @@ export function HabitoCard({
     marca: Marca | null,
     nota?: string,
     paginas?: number
-  ) => Promise<{ puntos: number; xp: number } | void>;
+  ) => Promise<{ puntos: number; xp: number; pendiente?: boolean } | void>;
   onAjustar?: (habito: EstadoHabito) => void;
   onDejarDePracticar?: (habitoId: number) => void;
   onEditar?: (habito: EstadoHabito) => void;
   onArchivar?: (habitoId: number) => void;
   onCargarLibro?: (habitoId: number, datos: DatosLibro) => Promise<boolean>;
 }) {
-  const [recompensaFlotante, setRecompensaFlotante] = useState<{ puntos: number; xp: number } | null>(null);
+  const [recompensaFlotante, setRecompensaFlotante] = useState<{ puntos: number; xp: number; pendiente?: boolean } | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [motivoSeleccionado, setMotivoSeleccionado] = useState<"justificado" | "no" | null>(null);
   const [motivoTexto, setMotivoTexto] = useState("");
@@ -108,7 +108,9 @@ export function HabitoCard({
       {/* Toast flotante de recompensas */}
       {recompensaFlotante && (
         <div className="animate-in fade-in slide-in-from-top-2 absolute -top-3 right-4 z-10 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-md">
-          {h.categoria === "oracion"
+          {recompensaFlotante.pendiente
+            ? "Esperando aprobación"
+            : h.categoria === "oracion"
             ? `+${recompensaFlotante.xp} XP`
             : `+${recompensaFlotante.puntos} pts · +${recompensaFlotante.xp} XP`}
         </div>
@@ -132,7 +134,9 @@ export function HabitoCard({
         </div>
 
         <CardAction className="flex items-center gap-1.5">
-          {!h.programadoHoy ? (
+          {!h.aprobado ? (
+            <Badge variant="outline" className="text-muted-foreground">Esperando aprobación</Badge>
+          ) : !h.programadoHoy ? (
             <Badge variant="outline" className="text-muted-foreground">Hoy libre</Badge>
           ) : (
             <Badge variant={h.etapa === "retomando" ? "outline" : "secondary"}>
@@ -226,7 +230,11 @@ export function HabitoCard({
       </CardContent>
 
       <CardFooter className="gap-2 pt-0">
-        {h.hoy ? (
+        {!h.aprobado ? (
+          <span className="flex flex-1 items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="size-4" /> Un padre tiene que aprobar que empieces este hábito.
+          </span>
+        ) : h.hoy ? (
           <>
             <span
               className={cn(
@@ -243,6 +251,7 @@ export function HabitoCard({
                 ? esLibro && h.paginasHoy
                   ? `Hecho hoy · ${h.paginasHoy} ${h.paginasHoy === 1 ? "página" : "páginas"}`
                   : "Hecho hoy"
+                + (h.hoyPendiente ? " · esperando aprobación" : "")
                 : justificado
                 ? "Omitido hoy"
                 : "No realizado"}

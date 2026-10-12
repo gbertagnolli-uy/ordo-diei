@@ -5,7 +5,7 @@ import {
   getCatalogo,
   getEstadosHabitos,
 } from "@/lib/habitos/server";
-import { usuariosObjetivo } from "@/lib/habitos/permisos";
+import { esPadre, usuariosObjetivo } from "@/lib/habitos/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/habitos — crear un hábito nuevo (cualquier usuario)
+// POST /api/habitos — crear un hábito nuevo (los hijos lo crean pendiente de aprobación)
 // body: { nombre, categoria, franja, ancla, minimo?, icono?, adoptar?: { dias?, ancla? } }
 export async function POST(req: NextRequest) {
   try {
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       icono,
       imagen,
       adoptar,
-    });
+    }, esPadre(session.user.rolFamiliar));
 
     const estados = await getEstadosHabitos([userId]);
     return NextResponse.json({ habito, estados });

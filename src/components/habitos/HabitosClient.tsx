@@ -112,7 +112,7 @@ export function HabitosClient({
       if (rec?.libroTerminado) {
         openModal("HABITO", { tipo: "libro", habito: rec.libroTerminado, paso: null, categoria: "cuidado" });
       }
-      return rec ? { puntos: rec.puntos, xp: rec.xp } : undefined;
+      return rec ? { puntos: rec.puntos, xp: rec.xp, pendiente: rec.pendiente } : undefined;
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al registrar");
     } finally {
