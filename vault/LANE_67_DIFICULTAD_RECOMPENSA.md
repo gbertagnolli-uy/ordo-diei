@@ -34,3 +34,8 @@ Las constantes (4, multiplicadores, tope 150) están en el código; si se quiere
 ## Lane 68 — Selector con SloshGauge
 Pedido: "EL selector de dificultad deberia ser con este componente: npx shadcn@latest add @react-bits/SloshGauge-TS-TW" (uso: `<SloshGauge value onChange interactive showValue liquidColor glassColor width height radius ticks viscosity tilt splash unit ariaLabel />`).
 Componente instalado en `src/components/SloshGauge.tsx`. En `TaskForm` el gauge tiene 4 tramos (`ticks={4}`): Fácil 25, Media 50, Difícil 75, Ardua 100; al arrastrar se ajusta al tramo y el color cambia por nivel. Al lado, la lista de niveles con ejemplo.
+
+## Lane 69 — Fix del gauge y del script del tema
+Pedido: "EL SloshGauge no se mueve al arrastrar, no hay animación, no está funcionando visualmente… tampoco hay viscosidad ni animación de liquido. Además hay un error: Encountered a script tag while rendering React component… src/app/layout.tsx (44:9)".
+- **Causa del gauge:** le pasaba `value` ya ajustado al tramo en cada `onChange`; el componente reaplicaba ese valor en pleno arrastre y el líquido nunca seguía al puntero. Ahora el formulario le da el valor continuo y recién al soltar el puntero lo acomoda en el tramo (la simulación de viscosidad queda libre).
+- **Causa del error:** `<script dangerouslySetInnerHTML>` dentro de `<head>` en `layout.tsx`. Ahora es `next/script` con `strategy="beforeInteractive"` (id `tema-inicial`), que evita el parpadeo del tema oscuro igual que antes.

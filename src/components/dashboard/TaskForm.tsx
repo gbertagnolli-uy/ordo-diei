@@ -18,6 +18,10 @@ import { toast } from "@/lib/toast";
 
 const COLOR_DIFICULTAD: Record<Dificultad, string> = { Facil: "#4ade80", Media: "#facc15", Dificil: "#fb923c", Ardua: "#f87171" };
 
+// El gauge es continuo (0–100): se arrastra libre y al soltar se acomoda en el centro del tramo.
+const nivelDe = (d: Dificultad) => (DIFICULTADES.indexOf(d) + 1) * 25;
+const dificultadDe = (v: number): Dificultad => DIFICULTADES[Math.min(3, Math.max(0, Math.ceil(v / 25) - 1))];
+
 interface TaskFormProps {
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[];
   task?: any; // If provided → edit mode
@@ -44,6 +48,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   );
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [dificultad, setDificultad] = useState<Dificultad>(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT);
+  const [nivel, setNivel] = useState(() => nivelDe(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT));
   const [minutos, setMinutos] = useState<string>(isEdit ? String(Math.floor(task.tiempoEjecucionEstimadoSeg / 60)) : "");
 
   const toggleUser = (id: number) => {
@@ -317,10 +322,15 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
           <Field className="sm:col-span-2">
             <FieldLabel htmlFor={fid("dificultad")} className="flex items-center gap-2"><Trophy className="size-4 text-primary" /> Dificultad</FieldLabel>
-            <div id={fid("dificultad")} className="flex items-center gap-4">
+            <div
+              id={fid("dificultad")}
+              className="flex items-center gap-4"
+              onPointerUpCapture={() => setNivel(nivelDe(dificultad))}
+              onPointerCancelCapture={() => setNivel(nivelDe(dificultad))}
+            >
               <SloshGauge
-                value={(DIFICULTADES.indexOf(dificultad) + 1) * 25}
-                onChange={(v) => setDificultad(DIFICULTADES[Math.min(3, Math.max(0, Math.ceil(v / 25) - 1))])}
+                value={nivel}
+                onChange={(v) => { setNivel(v); setDificultad(dificultadDe(v)); }}
                 interactive
                 showValue={false}
                 liquidColor={COLOR_DIFICULTAD[dificultad]}
