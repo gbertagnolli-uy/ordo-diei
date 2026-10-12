@@ -56,3 +56,14 @@ Nota: el usuario pegó solo el uso de `FlipCard`, no su código (no está en el 
 Chromium headless (puppeteer-core) sobre una página temporal con cartas de prueba (ya borrada), 1300×900 y 390×800 táctil:
 el domo gira y tiene inercia; tap/click abre el modal; click voltea y se ve el dorso; «Abrir carta» navega sin voltear de
 nuevo; bloqueada y desbloqueada. `tsc --noEmit` y eslint sin errores.
+
+## Seguimiento (lane 60): arrastrar para girar
+
+El usuario pegó después el código real de `FlipCard` (`ref/FlipCard-resumen.md`). Lo que mi primera versión no tenía y
+se agregó a `HoloCard`: `draggable` y `dragDistance`. Se arrastra horizontalmente para girar la carta; al soltar encaja
+en frente o dorso (con inercia), el click posterior a un arrastre no voltea, y el puntero solo se captura al empezar a
+arrastrar para que los enlaces del dorso sigan funcionando. El destino del giro es ahora un múltiplo de 180°
+(`turnTargetRef`), igual que en FlipCard. No se portó `axis="x"`: el holo gira solo en Y.
+
+Verificado con Chromium headless: click voltea y desvuelve, arrastre de 30 px vuelve, de 200 px voltea una sola vez, el
+enlace del dorso no voltea.
