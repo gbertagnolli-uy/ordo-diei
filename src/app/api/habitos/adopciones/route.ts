@@ -6,7 +6,7 @@ import {
   getEstadosHabitos,
   validarLibro,
 } from "@/lib/habitos/server";
-import { usuariosObjetivo } from "@/lib/habitos/permisos";
+import { esPadre, usuariosObjetivo } from "@/lib/habitos/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ID de hábito no válido" }, { status: 400 });
     }
 
-    await adoptar(ids, items);
+    try {
+      await adoptar(ids, items, esPadre(session.user.rolFamiliar));
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo empezar el hábito" }, { status: 400 });
+    }
     const estados = await getEstadosHabitos(ids);
     return NextResponse.json({ estados });
   } catch (error) {
@@ -70,7 +74,7 @@ export async function PATCH(req: NextRequest) {
       dias: body.dias !== undefined ? Number(body.dias) : undefined,
       ancla: typeof body.ancla === "string" ? body.ancla : undefined,
       activo: typeof body.activo === "boolean" ? body.activo : undefined,
-    });
+    }, esPadre(session.user.rolFamiliar));
 
     const estados = await getEstadosHabitos(ids);
     return NextResponse.json({ estados });

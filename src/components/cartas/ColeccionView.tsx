@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   Star,
+  Orbit,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -521,6 +522,14 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
         {/* PESTAÑA: ÁLBUM COMPLETO                                      */}
         {/* ============================================================ */}
         <TabsContent value="album" className="mt-6 flex flex-col gap-6">
+          <div className="flex justify-end">
+            <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs">
+              <Link href="/dashboard/cartas/album">
+                <Orbit className="size-3.5" />
+                <span>Explorar en 3D</span>
+              </Link>
+            </Button>
+          </div>
           {cartasFiltradas.length === 0 ? (
             <Empty className="border rounded-2xl bg-muted/20 py-16">
               <EmptyMedia variant="icon">
