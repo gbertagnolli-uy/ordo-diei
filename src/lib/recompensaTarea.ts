@@ -1,16 +1,20 @@
 // Puntos base de una tarea según su dificultad y su tiempo estimado.
 // Diseño y tabla de ejemplos: vault/LANE_67_DIFICULTAD_RECOMPENSA.md
 
-export const DIFICULTADES = ["Facil", "Media", "Dificil", "Ardua"] as const;
+export const DIFICULTADES = ["Trivial", "MuyFacil", "Facil", "Media", "Exigente", "Dificil", "MuyDificil", "Ardua"] as const;
 export type Dificultad = (typeof DIFICULTADES)[number];
 
 export const DIFICULTAD_DEFAULT: Dificultad = "Media";
 
-export const DIFICULTAD_INFO: Record<Dificultad, { etiqueta: string; multiplicador: number; ejemplo: string }> = {
-  Facil: { etiqueta: "Fácil", multiplicador: 1, ejemplo: "Bañarse, hacer la cama" },
-  Media: { etiqueta: "Media", multiplicador: 1.5, ejemplo: "Preparar el almuerzo" },
-  Dificil: { etiqueta: "Difícil", multiplicador: 2.25, ejemplo: "Oraciones de la mañana" },
-  Ardua: { etiqueta: "Ardua", multiplicador: 3, ejemplo: "Rosario completo" },
+export const DIFICULTAD_INFO: Record<Dificultad, { etiqueta: string; multiplicador: number }> = {
+  Trivial: { etiqueta: "Trivial", multiplicador: 0.5 },
+  MuyFacil: { etiqueta: "Muy fácil", multiplicador: 0.65 },
+  Facil: { etiqueta: "Fácil", multiplicador: 0.85 },
+  Media: { etiqueta: "Media", multiplicador: 1.1 },
+  Exigente: { etiqueta: "Exigente", multiplicador: 1.45 },
+  Dificil: { etiqueta: "Difícil", multiplicador: 1.9 },
+  MuyDificil: { etiqueta: "Muy difícil", multiplicador: 2.45 },
+  Ardua: { etiqueta: "Ardua", multiplicador: 3.2 },
 };
 
 const PUNTOS_POR_RAIZ_DE_MINUTO = 4; // el tiempo rinde con raíz cuadrada: 4× tiempo = 2× puntos

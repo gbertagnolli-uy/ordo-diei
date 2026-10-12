@@ -16,11 +16,16 @@ import SloshGauge from "@/components/SloshGauge";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
 import { toast } from "@/lib/toast";
 
-const COLOR_DIFICULTAD: Record<Dificultad, string> = { Facil: "#4ade80", Media: "#facc15", Dificil: "#fb923c", Ardua: "#f87171" };
+const COLOR_DIFICULTAD: Record<Dificultad, string> = {
+  Trivial: "#86efac", MuyFacil: "#4ade80", Facil: "#a3e635", Media: "#facc15",
+  Exigente: "#fbbf24", Dificil: "#fb923c", MuyDificil: "#f87171", Ardua: "#ef4444",
+};
+const ALTO_GAUGE = 176;
+const TRAMO = 100 / DIFICULTADES.length;
 
 // El gauge es continuo (0–100): se arrastra libre y al soltar se acomoda en el centro del tramo.
-const nivelDe = (d: Dificultad) => (DIFICULTADES.indexOf(d) + 1) * 25;
-const dificultadDe = (v: number): Dificultad => DIFICULTADES[Math.min(3, Math.max(0, Math.ceil(v / 25) - 1))];
+const nivelDe = (d: Dificultad) => (DIFICULTADES.indexOf(d) + 1) * TRAMO;
+const dificultadDe = (v: number): Dificultad => DIFICULTADES[Math.min(DIFICULTADES.length - 1, Math.max(0, Math.ceil(v / TRAMO) - 1))];
 
 interface TaskFormProps {
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[];
@@ -336,15 +341,15 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
                 liquidColor={COLOR_DIFICULTAD[dificultad]}
                 glassColor="#27272a"
                 width={64}
-                height={128}
+                height={ALTO_GAUGE}
                 radius={16}
-                ticks={4}
+                ticks={DIFICULTADES.length}
                 ariaLabel="Dificultad de la tarea"
               />
-              <ul className="flex flex-col-reverse gap-1 text-sm">
+              <ul className="flex flex-col-reverse text-sm">
                 {DIFICULTADES.map((d) => (
-                  <li key={d} className={d === dificultad ? "font-semibold text-foreground" : "text-muted-foreground"}>
-                    {DIFICULTAD_INFO[d].etiqueta} <span className="text-xs">— {DIFICULTAD_INFO[d].ejemplo}</span>
+                  <li key={d} style={{ height: ALTO_GAUGE / DIFICULTADES.length }} className={"flex items-center " + (d === dificultad ? "font-semibold text-foreground" : "text-muted-foreground")}>
+                    {DIFICULTAD_INFO[d].etiqueta}
                   </li>
                 ))}
               </ul>
