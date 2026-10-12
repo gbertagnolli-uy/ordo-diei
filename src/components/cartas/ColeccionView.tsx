@@ -18,6 +18,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/app/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -224,6 +225,8 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   };
 
   return (
+    <div className="flex flex-col">
+      <PageHeader group="Colección" title="Cartas" />
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       {/* Encabezado Principal y Recursos */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
@@ -649,6 +652,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
           setTab("coleccion");
         }}
       />
+    </div>
     </div>
   );
 }

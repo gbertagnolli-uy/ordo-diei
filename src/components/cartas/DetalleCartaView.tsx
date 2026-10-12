@@ -18,6 +18,7 @@ import {
   GalleryHorizontalEnd,
   IdCard,
 } from "lucide-react";
+import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -74,6 +75,8 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
   const pctBarra = Math.min(100, Math.round((carta.porcentaje / maxBarra) * 100));
 
   return (
+    <div className="flex flex-col">
+      <PageHeader group="Colección" title={carta.nombre} />
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
       {/* Navegación Superior */}
       <div className="flex items-center justify-between gap-4 border-b pb-4">
@@ -483,6 +486,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
         </div>
       </div>
       {modal}
+    </div>
     </div>
   );
 }
