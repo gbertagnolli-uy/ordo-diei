@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { toast } from "@/lib/toast";
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -122,10 +123,10 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
       if (res.ok) {
         window.location.reload();
       } else {
-        alert("Error al eliminar la tarea");
+        toast.error("Error al eliminar la tarea");
       }
     } catch {
-      alert("Error de conexión");
+      toast.error("Error de conexión");
     } finally {
       setDeletingId(null);
     }

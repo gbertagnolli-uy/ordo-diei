@@ -19,6 +19,7 @@ import { FloatingDock, DockItem } from "@/components/ui/floating-dock";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
 import { useModalStore } from "@/store/modalStore";
+import { toast } from "@/lib/toast";
 
 export function MainDock({
   currentUser,
@@ -52,7 +53,7 @@ export function MainDock({
       return;
     const res = await fetch("/api/cron", { method: "POST" });
     if (res.ok) {
-      alert("¡El Tiempo Avanzó! Se regeneraron las tareas recurrentes.");
+      toast.success("¡El Tiempo Avanzó! Se regeneraron las tareas recurrentes.");
       window.location.reload();
     }
   };

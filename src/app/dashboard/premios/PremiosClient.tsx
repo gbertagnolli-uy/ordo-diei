@@ -12,6 +12,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/lib/toast";
 
 interface Premio {
   id: number;
@@ -71,7 +72,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || "Error al guardar");
+        toast.error(data.error || "Error al guardar");
       }
     } finally {
       setLoading(false);
@@ -87,10 +88,10 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || "Error al eliminar");
+        toast.error(data.error || "Error al eliminar");
       }
     } catch {
-      alert("Error de conexión");
+      toast.error("Error de conexión");
     }
   };
 

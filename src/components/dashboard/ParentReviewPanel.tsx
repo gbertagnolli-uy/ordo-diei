@@ -8,6 +8,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Clock, User, AlertCircle } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
   const router = useRouter();
@@ -42,11 +43,11 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
         router.refresh();
       } else {
         setHidden(false);
-        alert(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
+        toast.error(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
       }
     } catch {
       setHidden(false);
-      alert("Error de conexión");
+      toast.error("Error de conexión");
     }
   };
 

@@ -6,6 +6,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useState } from "react";
+import { toast } from "@/lib/toast";
 
 type Props = { users: { id: number; nombre: string; rolFamiliar: string }[] };
 
@@ -27,14 +28,14 @@ export default function ResetPinPage({ users }: Props) {
         body: JSON.stringify({ userId, nuevoPin }),
       });
       if (res.ok) {
-        alert("PIN restablecido exitosamente");
+        toast.success("PIN restablecido exitosamente");
         form.reset();
       } else {
         const { error } = await res.json().catch(() => ({ error: null }));
-        alert(error || "No se pudo restablecer el PIN.");
+        toast.error(error || "No se pudo restablecer el PIN.");
       }
     } catch {
-      alert("Error en la conexión.");
+      toast.error("Error en la conexión.");
     } finally {
       setLoading(false);
     }
