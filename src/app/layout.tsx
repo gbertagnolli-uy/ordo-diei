@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Newsreader, Noto_Serif, Geist_Mono, Geist } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
@@ -40,8 +39,8 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", newsreader.variable, notoSerif.variable, geistMono.variable, "font-sans", geist.variable)}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <Script id="ordo-diei-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {
               var s = JSON.parse(localStorage.getItem('ordo-diei-theme') || '{}');
@@ -53,6 +52,8 @@ export default function RootLayout({
             } catch(e) { document.documentElement.classList.remove('dark'); }
           })();
         `}} />
+      </head>
+      <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
         </ThemeProvider>
