@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Calendar, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2 } from "lucide-react";
+import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
 
 interface TaskFormProps {
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[];
@@ -36,6 +37,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
     isEdit && task.checklistItems ? task.checklistItems.map((ci: any) => ci.texto) : []
   );
   const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [dificultad, setDificultad] = useState<Dificultad>(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT);
+  const [minutos, setMinutos] = useState<string>(isEdit ? String(Math.floor(task.tiempoEjecucionEstimadoSeg / 60)) : "");
 
   const toggleUser = (id: number) => {
     setSelectedUserIds(prev =>
@@ -67,6 +70,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         ordinalSemana: formData.get("ordinalSemana"),
         diaDeLaSemana: formData.get("diaDeLaSemana"),
         generaRecompensa: true,
+        dificultad,
         isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
         checklistItems: isChecklist ? checklistItems.filter(i => i.trim()) : [],
       };
@@ -103,6 +107,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         ordinalSemana: formData.get("ordinalSemana"),
         diaDeLaSemana: formData.get("diaDeLaSemana"),
         generaRecompensa: true,
+        dificultad,
         isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
         esGlobal: isGlobal,
         isChecklist: isChecklist,
@@ -280,7 +285,21 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
           <Field className={tipoRecurrencia === 'Unica' ? "sm:col-span-2" : ""}>
             <FieldLabel htmlFor={fid("tiempo")} className="flex items-center gap-2"><Clock className="size-4 text-primary" /> Tiempo Estimado (Minutos) *</FieldLabel>
-            <Input id={fid("tiempo")} required name="tiempoMinutos" type="number" min="1" defaultValue={isEdit ? Math.floor(task.tiempoEjecucionEstimadoSeg / 60) : ""} placeholder="Ej: 15" />
+            <Input id={fid("tiempo")} required name="tiempoMinutos" type="number" min="1" value={minutos} onChange={(e) => setMinutos(e.target.value)} placeholder="Ej: 15" />
+          </Field>
+
+          <Field className="sm:col-span-2">
+            <FieldLabel htmlFor={fid("dificultad")} className="flex items-center gap-2"><Trophy className="size-4 text-primary" /> Dificultad</FieldLabel>
+            <NativeSelect id={fid("dificultad")} value={dificultad} onChange={(e) => setDificultad(e.target.value as Dificultad)} className="w-full">
+              {DIFICULTADES.map((d) => (
+                <NativeSelectOption key={d} value={d}>{DIFICULTAD_INFO[d].etiqueta} — {DIFICULTAD_INFO[d].ejemplo}</NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <FieldDescription>
+              {Number(minutos) > 0
+                ? `Recompensa base: ${puntosBase(dificultad, Number(minutos) * 60)} pts (más bonos de racha, checklist y horario).`
+                : "Ingresá el tiempo estimado para ver la recompensa base."}
+            </FieldDescription>
           </Field>
         </div>
 

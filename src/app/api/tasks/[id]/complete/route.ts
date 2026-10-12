@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { puntosBase } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let timeBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
-      actualBasePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+      actualBasePoints = puntosBase(task.dificultad, task.tiempoEjecucionEstimadoSeg);
 
       // Streak bonus: +2 points per streak day, max +20 points
       actualStreakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));

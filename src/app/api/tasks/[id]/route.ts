@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { DIFICULTAD_DEFAULT, esDificultad } from "@/lib/recompensaTarea";
 import { getSession } from "@/lib/session";
 import { randomUUID } from "crypto";
 
@@ -64,6 +65,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         horaEjecucion,
         tipoRecurrencia: body.tipoRecurrencia,
         generaPuntosYRecompensa: true, // Points are ALWAYS generated
+        dificultad: esDificultad(body.dificultad) ? body.dificultad : currentTask.dificultad,
         isSurpriseEligible: body.isSurpriseEligible !== undefined ? Boolean(body.isSurpriseEligible) : currentTask.isSurpriseEligible,
         diaDelMes: body.diaDelMes !== undefined ? (body.diaDelMes ? Number(body.diaDelMes) : null) : currentTask.diaDelMes,
         ordinalSemana: body.ordinalSemana !== undefined ? (body.ordinalSemana ? Number(body.ordinalSemana) : null) : currentTask.ordinalSemana,
@@ -126,6 +128,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                         asignadoId: uid,
                         tiempoEjecucionEstimadoSeg: updatedData.tiempoEjecucionEstimadoSeg,
                         generaPuntosYRecompensa: true,
+                        dificultad: updatedData.dificultad,
                         tipoRecurrencia: updatedData.tipoRecurrencia,
                         fechaVencimiento: updatedData.fechaVencimiento,
                         horaEjecucion: updatedData.horaEjecucion,
