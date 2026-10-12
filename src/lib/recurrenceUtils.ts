@@ -135,8 +135,62 @@ export function ocurreEn(regla: {
   diaDelMes?: number | null;
   ordinalSemana?: number | null;
   diaDeLaSemana?: number | null;
+  intervalo?: number | null;
+  anclaFecha?: Date | null;
 }, dia: Date): boolean {
   const ancla = regla.fechaVencimiento;
+  if (!patronCoincide(regla, dia, ancla)) return false;
+  const n = regla.intervalo ?? 1;
+  if (n <= 1) return true;
+  const base = regla.anclaFecha ?? ancla;
+  if (!base) return true;
+  if (regla.tipoRecurrencia === "Diaria") return diasEntre(base, dia) % n === 0;
+  if (regla.tipoRecurrencia === "Semanal") return Math.floor(diasEntre(base, dia) / 7) % n === 0;
+  return mesesEntre(base, dia) % n === 0;
+}
+
+function diasEntre(a: Date, b: Date): number {
+  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((ub - ua) / 86400000);
+}
+
+function mesesEntre(a: Date, b: Date): number {
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
+/**
+ * Anclaje al completado: la siguiente toca `intervalo` días/semanas/meses después
+ * de la última vez que el usuario completó (o de la fecha inicial si nunca lo hizo).
+ * El reloj no mueve el ancla; si el mes destino es más corto, cae a su último día.
+ */
+export function tocaPorCompletado(regla: {
+  tipoRecurrencia: string;
+  intervalo?: number | null;
+  anclaFecha?: Date | null;
+  fechaVencimiento: Date | null;
+}, dia: Date): boolean {
+  const base = regla.anclaFecha ?? regla.fechaVencimiento;
+  if (!base) return false;
+  const n = Math.max(1, regla.intervalo ?? 1);
+  let objetivo: Date;
+  if (regla.tipoRecurrencia === "Diaria") {
+    objetivo = new Date(base.getFullYear(), base.getMonth(), base.getDate() + n);
+  } else if (regla.tipoRecurrencia === "Semanal") {
+    objetivo = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 7 * n);
+  } else {
+    const ultimo = new Date(base.getFullYear(), base.getMonth() + n + 1, 0).getDate();
+    objetivo = new Date(base.getFullYear(), base.getMonth() + n, Math.min(base.getDate(), ultimo));
+  }
+  return diasEntre(objetivo, dia) >= 0;
+}
+
+function patronCoincide(regla: {
+  tipoRecurrencia: string;
+  diaDelMes?: number | null;
+  ordinalSemana?: number | null;
+  diaDeLaSemana?: number | null;
+}, dia: Date, ancla: Date | null): boolean {
   switch (regla.tipoRecurrencia) {
     case "Diaria":
       return true;

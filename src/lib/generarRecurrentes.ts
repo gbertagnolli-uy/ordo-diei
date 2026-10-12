@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { ocurreEn } from "./recurrenceUtils";
+import { ocurreEn, tocaPorCompletado } from "./recurrenceUtils";
 
 const ESTADOS_CERRADOS = ["Completada", "Aprobada", "Vencida", "Expirada", "No_Realizada"] as const;
 
@@ -22,7 +22,15 @@ export async function generarTareasRecurrentes(prisma: PrismaClient, hoy: Date):
   let generadas = 0;
   for (const regla of reglas) {
     if (!(ESTADOS_CERRADOS as readonly string[]).includes(regla.estado)) continue;
-    if (!ocurreEn(regla, inicio)) continue;
+    if (regla.anclaCompletado) {
+      // Cadena: una sola abierta a la vez; la siguiente cuenta desde que se completó la última
+      if (!tocaPorCompletado(regla, inicio)) continue;
+      const abierta = await prisma.tarea.findFirst({
+        where: { parentTaskId: regla.id, estado: { in: ["Pendiente", "En_progreso", "Esperando_Aprobacion"] } },
+        select: { id: true },
+      });
+      if (abierta) continue;
+    } else if (!ocurreEn(regla, inicio)) continue;
 
     const yaExiste = await prisma.tarea.findFirst({
       where: {

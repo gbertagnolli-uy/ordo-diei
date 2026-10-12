@@ -107,6 +107,11 @@ model Tarea {
   ordinalSemana Int? @map("Ordinal_Semana")
   diaDeLaSemana Int? @map("Dia_De_La_Semana")
 
+  // Cadencia: cada N días/semanas/meses; el ancla solo la mueve el usuario al completar
+  intervalo       Int       @default(1) @map("Intervalo")
+  anclaCompletado Boolean   @default(false) @map("Ancla_Completado")
+  anclaFecha      DateTime? @map("Ancla_Fecha")
+
   // Seguimiento de clones
   parentTaskId Int?    @map("Parent_Task_ID")
   parentTask   Tarea?  @relation("TaskHistory", fields: [parentTaskId], references: [id])

@@ -32,6 +32,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
     isEdit ? (task.asignadoIds ?? [task.asignadoId]) : []
   );
   const [isGlobal, setIsGlobal] = useState(false);
+  const [intervalo, setIntervalo] = useState<string>(String(isEdit ? (task.intervalo ?? 1) : 1));
+  const [anclajeCompletado, setAnclajeCompletado] = useState<boolean>(isEdit ? Boolean(task.anclaCompletado) : false);
   const [tipoRecurrencia, setTipoRecurrencia] = useState(
     isEdit ? (task.tipoRecurrencia || "Unica") : "Unica"
   );
@@ -72,6 +74,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         diaDelMes: formData.get("diaDelMes"),
         ordinalSemana: formData.get("ordinalSemana"),
         diaDeLaSemana: formData.get("diaDeLaSemana"),
+        intervalo,
+        anclaCompletado: anclajeCompletado,
         generaRecompensa: true,
         dificultad,
         isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
@@ -109,6 +113,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         diaDelMes: formData.get("diaDelMes"),
         ordinalSemana: formData.get("ordinalSemana"),
         diaDeLaSemana: formData.get("diaDeLaSemana"),
+        intervalo,
+        anclaCompletado: anclajeCompletado,
         generaRecompensa: true,
         dificultad,
         isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
@@ -266,6 +272,23 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
                     <NativeSelectOption value="5">Viernes</NativeSelectOption>
                     <NativeSelectOption value="6">Sábado</NativeSelectOption>
                     <NativeSelectOption value="0">Domingo</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+            </div>
+          )}
+
+          {tipoRecurrencia !== "Unica" && (
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <Field>
+                <FieldLabel htmlFor={fid("intervalo")}>Repetir cada</FieldLabel>
+                <Input id={fid("intervalo")} type="number" min="1" max="365" value={intervalo} onChange={(e) => setIntervalo(e.target.value)} />
+                <FieldDescription>{tipoRecurrencia === "Diaria" ? "días" : tipoRecurrencia === "Semanal" ? "semanas" : "meses"}</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={fid("ancla")}>Contar desde</FieldLabel>
+                <NativeSelect id={fid("ancla")} value={anclajeCompletado ? "completado" : "calendario"} onChange={(e) => setAnclajeCompletado(e.target.value === "completado")} className="w-full">
+                  <NativeSelectOption value="calendario">El calendario</NativeSelectOption>
+                  <NativeSelectOption value="completado">Cuando la completo</NativeSelectOption>
                 </NativeSelect>
               </Field>
             </div>

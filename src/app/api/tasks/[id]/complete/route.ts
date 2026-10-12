@@ -201,6 +201,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       registrarAccion(prisma, { tareaId: taskId, actorId: session.user.id, estadoAnterior: task.estado, estadoNuevo: "Esperando_Aprobacion", duracionSesionSeg: cleanElapsed })
     ]);
 
+    // Anclaje al completado: la regla de la serie cuenta desde esta acción del usuario
+    const reglaId = task.parentTaskId ?? task.id;
+    await prisma.tarea.updateMany({ where: { id: reglaId, anclaCompletado: true }, data: { anclaFecha: now } });
+
     // Recalcular porcentaje de éxito del usuario
     await updateUserCompletionPercentage(task.asignadoId);
 

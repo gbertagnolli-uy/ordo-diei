@@ -70,6 +70,8 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         diaDelMes: body.diaDelMes !== undefined ? (body.diaDelMes ? Number(body.diaDelMes) : null) : currentTask.diaDelMes,
         ordinalSemana: body.ordinalSemana !== undefined ? (body.ordinalSemana ? Number(body.ordinalSemana) : null) : currentTask.ordinalSemana,
         diaDeLaSemana: body.diaDeLaSemana !== undefined ? (body.diaDeLaSemana !== null ? Number(body.diaDeLaSemana) : null) : currentTask.diaDeLaSemana,
+        intervalo: body.intervalo !== undefined ? Math.max(1, Math.min(365, Math.round(Number(body.intervalo)) || 1)) : currentTask.intervalo,
+        anclaCompletado: body.anclaCompletado !== undefined ? Boolean(body.anclaCompletado) && body.tipoRecurrencia !== "Unica" : currentTask.anclaCompletado,
     };
 
     const asignadoIds: number[] | null = Array.isArray(body.asignadoIds) && body.asignadoIds.length > 0
@@ -98,6 +100,12 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                 },
             });
         }
+
+        // El ancla se fija una vez: editar no la corre (solo la mueve completar)
+        await tx.tarea.updateMany({
+            where: { anclaFecha: null, ...(currentTask.grupoTareaId ? { grupoTareaId: currentTask.grupoTareaId } : { id: currentTask.id }) },
+            data: { anclaFecha: currentTask.fechaVencimiento },
+        });
 
         if (asignadoIds) {
             const actuales = new Set(hermanas.map(h => h.asignadoId));
@@ -135,6 +143,9 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                         diaDelMes: updatedData.diaDelMes,
                         ordinalSemana: updatedData.ordinalSemana,
                         diaDeLaSemana: updatedData.diaDeLaSemana,
+                        intervalo: updatedData.intervalo,
+                        anclaCompletado: updatedData.anclaCompletado,
+                        anclaFecha: currentTask.anclaFecha ?? currentTask.fechaVencimiento,
                         isSurpriseEligible: updatedData.isSurpriseEligible,
                         isChecklist,
                         grupoTareaId,
