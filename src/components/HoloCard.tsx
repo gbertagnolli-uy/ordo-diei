@@ -12,8 +12,12 @@ export interface HoloCardProps {
   backImage?: string;
   /** Reverso como contenido React (texto, botones). Si hay `back` o `backImage`, la carta se voltea. */
   back?: ReactNode;
-  /** Voltear con click o tap (default true). Con false, solo se voltea con `flipped`. */
+  /** Voltear con click o tap (default true). */
   flipOnClick?: boolean;
+  /** Arrastrar horizontalmente para girar la carta; al soltar encaja en el frente o el dorso (default true). */
+  draggable?: boolean;
+  /** Píxeles de arrastre para media vuelta (180°); 0 usa el ancho de la carta. */
+  dragDistance?: number;
   /** Estado de volteo controlado; si se omite, la carta lo maneja sola. */
   flipped?: boolean;
   onFlipChange?: (flipped: boolean) => void;
@@ -55,6 +59,11 @@ interface Settings {
 const PRESETS: HoloPreset[] = ['bursts', 'stars', 'shards', 'cosmos', 'rainbow', 'swirl', 'glitter', 'gold'];
 const PERSPECTIVE = 1100;
 const CARD_RATIO = 63 / 88;
+const DRAG_SLOP = { fine: 4, coarse: 8 };
+const FLING = 0.16;
+const HISTORY_MS = 90;
+const snap180 = (deg: number) => Math.round(deg / 180) * 180;
+const isBackTurn = (deg: number) => Math.abs(Math.round(deg / 180)) % 2 === 1;
 
 const VERTEX = `#version 300 es
 in vec2 position;
@@ -358,6 +367,8 @@ export default function HoloCard({
   backImage,
   back,
   flipOnClick = true,
+  draggable = true,
+  dragDistance = 0,
   flipped: flippedProp,
   onFlipChange,
   alt = '',
@@ -386,7 +397,12 @@ export default function HoloCard({
   const pointerRef = useRef({ x: 0.5, y: 0.5, inside: false });
   const wakeRef = useRef<(() => void) | null>(null);
   const loadRef = useRef<((src?: string) => void) | null>(null);
-  const flipRef = useRef(false);
+  // Giro en grados: `target` es siempre múltiplo de 180; `drag` tiene valor mientras se arrastra
+  const turnTargetRef = useRef(0);
+  const turnNowRef = useRef(0);
+  const dragTurnRef = useRef<number | null>(null);
+  const gripRef = useRef<{ id: number; x: number; base: number; moved: boolean; hist: { t: number; v: number }[] } | null>(null);
+  const suppressClickRef = useRef(false);
   const [ratio, setRatio] = useState(CARD_RATIO);
   const [ready, setReady] = useState(false);
   const [flippedState, setFlippedState] = useState(false);
@@ -407,11 +423,20 @@ export default function HoloCard({
     hoverScale: clamp(hoverScale, 0.8, 1.3),
     idle
   };
-  flipRef.current = flippable && flipped;
 
   useEffect(() => {
     wakeRef.current?.();
   });
+
+  // El estado `flipped` (click, teclado o prop) lleva el giro al lado que corresponde
+  useEffect(() => {
+    const wantBack = flippable && flipped;
+    if (isBackTurn(turnTargetRef.current) !== wantBack) {
+      const base = turnTargetRef.current;
+      turnTargetRef.current = isBackTurn(base) ? base - 180 : base + 180;
+    }
+    wakeRef.current?.();
+  }, [flipped, flippable]);
 
   useEffect(() => {
     loadRef.current?.(image);
@@ -582,10 +607,11 @@ export default function HoloCard({
         [state.lightX, state.lightVX] = spring(state.lightX, state.lightVX, lightX, 220, 30, h);
         [state.lightY, state.lightVY] = spring(state.lightY, state.lightVY, lightY, 220, 30, h);
         [state.lift, state.liftV] = spring(state.lift, state.liftV, lift, 320, 30, h);
-        [state.turn, state.turnV] = reduce
-          ? [flipRef.current ? 180 : 0, 0]
-          : spring(state.turn, state.turnV, flipRef.current ? 180 : 0, 170, 20, h);
+        if (dragTurnRef.current !== null) [state.turn, state.turnV] = [dragTurnRef.current, 0];
+        else if (reduce) [state.turn, state.turnV] = [turnTargetRef.current, 0];
+        else [state.turn, state.turnV] = spring(state.turn, state.turnV, turnTargetRef.current, 170, 20, h);
       }
+      turnNowRef.current = state.turn;
       rotor.style.transform = `perspective(${PERSPECTIVE}px) scale(${state.lift}) rotateX(${state.tiltX}deg) rotateY(${state.tiltY + state.turn}deg)`;
       if (shadowRef.current) {
         shadowRef.current.style.transform = `translate(${-state.tiltY * 0.7}px, ${state.tiltX * 0.7}px) scale(${0.9 + (state.lift - 1) * 1.5})`;
@@ -596,6 +622,7 @@ export default function HoloCard({
         Math.abs(state.tiltVY) +
         Math.abs(state.liftV) * 40 +
         Math.abs(state.turnV) +
+        Math.abs(state.turn - turnTargetRef.current) +
         (Math.abs(state.lightVX) + Math.abs(state.lightVY)) * 60 +
         Math.abs(state.tiltX - targetX) +
         Math.abs(state.tiltY - targetY);
@@ -694,6 +721,51 @@ export default function HoloCard({
     wakeRef.current?.();
   };
 
+  const dragFlip = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const g = gripRef.current;
+    if (!g || g.id !== e.pointerId) return;
+    const d = e.clientX - g.x;
+    if (!g.moved) {
+      if (Math.abs(d) < (e.pointerType === 'touch' ? DRAG_SLOP.coarse : DRAG_SLOP.fine)) return;
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+      g.moved = true;
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+    }
+    const span = dragDistance > 0 ? dragDistance : e.currentTarget.clientWidth || 1;
+    const deg = g.base + (d / span) * 180;
+    dragTurnRef.current = deg;
+    const now = performance.now();
+    g.hist.push({ t: now, v: deg });
+    while (g.hist.length > 2 && now - g.hist[0].t > HISTORY_MS) g.hist.shift();
+    wakeRef.current?.();
+  };
+
+  const releaseGrip = (e: ReactPointerEvent<HTMLDivElement>, cancelled: boolean) => {
+    const g = gripRef.current;
+    if (!g || g.id !== e.pointerId) return;
+    gripRef.current = null;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+    if (!g.moved) return;
+    suppressClickRef.current = true; // el click que sigue a un arrastre no voltea
+    const here = dragTurnRef.current ?? turnNowRef.current;
+    const a = g.hist[0];
+    const b = g.hist[g.hist.length - 1];
+    const velocity = !cancelled && a && b && b.t > a.t && performance.now() - b.t < 60 ? ((b.v - a.v) / (b.t - a.t)) * 1000 : 0;
+    const to = cancelled ? snap180(g.base) : clamp(snap180(here + velocity * FLING), snap180(here) - 180, snap180(here) + 180);
+    dragTurnRef.current = null;
+    turnTargetRef.current = to;
+    const next = isBackTurn(to);
+    if (next !== flipped) {
+      setFlippedState(next);
+      onFlipChange?.(next);
+    }
+    wakeRef.current?.();
+  };
+
   const toggle = () => {
     if (!flippable || !flipOnClick) return;
     const next = !flipped;
@@ -712,11 +784,28 @@ export default function HoloCard({
       data-ready={ready ? '' : undefined}
       data-flippable={flippable && flipOnClick ? '' : undefined}
       onPointerEnter={track}
-      onPointerMove={track}
-      onPointerDown={track}
+      onPointerMove={e => {
+        track(e);
+        dragFlip(e);
+      }}
+      onPointerDown={e => {
+        track(e);
+        suppressClickRef.current = false;
+        if (!flippable || !draggable || e.button !== 0 || gripRef.current) return;
+        if ((e.target as HTMLElement).closest('a, button, [data-no-flip]')) return;
+        gripRef.current = { id: e.pointerId, x: e.clientX, base: turnNowRef.current, moved: false, hist: [] };
+      }}
+      onPointerUp={e => releaseGrip(e, false)}
       onPointerLeave={leave}
-      onPointerCancel={leave}
+      onPointerCancel={e => {
+        leave();
+        releaseGrip(e, true);
+      }}
       onClick={e => {
+        if (suppressClickRef.current) {
+          suppressClickRef.current = false;
+          return;
+        }
         // Botones y enlaces del reverso (ej. «Abrir carta») no voltean la carta
         if ((e.target as HTMLElement).closest('a, button, [data-no-flip]')) return;
         toggle();
