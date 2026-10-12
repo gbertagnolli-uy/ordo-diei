@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, type ReactNode } from "react";
 import HoloCard from "@/components/HoloCard";
 import { Lock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ export interface CartaVistaProps {
   prioridad?: boolean;
   mostrarTitulo?: boolean; // solo modo holo: nombre y grado bajo la carta
   blancoYNegro?: boolean; // solo modo holo: carta sin consagrar (arte B/N y candado, el foil sigue)
+  reverso?: ReactNode; // solo modo holo: contenido del dorso; con él, un click o tap voltea la carta
 }
 
 // Holo igual para todas las cartas (lane 49)
@@ -99,7 +100,9 @@ export function CartaVista({
   onClick,
   mostrarTitulo = true,
   blancoYNegro = false,
+  reverso,
 }: CartaVistaProps) {
+  const [volteada, setVolteada] = useState(false);
   const estilo = ESTILOS_RAREZA[carta.rareza];
   const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
   const esGloriosa = grado === 4;
@@ -151,7 +154,7 @@ export function CartaVista({
   if (modo === "holo") {
     return (
       <div
-        role="img"
+        role={reverso ? "group" : "img"}
         aria-label={`${carta.nombre} · ${TEXTOS_CARTAS.grados[grado]}`}
         onClick={onClick}
         className={cn(
@@ -181,9 +184,12 @@ export function CartaVista({
             grayscale={blancoYNegro}
             frame={4}
             radius={12}
+            back={reverso}
+            onFlipChange={setVolteada}
           />
 
-          {blancoYNegro && (
+          {/* Candado e insignias son del frente: se ocultan con la carta de espaldas */}
+          {blancoYNegro && !volteada && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="rounded-full bg-black/50 p-3 text-stone-100 shadow-lg">
                 <Lock className="size-6" />
@@ -192,7 +198,7 @@ export function CartaVista({
           )}
 
           {/* Insignia de Grado */}
-          {!blancoYNegro && (
+          {!blancoYNegro && !volteada && (
           <div className="absolute top-3 left-3 pointer-events-none">
             <span
               className={cn(
@@ -210,6 +216,7 @@ export function CartaVista({
           </div>
           )}
 
+          {!volteada && (
           <div className="absolute top-3 right-3 pointer-events-none">
             <span
               className={cn(
@@ -221,6 +228,7 @@ export function CartaVista({
               {TEXTOS_CARTAS.rarezas[carta.rareza]}
             </span>
           </div>
+          )}
         </div>
 
         {/* Título y etiqueta de Grado */}
