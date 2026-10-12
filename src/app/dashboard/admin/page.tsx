@@ -17,7 +17,7 @@ export default async function AdminTasksPage() {
   }
 
   const tareas = await prisma.tarea.findMany({
-    include: { asignado: true, creador: true },
+    include: { asignado: true, creador: true, checklistItems: { orderBy: { orden: 'asc' } } },
     orderBy: { fechaVencimiento: 'asc' }
   });
 

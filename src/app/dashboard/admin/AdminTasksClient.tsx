@@ -54,6 +54,9 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const groupedTasks = groupTasksForTable(tasks);
+  const miembrosDe = (t: any): number[] => [...new Set<number>(
+    (t.grupoTareaId ? tasks.filter(g => g.grupoTareaId === t.grupoTareaId) : [t]).map(g => g.asignadoId)
+  )];
 
   const events = tasks.map(t => {
     let start = new Date(t.fechaVencimiento || new Date());
@@ -274,7 +277,7 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
           <Modal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} title="Editar Misión">
             <TaskForm
               users={users}
-              task={selectedTask}
+              task={{ ...selectedTask, asignadoIds: miembrosDe(selectedTask) }}
               isModal={true}
               onSuccess={() => window.location.reload()}
             />

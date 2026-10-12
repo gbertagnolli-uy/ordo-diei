@@ -25,7 +25,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   const isEdit = !!task;
   const [loading, setLoading] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>(
-    isEdit ? [task.asignadoId] : []
+    isEdit ? (task.asignadoIds ?? [task.asignadoId]) : []
   );
   const [isGlobal, setIsGlobal] = useState(false);
   const [tipoRecurrencia, setTipoRecurrencia] = useState(
@@ -45,7 +45,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!isEdit && !isGlobal && selectedUserIds.length === 0) {
+    if (!isGlobal && selectedUserIds.length === 0) {
       alert("Selecciona al menos un usuario o activa la tarea global.");
       return;
     }
@@ -58,7 +58,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
       const body: any = {
         titulo: formData.get("titulo"),
         descripcion: formData.get("descripcion"),
-        asignadoId: formData.get("asignadoId") || task.asignadoId,
+        asignadoIds: selectedUserIds,
         tiempoMinutos: formData.get("tiempoMinutos"),
         fecha: formData.get("fecha"),
         hora: formData.get("hora"),
@@ -68,6 +68,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         diaDeLaSemana: formData.get("diaDeLaSemana"),
         generaRecompensa: true,
         isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
+        checklistItems: isChecklist ? checklistItems.filter(i => i.trim()) : [],
       };
 
       try {
@@ -146,18 +147,6 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           <Textarea id={fid("descripcion")} name="descripcion" rows={3} defaultValue={isEdit ? (task.descripcion || "") : ""} placeholder="Asegúrate de dejar la caja ordenada..." />
         </Field>
 
-        {/* EDIT: Single user selector */}
-        {isEdit && (
-          <Field>
-            <FieldLabel htmlFor={fid("asignado")}>Asignado a</FieldLabel>
-            <NativeSelect id={fid("asignado")} required name="asignadoId" defaultValue={task.asignadoId} className="w-full">
-              {users.map((u) => (
-                <NativeSelectOption key={u.id} value={u.id}>{u.nombre} ({u.rolFamiliar.replace("_", " ")})</NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-        )}
-
         {/* CREATE: Global toggle */}
         {!isEdit && (
           <Field orientation="horizontal" className="rounded-lg border bg-muted/40 p-4">
@@ -170,8 +159,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           </Field>
         )}
 
-        {/* CREATE: Multi-select users */}
-        {!isEdit && !isGlobal && (
+        {/* Multi-select users (crear y editar) */}
+        {!isGlobal && (
           <FieldSet>
             <FieldLegend variant="label" className="flex items-center gap-2">
               <Users className="size-4 text-primary" /> Asignar a (selecciona uno o más) *
