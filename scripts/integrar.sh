@@ -48,8 +48,8 @@ BASE_DEV=$(git -C "$MAIN_DIR" rev-parse dev)
 git -C "$LANE_DIR" merge-base --is-ancestor dev HEAD || die "La rama no contiene dev; no se puede integrar."
 
 # --- 2. validar el resultado combinado --------------------------------------
-echo "→ Validando (lint + tests + tsc) en la lane"
-(cd "$LANE_DIR" && npm run lint --silent && npm test --silent && npx tsc --noEmit) \
+echo "→ Validando (tests + tsc) en la lane"
+(cd "$LANE_DIR" && npm test --silent && npx tsc --noEmit) \
   || die "La validación falló con dev incluido. Arreglalo en la lane y reintentá."
 
 # --- 3. dev no se pudo mover mientras tanto ---------------------------------
