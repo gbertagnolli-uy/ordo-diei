@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
@@ -314,24 +314,17 @@ export function HabitoCard({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Popover para nota opcional */}
-            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-              <PopoverTrigger asChild>
-                <span className="sr-only">Agregar nota</span>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-80 space-y-3"
-                align="end"
-                onOpenAutoFocus={(e) => e.preventDefault()}
-              >
-                <div className="space-y-1">
-                  <h4 className="font-medium text-sm">
+            {/* Modal centrado para nota opcional */}
+            <Dialog open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <DialogContent className="sm:max-w-sm space-y-3" showCloseButton={false}>
+                <DialogHeader>
+                  <DialogTitle className="text-sm">
                     {motivoSeleccionado === "justificado" ? "Omitir día" : "Marcar como no realizado"}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
+                  </DialogTitle>
+                  <DialogDescription className="text-xs">
                     Motivo: <span className="font-semibold">{motivoTexto}</span>. Podés sumar una nota opcional:
-                  </p>
-                </div>
+                  </DialogDescription>
+                </DialogHeader>
                 <Textarea
                   placeholder="Nota u observación (opcional)..."
                   value={notaOpcional}
@@ -347,8 +340,8 @@ export function HabitoCard({
                     Confirmar
                   </Button>
                 </div>
-              </PopoverContent>
-            </Popover>
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </CardFooter>
