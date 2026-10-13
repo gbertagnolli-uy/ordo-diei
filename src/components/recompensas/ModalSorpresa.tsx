@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { Gift, Sparkles } from "lucide-react";
+import { Coins, Flame, Gift, Layers, Sparkles, Ticket, Zap, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { URL_COFRE, URL_REGALO } from "./modelos";
@@ -19,6 +19,16 @@ export type TipoSorpresa = "regalo" | "cofre";
 export type ResultadoSorpresa = { lineas: string[]; pendienteEntrega: boolean };
 
 const COLORES = ["#f59e0b", "#fbbf24", "#38bdf8", "#f472b6", "#34d399", "#a78bfa"];
+
+/** Icono según de qué es el premio (las líneas llegan ya como texto) */
+function iconoDe(linea: string): LucideIcon {
+  if (/^vale/i.test(linea)) return Ticket;
+  if (/\bpuntos?\b/i.test(linea)) return Coins;
+  if (/\bxp\b/i.test(linea)) return Zap;
+  if (/incienso/i.test(linea)) return Flame;
+  if (/fragmento|carta/i.test(linea)) return Layers;
+  return Gift;
+}
 
 /** Varias explosiones de confites desde distintos puntos */
 function lluviaDeConfites(reducida: boolean) {
@@ -55,11 +65,14 @@ export function ModalSorpresa({
   const [revelado, setRevelado] = useState(false);
   const abierto = titulo !== null;
   const confitesHechos = useRef(false);
+  // Los premios se muestran de a uno, como las cartas de un sobre
+  const [paso, setPaso] = useState(0);
 
   // Cada apertura empieza de cero
   useEffect(() => {
     if (abierto) {
       setRevelado(false);
+      setPaso(0);
       confitesHechos.current = false;
     }
   }, [abierto, titulo]);
@@ -69,6 +82,15 @@ export function ModalSorpresa({
     confitesHechos.current = true;
     setRevelado(true);
     lluviaDeConfites(reducida);
+  };
+
+  const lineas = resultado?.lineas.length ? resultado.lineas : ["Un abrazo de tus papás"];
+  const ultimo = paso >= lineas.length - 1;
+  const Icono = iconoDe(lineas[Math.min(paso, lineas.length - 1)]);
+
+  const siguiente = () => {
+    setPaso((p) => p + 1);
+    lluviaDeConfites(reducida); // cada premio explota con sus propios confites
   };
 
   return (
@@ -91,38 +113,40 @@ export function ModalSorpresa({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-5 py-4 text-center">
-            <motion.div
-              initial={{ scale: 0.3, rotate: -20, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 14 }}
-              className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"
-            >
-              <Gift className="size-8" />
-            </motion.div>
             <div className="space-y-1">
               <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
                 <Sparkles className="size-4 text-amber-500" /> {titulo}
               </p>
               <h2 className="font-heading text-2xl font-semibold">¡Ganaste!</h2>
+              {lineas.length > 1 && (
+                <p className="text-xs text-muted-foreground" aria-live="polite">
+                  Premio {paso + 1} de {lineas.length}
+                </p>
+              )}
             </div>
-            <ul className="w-full space-y-2">
-              {(resultado?.lineas.length ? resultado.lineas : ["Un abrazo de tus papás"]).map((l, i) => (
-                <motion.li
-                  key={i}
-                  initial={{ y: 14, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.15 + i * 0.12 }}
-                  className="rounded-xl border bg-card px-4 py-3 font-heading text-lg font-medium"
-                >
-                  {l}
-                </motion.li>
-              ))}
-            </ul>
-            {resultado?.pendienteEntrega && (
+            <motion.div
+              key={paso}
+              initial={{ scale: 0.3, rotate: -20, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 14 }}
+              className="flex size-20 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+            >
+              <Icono className="size-10" />
+            </motion.div>
+            <motion.p
+              key={`t${paso}`}
+              initial={{ y: 14, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.12 }}
+              className="w-full rounded-xl border bg-card px-4 py-4 font-heading text-xl font-medium text-balance"
+            >
+              {lineas[Math.min(paso, lineas.length - 1)]}
+            </motion.p>
+            {ultimo && resultado?.pendienteEntrega && (
               <p className="text-sm text-muted-foreground">Tus papás ya lo ven y te lo van a entregar.</p>
             )}
-            <Button onClick={onCerrar} className="w-full">
-              ¡Genial!
+            <Button onClick={ultimo ? onCerrar : siguiente} className="w-full">
+              {ultimo ? "¡Genial!" : "Siguiente premio"}
             </Button>
           </div>
         )}

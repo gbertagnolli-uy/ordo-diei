@@ -7,3 +7,7 @@
 - **Imágenes** (`public/Imagenes/` está en `.gitignore`, por eso se optimizaron a `public/premios/`): `cofre.webp` (cofre, fondo blanco) para los cofres, `medalla.webp` (medalla, PNG con transparencia) para los reconocimientos. El resto sigue con `regalo.webp`. Mapa `IMAGEN` en `MisPremios.tsx`.
 - Insignia «Reconocimiento» con medalla; el pie dice «Recibido el … de {padre}». Como las demás tarjetas ya recibidas, lanza regalitos al click (Cool Mode).
 - Pendiente de decisión: hoy el niño no recibe aviso (banner) por un reconocimiento, solo lo ve en Mis premios.
+
+## Lane 88 — Medalla 10 % más chica
+**Pedido (textual):** "la imagen usada en el card de reconocimiento deberia ser un 10% menor."
+Hecho: `scale-90` sobre la imagen solo en las tarjetas de reconocimiento (`MisPremios.tsx`); el panel de la tarjeta no cambia de tamaño.

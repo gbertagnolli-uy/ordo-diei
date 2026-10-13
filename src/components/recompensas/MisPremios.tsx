@@ -166,7 +166,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
           <span className="absolute top-2 right-3 z-10 text-[10px] text-muted-foreground">{fechaCorta((r.reclamadaEn ?? r.entregadaEn)!)}</span>
         )}
         <div className="relative w-32 shrink-0 self-stretch bg-white sm:w-48">
-          <Image src={IMAGEN[r.tipo] ?? "/premios/regalo.webp"} alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className="object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]" />
+          <Image src={IMAGEN[r.tipo] ?? "/premios/regalo.webp"} alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className={cn("object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]", reconocimiento && "scale-90")} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-2 p-4 text-left sm:p-5">
           <Badge variant={disponible || reconocimiento ? "default" : "secondary"}>
