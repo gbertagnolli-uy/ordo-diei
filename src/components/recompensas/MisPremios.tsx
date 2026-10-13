@@ -21,6 +21,7 @@ import {
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Label } from "@/components/ui/label";
+import { CoolMode } from "@/components/ui/cool-mode";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,9 @@ const ESTADOS = {
   reclamado: { label: "Esperando entrega", icon: Hourglass },
   entregado: { label: "Entregado", icon: PackageCheck },
 } as const;
+
+// Estable entre renders: CoolMode reinicia el efecto si cambian las opciones
+const CONFITES = { particle: "🎁", size: 14 };
 
 const fecha = (iso: string) => format(new Date(iso), "d 'de' MMMM", { locale: es });
 
@@ -195,6 +199,22 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                     </p>
                   )}
                 </CardContent>
+                {r.sorpresa && (
+                  <CardFooter className="pb-0">
+                    <CoolMode options={CONFITES}>
+                      <Button
+                        size="sm"
+                        disabled={ocupadoId !== null}
+                        onClick={(e) => {
+                          e.stopPropagation(); // la tarjeta entera también abre el premio
+                          elegir(r);
+                        }}
+                      >
+                        {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} Reclamar premio
+                      </Button>
+                    </CoolMode>
+                  </CardFooter>
+                )}
                 <CardFooter className="text-xs text-muted-foreground">
                   {r.estado === "entregado" && r.entregadaEn
                     ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
