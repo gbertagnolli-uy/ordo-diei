@@ -24,3 +24,8 @@
 ## Pendiente del usuario
 - (Resuelto en lane 81) `public/models/present_1_low_poly.glb` ya está en el repo.
 - Nota técnica: `@react-three/fiber` amplía `JSX.IntrinsicElements`, por eso los íconos tipados `React.ElementType` pasaron a `LucideIcon`.
+
+## Lane 83 — Tarjeta de premio horizontal
+**Pedido (textual):** "hay algunas inconsistencias en la card tiene dos partes grises donde aparece la fecha. Ademas de eso, quiero que las cards sean rectangulares, en la izquierda quiero que aparezca esta imagen «gift-3d-boxes-with-golden-ribbon-bow-confetti…» que esta guardada en public/imagenes, y a la derecha la informacion de la card y el boton (texto y boton con alineacion a la izquierda)" y "que el feed de cards de premios, tenga una sola columna".
+
+Hecho: tarjetas horizontales en una sola columna, sin las franjas grises del pie (la fecha pasó a ser texto dentro del bloque derecho). `public/Imagenes/` está en `.gitignore`, así que la ilustración (JPG recortado del zip; el EPS no trae transparencia real, solo un cuadriculado dibujado) se optimizó a `public/premios/regalo.webp`.

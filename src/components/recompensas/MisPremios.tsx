@@ -3,13 +3,14 @@
 // Premios reclamables (vault/HABITO_LIBRO.md D8–D9): reclamar los propios y, para padres, entregar los de la familia.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { BookMarked, Check, Gift, Hourglass, PackageCheck, User } from "lucide-react";
+import { Check, Gift, Hourglass, PackageCheck, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -148,11 +149,16 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4">
           {datos.propias.map((r) => {
             const estado = ESTADOS[r.estado];
-            const Icono = r.tipo === "libro" ? BookMarked : Gift;
             const disponible = r.estado === "disponible";
+            const pie =
+              r.estado === "entregado" && r.entregadaEn
+                ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
+                : r.estado === "reclamado" && r.reclamadaEn
+                ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
+                : `Ganado el ${fecha(r.ganadaEn)} · tocá para ${r.sorpresa ? "abrirlo" : "reclamarlo"}`;
             return (
               <Card
                 key={r.id}
@@ -166,41 +172,36 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                   }
                 }}
                 className={cn(
-                  "transition-all",
+                  "flex-row gap-0 overflow-hidden py-0 transition-all",
                   disponible && "cursor-pointer border-primary/40 hover:border-primary hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none",
                   r.estado === "entregado" && "opacity-70"
                 )}
               >
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Icono className="size-5" />
-                    </div>
-                    <Badge variant={disponible ? "default" : "secondary"}>
-                      <estado.icon className="size-3" /> {estado.label}
-                    </Badge>
+                {/* Imagen a la izquierda: fondo blanco propio para que el degradé de la ilustración se funda */}
+                <div className="relative w-32 shrink-0 self-stretch bg-white sm:w-48">
+                  <Image src="/premios/regalo.webp" alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className="object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]" />
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 p-4 text-left sm:p-5">
+                  <Badge variant={disponible ? "default" : "secondary"}>
+                    <estado.icon className="size-3" /> {estado.label}
+                  </Badge>
+                  <div className="space-y-0.5">
+                    <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? "Premio sorpresa" : r.titulo}</h3>
+                    {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa ? `Por: ${r.titulo}` : r.origen}</p>}
                   </div>
-                  <CardTitle className="font-heading text-lg">{r.sorpresa ? "Premio sorpresa" : r.titulo}</CardTitle>
-                  {r.origen && <CardDescription>{r.sorpresa ? `Por: ${r.titulo}` : r.origen}</CardDescription>}
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">
                   {r.contenido && r.contenido.length > 0 && (
-                    <ul className="list-inside list-disc">
+                    <ul className="list-inside list-disc text-sm">
                       {r.contenido.map((c, i) => (
-                        <li key={i} className="text-foreground">
-                          {c}
-                        </li>
+                        <li key={i}>{c}</li>
                       ))}
                     </ul>
                   )}
                   {r.pedido && (
-                    <p>
+                    <p className="text-sm text-muted-foreground">
                       Pediste <span className="font-medium text-foreground">«{r.pedido}»</span>
                     </p>
                   )}
-                </CardContent>
-                {r.sorpresa && (
-                  <CardFooter className="pb-0">
+                  {r.sorpresa && (
                     <CoolMode options={CONFITES}>
                       <Button
                         size="sm"
@@ -213,15 +214,9 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                         {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} Reclamar premio
                       </Button>
                     </CoolMode>
-                  </CardFooter>
-                )}
-                <CardFooter className="text-xs text-muted-foreground">
-                  {r.estado === "entregado" && r.entregadaEn
-                    ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
-                    : r.estado === "reclamado" && r.reclamadaEn
-                    ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
-                    : `Ganado el ${fecha(r.ganadaEn)} · tocá para ${r.sorpresa ? "abrirlo" : "reclamarlo"}`}
-                </CardFooter>
+                  )}
+                  <p className="text-xs text-muted-foreground">{pie}</p>
+                </div>
               </Card>
             );
           })}
