@@ -6,6 +6,7 @@ export type ItemPremio =
   | { tipo: "incienso"; cantidad: number }
   | { tipo: "xp"; cantidad: number }
   | { tipo: "carta"; cartaId: number; nombre: string; modo: "completa" | "fragmentos"; cantidad?: number }
+  | { tipo: "vale"; texto: string } // voucher canjeable: «Vale por {texto}» (lane 86)
   | { tipo: "exoneracion"; texto: string }
   | { tipo: "extra"; texto: string };
 
@@ -49,6 +50,8 @@ export function validarItems(entrada: unknown): ItemPremio[] {
         if (i.modo === "completa") return { tipo: "carta", cartaId, nombre, modo: "completa" };
         return { tipo: "carta", cartaId, nombre, modo: "fragmentos", cantidad: entero(i.cantidad, MAX_FRAGMENTOS, "Fragmentos") };
       }
+      case "vale":
+        return { tipo: "vale", texto: texto(i.texto, "Vale") };
       case "exoneracion":
         return { tipo: "exoneracion", texto: texto(i.texto, "Exoneración") };
       case "extra":
@@ -80,6 +83,8 @@ export function textoItem(i: ItemPremio): string {
       return i.modo === "completa"
         ? `Carta completa: ${i.nombre || "carta"}`
         : `${i.cantidad} ${i.cantidad === 1 ? "fragmento" : "fragmentos"} de ${i.nombre || "una carta"}`;
+    case "vale":
+      return `Vale por ${i.texto}`;
     case "exoneracion":
       return `Exoneración: ${i.texto}`;
     case "extra":

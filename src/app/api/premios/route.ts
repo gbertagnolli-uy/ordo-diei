@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
       diaEntregaSemana,
       diaDelMes,
       tareasRequeridasIds,
+      esVale,
     } = body;
 
     if (!titulo || !cantidad || !tipoFrecuencia) {
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
         diaEntregaSemana: diaEntregaSemana ? Number(diaEntregaSemana) : null,
         diaDelMes: diaDelMes ? Number(diaDelMes) : null,
         tareasRequeridasIds: tareasRequeridasIds ? JSON.stringify(tareasRequeridasIds) : "[]",
+        esVale: esVale === true,
       }
     });
 

@@ -28,6 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { RecompensaVista } from "@/lib/recompensas/server";
 import { toast } from "@/lib/toast";
+import { Separator } from "@/components/ui/separator";
+import { ValeTicket } from "./ValeTicket";
 import { ModalSorpresa, type ResultadoSorpresa, type TipoSorpresa } from "./ModalSorpresa";
 
 type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[] };
@@ -42,6 +44,7 @@ const ESTADOS = {
 const CONFITES = { particle: "🎁", size: 14 };
 
 const fecha = (iso: string) => format(new Date(iso), "d 'de' MMMM", { locale: es });
+const fechaCorta = (iso: string) => format(new Date(iso), "d MMM yyyy", { locale: es });
 
 export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: boolean }) {
   const router = useRouter();
@@ -49,6 +52,8 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   const [abierto, setAbierto] = useState<RecompensaVista | null>(null);
   const [pedido, setPedido] = useState("");
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
+  // Vales arrancados que el servidor todavía no confirmó (el ticket se ve usado de inmediato)
+  const [arrancados, setArrancados] = useState<number[]>([]);
   // Premio sorpresa en apertura: el modal 3D se muestra de inmediato y el resultado llega del servidor
   const [sorpresa, setSorpresa] = useState<{ titulo: string; tipo: TipoSorpresa; resultado: ResultadoSorpresa | null } | null>(null);
 
@@ -87,6 +92,24 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
     else setSorpresa(null); // falló: el toast ya avisó
   };
 
+  const usarVale = async (id: number) => {
+    setArrancados((prev) => [...prev, id]);
+    try {
+      const res = await fetch(`/api/recompensas/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accion: "usar" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "No se pudo usar el vale");
+      setDatos({ propias: json.propias, porEntregar: json.porEntregar });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo usar el vale");
+    } finally {
+      setArrancados((prev) => prev.filter((x) => x !== id));
+    }
+  };
+
   const reclamar = async () => {
     if (!abierto) return;
     if (await accion(abierto.id, { accion: "reclamar", pedido })) setAbierto(null);
@@ -98,6 +121,97 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
     setPedido("");
     setAbierto(r);
   };
+
+  const tarjeta = (r: RecompensaVista) => {
+    // Vale ya abierto: se muestra como ticket para arrancar
+    if (r.tipo === "vale" && r.estado !== "disponible") {
+      return (
+        <ValeTicket key={r.id} vale={arrancados.includes(r.id) && !r.usadoEn ? { ...r, usadoEn: new Date().toISOString() } : r} onUsar={() => usarVale(r.id)} />
+      );
+    }
+    const estado = ESTADOS[r.estado];
+    const disponible = r.estado === "disponible";
+    const pie =
+      r.estado === "entregado" && r.entregadaEn
+        ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
+        : r.estado === "reclamado" && r.reclamadaEn
+        ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
+        : `Ganado el ${fecha(r.ganadaEn)} · tocá para ${r.sorpresa ? "abrirlo" : "reclamarlo"}`;
+    const card = (
+      <Card
+        key={r.id}
+        role={disponible ? "button" : undefined}
+        tabIndex={disponible ? 0 : undefined}
+        onClick={() => elegir(r)}
+        onKeyDown={(e) => {
+          if (disponible && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            elegir(r);
+          }
+        }}
+        className={cn(
+          "relative flex-row gap-0 overflow-hidden py-0 transition-all",
+          disponible && "cursor-pointer border-primary/40 hover:border-primary hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none",
+          r.estado === "entregado" && "opacity-70"
+        )}
+      >
+        {/* Imagen a la izquierda: fondo blanco propio para que el degradé de la ilustración se funda */}
+        {!disponible && (r.reclamadaEn ?? r.entregadaEn) && (
+          <span className="absolute top-2 right-3 z-10 text-[10px] text-muted-foreground">{fechaCorta((r.reclamadaEn ?? r.entregadaEn)!)}</span>
+        )}
+        <div className="relative w-32 shrink-0 self-stretch bg-white sm:w-48">
+          <Image src="/premios/regalo.webp" alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className="object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]" />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-2 p-4 text-left sm:p-5">
+          <Badge variant={disponible ? "default" : "secondary"}>
+            <estado.icon className="size-3" /> {estado.label}
+          </Badge>
+          <div className="space-y-0.5">
+            <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : "Premio sorpresa") : r.titulo}</h3>
+            {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa && r.tipo !== "vale" ? `Por: ${r.titulo}` : r.origen}</p>}
+          </div>
+          {r.contenido && r.contenido.length > 0 && (
+            <ul className="list-inside list-disc text-sm">
+              {r.contenido.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
+          )}
+          {r.pedido && (
+            <p className="text-sm text-muted-foreground">
+              Pediste <span className="font-medium text-foreground">«{r.pedido}»</span>
+            </p>
+          )}
+          {r.sorpresa && (
+            <CoolMode options={CONFITES}>
+              <Button
+                size="sm"
+                disabled={ocupadoId !== null}
+                onClick={(e) => {
+                  e.stopPropagation(); // la tarjeta entera también abre el premio
+                  elegir(r);
+                }}
+              >
+                {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" ? "Abrir cofre" : "Reclamar premio"}
+              </Button>
+            </CoolMode>
+          )}
+          <p className="text-xs text-muted-foreground">{pie}</p>
+        </div>
+      </Card>
+    );
+    // Ya reclamado: cada click en la tarjeta lanza regalitos
+    return disponible ? card : (
+      <CoolMode key={r.id} options={CONFITES} className="block">
+        {card}
+      </CoolMode>
+    );
+  };
+
+  const porReclamar = datos.propias.filter((r) => r.estado === "disponible");
+  const reclamados = datos.propias
+    .filter((r) => r.estado !== "disponible")
+    .sort((a, b) => new Date(b.reclamadaEn ?? b.ganadaEn).getTime() - new Date(a.reclamadaEn ?? a.ganadaEn).getTime());
 
   const pideLibro = abierto?.tipo === "libro";
 
@@ -142,7 +256,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         </Card>
       )}
 
-      {/* Premios propios */}
+      {/* Premios propios: primero lo que falta reclamar y, aparte, lo ya reclamado */}
       {datos.propias.length === 0 ? (
         <Empty className="border bg-card py-12">
           <EmptyHeader>
@@ -156,84 +270,18 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {datos.propias.map((r) => {
-            const estado = ESTADOS[r.estado];
-            const disponible = r.estado === "disponible";
-            const pie =
-              r.estado === "entregado" && r.entregadaEn
-                ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
-                : r.estado === "reclamado" && r.reclamadaEn
-                ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
-                : `Ganado el ${fecha(r.ganadaEn)} · tocá para ${r.sorpresa ? "abrirlo" : "reclamarlo"}`;
-            const tarjeta = (
-              <Card
-                key={r.id}
-                role={disponible ? "button" : undefined}
-                tabIndex={disponible ? 0 : undefined}
-                onClick={() => elegir(r)}
-                onKeyDown={(e) => {
-                  if (disponible && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    elegir(r);
-                  }
-                }}
-                className={cn(
-                  "flex-row gap-0 overflow-hidden py-0 transition-all",
-                  disponible && "cursor-pointer border-primary/40 hover:border-primary hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none",
-                  r.estado === "entregado" && "opacity-70"
-                )}
-              >
-                {/* Imagen a la izquierda: fondo blanco propio para que el degradé de la ilustración se funda */}
-                <div className="relative w-32 shrink-0 self-stretch bg-white sm:w-48">
-                  <Image src="/premios/regalo.webp" alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className="object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]" />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 p-4 text-left sm:p-5">
-                  <Badge variant={disponible ? "default" : "secondary"}>
-                    <estado.icon className="size-3" /> {estado.label}
-                  </Badge>
-                  <div className="space-y-0.5">
-                    <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : "Premio sorpresa") : r.titulo}</h3>
-                    {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa ? `Por: ${r.titulo}` : r.origen}</p>}
-                  </div>
-                  {r.contenido && r.contenido.length > 0 && (
-                    <ul className="list-inside list-disc text-sm">
-                      {r.contenido.map((c, i) => (
-                        <li key={i}>{c}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {r.pedido && (
-                    <p className="text-sm text-muted-foreground">
-                      Pediste <span className="font-medium text-foreground">«{r.pedido}»</span>
-                    </p>
-                  )}
-                  {r.sorpresa && (
-                    <CoolMode options={CONFITES}>
-                      <Button
-                        size="sm"
-                        disabled={ocupadoId !== null}
-                        onClick={(e) => {
-                          e.stopPropagation(); // la tarjeta entera también abre el premio
-                          elegir(r);
-                        }}
-                      >
-                        {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" ? "Abrir cofre" : "Reclamar premio"}
-                      </Button>
-                    </CoolMode>
-                  )}
-                  <p className="text-xs text-muted-foreground">{pie}</p>
-                </div>
-              </Card>
-            );
-            // Ya reclamado: cada click en la tarjeta lanza regalitos
-            return disponible ? tarjeta : (
-              <CoolMode key={r.id} options={CONFITES} className="block">
-                {tarjeta}
-              </CoolMode>
-            );
-          })}
-        </div>
+        <>
+          {porReclamar.length > 0 && <div className="grid grid-cols-1 gap-4">{porReclamar.map(tarjeta)}</div>}
+          {reclamados.length > 0 && (
+            <section className="space-y-4" aria-labelledby="premios-reclamados">
+              {porReclamar.length > 0 && <Separator />}
+              <h2 id="premios-reclamados" className="flex items-center gap-2 font-heading text-lg font-medium">
+                <PackageCheck className="size-5 text-primary" /> Reclamados
+              </h2>
+              <div className="grid grid-cols-1 gap-4">{reclamados.map(tarjeta)}</div>
+            </section>
+          )}
+        </>
       )}
 
       <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} onCerrar={() => setSorpresa(null)} />

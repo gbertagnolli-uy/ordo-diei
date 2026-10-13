@@ -16,6 +16,8 @@ export type RecompensaVista = {
   ganadaEn: string;
   reclamadaEn: string | null;
   entregadaEn: string | null;
+  /** Vales: cuándo se arrancó el ticket (null = sin usar o no es un vale) */
+  usadoEn: string | null;
   /** Premio sorpresa de comportamiento: sin abrir es true y no se revela el contenido */
   sorpresa: boolean;
   /** Qué incluye el premio sorpresa; null mientras no se abrió */
@@ -31,18 +33,20 @@ const INCLUDE = {
 
 type Fila = Awaited<ReturnType<typeof prisma.recompensa.findMany<{ include: typeof INCLUDE }>>>[number];
 
-const esSorpresa = (tipo: string) => tipo === "comportamiento" || tipo === "cofre";
+const esSorpresa = (tipo: string) => tipo === "comportamiento" || tipo === "cofre" || tipo === "vale";
 
 const aVista = (r: Fila): RecompensaVista => ({
   id: r.id,
   tipo: r.tipo,
-  titulo: r.titulo,
+  // Un vale sin abrir no revela de qué es
+  titulo: r.tipo === "vale" && r.estado === "disponible" ? "Vale sorpresa" : r.titulo,
   origen: r.origen,
   estado: r.estado,
   pedido: r.pedido,
   ganadaEn: r.ganadaEn.toISOString(),
   reclamadaEn: r.reclamadaEn?.toISOString() ?? null,
   entregadaEn: r.entregadaEn?.toISOString() ?? null,
+  usadoEn: r.usadoEn?.toISOString() ?? null,
   sorpresa: esSorpresa(r.tipo) && r.estado === "disponible",
   contenido: esSorpresa(r.tipo) && r.estado !== "disponible" ? leerItems(r.contenido).map(textoItem) : null,
   usuario: r.usuario,
@@ -110,4 +114,4 @@ export async function entregarRecompensa(actor: { id: number; rol?: string }, id
 
 /** Premios sorpresa de comportamiento que el usuario todavía no abrió (banner del dashboard) */
 export const contarSorpresasSinAbrir = (usuarioId: number) =>
-  prisma.recompensa.count({ where: { usuarioId, tipo: { in: ["comportamiento", "cofre"] }, estado: "disponible" } });
+  prisma.recompensa.count({ where: { usuarioId, tipo: { in: ["comportamiento", "cofre", "vale"] }, estado: "disponible" } });
