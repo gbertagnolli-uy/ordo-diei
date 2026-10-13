@@ -39,6 +39,7 @@ const TIPOS_ITEM: { id: TipoItem; label: string }[] = [
   { id: "incienso", label: "Incienso" },
   { id: "xp", label: "XP" },
   { id: "carta", label: "Carta o fragmentos" },
+  { id: "reconocimiento", label: "Reconocimiento (a una virtud o buena acción)" },
   { id: "vale", label: "Vale (voucher canjeable)" },
   { id: "exoneracion", label: "Exonerar de una tarea" },
   { id: "extra", label: "Premio extra (fuera de la app)" },
@@ -376,12 +377,12 @@ export function ComportamientoAdmin({
                 )}
 
                 <div className="flex gap-2">
-                  {(tipoItem === "exoneracion" || tipoItem === "extra" || tipoItem === "vale") && (
+                  {(tipoItem === "exoneracion" || tipoItem === "extra" || tipoItem === "vale" || tipoItem === "reconocimiento") && (
                     <Input
                       value={textoLibre}
                       maxLength={200}
                       onChange={(e) => setTextoLibre(e.target.value)}
-                      placeholder={tipoItem === "vale" ? "Vale por… Ej. un viaje a Beto Carrero World" : tipoItem === "exoneracion" ? "Ej. Lavar los platos hoy" : "Ej. Permiso para ver una película, un helado…"}
+                      placeholder={tipoItem === "reconocimiento" ? "Ej. Generosidad: compartió su merienda" : tipoItem === "vale" ? "Vale por… Ej. un viaje a Beto Carrero World" : tipoItem === "exoneracion" ? "Ej. Lavar los platos hoy" : "Ej. Permiso para ver una película, un helado…"}
                     />
                   )}
                   {(tipoItem === "puntos" || tipoItem === "incienso" || tipoItem === "xp" || (tipoItem === "carta" && modoCarta === "fragmentos")) && (
@@ -399,7 +400,7 @@ export function ComportamientoAdmin({
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Puntos, incienso, XP y cartas se acreditan solos cuando el niño abre su premio. Lo demás lo ves en «Para entregar». Cada vale llega como su propio regalo y después se muestra como ticket para arrancar.
+                  Puntos, incienso, XP y cartas se acreditan solos cuando el niño abre su premio. Lo demás lo ves en «Para entregar». Cada reconocimiento llega ya entregado, con su medalla. Cada vale llega como su propio regalo y después se muestra como ticket para arrancar.
                 </p>
               </div>
             ) : (

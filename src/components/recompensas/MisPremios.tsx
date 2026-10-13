@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Check, Gift, Hourglass, PackageCheck, User } from "lucide-react";
+import { Check, Gift, Hourglass, Medal, PackageCheck, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,9 @@ const ESTADOS = {
 
 // Estable entre renders: CoolMode reinicia el efecto si cambian las opciones
 const CONFITES = { particle: "🎁", size: 14 };
+
+// Ilustración de la tarjeta según el tipo de premio (public/premios)
+const IMAGEN = { cofre: "/premios/cofre.webp", reconocimiento: "/premios/medalla.webp" } as Record<string, string>;
 
 const fecha = (iso: string) => format(new Date(iso), "d 'de' MMMM", { locale: es });
 const fechaCorta = (iso: string) => format(new Date(iso), "d MMM yyyy", { locale: es });
@@ -129,10 +132,13 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         <ValeTicket key={r.id} vale={arrancados.includes(r.id) && !r.usadoEn ? { ...r, usadoEn: new Date().toISOString() } : r} onUsar={() => usarVale(r.id)} />
       );
     }
-    const estado = ESTADOS[r.estado];
+    const reconocimiento = r.tipo === "reconocimiento";
+    const estado = reconocimiento ? { label: "Reconocimiento", icon: Medal } : ESTADOS[r.estado];
     const disponible = r.estado === "disponible";
     const pie =
-      r.estado === "entregado" && r.entregadaEn
+      reconocimiento
+        ? `Recibido el ${fecha(r.ganadaEn)}${r.entregadaPor ? ` de ${r.entregadaPor.nombre}` : ""}`
+        : r.estado === "entregado" && r.entregadaEn
         ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
         : r.estado === "reclamado" && r.reclamadaEn
         ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
@@ -152,7 +158,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         className={cn(
           "relative flex-row gap-0 overflow-hidden py-0 transition-all",
           disponible && "cursor-pointer border-primary/40 hover:border-primary hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none",
-          r.estado === "entregado" && "opacity-70"
+          r.estado === "entregado" && !reconocimiento && "opacity-70"
         )}
       >
         {/* Imagen a la izquierda: fondo blanco propio para que el degradé de la ilustración se funda */}
@@ -160,15 +166,15 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
           <span className="absolute top-2 right-3 z-10 text-[10px] text-muted-foreground">{fechaCorta((r.reclamadaEn ?? r.entregadaEn)!)}</span>
         )}
         <div className="relative w-32 shrink-0 self-stretch bg-white sm:w-48">
-          <Image src="/premios/regalo.webp" alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className="object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]" />
+          <Image src={IMAGEN[r.tipo] ?? "/premios/regalo.webp"} alt="" fill unoptimized sizes="(min-width: 640px) 192px, 128px" className="object-contain [mask-image:linear-gradient(to_right,black_70%,transparent_96%)]" />
         </div>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-2 p-4 text-left sm:p-5">
-          <Badge variant={disponible ? "default" : "secondary"}>
+          <Badge variant={disponible || reconocimiento ? "default" : "secondary"}>
             <estado.icon className="size-3" /> {estado.label}
           </Badge>
           <div className="space-y-0.5">
             <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : "Premio sorpresa") : r.titulo}</h3>
-            {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa && r.tipo !== "vale" ? `Por: ${r.titulo}` : r.origen}</p>}
+            {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa && r.tipo === "comportamiento" ? `Por: ${r.titulo}` : r.origen}</p>}
           </div>
           {r.contenido && r.contenido.length > 0 && (
             <ul className="list-inside list-disc text-sm">

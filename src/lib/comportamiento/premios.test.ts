@@ -38,3 +38,10 @@ test("el vale se valida, se muestra como «Vale por…» y no necesita que un pa
   assert.equal(esAutomatico(vale), true);
   assert.throws(() => validarItems([{ tipo: "vale", texto: "  " }]));
 });
+
+test("el reconocimiento se valida y se muestra como «Reconocimiento: …»", () => {
+  const [r] = validarItems([{ tipo: "reconocimiento", texto: "  Generosidad  " }]);
+  assert.deepEqual(r, { tipo: "reconocimiento", texto: "Generosidad" });
+  assert.equal(textoItem(r), "Reconocimiento: Generosidad");
+  assert.throws(() => validarItems([{ tipo: "reconocimiento", texto: "" }]));
+});

@@ -94,7 +94,9 @@ export async function registrarComportamiento(
 
     // Cada vale llega como su propio regalo (después se muestra como ticket); lo demás, en un solo premio sorpresa
     const vales = items.flatMap((i) => (i.tipo === "vale" ? [i.texto] : []));
-    const resto = items.filter((i) => i.tipo !== "vale");
+    // Cada reconocimiento llega ya entregado, como su propia tarjeta con medalla (no es una sorpresa)
+    const reconocimientos = items.flatMap((i) => (i.tipo === "reconocimiento" ? [i.texto] : []));
+    const resto = items.filter((i) => i.tipo !== "vale" && i.tipo !== "reconocimiento");
 
     // Todo o nada: si falla uno, no queda ningún registro a medias
     await prisma.$transaction(async (tx) => {
@@ -118,6 +120,21 @@ export async function registrarComportamiento(
           },
         });
         for (const texto of vales) await crearVale(tx, usuarioId, texto, `Comportamiento: ${titulo}`);
+        const ahora = new Date();
+        for (const texto of reconocimientos) {
+          await tx.recompensa.create({
+            data: {
+              usuarioId,
+              tipo: "reconocimiento",
+              titulo: texto,
+              origen: `Por: ${titulo}`,
+              estado: "entregado",
+              reclamadaEn: ahora,
+              entregadaEn: ahora,
+              entregadaPorId: actor.id,
+            },
+          });
+        }
       }
     });
     return;
