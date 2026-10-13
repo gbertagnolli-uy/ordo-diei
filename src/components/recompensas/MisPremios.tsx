@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { RecompensaVista } from "@/lib/recompensas/server";
 import { toast } from "@/lib/toast";
+import { ModalSorpresa, type ResultadoSorpresa } from "./ModalSorpresa";
 
 type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[] };
 
@@ -43,6 +44,8 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   const [abierto, setAbierto] = useState<RecompensaVista | null>(null);
   const [pedido, setPedido] = useState("");
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
+  // Premio sorpresa en apertura: el modal 3D se muestra de inmediato y el resultado llega del servidor
+  const [sorpresa, setSorpresa] = useState<{ titulo: string; resultado: ResultadoSorpresa | null } | null>(null);
 
   const accion = async (id: number, body: Record<string, unknown>) => {
     setOcupadoId(id);
@@ -54,9 +57,9 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "No se pudo actualizar el premio");
-      setDatos(json);
-      router.refresh(); // insignia de la barra lateral
-      return true;
+      setDatos({ propias: json.propias, porEntregar: json.porEntregar });
+      router.refresh(); // insignia de la barra lateral y banner
+      return json.apertura ?? true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo actualizar el premio");
       return false;
@@ -65,9 +68,23 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
     }
   };
 
+  const abrirSorpresa = async (r: RecompensaVista) => {
+    setSorpresa({ titulo: r.titulo, resultado: null });
+    const res = await accion(r.id, { accion: "abrir" });
+    if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, resultado: res as ResultadoSorpresa });
+    else setSorpresa(null); // falló: el toast ya avisó
+  };
+
   const reclamar = async () => {
     if (!abierto) return;
     if (await accion(abierto.id, { accion: "reclamar", pedido })) setAbierto(null);
+  };
+
+  const elegir = (r: RecompensaVista) => {
+    if (r.estado !== "disponible" || ocupadoId !== null) return;
+    if (r.sorpresa) return void abrirSorpresa(r);
+    setPedido("");
+    setAbierto(r);
   };
 
   const pideLibro = abierto?.tipo === "libro";
@@ -98,7 +115,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                     {r.usuario.nombre} · {r.titulo}
                   </ItemTitle>
                   <ItemDescription>
-                    {r.pedido ? <>Pidió «{r.pedido}»</> : r.origen}
+                    {r.contenido?.length ? r.contenido.join(" · ") : r.pedido ? <>Pidió «{r.pedido}»</> : r.origen}
                     {r.reclamadaEn && <> · reclamado el {fecha(r.reclamadaEn)}</>}
                   </ItemDescription>
                 </ItemContent>
@@ -137,16 +154,11 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                 key={r.id}
                 role={disponible ? "button" : undefined}
                 tabIndex={disponible ? 0 : undefined}
-                onClick={() => {
-                  if (!disponible) return;
-                  setPedido("");
-                  setAbierto(r);
-                }}
+                onClick={() => elegir(r)}
                 onKeyDown={(e) => {
                   if (disponible && (e.key === "Enter" || e.key === " ")) {
                     e.preventDefault();
-                    setPedido("");
-                    setAbierto(r);
+                    elegir(r);
                   }
                 }}
                 className={cn(
@@ -164,10 +176,19 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                       <estado.icon className="size-3" /> {estado.label}
                     </Badge>
                   </div>
-                  <CardTitle className="font-heading text-lg">{r.titulo}</CardTitle>
-                  {r.origen && <CardDescription>{r.origen}</CardDescription>}
+                  <CardTitle className="font-heading text-lg">{r.sorpresa ? "Premio sorpresa" : r.titulo}</CardTitle>
+                  {r.origen && <CardDescription>{r.sorpresa ? `Por: ${r.titulo}` : r.origen}</CardDescription>}
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
+                  {r.contenido && r.contenido.length > 0 && (
+                    <ul className="list-inside list-disc">
+                      {r.contenido.map((c, i) => (
+                        <li key={i} className="text-foreground">
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {r.pedido && (
                     <p>
                       Pediste <span className="font-medium text-foreground">«{r.pedido}»</span>
@@ -179,13 +200,15 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                     ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
                     : r.estado === "reclamado" && r.reclamadaEn
                     ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
-                    : `Ganado el ${fecha(r.ganadaEn)} · tocá para reclamarlo`}
+                    : `Ganado el ${fecha(r.ganadaEn)} · tocá para ${r.sorpresa ? "abrirlo" : "reclamarlo"}`}
                 </CardFooter>
               </Card>
             );
           })}
         </div>
       )}
+
+      <ModalSorpresa titulo={sorpresa?.titulo ?? null} resultado={sorpresa?.resultado ?? null} onCerrar={() => setSorpresa(null)} />
 
       <Dialog open={abierto !== null} onOpenChange={(o) => !o && setAbierto(null)}>
         <DialogContent className="sm:max-w-md">

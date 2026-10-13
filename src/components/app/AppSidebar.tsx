@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -13,6 +14,7 @@ import {
   Layers,
   ListTodo,
   Network,
+  ShieldCheck,
   Sprout,
   Timer,
 } from "lucide-react";
@@ -34,7 +36,7 @@ import { isDueToday, isLate, taskGroup } from "@/components/tasks/taskUtils";
 
 export type SectionId = "todo" | "progress" | "review" | "done" | "today" | "late" | "history" | "family";
 
-export const NAV: { heading: string; items: { id: SectionId; label: string; icon: React.ElementType }[] }[] = [
+export const NAV: { heading: string; items: { id: SectionId; label: string; icon: LucideIcon }[] }[] = [
   {
     heading: "Mis tareas",
     items: [
@@ -88,6 +90,8 @@ export function AppSidebar({
   const pathname = usePathname();
   const params = useSearchParams();
   const active = pathname === "/dashboard" ? sectionFromParams(params) : null;
+  const esPadre = currentUser?.rolFamiliar === "Padre" || currentUser?.rolFamiliar === "Madre";
+  const enAdmin = !!pathname && ["/dashboard/admin", "/dashboard/tasks/new", "/dashboard/users", "/dashboard/premios", "/dashboard/cartas/admin"].some((r) => pathname.startsWith(r));
 
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = { todo: 0, progress: 0, review: 0, done: 0, today: 0, late: 0 };
@@ -161,6 +165,21 @@ export function AppSidebar({
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+        {esPadre && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administración</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={enAdmin} tooltip="Panel de administración">
+                  <Link href="/dashboard/admin">
+                    <ShieldCheck />
+                    <span>Panel de administración</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
         {NAV.map((group) => (
           <SidebarGroup key={group.heading}>
             <SidebarGroupLabel>{group.heading}</SidebarGroupLabel>

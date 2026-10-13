@@ -1,45 +1,28 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import prisma from "@/lib/prisma";
-import { PageHeader } from "@/components/app/PageHeader";
-import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { AdminTasksClient } from "./AdminTasksClient";
-import { SolicitudesHabitos } from "@/components/habitos/SolicitudesHabitos";
+import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/session";
+import { esPadre } from "@/lib/habitos/permisos";
 import { getSolicitudes } from "@/lib/habitos/aprobaciones";
+import { PageHeader } from "@/components/app/PageHeader";
+import { PanelAdmin } from "@/components/admin/PanelAdmin";
 
-export default async function AdminTasksPage() {
+export default async function AdminPage() {
   const session = await getSession();
-  if (!session || !session.user) redirect("/");
-  
-  if (session.user.rolFamiliar !== "Padre" && session.user.rolFamiliar !== "Madre") {
-    redirect("/dashboard");
-  }
+  if (!session?.user) redirect("/");
+  if (!esPadre(session.user.rolFamiliar)) redirect("/dashboard");
 
-  const tareas = await prisma.tarea.findMany({
-    include: { asignado: true, creador: true, checklistItems: { orderBy: { orden: 'asc' } } },
-    orderBy: { fechaVencimiento: 'asc' }
-  });
-
-  const solicitudes = await getSolicitudes();
-
-  const usuarios = await prisma.usuario.findMany({
-    select: { id: true, nombre: true, rolFamiliar: true, fotoUrl: true }
-  });
-
-  // Serialize dates
-  const tareasSerialized = tareas.map(t => ({
-     ...t,
-     fechaVencimiento: t.fechaVencimiento?.toISOString() || null,
-     horaEjecucion: t.horaEjecucion?.toISOString() || null,
-  }));
+  const [solicitudes, premiosPorEntregar] = await Promise.all([
+    getSolicitudes(),
+    prisma.recompensa.count({ where: { estado: "reclamado" } }),
+  ]);
 
   return (
     <div className="flex flex-col">
-      <PageHeader group="Administración" title="Agenda master" />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col">
-        <SolicitudesHabitos inicial={solicitudes} />
-        <AdminTasksClient tasks={tareasSerialized} users={usuarios} />
+      <PageHeader group="Administración" title="Panel de administración" />
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6 sm:px-6">
+        <PanelAdmin pendientes={{ solicitudesHabitos: solicitudes.total, premiosPorEntregar }} />
       </main>
     </div>
   );

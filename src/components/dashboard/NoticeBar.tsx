@@ -70,8 +70,8 @@ export function NoticeBar() {
 
   // Altura visible de la barra, para que el App Shell se ajuste y no quede bajo el Dock
   useEffect(() => {
-    const el = document.getElementById("notice-bar");
-    document.documentElement.style.setProperty("--notice-h", el ? `${el.offsetHeight}px` : "0px");
+    const alto = ["notice-bar", "premio-banner"].reduce((n, id) => n + (document.getElementById(id)?.offsetHeight ?? 0), 0);
+    document.documentElement.style.setProperty("--notice-h", `${alto}px`);
   });
 
   if (!isVisible) return null;

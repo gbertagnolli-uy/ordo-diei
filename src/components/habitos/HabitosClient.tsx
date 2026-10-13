@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HeartHandshake, Plus, Sprout, Sun, Sunset, Moon } from "lucide-react";
@@ -27,7 +28,7 @@ import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";
 import { toast } from "@/lib/toast";
 
-const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: React.ElementType }[] = [
+const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: LucideIcon }[] = [
   { franja: "manana", titulo: "Mañana", icono: Sun },
   { franja: "tarde", titulo: "Tarde", icono: Sunset },
   { franja: "noche", titulo: "Noche", icono: Moon },
