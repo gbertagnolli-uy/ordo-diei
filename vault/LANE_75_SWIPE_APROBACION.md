@@ -7,3 +7,5 @@ Referencia: componente `SwipeRow` (motion + hugeicons) pegado por el usuario, de
 - `ParentReviewPanel.tsx`: cada fila va envuelta en `SwipeRow`; izquierda = Aprobar (`--success`), derecha = Rechazar (`--destructive`). Los botones siguen igual y usan el mismo `handleAction`.
 
 - Lane 76: en escritorio el arrastre nativo de la imagen (avatar) y la selección de texto cancelaban el gesto con mouse; se agregó `onDragStart` preventDefault, `pointer-events-none` en imágenes, `select-none` mientras se arrastra y cursor grab.
+
+- Lane 77: el pedido era para los **hábitos por aprobar** (`SolicitudesHabitos.tsx`), no solo las tareas; cada fila va envuelta en `SwipeRow` (izquierda aprobar, derecha rechazar). Los botones se mantienen.
