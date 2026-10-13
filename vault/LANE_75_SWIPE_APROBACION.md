@@ -5,3 +5,5 @@ Referencia: componente `SwipeRow` (motion + hugeicons) pegado por el usuario, de
 
 - `src/components/SwipeRow.tsx`: versión bidireccional y solo full-swipe (sin cajón). Props `left`/`right` (label, icono, color, onCommit). Mantiene resistencia elástica, umbral `commitAt`, flick por velocidad, vibración al armarse, colapso de altura y `prefers-reduced-motion`.
 - `ParentReviewPanel.tsx`: cada fila va envuelta en `SwipeRow`; izquierda = Aprobar (`--success`), derecha = Rechazar (`--destructive`). Los botones siguen igual y usan el mismo `handleAction`.
+
+- Lane 76: en escritorio el arrastre nativo de la imagen (avatar) y la selección de texto cancelaban el gesto con mouse; se agregó `onDragStart` preventDefault, `pointer-events-none` en imágenes, `select-none` mientras se arrastra y cursor grab.
