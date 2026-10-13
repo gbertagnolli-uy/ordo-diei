@@ -88,7 +88,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   };
 
   const abrirSorpresa = async (r: RecompensaVista) => {
-    const tipo: TipoSorpresa = r.tipo === "cofre" ? "cofre" : "regalo";
+    const tipo: TipoSorpresa = r.tipo === "cofre" ? "cofre" : r.tipo === "reconocimiento" ? "reconocimiento" : "regalo";
     setSorpresa({ titulo: r.titulo, tipo, resultado: null });
     const res = await accion(r.id, { accion: "abrir" });
     if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, tipo, resultado: res as ResultadoSorpresa });
@@ -133,10 +133,10 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       );
     }
     const reconocimiento = r.tipo === "reconocimiento";
-    const estado = reconocimiento ? { label: "Reconocimiento", icon: Medal } : ESTADOS[r.estado];
     const disponible = r.estado === "disponible";
+    const estado = reconocimiento && !disponible ? { label: "Reconocimiento", icon: Medal } : ESTADOS[r.estado];
     const pie =
-      reconocimiento
+      reconocimiento && !disponible
         ? `Recibido el ${fecha(r.ganadaEn)}${r.entregadaPor ? ` de ${r.entregadaPor.nombre}` : ""}`
         : r.estado === "entregado" && r.entregadaEn
         ? `Entregado el ${fecha(r.entregadaEn)}${r.entregadaPor ? ` por ${r.entregadaPor.nombre}` : ""}`
@@ -173,7 +173,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
             <estado.icon className="size-3" /> {estado.label}
           </Badge>
           <div className="space-y-0.5">
-            <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : "Premio sorpresa") : r.titulo}</h3>
+            <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : r.tipo === "reconocimiento" ? "Reconocimiento" : "Premio sorpresa") : r.titulo}</h3>
             {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa && r.tipo === "comportamiento" ? `Por: ${r.titulo}` : r.origen}</p>}
           </div>
           {r.contenido && r.contenido.length > 0 && (
@@ -198,7 +198,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                   elegir(r);
                 }}
               >
-                {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" ? "Abrir cofre" : "Reclamar premio"}
+                {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" ? "Abrir cofre" : r.tipo === "reconocimiento" ? "Reclamar reconocimiento" : "Reclamar premio"}
               </Button>
             </CoolMode>
           )}

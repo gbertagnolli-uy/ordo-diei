@@ -33,13 +33,14 @@ const INCLUDE = {
 
 type Fila = Awaited<ReturnType<typeof prisma.recompensa.findMany<{ include: typeof INCLUDE }>>>[number];
 
-const esSorpresa = (tipo: string) => tipo === "comportamiento" || tipo === "cofre" || tipo === "vale";
+const esSorpresa = (tipo: string) => tipo === "comportamiento" || tipo === "cofre" || tipo === "vale" || tipo === "reconocimiento";
 
 const aVista = (r: Fila): RecompensaVista => ({
   id: r.id,
   tipo: r.tipo,
   // Un vale sin abrir no revela de qué es
-  titulo: r.tipo === "vale" && r.estado === "disponible" ? "Vale sorpresa" : r.titulo,
+  titulo:
+    r.estado === "disponible" && r.tipo === "vale" ? "Vale sorpresa" : r.estado === "disponible" && r.tipo === "reconocimiento" ? "Reconocimiento" : r.titulo,
   origen: r.origen,
   estado: r.estado,
   pedido: r.pedido,
@@ -48,7 +49,11 @@ const aVista = (r: Fila): RecompensaVista => ({
   entregadaEn: r.entregadaEn?.toISOString() ?? null,
   usadoEn: r.usadoEn?.toISOString() ?? null,
   sorpresa: esSorpresa(r.tipo) && r.estado === "disponible",
-  contenido: esSorpresa(r.tipo) && r.estado !== "disponible" ? leerItems(r.contenido).map(textoItem) : null,
+  contenido:
+    esSorpresa(r.tipo) && r.estado !== "disponible"
+      ? // En el reconocimiento la virtud ya es el título: acá solo lo que suma
+        leerItems(r.contenido).filter((i) => i.tipo !== "reconocimiento").map(textoItem)
+      : null,
   usuario: r.usuario,
   entregadaPor: r.entregadaPor,
 });
@@ -115,3 +120,7 @@ export async function entregarRecompensa(actor: { id: number; rol?: string }, id
 /** Premios sorpresa de comportamiento que el usuario todavía no abrió (banner del dashboard) */
 export const contarSorpresasSinAbrir = (usuarioId: number) =>
   prisma.recompensa.count({ where: { usuarioId, tipo: { in: ["comportamiento", "cofre", "vale"] }, estado: "disponible" } });
+
+/** Reconocimientos que el usuario todavía no reclamó (banner «Ganaste un reconocimiento») */
+export const contarReconocimientosSinAbrir = (usuarioId: number) =>
+  prisma.recompensa.count({ where: { usuarioId, tipo: "reconocimiento", estado: "disponible" } });

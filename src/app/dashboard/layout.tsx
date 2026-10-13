@@ -8,7 +8,7 @@ import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
 import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
-import { contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
+import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 
@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas] = await Promise.all([
+  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -34,6 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
     eventosDeHoy(Number(session.user.id)).catch(() => null),
     contarSorpresasSinAbrir(Number(session.user.id)),
+    contarReconocimientosSinAbrir(Number(session.user.id)),
   ]);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
@@ -55,7 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         hayEventosCartas={hayEventosCartas}
       />
       <SidebarInset className="min-w-0">
-        <PremioBanner cantidad={sorpresas} />
+        <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />
         <NoticeBar />
         <div className="flex flex-1 flex-col pb-24">{children}</div>
       </SidebarInset>

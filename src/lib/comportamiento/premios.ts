@@ -11,6 +11,9 @@ export type ItemPremio =
   | { tipo: "exoneracion"; texto: string }
   | { tipo: "extra"; texto: string };
 
+/** XP que suma cada reconocimiento al reclamarlo */
+export const XP_RECONOCIMIENTO = 100;
+
 export const MAX_CANTIDAD = 100_000;
 export const MAX_FRAGMENTOS = 500;
 export const MAX_TEXTO = 200;
