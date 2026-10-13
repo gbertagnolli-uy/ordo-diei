@@ -43,6 +43,7 @@ export function SwipeRow({
   const grip = useRef<{ id: number; x0: number; y0: number; grab: number | null; last: number; t: number; v: number } | null>(null);
   const [done, setDone] = useState(false);
   const [height, setHeight] = useState<number | "auto">("auto");
+  const [dragging, setDragging] = useState(false);
   const [armed, setArmed] = useState<"left" | "right" | null>(null);
   const x = useMotionValue(0);
   const revealLeft = useTransform(x, v => Math.min(1, Math.max(0, -v / 80)));
@@ -82,6 +83,7 @@ export function SwipeRow({
     if (g.grab === null) {
       if (Math.abs(dx) < HYST || Math.abs(dx) < Math.abs(e.clientY - g.y0)) return;
       g.grab = g.x0 + Math.sign(dx) * HYST;
+      setDragging(true);
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     }
     const raw = e.clientX - g.grab;
@@ -103,6 +105,7 @@ export function SwipeRow({
     const g = grip.current;
     if (!g || g.id !== e.pointerId) return;
     grip.current = null;
+    setDragging(false);
     if (g.grab === null) return;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
     const ex = x.get();
@@ -145,8 +148,9 @@ export function SwipeRow({
       {left && <Side side={left} dir="left" />}
       {right && <Side side={right} dir="right" />}
       <motion.div
-        className="relative z-[1] touch-pan-y bg-card [-webkit-tap-highlight-color:transparent]"
+        className={`relative z-[1] touch-pan-y bg-card [-webkit-tap-highlight-color:transparent] [@media(hover:hover)_and_(pointer:fine)]:cursor-grab ${dragging ? "select-none cursor-grabbing" : ""} [&_img]:pointer-events-none`}
         style={{ x }}
+        onDragStart={e => e.preventDefault()}
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
