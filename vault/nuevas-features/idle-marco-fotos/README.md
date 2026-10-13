@@ -1,3 +1,5 @@
+> **Reemplazado por [`SPEC.md`](SPEC.md) (2026-10-13):** el marco usa **Google Fotos** y es una pantalla de reposo con logo, nombre y botón «Entrar»; la interpretación «fotos de usuarios para login» de §3 ya no aplica.
+
 # Idle state — marco de fotos dinámico con login por foto
 
 > Estado: **planificación** (2026-10-13). Sin lanes creadas todavía.
