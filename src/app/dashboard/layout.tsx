@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app/AppSidebar";
 import { MainDock } from "@/components/dashboard/MainDock";
 import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
+import { ActualizarPremios } from "@/components/dashboard/ActualizarPremios";
 import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
@@ -60,6 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <NoticeBar />
         <div className="flex flex-1 flex-col pb-24">{children}</div>
       </SidebarInset>
+      <ActualizarPremios />
       <ModalManager />
       <MainDock currentUser={currentUser} allUsers={users} />
     </SidebarProvider>

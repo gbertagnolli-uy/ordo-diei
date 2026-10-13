@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "../prisma.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
-import { regalarCartaEnTx } from "../cartas/server.ts";
+import { regalarCartaEnTx, type FragmentosOtorgados } from "../cartas/server.ts";
 import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
@@ -182,7 +182,13 @@ export async function eliminarComportamiento(rol: string | undefined, id: number
   });
 }
 
-export type ResultadoApertura = { lineas: string[]; pendienteEntrega: boolean };
+export type ResultadoApertura = {
+  lineas: string[];
+  pendienteEntrega: boolean;
+  /** Cartas que recibieron fragmentos: el cliente las muestra con el modal de apertura de sobres */
+  cartasAfectadas: FragmentosOtorgados[];
+  totalInciensoGanado: number;
+};
 
 /**
  * El niño abre su premio sorpresa: se acreditan los premios de la economía (puntos, incienso, XP,
@@ -225,19 +231,25 @@ export async function abrirPremioSorpresa(usuarioId: number, id: number): Promis
       });
     }
 
+    const cartasAfectadas: FragmentosOtorgados[] = [];
     for (const i of items) {
       if (i.tipo === "carta") {
-        await regalarCartaEnTx(
+        cartasAfectadas.push(await regalarCartaEnTx(
           tx,
           usuarioId,
           i.cartaId,
           i.modo === "completa" ? { tipo: "completa" } : { tipo: "fragmentos", cantidad: i.cantidad ?? 1 },
           `Premio de comportamiento: ${r.titulo}`
-        );
+        ));
       }
     }
 
-    return { lineas: items.map(textoItem), pendienteEntrega };
+    return {
+      lineas: items.map(textoItem),
+      pendienteEntrega,
+      cartasAfectadas,
+      totalInciensoGanado: cartasAfectadas.reduce((n, c) => n + c.inciensoGanado, 0),
+    };
   });
 }
 

@@ -17,7 +17,14 @@ const Regalo3D = dynamic(() => import("./Regalo3D"), { ssr: false });
 
 export type TipoSorpresa = "regalo" | "cofre" | "reconocimiento";
 
-export type ResultadoSorpresa = { lineas: string[]; pendienteEntrega: boolean };
+import type { CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
+
+export type ResultadoSorpresa = {
+  lineas: string[];
+  pendienteEntrega: boolean;
+  cartasAfectadas?: CartaAfectadaCompra[];
+  totalInciensoGanado?: number;
+};
 
 const COLORES = ["#f59e0b", "#fbbf24", "#38bdf8", "#f472b6", "#34d399", "#a78bfa"];
 
