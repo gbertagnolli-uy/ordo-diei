@@ -9,9 +9,12 @@ import confetti from "canvas-confetti";
 import { Gift, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { URL_COFRE, URL_REGALO } from "./modelos";
 import { Spinner } from "@/components/ui/spinner";
 
 const Regalo3D = dynamic(() => import("./Regalo3D"), { ssr: false });
+
+export type TipoSorpresa = "regalo" | "cofre";
 
 export type ResultadoSorpresa = { lineas: string[]; pendienteEntrega: boolean };
 
@@ -38,9 +41,11 @@ function lluviaDeConfites(reducida: boolean) {
 
 export function ModalSorpresa({
   titulo,
+  tipo = "regalo",
   resultado,
   onCerrar,
 }: {
+  tipo?: TipoSorpresa;
   /** Comportamiento que originó el premio; null = modal cerrado */
   titulo: string | null;
   resultado: ResultadoSorpresa | null;
@@ -79,9 +84,9 @@ export function ModalSorpresa({
 
         {!revelado ? (
           <div className="flex flex-col items-center gap-2 py-2">
-            <div className="h-72 w-full">{abierto && <Regalo3D listo={!!resultado} reducida={reducida} onExplotar={explotar} />}</div>
+            <div className="h-72 w-full">{abierto && <Regalo3D url={tipo === "cofre" ? URL_COFRE : URL_REGALO} listo={!!resultado} reducida={reducida} onExplotar={explotar} />}</div>
             <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
-              <Spinner className="size-3.5" /> Abriendo tu premio sorpresa…
+              <Spinner className="size-3.5" /> {tipo === "cofre" ? "Abriendo tu cofre sorpresa…" : "Abriendo tu premio sorpresa…"}
             </p>
           </div>
         ) : (

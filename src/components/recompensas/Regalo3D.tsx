@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 
-export const URL_REGALO = "/models/present_1_low_poly.glb";
+import { URL_COFRE, URL_REGALO } from "./modelos";
 
 const T_LENTO = 2; // s girando lento
 const T_EXPLOSION = 5.5; // s en los que ya alcanzó la velocidad máxima
@@ -32,8 +32,8 @@ class Limite extends Component<{ fallback: ReactNode; children: ReactNode }, { e
   }
 }
 
-function RegaloModelo() {
-  const { scene } = useGLTF(URL_REGALO);
+function RegaloModelo({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
   // Centrado y escalado a un tamaño fijo, sea cual sea la unidad con que se exportó el modelo
   const { objeto, escala } = useMemo(() => {
     const clon = scene.clone(true);
@@ -79,7 +79,7 @@ function RegaloSimple() {
   );
 }
 
-function Girador({ listo, reducida, onExplotar }: { listo: boolean; reducida: boolean; onExplotar: () => void }) {
+function Girador({ url, listo, reducida, onExplotar }: { url: string; listo: boolean; reducida: boolean; onExplotar: () => void }) {
   const grupo = useRef<THREE.Group>(null);
   const t = useRef(0);
   const angulo = useRef(0);
@@ -108,20 +108,26 @@ function Girador({ listo, reducida, onExplotar }: { listo: boolean; reducida: bo
     <group ref={grupo} rotation={[0.25, 0, 0]}>
       <Limite fallback={<RegaloSimple />}>
         <Suspense fallback={null}>
-          <RegaloModelo />
+          <RegaloModelo url={url} />
         </Suspense>
       </Limite>
     </group>
   );
 }
 
-export default function Regalo3D({ listo, reducida, onExplotar }: { listo: boolean; reducida: boolean; onExplotar: () => void }) {
+export default function Regalo3D({ url = URL_REGALO, listo, reducida, onExplotar }: { url?: string; listo: boolean; reducida: boolean; onExplotar: () => void }) {
   return (
     <Canvas camera={{ position: [0, 0.6, 5.2], fov: 40 }} dpr={[1, 2]} gl={{ alpha: true, antialias: true }}>
       <ambientLight intensity={1.4} />
       <directionalLight position={[3, 5, 4]} intensity={2.4} />
       <directionalLight position={[-4, 1, -3]} intensity={1} color="#a5b4fc" />
-      <Girador listo={listo} reducida={reducida} onExplotar={onExplotar} />
+      <Girador url={url} listo={listo} reducida={reducida} onExplotar={onExplotar} />
     </Canvas>
   );
+}
+
+/** Baja los modelos de antemano para que el modal abra al instante */
+export function precargar() {
+  useGLTF.preload(URL_REGALO);
+  useGLTF.preload(URL_COFRE);
 }

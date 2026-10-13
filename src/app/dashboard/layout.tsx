@@ -9,6 +9,7 @@ import { NoticeBar } from "@/components/dashboard/NoticeBar";
 import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
+import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export const dynamic = "force-dynamic";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   if (!session?.user) redirect("/");
+
+  // Desde las 18:00 el cofre del día llega al entrar (si los padres evaluaron bien el día)
+  await otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
   const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas] = await Promise.all([

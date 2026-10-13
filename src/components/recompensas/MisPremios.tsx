@@ -1,7 +1,7 @@
 "use client";
 
 // Premios reclamables (vault/HABITO_LIBRO.md D8–D9): reclamar los propios y, para padres, entregar los de la familia.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { format } from "date-fns";
@@ -28,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { RecompensaVista } from "@/lib/recompensas/server";
 import { toast } from "@/lib/toast";
-import { ModalSorpresa, type ResultadoSorpresa } from "./ModalSorpresa";
+import { ModalSorpresa, type ResultadoSorpresa, type TipoSorpresa } from "./ModalSorpresa";
 
 type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[] };
 
@@ -50,7 +50,13 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   const [pedido, setPedido] = useState("");
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
   // Premio sorpresa en apertura: el modal 3D se muestra de inmediato y el resultado llega del servidor
-  const [sorpresa, setSorpresa] = useState<{ titulo: string; resultado: ResultadoSorpresa | null } | null>(null);
+  const [sorpresa, setSorpresa] = useState<{ titulo: string; tipo: TipoSorpresa; resultado: ResultadoSorpresa | null } | null>(null);
+
+  // Con premios sin abrir, baja los modelos 3D ya para que el modal abra al instante
+  const haySorpresas = datos.propias.some((r) => r.sorpresa);
+  useEffect(() => {
+    if (haySorpresas) void import("./Regalo3D").then((m) => m.precargar());
+  }, [haySorpresas]);
 
   const accion = async (id: number, body: Record<string, unknown>) => {
     setOcupadoId(id);
@@ -74,9 +80,10 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   };
 
   const abrirSorpresa = async (r: RecompensaVista) => {
-    setSorpresa({ titulo: r.titulo, resultado: null });
+    const tipo: TipoSorpresa = r.tipo === "cofre" ? "cofre" : "regalo";
+    setSorpresa({ titulo: r.titulo, tipo, resultado: null });
     const res = await accion(r.id, { accion: "abrir" });
-    if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, resultado: res as ResultadoSorpresa });
+    if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, tipo, resultado: res as ResultadoSorpresa });
     else setSorpresa(null); // falló: el toast ya avisó
   };
 
@@ -186,7 +193,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                     <estado.icon className="size-3" /> {estado.label}
                   </Badge>
                   <div className="space-y-0.5">
-                    <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? "Premio sorpresa" : r.titulo}</h3>
+                    <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : "Premio sorpresa") : r.titulo}</h3>
                     {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa ? `Por: ${r.titulo}` : r.origen}</p>}
                   </div>
                   {r.contenido && r.contenido.length > 0 && (
@@ -211,7 +218,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                           elegir(r);
                         }}
                       >
-                        {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} Reclamar premio
+                        {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" ? "Abrir cofre" : "Reclamar premio"}
                       </Button>
                     </CoolMode>
                   )}
@@ -229,7 +236,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         </div>
       )}
 
-      <ModalSorpresa titulo={sorpresa?.titulo ?? null} resultado={sorpresa?.resultado ?? null} onCerrar={() => setSorpresa(null)} />
+      <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} onCerrar={() => setSorpresa(null)} />
 
       <Dialog open={abierto !== null} onOpenChange={(o) => !o && setAbierto(null)}>
         <DialogContent className="sm:max-w-md">

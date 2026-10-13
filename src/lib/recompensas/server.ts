@@ -31,6 +31,8 @@ const INCLUDE = {
 
 type Fila = Awaited<ReturnType<typeof prisma.recompensa.findMany<{ include: typeof INCLUDE }>>>[number];
 
+const esSorpresa = (tipo: string) => tipo === "comportamiento" || tipo === "cofre";
+
 const aVista = (r: Fila): RecompensaVista => ({
   id: r.id,
   tipo: r.tipo,
@@ -41,8 +43,8 @@ const aVista = (r: Fila): RecompensaVista => ({
   ganadaEn: r.ganadaEn.toISOString(),
   reclamadaEn: r.reclamadaEn?.toISOString() ?? null,
   entregadaEn: r.entregadaEn?.toISOString() ?? null,
-  sorpresa: r.tipo === "comportamiento" && r.estado === "disponible",
-  contenido: r.tipo === "comportamiento" && r.estado !== "disponible" ? leerItems(r.contenido).map(textoItem) : null,
+  sorpresa: esSorpresa(r.tipo) && r.estado === "disponible",
+  contenido: esSorpresa(r.tipo) && r.estado !== "disponible" ? leerItems(r.contenido).map(textoItem) : null,
   usuario: r.usuario,
   entregadaPor: r.entregadaPor,
 });
@@ -81,7 +83,7 @@ export async function reclamarRecompensa(usuarioId: number, id: number, pedido?:
   if (!r) throw new NoEncontradoError("Premio no encontrado");
   if (r.usuarioId !== usuarioId) throw new NoAutorizadoError("Solo podés reclamar tus propios premios");
   if (r.estado !== "disponible") throw new Error("Este premio ya fue reclamado");
-  if (r.tipo === "comportamiento") throw new Error("Este premio sorpresa se abre desde «Mis premios»");
+  if (esSorpresa(r.tipo)) throw new Error("Este premio sorpresa se abre desde «Mis premios»");
 
   const texto = typeof pedido === "string" ? pedido.trim() : "";
   if (r.tipo === "libro" && !texto) throw new Error("Escribí qué libro querés");
@@ -108,4 +110,4 @@ export async function entregarRecompensa(actor: { id: number; rol?: string }, id
 
 /** Premios sorpresa de comportamiento que el usuario todavía no abrió (banner del dashboard) */
 export const contarSorpresasSinAbrir = (usuarioId: number) =>
-  prisma.recompensa.count({ where: { usuarioId, tipo: "comportamiento", estado: "disponible" } });
+  prisma.recompensa.count({ where: { usuarioId, tipo: { in: ["comportamiento", "cofre"] }, estado: "disponible" } });
