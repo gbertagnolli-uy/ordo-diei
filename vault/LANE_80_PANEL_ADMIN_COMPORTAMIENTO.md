@@ -22,5 +22,5 @@
 - **Modal 3D** `ModalSorpresa` + `Regalo3D` (three + @react-three/fiber + drei): giro lento 2 s → aceleración exponencial → explota a los ~5,5 s (espera al servidor si hace falta), confites en 7 ráfagas, premio en texto. Respeta `prefers-reduced-motion`.
 
 ## Pendiente del usuario
-- Copiar `present_1_low_poly.glb` a `public/models/present_1_low_poly.glb`. Mientras no esté, el modal usa un regalo dibujado por código.
+- (Resuelto en lane 81) `public/models/present_1_low_poly.glb` ya está en el repo.
 - Nota técnica: `@react-three/fiber` amplía `JSX.IntrinsicElements`, por eso los íconos tipados `React.ElementType` pasaron a `LucideIcon`.
