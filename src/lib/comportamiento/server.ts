@@ -7,6 +7,7 @@ import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { regalarCartaEnTx } from "../cartas/server.ts";
 import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
+import { cofreDeHoy } from "./cofreHorario.ts";
 import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { esAutomatico, leerItems, XP_RECONOCIMIENTO, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
 
@@ -192,6 +193,10 @@ export async function abrirPremioSorpresa(usuarioId: number, id: number): Promis
     const r = await tx.recompensa.findUnique({ where: { id } });
     if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre" && r.tipo !== "vale" && r.tipo !== "reconocimiento")) throw new NoEncontradoError("Premio no encontrado");
     if (r.usuarioId !== usuarioId) throw new NoAutorizadoError("Solo podés abrir tus propios premios");
+
+    // El cofre solo se abre desde las 18:00 (UTC-03:00), aunque haya llegado antes
+    const ahoraMs = Date.now();
+    if (r.tipo === "cofre" && ahoraMs < cofreDeHoy(ahoraMs)) throw new Error("El cofre se abre desde las 18:00");
 
     const items = leerItems(r.contenido);
 

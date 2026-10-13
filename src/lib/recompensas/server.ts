@@ -3,6 +3,7 @@ import prisma from "../prisma.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { leerItems, textoItem } from "../comportamiento/premios.ts";
+import { cofreDeHoy } from "../comportamiento/cofreHorario.ts";
 
 export type EstadoRecompensa = "disponible" | "reclamado" | "entregado";
 
@@ -117,9 +118,18 @@ export async function entregarRecompensa(actor: { id: number; rol?: string }, id
   });
 }
 
-/** Premios sorpresa de comportamiento que el usuario todavía no abrió (banner del dashboard) */
-export const contarSorpresasSinAbrir = (usuarioId: number) =>
-  prisma.recompensa.count({ where: { usuarioId, tipo: { in: ["comportamiento", "cofre", "vale"] }, estado: "disponible" } });
+/**
+ * Premios sorpresa que el usuario todavía no abrió (banner del dashboard). El cofre solo cuenta desde las
+ * 18:00: antes está deshabilitado y avisar que ganó algo que no puede abrir confunde.
+ */
+export const contarSorpresasSinAbrir = (usuarioId: number, ahora = Date.now()) =>
+  prisma.recompensa.count({
+    where: {
+      usuarioId,
+      tipo: { in: ahora >= cofreDeHoy(ahora) ? ["comportamiento", "cofre", "vale"] : ["comportamiento", "vale"] },
+      estado: "disponible",
+    },
+  });
 
 /** Reconocimientos que el usuario todavía no reclamó (banner «Ganaste un reconocimiento») */
 export const contarReconocimientosSinAbrir = (usuarioId: number) =>

@@ -30,6 +30,8 @@ import type { RecompensaVista } from "@/lib/recompensas/server";
 import { toast } from "@/lib/toast";
 import { Separator } from "@/components/ui/separator";
 import { ValeTicket } from "./ValeTicket";
+import { CofreDelDia } from "./CofreDelDia";
+import { mismoDia } from "@/lib/comportamiento/cofreHorario";
 import { ModalSorpresa, type ResultadoSorpresa, type TipoSorpresa } from "./ModalSorpresa";
 
 type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[] };
@@ -214,7 +216,10 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
     );
   };
 
-  const porReclamar = datos.propias.filter((r) => r.estado === "disponible");
+  // Los cofres no van con los premios por reclamar: tienen su propia sección con cuenta regresiva
+  const cofresSinAbrir = datos.propias.filter((r) => r.tipo === "cofre" && r.estado === "disponible");
+  const porReclamar = datos.propias.filter((r) => r.estado === "disponible" && r.tipo !== "cofre");
+  const abiertoHoy = datos.propias.some((r) => r.tipo === "cofre" && r.reclamadaEn !== null && mismoDia(new Date(r.reclamadaEn).getTime(), Date.now()));
   const reclamados = datos.propias
     .filter((r) => r.estado !== "disponible")
     .sort((a, b) => new Date(b.reclamadaEn ?? b.ganadaEn).getTime() - new Date(a.reclamadaEn ?? a.ganadaEn).getTime());
@@ -263,7 +268,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       )}
 
       {/* Premios propios: primero lo que falta reclamar y, aparte, lo ya reclamado */}
-      {datos.propias.length === 0 ? (
+      {datos.propias.length === 0 && (
         <Empty className="border bg-card py-12">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -275,19 +280,28 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : (
-        <>
-          {porReclamar.length > 0 && <div className="grid grid-cols-1 gap-4">{porReclamar.map(tarjeta)}</div>}
-          {reclamados.length > 0 && (
-            <section className="space-y-4" aria-labelledby="premios-reclamados">
-              {porReclamar.length > 0 && <Separator />}
-              <h2 id="premios-reclamados" className="flex items-center gap-2 font-heading text-lg font-medium">
-                <PackageCheck className="size-5 text-primary" /> Reclamados
-              </h2>
-              <div className="grid grid-cols-1 gap-4">{reclamados.map(tarjeta)}</div>
-            </section>
-          )}
-        </>
+      )}
+
+      {porReclamar.length > 0 && <div className="grid grid-cols-1 gap-4">{porReclamar.map(tarjeta)}</div>}
+
+      {/* Entre lo que falta reclamar y lo ya reclamado: el cofre diario, siempre a la vista */}
+      <CofreDelDia
+        hayCofre={cofresSinAbrir.length > 0}
+        abiertoHoy={abiertoHoy}
+        ocupado={ocupadoId !== null}
+        abriendo={cofresSinAbrir.length > 0 && ocupadoId === cofresSinAbrir[0].id}
+        masPendientes={Math.max(0, cofresSinAbrir.length - 1)}
+        onAbrir={() => cofresSinAbrir[0] && elegir(cofresSinAbrir[0])}
+      />
+
+      {reclamados.length > 0 && (
+        <section className="space-y-4" aria-labelledby="premios-reclamados">
+          <Separator />
+          <h2 id="premios-reclamados" className="flex items-center gap-2 font-heading text-lg font-medium">
+            <PackageCheck className="size-5 text-primary" /> Reclamados
+          </h2>
+          <div className="grid grid-cols-1 gap-4">{reclamados.map(tarjeta)}</div>
+        </section>
       )}
 
       <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} onCerrar={() => setSorpresa(null)} />
