@@ -1,5 +1,6 @@
 import { generarTareasRecurrentes } from "@/lib/generarRecurrentes";
 import prisma from "@/lib/prisma";
+import { crearEntregaPremio } from "@/lib/recompensas/vales";
 import { NextResponse } from "next/server";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
 
@@ -91,9 +92,7 @@ export async function GET(req: Request) {
           gano = completadas === tareasRequeridasIds.length;
         }
 
-        await prisma.premioEntregado.create({
-          data: { premioId: premio.id, usuarioId: usuario.id, estado: gano ? "Pendiente" : "No_ganado" }
-        });
+        await crearEntregaPremio(premio, usuario.id, gano);
         if (gano) premiosEntregados++;
       }
     }

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { abrirPremioSorpresa } from "@/lib/comportamiento/server";
+import { restaurarVale, usarVale } from "@/lib/recompensas/vales";
 import { entregarRecompensa, getRecompensas, reclamarRecompensa } from "@/lib/recompensas/server";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/recompensas/[id] — reclamar (dueño) o entregar (padre o madre)
 // body: { accion: "reclamar", pedido? } | { accion: "abrir" } (sorpresa) | { accion: "entregar" }
+//       | { accion: "usar" } (vale, dueño) | { accion: "restaurar" } (vale, padre)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getSession();
@@ -23,6 +25,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     try {
       if (body.accion === "abrir") apertura = await abrirPremioSorpresa(usuarioId, id);
       else if (body.accion === "reclamar") await reclamarRecompensa(usuarioId, id, body.pedido);
+      else if (body.accion === "usar") await usarVale(usuarioId, id);
+      else if (body.accion === "restaurar") await restaurarVale(rol, id);
       else if (body.accion === "entregar") await entregarRecompensa({ id: usuarioId, rol }, id);
       else return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     } catch (err) {

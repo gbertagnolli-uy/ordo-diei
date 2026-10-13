@@ -30,3 +30,11 @@ test("leerItems tolera datos rotos y esAutomatico separa lo que entrega un padre
   assert.equal(esAutomatico({ tipo: "exoneracion", texto: "platos" }), false);
   assert.equal(textoItem({ tipo: "incienso", cantidad: 1 }), "1 grano de incienso");
 });
+
+test("el vale se valida, se muestra como «Vale por…» y no necesita que un padre lo entregue", () => {
+  const [vale] = validarItems([{ tipo: "vale", texto: "  un viaje a Beto Carrero World ", extra: 1 }]);
+  assert.deepEqual(vale, { tipo: "vale", texto: "un viaje a Beto Carrero World" });
+  assert.equal(textoItem(vale), "Vale por un viaje a Beto Carrero World");
+  assert.equal(esAutomatico(vale), true);
+  assert.throws(() => validarItems([{ tipo: "vale", texto: "  " }]));
+});

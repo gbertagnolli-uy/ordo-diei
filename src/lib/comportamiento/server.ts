@@ -6,6 +6,7 @@ import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { regalarCartaEnTx } from "../cartas/server.ts";
 import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
+import { crearVale } from "../recompensas/vales.ts";
 import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { esAutomatico, leerItems, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
 
@@ -91,10 +92,14 @@ export async function registrarComportamiento(
       i.nombre = carta.nombre;
     }
 
+    // Cada vale llega como su propio regalo (después se muestra como ticket); lo demás, en un solo premio sorpresa
+    const vales = items.flatMap((i) => (i.tipo === "vale" ? [i.texto] : []));
+    const resto = items.filter((i) => i.tipo !== "vale");
+
     // Todo o nada: si falla uno, no queda ningún registro a medias
-    await prisma.$transaction(
-      usuarioIds.map((usuarioId) =>
-        prisma.comportamiento.create({
+    await prisma.$transaction(async (tx) => {
+      for (const usuarioId of usuarioIds) {
+        await tx.comportamiento.create({
           data: {
             usuarioId,
             registradoPorId: actor.id,
@@ -103,17 +108,18 @@ export async function registrarComportamiento(
             evaluacion: evaluacion || null,
             premios: items,
             // Sin premios es solo una anotación en la bitácora: no hay sorpresa que reclamar
-            ...(items.length > 0
+            ...(resto.length > 0
               ? {
                   recompensa: {
-                    create: { usuarioId, tipo: "comportamiento", titulo, origen: "Comportamiento", contenido: items },
+                    create: { usuarioId, tipo: "comportamiento", titulo, origen: "Comportamiento", contenido: resto },
                   },
                 }
               : {}),
           },
-        })
-      )
-    );
+        });
+        for (const texto of vales) await crearVale(tx, usuarioId, texto, `Comportamiento: ${titulo}`);
+      }
+    });
     return;
   }
 
@@ -167,7 +173,7 @@ export type ResultadoApertura = { lineas: string[]; pendienteEntrega: boolean };
 export async function abrirPremioSorpresa(usuarioId: number, id: number): Promise<ResultadoApertura> {
   return prisma.$transaction(async (tx) => {
     const r = await tx.recompensa.findUnique({ where: { id } });
-    if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre")) throw new NoEncontradoError("Premio no encontrado");
+    if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre" && r.tipo !== "vale")) throw new NoEncontradoError("Premio no encontrado");
     if (r.usuarioId !== usuarioId) throw new NoAutorizadoError("Solo podés abrir tus propios premios");
 
     const items = leerItems(r.contenido);

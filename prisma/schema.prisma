@@ -223,6 +223,7 @@ model Premio {
   diaDelMes           Int?           @map("Dia_Del_Mes")
   tareasRequeridasIds String         @map("Tareas_Requeridas_Ids")
   activo              Boolean        @default(true) @map("Activo")
+  esVale              Boolean        @default(false) @map("Es_Vale") // el premio es un vale canjeable (lane 86)
   createdAt           DateTime       @default(now()) @map("Created_At")
   updatedAt           DateTime       @updatedAt @map("Updated_At")
 
@@ -372,6 +373,7 @@ model Recompensa {
   reclamadaEn    DateTime?        @map("Reclamada_En")
   entregadaEn    DateTime?        @map("Entregada_En")
   entregadaPorId Int?             @map("Entregada_Por_ID")
+  usadoEn        DateTime?        @map("Usado_En") // vales: cuándo se arrancó el ticket; null = sin usar
 
   // Premio sorpresa de la bitácora de comportamiento (vault/LANE_80_PANEL_ADMIN_COMPORTAMIENTO.md)
   comportamientoId Int?  @unique @map("Comportamiento_ID")
