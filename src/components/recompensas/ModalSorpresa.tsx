@@ -30,16 +30,6 @@ function iconoDe(linea: string): LucideIcon {
   return Gift;
 }
 
-/** Icono según de qué es el premio (las líneas llegan ya como texto) */
-function iconoDe(linea: string): LucideIcon {
-  if (/^vale/i.test(linea)) return Ticket;
-  if (/\bpuntos?\b/i.test(linea)) return Coins;
-  if (/\bxp\b/i.test(linea)) return Zap;
-  if (/incienso/i.test(linea)) return Flame;
-  if (/fragmento|carta/i.test(linea)) return Layers;
-  return Gift;
-}
-
 /** Varias explosiones de confites desde distintos puntos */
 function lluviaDeConfites(reducida: boolean) {
   if (reducida) return confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: COLORES, disableForReducedMotion: false });
@@ -77,8 +67,6 @@ export function ModalSorpresa({
   const confitesHechos = useRef(false);
   // Los premios se muestran de a uno, como las cartas de un sobre
   const [paso, setPaso] = useState(0);
-  // Los premios se muestran de a uno, como las cartas de un sobre
-  const [paso, setPaso] = useState(0);
 
   // Cada apertura empieza de cero
   useEffect(() => {
@@ -94,15 +82,6 @@ export function ModalSorpresa({
     confitesHechos.current = true;
     setRevelado(true);
     lluviaDeConfites(reducida);
-  };
-
-  const lineas = resultado?.lineas.length ? resultado.lineas : ["Un abrazo de tus papás"];
-  const ultimo = paso >= lineas.length - 1;
-  const Icono = iconoDe(lineas[Math.min(paso, lineas.length - 1)]);
-
-  const siguiente = () => {
-    setPaso((p) => p + 1);
-    lluviaDeConfites(reducida); // cada premio explota con sus propios confites
   };
 
   const lineas = resultado?.lineas.length ? resultado.lineas : ["Un abrazo de tus papás"];
