@@ -41,9 +41,15 @@ function RegaloModelo() {
     const centro = caja.getCenter(new THREE.Vector3());
     const tam = caja.getSize(new THREE.Vector3());
     clon.position.sub(centro);
-    return { objeto: clon, escala: 2.4 / (Math.max(tam.x, tam.y, tam.z) || 1) };
+    return { objeto: clon, escala: 2.0 / (Math.max(tam.x, tam.y, tam.z) || 1) };
   }, [scene]);
-  return <primitive object={objeto} scale={escala} />;
+  // El escalado va en un grupo aparte: si fuera el del propio objeto, el desplazamiento de centrado
+  // (en unidades originales) no se reduciría y el modelo quedaría fuera de cámara.
+  return (
+    <group scale={escala}>
+      <primitive object={objeto} />
+    </group>
+  );
 }
 
 function RegaloSimple() {
