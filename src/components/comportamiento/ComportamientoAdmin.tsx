@@ -8,6 +8,7 @@ import { Gift, HeartHandshake, Plus, ScrollText, ThumbsDown, ThumbsUp, Trash2, U
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -64,7 +65,7 @@ export function ComportamientoAdmin({
   const [guardando, setGuardando] = useState(false);
 
   // Formulario
-  const [usuarioId, setUsuarioId] = useState("");
+  const [destinatarios, setDestinatarios] = useState<number[]>([]);
   const [tipo, setTipo] = useState<"Positivo" | "Negativo">("Positivo");
   const [titulo, setTitulo] = useState("");
   const [evaluacion, setEvaluacion] = useState("");
@@ -84,7 +85,11 @@ export function ComportamientoAdmin({
     [registros, filtro]
   );
 
+  const alternarDestinatario = (id: number) =>
+    setDestinatarios((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   const reiniciar = () => {
+    setDestinatarios([]);
     setTitulo("");
     setEvaluacion("");
     setItems([]);
@@ -122,7 +127,7 @@ export function ComportamientoAdmin({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          usuarioId: Number(usuarioId),
+          usuarioIds: destinatarios,
           tipo,
           titulo,
           evaluacion,
@@ -158,7 +163,7 @@ export function ComportamientoAdmin({
     }
   };
 
-  const listo = usuarioId !== "" && titulo.trim() !== "";
+  const listo = destinatarios.length > 0 && titulo.trim() !== "";
 
   return (
     <div className="space-y-6">
@@ -252,17 +257,35 @@ export function ComportamientoAdmin({
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="comp-usuario">¿De quién?</Label>
-              <NativeSelect id="comp-usuario" className="w-full" value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)}>
-                <NativeSelectOption value="">Elegí un miembro…</NativeSelectOption>
+            <fieldset className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <legend className="text-sm leading-none font-medium">¿De quién?</legend>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setDestinatarios(destinatarios.length === usuarios.length ? [] : usuarios.map((u) => u.id))}
+                >
+                  {destinatarios.length === usuarios.length ? "Quitar a todos" : "Elegir a todos"}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 {usuarios.map((u) => (
-                  <NativeSelectOption key={u.id} value={String(u.id)}>
+                  <Label
+                    key={u.id}
+                    htmlFor={`comp-u-${u.id}`}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 font-normal has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+                  >
+                    <Checkbox id={`comp-u-${u.id}`} checked={destinatarios.includes(u.id)} onCheckedChange={() => alternarDestinatario(u.id)} />
                     {u.nombre}
-                  </NativeSelectOption>
+                  </Label>
                 ))}
-              </NativeSelect>
-            </div>
+              </div>
+              {destinatarios.length > 1 && (
+                <p className="text-xs text-muted-foreground">Cada uno recibe su propio registro y su propio premio sorpresa.</p>
+              )}
+            </fieldset>
 
             <ToggleGroup
               type="single"

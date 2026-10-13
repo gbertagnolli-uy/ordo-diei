@@ -159,7 +159,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                 : r.estado === "reclamado" && r.reclamadaEn
                 ? `Reclamado el ${fecha(r.reclamadaEn)} · tus papás ya lo ven`
                 : `Ganado el ${fecha(r.ganadaEn)} · tocá para ${r.sorpresa ? "abrirlo" : "reclamarlo"}`;
-            return (
+            const tarjeta = (
               <Card
                 key={r.id}
                 role={disponible ? "button" : undefined}
@@ -218,6 +218,12 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                   <p className="text-xs text-muted-foreground">{pie}</p>
                 </div>
               </Card>
+            );
+            // Ya reclamado: cada click en la tarjeta lanza regalitos
+            return disponible ? tarjeta : (
+              <CoolMode key={r.id} options={CONFITES} className="block">
+                {tarjeta}
+              </CoolMode>
             );
           })}
         </div>

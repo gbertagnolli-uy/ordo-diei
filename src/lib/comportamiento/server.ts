@@ -64,18 +64,20 @@ export async function registrarComportamiento(
 ): Promise<void> {
   exigirPadre(actor.rol);
 
-  const usuarioId = Number(entrada.usuarioId);
+  // Uno o varios destinatarios: cada uno recibe su propio registro y su propio premio sorpresa
+  const pedidos = Array.isArray(entrada.usuarioIds) ? entrada.usuarioIds : [entrada.usuarioId];
+  const usuarioIds = [...new Set(pedidos.map(Number).filter(Number.isInteger))];
   const titulo = typeof entrada.titulo === "string" ? entrada.titulo.trim() : "";
   const evaluacion = typeof entrada.evaluacion === "string" ? entrada.evaluacion.trim() : "";
   const positivo = entrada.tipo !== "Negativo";
 
-  if (!Number.isInteger(usuarioId)) throw new Error("Elegí a quién corresponde");
+  if (usuarioIds.length === 0) throw new Error("Elegí a quién corresponde");
   if (!titulo) throw new Error("Escribí el título del comportamiento");
   if (titulo.length > 120) throw new Error("El título no puede superar los 120 caracteres");
   if (evaluacion.length > 1000) throw new Error("La evaluación no puede superar los 1000 caracteres");
 
-  const hijo = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: { id: true } });
-  if (!hijo) throw new NoEncontradoError("Usuario no encontrado");
+  const existentes = await prisma.usuario.count({ where: { id: { in: usuarioIds } } });
+  if (existentes !== usuarioIds.length) throw new NoEncontradoError("Usuario no encontrado");
 
   if (positivo) {
     const items = validarItems(entrada.premios);
@@ -86,30 +88,29 @@ export async function registrarComportamiento(
       i.nombre = carta.nombre;
     }
 
-    await prisma.comportamiento.create({
-      data: {
-        usuarioId,
-        registradoPorId: actor.id,
-        tipo: "Positivo",
-        titulo,
-        evaluacion: evaluacion || null,
-        premios: items,
-        // Sin premios es solo una anotación en la bitácora: no hay sorpresa que reclamar
-        ...(items.length > 0
-          ? {
-              recompensa: {
-                create: {
-                  usuarioId,
-                  tipo: "comportamiento",
-                  titulo,
-                  origen: "Comportamiento",
-                  contenido: items,
-                },
-              },
-            }
-          : {}),
-      },
-    });
+    // Todo o nada: si falla uno, no queda ningún registro a medias
+    await prisma.$transaction(
+      usuarioIds.map((usuarioId) =>
+        prisma.comportamiento.create({
+          data: {
+            usuarioId,
+            registradoPorId: actor.id,
+            tipo: "Positivo",
+            titulo,
+            evaluacion: evaluacion || null,
+            premios: items,
+            // Sin premios es solo una anotación en la bitácora: no hay sorpresa que reclamar
+            ...(items.length > 0
+              ? {
+                  recompensa: {
+                    create: { usuarioId, tipo: "comportamiento", titulo, origen: "Comportamiento", contenido: items },
+                  },
+                }
+              : {}),
+          },
+        })
+      )
+    );
     return;
   }
 
@@ -119,25 +120,27 @@ export async function registrarComportamiento(
   if (!Number.isInteger(puntos) || puntos < 0 || puntos > MAX_CANTIDAD) throw new Error("Los puntos a quitar no son válidos");
 
   await prisma.$transaction(async (tx) => {
-    let aplicados = 0;
-    if (puntos > 0) {
-      const u = await tx.usuario.findUniqueOrThrow({ where: { id: usuarioId }, select: { availablePoints: true } });
-      aplicados = Math.min(puntos, u.availablePoints); // nunca deja saldo negativo
-      if (aplicados > 0) {
-        await tx.usuario.update({ where: { id: usuarioId }, data: { availablePoints: { decrement: aplicados } } });
+    for (const usuarioId of usuarioIds) {
+      let aplicados = 0;
+      if (puntos > 0) {
+        const u = await tx.usuario.findUniqueOrThrow({ where: { id: usuarioId }, select: { availablePoints: true } });
+        aplicados = Math.min(puntos, u.availablePoints); // nunca deja saldo negativo
+        if (aplicados > 0) {
+          await tx.usuario.update({ where: { id: usuarioId }, data: { availablePoints: { decrement: aplicados } } });
+        }
       }
+      await tx.comportamiento.create({
+        data: {
+          usuarioId,
+          registradoPorId: actor.id,
+          tipo: "Negativo",
+          titulo,
+          evaluacion: evaluacion || null,
+          penitencia: penitencia || null,
+          puntosPenalizados: aplicados,
+        },
+      });
     }
-    await tx.comportamiento.create({
-      data: {
-        usuarioId,
-        registradoPorId: actor.id,
-        tipo: "Negativo",
-        titulo,
-        evaluacion: evaluacion || null,
-        penitencia: penitencia || null,
-        puntosPenalizados: aplicados,
-      },
-    });
   });
 }
 
