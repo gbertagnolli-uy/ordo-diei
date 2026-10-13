@@ -1,9 +1,12 @@
 // Bitácora de comportamiento (vault/LANE_80_PANEL_ADMIN_COMPORTAMIENTO.md): los padres registran
 // la conducta de cada hijo y, si es positiva, le dejan un premio sorpresa en «Mis premios».
+import type { Prisma } from "@prisma/client";
 import prisma from "../prisma.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { regalarCartaEnTx } from "../cartas/server.ts";
+import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
+import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { esAutomatico, leerItems, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
 
 export type ComportamientoVista = {
@@ -164,7 +167,7 @@ export type ResultadoApertura = { lineas: string[]; pendienteEntrega: boolean };
 export async function abrirPremioSorpresa(usuarioId: number, id: number): Promise<ResultadoApertura> {
   return prisma.$transaction(async (tx) => {
     const r = await tx.recompensa.findUnique({ where: { id } });
-    if (!r || r.tipo !== "comportamiento") throw new NoEncontradoError("Premio no encontrado");
+    if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre")) throw new NoEncontradoError("Premio no encontrado");
     if (r.usuarioId !== usuarioId) throw new NoAutorizadoError("Solo podés abrir tus propios premios");
 
     const items = leerItems(r.contenido);
@@ -207,5 +210,47 @@ export async function abrirPremioSorpresa(usuarioId: number, id: number): Promis
     }
 
     return { lineas: items.map(textoItem), pendienteEntrega };
+  });
+}
+
+const horaEnFamilia = (ahora: Date) =>
+  Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: APP_TZ }).format(ahora));
+
+/** Crea un cofre sorpresa con una carta al azar (por rareza). `origen` identifica el motivo. */
+export async function crearCofre(cliente: Prisma.TransactionClient | typeof prisma, usuarioId: number, origen: string) {
+  const rareza = elegirRareza();
+  const candidatas = await cliente.carta.findMany({ where: { activa: true, rareza }, select: { id: true, nombre: true } });
+  // Si no hay cartas de esa rareza, cae a cualquiera activa
+  const pool = candidatas.length ? candidatas : await cliente.carta.findMany({ where: { activa: true }, select: { id: true, nombre: true } });
+  if (pool.length === 0) throw new Error("No hay cartas activas para el cofre");
+  const carta = pool[Math.floor(Math.random() * pool.length)];
+  return cliente.recompensa.create({
+    data: { usuarioId, tipo: "cofre", titulo: "Cofre sorpresa", origen, contenido: contenidoCofre(carta) },
+  });
+}
+
+/**
+ * Cofre del día: desde las 18:00, si los padres evaluaron bien el día de este usuario, recibe uno
+ * (máximo uno por día). Se evalúa al entrar a la app, así que no hace falta un cron.
+ * @returns true si se otorgó ahora.
+ */
+export async function otorgarCofreDelDia(usuarioId: number, ahora = new Date()): Promise<boolean> {
+  if (horaEnFamilia(ahora) < HORA_COFRE) return false;
+  const desde = inicioDelDiaEnTz(ahora, APP_TZ);
+  const origen = `Buen comportamiento · ${desde.toISOString().slice(0, 10)}`;
+
+  return prisma.$transaction(async (tx) => {
+    // Un candado por usuario evita dos cofres si se abren dos pestañas a la vez
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${usuarioId}::bigint + 7000000)`;
+    const yaTiene = await tx.recompensa.count({ where: { usuarioId, tipo: "cofre", origen } });
+    if (yaTiene > 0) return false;
+    const [positivos, negativos] = await Promise.all([
+      tx.comportamiento.count({ where: { usuarioId, tipo: "Positivo", createdAt: { gte: desde } } }),
+      tx.comportamiento.count({ where: { usuarioId, tipo: "Negativo", createdAt: { gte: desde } } }),
+    ]);
+    if (!diaEsBueno(positivos, negativos)) return false;
+
+    await crearCofre(tx, usuarioId, origen);
+    return true;
   });
 }
