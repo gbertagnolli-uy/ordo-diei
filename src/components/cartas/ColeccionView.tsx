@@ -387,64 +387,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
         {/* PESTAÑA: MI COLECCIÓN                                        */}
         {/* ============================================================ */}
         <TabsContent value="coleccion" className="mt-6 flex flex-col gap-8">
-          {/* Sección 1: En Camino (cartas con progreso pero aún no consagradas) */}
-          {coleccionEnCamino.length > 0 && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-4 text-amber-500" />
-                  <h2 className="font-heading text-lg font-semibold tracking-tight">
-                    En camino ({coleccionEnCamino.length})
-                  </h2>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  Cartas reuniendo fragmentos de gracia
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {coleccionEnCamino.map((carta) => {
-                  const pct = Math.floor(
-                    (carta.fragmentos / carta.fragmentosRequeridos) * 100
-                  );
-                  return (
-                    <div key={carta.clave} className="flex flex-col gap-1.5">
-                      <Link
-                        href={`/dashboard/cartas/${carta.clave}`}
-                        className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
-                      >
-                        {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
-                          <CartaVista
-                            carta={carta}
-                            modo="bloqueada"
-                            grado={carta.grado}
-                            fragmentos={carta.fragmentos}
-                            ancho={240}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>)}
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
-                            {carta.nombre}
-                          </span>
-                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>
-                              {carta.fragmentos}/{carta.fragmentosRequeridos}
-                            </span>
-                            <span className="font-medium text-foreground">{pct}%</span>
-                          </div>
-                          <Progress value={pct} className="h-1.5" />
-                        </div>
-                      </Link>
-                      {accionReclamo(carta)}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Sección 2: Cartas Consagradas (Desbloqueadas) */}
+          {/* Sección 1: Cartas Consagradas (Desbloqueadas) */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="font-heading text-lg font-semibold tracking-tight">
@@ -523,6 +466,63 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
               </div>
             )}
           </div>
+
+          {/* Sección 2: En Camino (cartas con progreso pero aún no consagradas) */}
+          {coleccionEnCamino.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-amber-500" />
+                  <h2 className="font-heading text-lg font-semibold tracking-tight">
+                    En camino ({coleccionEnCamino.length})
+                  </h2>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Cartas reuniendo fragmentos de gracia
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {coleccionEnCamino.map((carta) => {
+                  const pct = Math.floor(
+                    (carta.fragmentos / carta.fragmentosRequeridos) * 100
+                  );
+                  return (
+                    <div key={carta.clave} className="flex flex-col gap-1.5">
+                      <Link
+                        href={`/dashboard/cartas/${carta.clave}`}
+                        className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
+                      >
+                        {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
+                          <CartaVista
+                            carta={carta}
+                            modo="bloqueada"
+                            grado={carta.grado}
+                            fragmentos={carta.fragmentos}
+                            ancho={240}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>)}
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                            {carta.nombre}
+                          </span>
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>
+                              {carta.fragmentos}/{carta.fragmentosRequeridos}
+                            </span>
+                            <span className="font-medium text-foreground">{pct}%</span>
+                          </div>
+                          <Progress value={pct} className="h-1.5" />
+                        </div>
+                      </Link>
+                      {accionReclamo(carta)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* ============================================================ */}
