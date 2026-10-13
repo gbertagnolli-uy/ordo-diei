@@ -8,7 +8,7 @@ import { regalarCartaEnTx } from "../cartas/server.ts";
 import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
-import { esAutomatico, leerItems, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
+import { esAutomatico, leerItems, XP_RECONOCIMIENTO, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
 
 export type ComportamientoVista = {
   id: number;
@@ -94,7 +94,7 @@ export async function registrarComportamiento(
 
     // Cada vale llega como su propio regalo (después se muestra como ticket); lo demás, en un solo premio sorpresa
     const vales = items.flatMap((i) => (i.tipo === "vale" ? [i.texto] : []));
-    // Cada reconocimiento llega ya entregado, como su propia tarjeta con medalla (no es una sorpresa)
+    // Cada reconocimiento llega como su propia tarjeta con medalla, para reclamar
     const reconocimientos = items.flatMap((i) => (i.tipo === "reconocimiento" ? [i.texto] : []));
     const resto = items.filter((i) => i.tipo !== "vale" && i.tipo !== "reconocimiento");
 
@@ -120,7 +120,7 @@ export async function registrarComportamiento(
           },
         });
         for (const texto of vales) await crearVale(tx, usuarioId, texto, `Comportamiento: ${titulo}`);
-        const ahora = new Date();
+        // Cada reconocimiento se reclama como un premio sorpresa y suma XP al abrirlo
         for (const texto of reconocimientos) {
           await tx.recompensa.create({
             data: {
@@ -128,10 +128,10 @@ export async function registrarComportamiento(
               tipo: "reconocimiento",
               titulo: texto,
               origen: `Por: ${titulo}`,
-              estado: "entregado",
-              reclamadaEn: ahora,
-              entregadaEn: ahora,
-              entregadaPorId: actor.id,
+              contenido: [
+                { tipo: "reconocimiento", texto },
+                { tipo: "xp", cantidad: XP_RECONOCIMIENTO },
+              ],
             },
           });
         }
@@ -190,7 +190,7 @@ export type ResultadoApertura = { lineas: string[]; pendienteEntrega: boolean };
 export async function abrirPremioSorpresa(usuarioId: number, id: number): Promise<ResultadoApertura> {
   return prisma.$transaction(async (tx) => {
     const r = await tx.recompensa.findUnique({ where: { id } });
-    if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre" && r.tipo !== "vale")) throw new NoEncontradoError("Premio no encontrado");
+    if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre" && r.tipo !== "vale" && r.tipo !== "reconocimiento")) throw new NoEncontradoError("Premio no encontrado");
     if (r.usuarioId !== usuarioId) throw new NoAutorizadoError("Solo podés abrir tus propios premios");
 
     const items = leerItems(r.contenido);

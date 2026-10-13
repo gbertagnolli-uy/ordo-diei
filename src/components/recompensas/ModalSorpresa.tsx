@@ -9,12 +9,13 @@ import confetti from "canvas-confetti";
 import { Coins, Flame, Gift, Layers, Sparkles, Ticket, Zap, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import Image from "next/image";
 import { URL_COFRE, URL_REGALO } from "./modelos";
 import { Spinner } from "@/components/ui/spinner";
 
 const Regalo3D = dynamic(() => import("./Regalo3D"), { ssr: false });
 
-export type TipoSorpresa = "regalo" | "cofre";
+export type TipoSorpresa = "regalo" | "cofre" | "reconocimiento";
 
 export type ResultadoSorpresa = { lineas: string[]; pendienteEntrega: boolean };
 
@@ -84,6 +85,16 @@ export function ModalSorpresa({
     lluviaDeConfites(reducida);
   };
 
+  // El reconocimiento no tiene objeto 3D: al llegar el resultado se abre ya con los confites
+  const sinObjeto3D = tipo === "reconocimiento";
+  useEffect(() => {
+    if (sinObjeto3D && abierto && resultado && !confitesHechos.current) {
+      confitesHechos.current = true;
+      setRevelado(true);
+      lluviaDeConfites(reducida);
+    }
+  }, [sinObjeto3D, abierto, resultado, reducida]);
+
   const lineas = resultado?.lineas.length ? resultado.lineas : ["Un abrazo de tus papás"];
   const ultimo = paso >= lineas.length - 1;
   const Icono = iconoDe(lineas[Math.min(paso, lineas.length - 1)]);
@@ -106,9 +117,9 @@ export function ModalSorpresa({
 
         {!revelado ? (
           <div className="flex flex-col items-center gap-2 py-2">
-            <div className="h-72 w-full">{abierto && <Regalo3D url={tipo === "cofre" ? URL_COFRE : URL_REGALO} listo={!!resultado} reducida={reducida} onExplotar={explotar} />}</div>
+            <div className="h-72 w-full">{abierto && !sinObjeto3D && <Regalo3D url={tipo === "cofre" ? URL_COFRE : URL_REGALO} listo={!!resultado} reducida={reducida} onExplotar={explotar} />}</div>
             <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
-              <Spinner className="size-3.5" /> {tipo === "cofre" ? "Abriendo tu cofre sorpresa…" : "Abriendo tu premio sorpresa…"}
+              <Spinner className="size-3.5" /> {tipo === "cofre" ? "Abriendo tu cofre sorpresa…" : tipo === "reconocimiento" ? "Abriendo tu reconocimiento…" : "Abriendo tu premio sorpresa…"}
             </p>
           </div>
         ) : (
@@ -131,7 +142,11 @@ export function ModalSorpresa({
               transition={{ type: "spring", stiffness: 260, damping: 14 }}
               className="flex size-20 items-center justify-center rounded-2xl bg-primary/10 text-primary"
             >
-              <Icono className="size-10" />
+              {sinObjeto3D && paso === 0 ? (
+                <Image src="/premios/medalla.webp" alt="" width={56} height={56} unoptimized className="h-14 w-auto object-contain" />
+              ) : (
+                <Icono className="size-10" />
+              )}
             </motion.div>
             <motion.p
               key={`t${paso}`}

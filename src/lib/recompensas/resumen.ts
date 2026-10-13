@@ -36,7 +36,7 @@ export async function getResumenDia(usuarioId: number): Promise<ResumenDia> {
     }),
     // Puntos, XP e incienso de los premios sorpresa y cofres abiertos hoy
     prisma.recompensa.findMany({
-      where: { usuarioId, tipo: { in: ["comportamiento", "cofre"] }, reclamadaEn: { gte: desde } },
+      where: { usuarioId, tipo: { in: ["comportamiento", "cofre", "reconocimiento"] }, reclamadaEn: { gte: desde } },
       select: { contenido: true },
     }),
   ]);

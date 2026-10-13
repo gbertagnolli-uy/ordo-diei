@@ -11,3 +11,8 @@
 ## Lane 88 — Medalla 10 % más chica
 **Pedido (textual):** "la imagen usada en el card de reconocimiento deberia ser un 10% menor."
 Hecho: `scale-90` sobre la imagen solo en las tarjetas de reconocimiento (`MisPremios.tsx`); el panel de la tarjeta no cambia de tamaño.
+
+## Lane 89 — El reconocimiento se reclama
+**Pedido (textual):** "Si quiero un banner: «Ganaste un reconocimiento». Quiero que el reconocimiento también haya que reclamarlo. Que se abra el modal, que exploten los confites y que los reconocimientos sumen 100 XP."
+
+Hecho: el reconocimiento nace `disponible` con contenido `[reconocimiento, xp 100]` (`XP_RECONOCIMIENTO` en `premios.ts`) y se abre con el mismo flujo que los premios sorpresa (`abrirPremioSorpresa`). Sin abrir, la tarjeta dice «Reconocimiento» y no revela la virtud. Banner `reconocimiento-banner` «¡Ganaste un reconocimiento!» con botón «Reclamar reconocimiento». El modal no usa objeto 3D (no hay modelo): al llegar el resultado abre directo con la lluvia de confites, muestra la medalla, la virtud y «100 XP». Los reconocimientos ya entregados antes de esta lane quedan como estaban.
