@@ -87,7 +87,9 @@ export function HabitoCard({
     setMotivoSeleccionado(tipo);
     setMotivoTexto(texto);
     setNotaOpcional("");
-    setPopoverOpen(true);
+    // Esperar a que el menú termine de cerrarse; si no, su cierre (foco/click
+    // afuera) cierra el popover en el mismo instante.
+    setTimeout(() => setPopoverOpen(true), 150);
   };
 
   const confirmarConNota = () => {
@@ -289,7 +291,11 @@ export function HabitoCard({
                   No pude <ChevronDown className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent
+                align="end"
+                className="w-52"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
                 <DropdownMenuLabel>Omitir (justificado)</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => abrirNotaPopover("justificado", "Enfermedad")}>
                   Enfermedad
@@ -313,7 +319,11 @@ export function HabitoCard({
               <PopoverTrigger asChild>
                 <span className="sr-only">Agregar nota</span>
               </PopoverTrigger>
-              <PopoverContent className="w-80 space-y-3" align="end">
+              <PopoverContent
+                className="w-80 space-y-3"
+                align="end"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
                 <div className="space-y-1">
                   <h4 className="font-medium text-sm">
                     {motivoSeleccionado === "justificado" ? "Omitir día" : "Marcar como no realizado"}
