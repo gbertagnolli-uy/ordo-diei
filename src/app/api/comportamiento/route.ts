@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/comportamiento — registrar un comportamiento (solo padres)
-// body: { usuarioId, tipo: "Positivo"|"Negativo", titulo, evaluacion?, premios?: ItemPremio[], penitencia?, puntosPenalizados? }
+// body: { usuarioIds: number[] (o usuarioId), tipo: "Positivo"|"Negativo", titulo, evaluacion?, premios?: ItemPremio[], penitencia?, puntosPenalizados? }
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();

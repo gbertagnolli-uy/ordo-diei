@@ -29,3 +29,8 @@
 **Pedido (textual):** "hay algunas inconsistencias en la card tiene dos partes grises donde aparece la fecha. Ademas de eso, quiero que las cards sean rectangulares, en la izquierda quiero que aparezca esta imagen «gift-3d-boxes-with-golden-ribbon-bow-confetti…» que esta guardada en public/imagenes, y a la derecha la informacion de la card y el boton (texto y boton con alineacion a la izquierda)" y "que el feed de cards de premios, tenga una sola columna".
 
 Hecho: tarjetas horizontales en una sola columna, sin las franjas grises del pie (la fecha pasó a ser texto dentro del bloque derecho). `public/Imagenes/` está en `.gitignore`, así que la ilustración (JPG recortado del zip; el EPS no trae transparencia real, solo un cuadriculado dibujado) se optimizó a `public/premios/regalo.webp`.
+
+## Lane 84 — Premio a varios usuarios y Cool Mode en tarjetas reclamadas
+**Pedido (textual):** "Agrega la posibilidad de dar un premio a varios usuarios a la vez" y "que despues de reclamado el premio, al hacer click en cualquier parte de la card, se active el «Cool Mode» para que aparezcan los emojis de regalos cada vez que se clickee una card".
+
+Hecho: el formulario de Comportamiento elige destinatarios con casillas («Elegir a todos» incluido); `POST /api/comportamiento` acepta `usuarioIds` y crea un registro y un premio sorpresa por persona, todo en una transacción (si falla uno no queda ninguno). La penitencia con puntos también se aplica a cada uno. `CoolMode` (`ui/cool-mode.tsx`) ganó la prop `className` y envuelve las tarjetas ya reclamadas.
