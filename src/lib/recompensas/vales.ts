@@ -19,9 +19,9 @@ export type ValeAdminVista = {
 };
 
 /** Crea un vale sin abrir en «Mis premios» del usuario. `texto` es lo que sigue a «Vale por». */
-export const crearVale = (cliente: Cliente, usuarioId: number, texto: string, origen: string) =>
+export const crearVale = (cliente: Cliente, usuarioId: number, texto: string, origen: string, evaluacion: string | null = null) =>
   cliente.recompensa.create({
-    data: { usuarioId, tipo: "vale", titulo: texto, origen, contenido: [{ tipo: "vale", texto }] },
+    data: { usuarioId, tipo: "vale", titulo: texto, origen, evaluacion, contenido: [{ tipo: "vale", texto }] },
   });
 
 /** El dueño arranca el ticket: queda usado. Atómico, así que dos pestañas no lo usan dos veces. */

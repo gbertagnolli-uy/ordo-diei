@@ -378,6 +378,7 @@ model Recompensa {
   // Premio sorpresa de la bitácora de comportamiento (vault/LANE_80_PANEL_ADMIN_COMPORTAMIENTO.md)
   comportamientoId Int?  @unique @map("Comportamiento_ID")
   contenido        Json? @map("Contenido") // ItemPremio[]; oculto al niño hasta que lo abre
+  evaluacion       String? @map("Evaluacion") // texto que los padres escribieron al registrar el comportamiento; se lee antes de abrir el premio
 
   usuario        Usuario         @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
   entregadaPor   Usuario?        @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
