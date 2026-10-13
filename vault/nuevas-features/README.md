@@ -8,17 +8,20 @@ Investigación de mercado pegada por el usuario, guardada sin cambios en [`ref/`
 
 | Carpeta | Prioridad según la investigación | Tamaño estimado | Depende de |
 |---|---|---|---|
-| [`kiosk-mode/`](kiosk-mode/README.md) | Must-Have | M | — |
-| [`sonidos-ui/`](sonidos-ui/README.md) | Must-Have (sonidos de recompensa) | S–M | — (base de audio) |
-| [`idle-marco-fotos/`](idle-marco-fotos/README.md) | Should-Have | M | kiosk (wake lock), login por PIN existente |
-| [`temporizadores-visuales/`](temporizadores-visuales/README.md) | Should-Have | S–M | sonidos (aviso) |
-| [`marketplace/`](marketplace/README.md) | Should-Have | M | economía y flujo de `Recompensa` existentes |
-| [`meal-planner/`](meal-planner/README.md) | Could-Have (e-commerce) | M | — |
-| [`musica-fondo/`](musica-fondo/README.md) | Won't-Have como reproductor propio | S–M | motor de audio de sonidos |
-| [`homeschooling/`](homeschooling/README.md) | Could-Have («océano azul») | XL (varias lanes) | hábitos/libros, evidencia |
+| [`kiosk-mode/`](kiosk-mode/SPEC.md) | **Pospuesto a la APP** (D6) | — | — |
+| [`sonidos-ui/`](sonidos-ui/SPEC.md) | Must-Have (sonidos de recompensa) | S–M | — (base de audio) |
+| [`idle-marco-fotos/`](idle-marco-fotos/SPEC.md) | **Pedido firme**: reposo con Google Fotos + «Entrar» | M–L | spike Google Fotos, inactividad |
+| [`sesion-inactividad-borradores/`](sesion-inactividad-borradores/SPEC.md) | **Pedido firme**: 15 s login / 60 s sesión + borradores | M–L | — |
+| [`temporizadores-visuales/`](temporizadores-visuales/SPEC.md) | Should-Have | S–M | sonidos (aviso) |
+| [`marketplace/`](marketplace/SPEC.md) | Should-Have | M | economía y flujo de `Recompensa` existentes |
+| [`meal-planner/`](meal-planner/SPEC.md) | Could-Have (e-commerce) | M | — |
+| [`musica-fondo/`](musica-fondo/SPEC.md) | Won't-Have como reproductor propio | S–M | motor de audio de sonidos |
+| [`homeschooling/`](homeschooling/SPEC.md) | Could-Have («océano azul») | XL (varias lanes) | hábitos/libros, evidencia |
 
 Orden sugerido (a confirmar): 1) sonidos + base de audio → 2) kiosk/PWA → 3) idle con marco de fotos → 4) temporizadores → 5) marketplace → 6) música → 7) meal planner → 8) homeschooling por fases.
 
 Hallazgos transversales de la investigación que no son una carpeta propia pero conviene no perder: **offline-first** para marcar tareas, **notificaciones locales programadas**, **Battery Health Mode** (apagar/atenuar de madrugada), rachas y tarjetas por perfil (ya existen en parte). Quedaron fuera de lo pedido: sincronización de calendarios, pizarra de notas, domótica, intercomunicador, RPG con pérdida de HP.
 
-Cada carpeta tiene: pedido textual, lo que dice la investigación, lo que ya existe en el repo, propuesta y **preguntas abiertas** para decidir antes de crear lanes.
+**Ronda 2 (2026-10-13):** decisiones del usuario en [`DECISIONES.md`](DECISIONES.md); plan de lanes en [`lanes/LANES.md`](lanes/LANES.md); prompt común en [`lanes/PROMPT_GENERAL_AGY.md`](lanes/PROMPT_GENERAL_AGY.md). Cada carpeta tiene un `SPEC.md` listo para implementar (el `README.md` queda como contexto de la ronda 1).
+
+Cada carpeta tiene (ronda 1): pedido textual, lo que dice la investigación, lo que ya existe en el repo, propuesta y **preguntas abiertas** para decidir antes de crear lanes.

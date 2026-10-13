@@ -1,0 +1,59 @@
+# Sonidos de interfaz — Especificación
+
+> Amplía [`README.md`](README.md). Comparte el motor con [`../musica-fondo/SPEC.md`](../musica-fondo/SPEC.md). Es **Must-Have** en la investigación (check-off con sonidos de recompensa).
+
+## 1. Objetivo
+Dar retroalimentación sonora breve a acciones y recompensas para reforzar el bucle de hábito, sin molestar ni sonar en horas de silencio.
+
+## 2. Motor de audio compartido (`src/lib/audio/`)
+- `reproducir(evento, opciones?)` es la **única** API para los componentes. Los componentes **no** conocen archivos.
+- Canales: `efectos` y `musica` con volumen independiente; ducking de música al sonar un efecto «grande».
+- Precarga perezosa por grupos (sprite de Howler); uso de Web Audio para baja latencia.
+- Estado de autoplay: el motor se «desbloquea» en el primer gesto (clic en Entrar / toque). Antes de eso `reproducir` encola nada y no falla.
+- Se silencia por: preferencia del usuario, horario silencioso del admin, pestaña oculta (salvo música), `prefers-reduced-motion` no aplica.
+- Háptica opcional: `navigator.vibrate(15)` en móviles compatibles, ligada a la misma preferencia.
+
+## 3. Catálogo de eventos
+
+| Evento | Dónde se dispara (archivo actual) | Sonido | Duración |
+|---|---|---|---|
+| `tap` | botones primarios (opcional, desactivado por defecto) | clic suave | < 60 ms |
+| `tarea.completada` | `useTaskActions` al completar | «ding» alegre | ~0,6 s |
+| `tarea.aprobada` | notificación de aprobación | campanilla | ~0,8 s |
+| `tarea.rechazada` / `error` | `toast` de error | tono bajo corto | ~0,3 s |
+| `habito.hecho` | `HabitoCard` al marcar | pluma/campana | ~0,6 s |
+| `xp.ganado` | animación de XP | «blip» ascendente | ~0,4 s |
+| `nivel.sube` | subida de nivel | fanfarria corta | ~1,5 s |
+| `racha.suma` | racha | chispa | ~0,5 s |
+| `premio.reclamar` | `MisPremios` al reclamar | cofre/campanas | ~1 s |
+| `cofre.abrir` | `ModalSorpresa` | apertura mágica | ~1,5 s |
+| `sobre.abrir` | `ModalAperturaSobre` (rasgado) | rasgado de papel | ~0,8 s |
+| `carta.revelar.{comun,buena,perfecta,celestial}` | revelado de carta | 4 niveles crecientes (celestial = coro) | 0,5–3 s |
+| `carta.desbloqueada` | carta nueva | acorde brillante | ~1,2 s |
+| `marketplace.compra` | compra exitosa | caja registradora suave | ~0,8 s |
+| `marketplace.bloqueado` | tocar producto bloqueado | candado | ~0,3 s |
+| `timer.fin` | temporizador visual | campanilla repetida 2× | ~2 s |
+| `aviso.sesion` | aviso de cierre (10 s) | pip suave | ~0,3 s |
+
+## 4. Preferencias (UX)
+- Menú de usuario → **«Sonido»**: interruptor «Efectos», deslizador «Volumen de efectos», interruptor «Música», deslizador «Volumen de música», botón «Probar».
+- Admin: **horario silencioso**, volumen máximo, «sonidos para niños habilitados» (ver `ConfigAudio` en música).
+- Valores por defecto: efectos ON al 60 %, música OFF hasta que el usuario la active (evita sorpresas).
+- Cambios sin recarga; guardados en `PreferenciaAudio` (por usuario) y `localStorage` como respaldo.
+
+## 5. Assets
+- Formato: **OGG + MP3** (fallback), mono, ≤ 30 KB c/u, normalizados a −16 LUFS. Ubicación `public/sonidos/` (son pocos y livianos ⇒ sí van en el repo).
+- Origen: banco **CC0** (p. ej. Kenney, freesound CC0) o encargo; registrar créditos en `public/sonidos/CREDITOS.md`.
+- Estilo propuesto: cálido y solemne-lúdico (campanas, cuerdas suaves, coro para lo celestial); evitar sonidos de videojuego agresivos. *A confirmar con el usuario.*
+
+## 6. Modelo de datos
+`PreferenciaAudio { usuarioId @id, efectos Boolean=true, volEfectos Int=60, musica Boolean=false, volMusica Int=40, haptica Boolean=true }`.
+
+## 7. Criterios de aceptación
+1. Completar una tarea reproduce `tarea.completada` una sola vez (sin duplicar por re-render).
+2. Apagar «Efectos» silencia todo, incluida la fanfarria.
+3. En horario silencioso no suena nada, pero la interfaz funciona.
+4. Antes del primer gesto no hay errores de autoplay en consola.
+5. Cada rareza de carta suena distinto.
+6. Los assets suman < 600 KB y se cargan solo cuando se necesitan.
+7. Pruebas unitarias del mapa evento→archivo y de las reglas de silencio.

@@ -1,0 +1,74 @@
+# Plan de lanes — nuevas features
+
+Numeración definitiva = la siguiente libre en el momento de crear cada lane (usar `git branch --list 'task/lane-*'` **y** `ls vault/LANE_*` antes; ya hubo colisiones). Aquí se usan códigos **N1…N14**. Cada lane = worktree propio desde `dev`, SQL aditivo (nunca `db push`), `scripts/integrar.sh`, registro en el vault, limpieza del worktree (AGENTS.md).
+
+## Orden y dependencias
+
+```
+N1 Spike Google Fotos ──────────────┐
+N2 Audio: motor + efectos ──► N3 Música            
+N4 Inactividad (hook) ──► N5 Borradores ──► N6 Cierre por inactividad
+N7 Reposo (UI + fotos subidas) ◄── N4 ;  N8 Google Fotos ◄── N1, N7
+N9 Marketplace núcleo ──► N10 Mkt admin ──► N11 Mkt miembros ──► N12 Mkt sobres/sistema
+N13 Temporizadores ◄── N2, N4
+N14 Meal planner F1       H1.. Homeschooling (después)
+```
+Prioridad: **N4→N7→N5→N6** (pedido más concreto del usuario), en paralelo **N9→N12**, luego N2/N3/N13, después N8, N14 y Homeschooling.
+
+## Lanes
+
+### N1 · Spike Google Fotos (sin código de producción)
+- Leer la documentación vigente de *Picker API* y *Media items*: vida del `baseUrl`, límites, si se permite cachear/copiar, vida de la sesión, scopes y verificación de la app OAuth (modo «prueba» limita a 100 usuarios y los tokens caducan a 7 días ⇒ ver si hay que pasar a «producción»).
+- Prototipo en rama: conectar, elegir fotos y descargar una.
+- **Salida:** `idle-marco-fotos/SPIKE.md` con la estrategia A/B/C elegida. Tamaño S.
+
+### N2 · Motor de audio + sonidos de efectos
+- `src/lib/audio/*`, `PreferenciaAudio`, menú «Sonido», assets CC0, enganchar eventos del catálogo (`sonidos-ui/SPEC.md` §3).
+- Tests: mapa evento→archivo, reglas de silencio. Tamaño M.
+
+### N3 · Música de fondo
+- Importador de carpeta, `PistaMusical`, bucket de almacenamiento, mini reproductor persistente, `ConfigAudio`, Media Session. Depende de N2. **Necesita la carpeta de canciones del usuario.** Tamaño M.
+
+### N4 · Detector de inactividad (solo hook y pruebas)
+- `useInactividad`, `lib/actividad.ts`, `useMantenerActivo`, canal entre pestañas. Reloj inyectable para tests. Sin cambios visibles. Tamaño S.
+
+### N5 · Borradores
+- Tabla `Borrador`, API, `useBorrador` y registro, `BandaBorrador`, «Mis borradores». Integrar los formularios de la tabla §4.2 (modo `final`/`solo-borrador`). Tamaño M–L.
+
+### N6 · Cierre de sesión por inactividad
+- `GuardiaInactividad` (60 s en dashboard, 15 s en login), aviso de 10 s, secuencia §3 (vaciar borradores → logout), sesión deslizante (si se aprueba S3). Depende de N4, N5, N7. Tamaño M.
+
+### N7 · Pantalla de reposo (UI) + fotos subidas
+- `ReposoPantalla` en `/` con logo, nombre, **Entrar**, rotación de fotos propias (`FotoReposo`, `ConfigReposo`), respaldo de partículas, anti burn-in, panel «Reposo y fotos» en Administración. Estados `REPOSO → SELECTOR` en `AuthPageClient`. Tamaño M.
+
+### N8 · Google Fotos
+- OAuth + Picker + importación según N1, `/api/admin/reposo/google/*`, desconexión. Tamaño M–L.
+
+### N9 · Marketplace — núcleo
+- Esquema (§4), registro de monedas, `evaluarRequisito`, `estadoProducto`, `comprarProducto` (transacción, idempotencia, reembolso) con **tests unitarios**; sin UI. Tamaño L.
+
+### N10 · Marketplace — administración
+- Pantalla de productos (lista + formulario con vista previa), constructor de precios y requisitos, plantillas, compras (aprobar/rechazar/cancelar), badge en `PanelAdmin`. Tamaño L.
+
+### N11 · Marketplace — miembros
+- `/dashboard/marketplace`: grilla, filtros, bloqueado en grises con candado, detalle, confirmación, resultado, meta, «Mis compras». Entrada en `AppSidebar`. Tamaño L.
+
+### N12 · Marketplace — productos del sistema
+- Sembrar los 4 sobres como `origen:"sistema"` (leyendo `economia.ts`), tarjeta de fragmentos hacia la Tienda de cartas, delegación a `comprarSobre`, historial unificado. Tamaño M.
+
+### N13 · Temporizadores visuales
+- `TemporizadorVisual` (disco/barra), modo foco, temporizador libre, `Habito.duracionMin`, pictogramas Lucide. Depende de N2/N4. Tamaño M.
+
+### N14 · Meal planner F1
+- Recetas, plan semanal, lista de compras. Tamaño M.
+
+### H1+ · Homeschooling
+- Ver `homeschooling/SPEC.md`. Se planifica en detalle al terminar N1–N13.
+
+## Reglas comunes de implementación
+- **UI**: solo componentes prebuilt del proyecto (`Button`, `Card`, `Dialog`, `Sheet`, `Progress`, `Toast`…); sin duplicar componentes; no cambiar comportamientos existentes (memoria *ui-work-rules*).
+- **Next.js**: leer `node_modules/next/dist/docs/` antes de escribir código (AGENTS.md; versión con cambios).
+- **Librerías maduras** antes que código propio (Howler.js, music-metadata, zod, etc.).
+- **Textos** en español rioplatense del proyecto (voseo ya usado en cartas: «Necesitás»); revisar consistencia con `lib/cartas/textos.ts`.
+- **Pruebas**: `npm test` + `tsc --noEmit`; funciones puras con tests; ninguna prueba que escriba en la base real sin `PERMITIR_TESTS_DB=1`.
+- **Vault**: cada lane crea `vault/nuevas-features/lanes/lane-NN-*.md` con pedido, decisiones, qué se hizo y cómo verificar.
