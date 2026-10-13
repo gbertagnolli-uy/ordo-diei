@@ -142,7 +142,7 @@ export function ComportamientoAdmin({
       setRegistros(json);
       setAbierto(false);
       reiniciar();
-      toast.success(tipo === "Positivo" && items.length > 0 ? "Registrado: el premio sorpresa ya está en «Mis premios»" : "Comportamiento registrado");
+      toast.success(tipo === "Positivo" ? "Registrado: el premio sorpresa ya está en «Mis premios»" : "Comportamiento registrado");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
@@ -166,7 +166,7 @@ export function ComportamientoAdmin({
     }
   };
 
-  const listo = destinatarios.length > 0 && titulo.trim() !== "";
+  const listo = destinatarios.length > 0 && titulo.trim() !== "" && (tipo !== "Positivo" || items.length > 0);
 
   return (
     <div className="space-y-6">
@@ -334,6 +334,7 @@ export function ComportamientoAdmin({
             {tipo === "Positivo" ? (
               <div className="space-y-3 rounded-lg border p-3">
                 <p className="text-sm font-medium">Premios sorpresa</p>
+                {items.length === 0 && <p className="text-xs text-muted-foreground">Agregá al menos un premio para poder guardar.</p>}
                 {items.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {items.map((p, i) => (

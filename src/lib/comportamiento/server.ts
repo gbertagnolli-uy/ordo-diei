@@ -86,6 +86,7 @@ export async function registrarComportamiento(
 
   if (positivo) {
     const items = validarItems(entrada.premios);
+    if (items.length === 0) throw new Error("Agregá al menos un premio para guardar el comportamiento");
     for (const i of items) {
       if (i.tipo !== "carta") continue;
       const carta = await prisma.carta.findUnique({ where: { id: i.cartaId }, select: { nombre: true } });
