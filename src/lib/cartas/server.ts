@@ -88,7 +88,7 @@ function exigirXpParaRareza(xp: number, rareza: RarezaCarta, accion: string) {
 /** Período del reclamo de bienvenida (D23): uno solo por usuario, para siempre */
 const PERIODO_BIENVENIDA = "inicio";
 
-type TipoMovimiento = "Sobre" | "Compra" | "CompraIncienso" | "Fiesta" | "Cumpleanos" | "Bienvenida";
+type TipoMovimiento = "Sobre" | "Compra" | "CompraIncienso" | "Fiesta" | "Cumpleanos" | "Bienvenida" | "Ajuste";
 
 /** Lo que hace falta de una carta para sumarle fragmentos */
 const SELECT_OTORGABLE = {
@@ -446,6 +446,32 @@ async function otorgarFragmentos(
     excedente: res.excedente,
     inciensoGanado: res.incienso,
   };
+}
+
+/**
+ * Regalo de un padre (bitácora de comportamiento): fragmentos sueltos o la carta completa (los que
+ * faltan para el Grado I, ya reclamado). Corre dentro de la transacción del llamador.
+ */
+export async function regalarCartaEnTx(
+  tx: Prisma.TransactionClient,
+  usuarioId: number,
+  cartaId: number,
+  modo: { tipo: "completa" } | { tipo: "fragmentos"; cantidad: number },
+  detalle: string
+): Promise<FragmentosOtorgados> {
+  const carta = await tx.carta.findUnique({ where: { id: cartaId } });
+  if (!carta) throw new Error("La carta del premio ya no existe");
+  let cantidad: number;
+  if (modo.tipo === "completa") {
+    const actual = await tx.cartaUsuario.findUnique({
+      where: { usuarioId_cartaId: { usuarioId, cartaId } },
+      select: { fragmentos: true },
+    });
+    cantidad = Math.max(1, carta.fragmentosRequeridos - (actual?.fragmentos ?? 0));
+  } else {
+    cantidad = modo.cantidad;
+  }
+  return otorgarFragmentos(tx, usuarioId, carta, cantidad, { tipo: "Ajuste", detalle }, modo.tipo === "completa");
 }
 
 /** Aplica los fragmentos de un sobre ya sorteado. Los grados quedan pendientes de reclamar (D20). */

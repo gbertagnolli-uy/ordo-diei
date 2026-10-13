@@ -73,14 +73,16 @@ model Usuario {
   registrosAnimo    RegistroAnimo[]
   premiosEntregados PremioEntregado[]
 
-  experienciaHabitos    Int              @default(0) @map("Experiencia_Habitos")
-  habitosCreados        Habito[]         @relation("HabitosCreados")
-  habitosUsuario        HabitoUsuario[]
-  registrosHabito       RegistroHabito[] @relation("RegistrosHabito")
-  registrosHabitoHechos RegistroHabito[] @relation("RegistrosHabitoHechos")
-  libros                Libro[]
-  recompensas           Recompensa[]     @relation("Recompensas")
-  recompensasEntregadas Recompensa[]     @relation("RecompensasEntregadas")
+  experienciaHabitos         Int              @default(0) @map("Experiencia_Habitos")
+  habitosCreados             Habito[]         @relation("HabitosCreados")
+  habitosUsuario             HabitoUsuario[]
+  registrosHabito            RegistroHabito[] @relation("RegistrosHabito")
+  registrosHabitoHechos      RegistroHabito[] @relation("RegistrosHabitoHechos")
+  libros                     Libro[]
+  recompensas                Recompensa[]     @relation("Recompensas")
+  recompensasEntregadas      Recompensa[]     @relation("RecompensasEntregadas")
+  comportamientos            Comportamiento[] @relation("ComportamientosHijo")
+  comportamientosRegistrados Comportamiento[] @relation("ComportamientosRegistrados")
 
   incienso             Int                   @default(0) @map("Incienso")
   cartasCreadas        Carta[]               @relation("CartasCreadas")
@@ -371,12 +373,43 @@ model Recompensa {
   entregadaEn    DateTime?        @map("Entregada_En")
   entregadaPorId Int?             @map("Entregada_Por_ID")
 
-  usuario      Usuario  @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
-  entregadaPor Usuario? @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
-  libro        Libro?   @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  // Premio sorpresa de la bitácora de comportamiento (vault/LANE_80_PANEL_ADMIN_COMPORTAMIENTO.md)
+  comportamientoId Int?  @unique @map("Comportamiento_ID")
+  contenido        Json? @map("Contenido") // ItemPremio[]; oculto al niño hasta que lo abre
+
+  usuario        Usuario         @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
+  entregadaPor   Usuario?        @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
+  libro          Libro?          @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  comportamiento Comportamiento? @relation(fields: [comportamientoId], references: [id], onDelete: SetNull)
 
   @@index([usuarioId, estado])
   @@map("Recompensas")
+}
+
+// Bitácora de comportamiento: lo que los padres registran de la conducta moral y ética de cada hijo.
+enum TipoComportamiento {
+  Positivo
+  Negativo
+}
+
+model Comportamiento {
+  id                Int                @id @default(autoincrement())
+  usuarioId         Int                @map("Usuario_ID")
+  registradoPorId   Int                @map("Registrado_Por_ID")
+  tipo              TipoComportamiento @default(Positivo) @map("Tipo")
+  titulo            String             @map("Titulo")
+  evaluacion        String?            @map("Evaluacion")
+  premios           Json?              @map("Premios") // ItemPremio[] (solo Positivo)
+  penitencia        String?            @map("Penitencia") // texto de la penitencia (solo Negativo)
+  puntosPenalizados Int                @default(0) @map("Puntos_Penalizados")
+  createdAt         DateTime           @default(now()) @map("Created_At")
+
+  usuario       Usuario     @relation("ComportamientosHijo", fields: [usuarioId], references: [id], onDelete: Cascade)
+  registradoPor Usuario     @relation("ComportamientosRegistrados", fields: [registradoPorId], references: [id])
+  recompensa    Recompensa?
+
+  @@index([usuarioId, createdAt])
+  @@map("Comportamientos")
 }
 
 // ==========================================

@@ -6,8 +6,9 @@ import { AppSidebar } from "@/components/app/AppSidebar";
 import { MainDock } from "@/components/dashboard/MainDock";
 import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
+import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
-import { contarRecompensasPendientes } from "@/lib/recompensas/server";
+import { contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/");
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas] = await Promise.all([
+  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -28,6 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getEstadoHabitos(Number(session.user.id)),
     contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
     eventosDeHoy(Number(session.user.id)).catch(() => null),
+    contarSorpresasSinAbrir(Number(session.user.id)),
   ]);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
@@ -49,6 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         hayEventosCartas={hayEventosCartas}
       />
       <SidebarInset className="min-w-0">
+        <PremioBanner cantidad={sorpresas} />
         <NoticeBar />
         <div className="flex flex-1 flex-col pb-24">{children}</div>
       </SidebarInset>

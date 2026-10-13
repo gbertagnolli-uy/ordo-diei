@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { CalendarDays, Columns3, List, PanelRight } from "lucide-react";
@@ -103,10 +104,10 @@ export function TaskWorkspace({
     <SchedulePanel tasks={tasks} onSelect={selectTask} onClose={() => setPanelPref(false)} />
   );
 
-  const layouts: [Layout, string, React.ElementType][] = [
+  const layouts: [Layout, string, LucideIcon][] = [
     ["list", "Lista", List],
     ["board", "Tablero", Columns3],
-    ...(isAdmin ? [] : ([["calendar", "Calendario", CalendarDays]] as [Layout, string, React.ElementType][])),
+    ...(isAdmin ? [] : ([["calendar", "Calendario", CalendarDays]] as [Layout, string, LucideIcon][])),
   ];
 
   return (
