@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { ValeTicket } from "./ValeTicket";
 import { CofreDelDia } from "./CofreDelDia";
 import { mismoDia } from "@/lib/comportamiento/cofreHorario";
+import { ModalAperturaSobre, type ResultadoCompraSobre } from "@/components/cartas/ModalAperturaSobre";
 import { ModalSorpresa, type ResultadoSorpresa, type TipoSorpresa } from "./ModalSorpresa";
 
 type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[] };
@@ -61,6 +62,15 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   const [arrancados, setArrancados] = useState<number[]>([]);
   // Premio sorpresa en apertura: el modal 3D se muestra de inmediato y el resultado llega del servidor
   const [sorpresa, setSorpresa] = useState<{ titulo: string; tipo: TipoSorpresa; resultado: ResultadoSorpresa | null } | null>(null);
+
+  // El refresco automático del dashboard trae premios nuevos; no se pisa lo que se está abriendo
+  useEffect(() => {
+    if (ocupadoId === null && sorpresa === null) setDatos(inicial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inicial]);
+
+  // Fragmentos ganados: al cerrar el premio sorpresa se muestran con el mismo modal que los sobres
+  const [sobre, setSobre] = useState<ResultadoCompraSobre | null>(null);
 
   // Con premios sin abrir, baja los modelos 3D ya para que el modal abra al instante
   const haySorpresas = datos.propias.some((r) => r.sorpresa);
@@ -304,7 +314,22 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         </section>
       )}
 
-      <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} onCerrar={() => setSorpresa(null)} />
+      <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} onCerrar={() => {
+          const cartas = sorpresa?.resultado?.cartasAfectadas ?? [];
+          if (cartas.length > 0) {
+            setSobre({
+              nombreSobre: sorpresa?.titulo,
+              nuevoSaldoPuntos: 0,
+              nuevoSaldoIncienso: 0,
+              mostrarSaldos: false,
+              totalInciensoGanado: sorpresa?.resultado?.totalInciensoGanado ?? 0,
+              cartasAfectadas: cartas,
+            });
+          }
+          setSorpresa(null);
+        }}
+      />
+      <ModalAperturaSobre open={sobre !== null} onOpenChange={(a) => !a && setSobre(null)} resultado={sobre} />
 
       <Dialog open={abierto !== null} onOpenChange={(o) => !o && setAbierto(null)}>
         <DialogContent className="sm:max-w-md">
