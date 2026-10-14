@@ -15,6 +15,7 @@ import {
   ListTodo,
   Network,
   ShieldCheck,
+  ShoppingCart,
   Sprout,
   Timer,
 } from "lucide-react";
@@ -91,7 +92,7 @@ export function AppSidebar({
   const params = useSearchParams();
   const active = pathname === "/dashboard" ? sectionFromParams(params) : null;
   const esPadre = currentUser?.rolFamiliar === "Padre" || currentUser?.rolFamiliar === "Madre";
-  const enAdmin = !!pathname && ["/dashboard/admin", "/dashboard/tasks/new", "/dashboard/users", "/dashboard/premios", "/dashboard/cartas/admin"].some((r) => pathname.startsWith(r));
+  const enAdmin = !!pathname && ["/dashboard/admin", "/dashboard/tasks/new", "/dashboard/users", "/dashboard/premios", "/dashboard/cartas/admin", "/dashboard/admin/tienda"].some((r) => pathname.startsWith(r));
 
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = { todo: 0, progress: 0, review: 0, done: 0, today: 0, late: 0 };
@@ -162,6 +163,14 @@ export function AppSidebar({
               {hayEventosCartas && (
                 <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Cartas para reclamar" />
               )}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/tienda")} tooltip="Tienda">
+                <Link href="/dashboard/tienda">
+                  <ShoppingCart />
+                  <span>Tienda</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

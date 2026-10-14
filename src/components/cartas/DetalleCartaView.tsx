@@ -14,7 +14,7 @@ import {
   Quote,
   Scroll,
   Table as TableIcon,
-  ShoppingBag,
+  ShoppingCart,
   GalleryHorizontalEnd,
   IdCard,
 } from "lucide-react";
@@ -195,9 +195,9 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
               <p className="text-[11px] text-center text-muted-foreground">{TEXTOS_CARTAS.eventos.fiestaDetalle}</p>
             )}
             <Button asChild variant="outline" className="w-full gap-2">
-              <Link href="/dashboard/cartas?tab=tienda">
-                <ShoppingBag className="size-4" />
-                <span>Ir a la Tienda de Cartas</span>
+              <Link href="/dashboard/tienda">
+                <ShoppingCart className="size-4" />
+                <span>Ir a la Tienda</span>
               </Link>
             </Button>
           </div>

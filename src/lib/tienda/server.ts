@@ -9,8 +9,8 @@ import { rachaEfectiva } from "../cartas/racha.ts";
 import { APP_TZ, esFiestaHoy } from "../cartas/eventos.ts";
 import { comprarSobre, descuentoDeUsuario, SELECT_ECONOMIA } from "../cartas/server.ts";
 import { BONO_FIESTA_TIENDA } from "../cartas/economia.ts";
-import { MONEDAS, CLAVES_MONEDA, type Costo, type Moneda, type OpcionPrecio, type Saldos } from "./monedas.ts";
-import { aplicarDescuento, faltantes } from "./precios.ts";
+import { MONEDAS, CLAVES_MONEDA, type Costo, type OpcionPrecio, type Saldos } from "./monedas.ts";
+import { faltantes } from "./precios.ts";
 import { evaluarRequisitos, type ContextoRequisitos, type Requisito, type RequisitoEvaluado } from "./requisitos.ts";
 import { estadoProducto, inicioPeriodo, type EstadoProducto, type PeriodoLimite } from "./estado.ts";
 import { PreciosSchema, ProductoEntradaSchema, RequisitosSchema } from "./esquemas.ts";
@@ -55,8 +55,6 @@ export type TiendaVista = {
 export class CompraError extends Error {
   status = 400;
 }
-
-const ordenCategorias = ["cartas", "premios", "vales"];
 
 const saldosDe = (u: { availablePoints: number; stars: number; incienso: number }): Saldos => ({
   puntos: u.availablePoints,

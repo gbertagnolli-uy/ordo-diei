@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { FileText, Trophy, Sun, Moon, LogOut } from "lucide-react";
+import { FileText, Trophy, Sun, Moon, LogOut, ShoppingCart } from "lucide-react";
 import { FloatingDock, DockItem } from "@/components/ui/floating-dock";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
@@ -33,6 +33,12 @@ export function MainDock({
       title: "Tabla de Líderes",
       icon: <Trophy className="w-5 h-5 text-[var(--secondary)]" />,
       onClick: () => openModal("LEADERBOARD", { users: allUsers }),
+    },
+    {
+      title: "Tienda",
+      icon: <ShoppingCart className="w-5 h-5 text-[var(--primary)]" />,
+      href: "/dashboard/tienda",
+      active: !!pathname && pathname.startsWith("/dashboard/tienda"),
     },
     {
       title: "Reglas del Hogar",

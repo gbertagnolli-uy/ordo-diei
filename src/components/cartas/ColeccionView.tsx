@@ -11,7 +11,7 @@ import {
   Flame,
   Award,
   Filter,
-  ShoppingBag,
+  ShoppingCart,
   ShieldCheck,
   Star,
   Orbit,
@@ -34,14 +34,11 @@ import {
 } from "@/components/ui/empty";
 import { CartaVista } from "@/components/cartas/CartaVista";
 import { AlbumDomo } from "@/components/cartas/AlbumDomo";
-import { TiendaCartasView } from "@/components/cartas/TiendaCartasView";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
-import { ModalAperturaSobre, type ResultadoCompraSobre, type CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
 import { BordeReclamable } from "@/components/cartas/BordeReclamable";
 import { useReclamoCarta, claveReclamo } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { CartaListada } from "@/lib/cartas/server";
-import type { GradoCarta } from "@/lib/cartas/economia";
 
 interface ColeccionViewProps {
   inicial: {
@@ -60,7 +57,7 @@ interface ColeccionViewProps {
 export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get("tab");
-  const tabInicial = tabParam === "tienda" || tabParam === "album" ? tabParam : "coleccion";
+  const tabInicial = tabParam === "album" ? tabParam : "coleccion";
 
   const [tab, setTab] = useState<string>(tabInicial);
   const [vistaAlbum, setVistaAlbum] = useState<"normal" | "3d">(searchParams?.get("vista") === "3d" ? "3d" : "normal");
@@ -71,34 +68,6 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
 
   const [cartas, setCartas] = useState<CartaListada[]>(inicial.cartas);
   const [usuario, setUsuario] = useState(inicial.usuario);
-  const [modalAperturaOpen, setModalAperturaOpen] = useState<boolean>(false);
-  const [resultadoApertura, setResultadoApertura] = useState<ResultadoCompraSobre | null>(null);
-
-  const handleCompraExitosa = (resultado: ResultadoCompraSobre) => {
-    setResultadoApertura(resultado);
-    setModalAperturaOpen(true);
-
-    if (resultado.cartasAfectadas && Array.isArray(resultado.cartasAfectadas)) {
-      setCartas((prev) =>
-        prev.map((c) => {
-          const afectada = resultado.cartasAfectadas.find(
-            (a: CartaAfectadaCompra) => a.cartaId === c.id || a.cartaClave === c.clave
-          );
-          if (afectada) {
-            return {
-              ...c,
-              fragmentos: afectada.fragmentosDespues,
-              desbloqueada: Boolean(afectada.desbloquea || c.desbloqueada),
-              grado: afectada.gradoDespues as GradoCarta,
-              reclamable: Boolean(afectada.reclamable),
-              porcentaje: Math.floor((afectada.fragmentosDespues / c.fragmentosRequeridos) * 100),
-            };
-          }
-          return c;
-        })
-      );
-    }
-  };
 
   const recargarCartas = () => {
     fetch("/api/cartas")
@@ -150,15 +119,6 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
       );
     }
     return null;
-  };
-
-  const handleActualizarSaldo = (nuevoPuntos: number, nuevoIncienso: number, nuevasEstrellas?: number) => {
-    setUsuario((previo) => ({
-      ...previo,
-      availablePoints: nuevoPuntos,
-      incienso: nuevoIncienso,
-      stars: nuevasEstrellas ?? previo.stars,
-    }));
   };
 
   // Estadísticas generales
@@ -276,7 +236,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
       {/* Selector de Pestañas */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <TabsList className="grid w-full sm:w-auto grid-cols-3">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2">
             <TabsTrigger value="coleccion" className="flex items-center gap-2">
               <span>Mi colección</span>
               <Badge variant="secondary" className="px-1.5 py-0 text-xs tabular-nums">
@@ -289,13 +249,15 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                 {totalDesbloqueadas}/{totalCartas}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="tienda" className="flex items-center gap-2">
-              <ShoppingBag className="size-3.5" />
-              <span>Tienda</span>
-            </TabsTrigger>
           </TabsList>
 
           <div className="flex items-center gap-3">
+            <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs h-8">
+              <Link href="/dashboard/tienda">
+                <ShoppingCart className="size-3.5" />
+                <span>Ir a la Tienda</span>
+              </Link>
+            </Button>
             {(rolFamiliar === "Padre" || rolFamiliar === "Madre") && (
               <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs h-8">
                 <Link href="/dashboard/cartas/admin">
@@ -623,35 +585,10 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
           )}
         </TabsContent>
 
-        {/* ============================================================ */}
-        {/* PESTAÑA: TIENDA                                              */}
-        {/* ============================================================ */}
-        <TabsContent value="tienda" className="mt-6">
-          <TiendaCartasView
-            cartas={cartas}
-            usuario={usuario}
-            onCompraExitosa={handleCompraExitosa}
-            onActualizarSaldo={handleActualizarSaldo}
-          />
-        </TabsContent>
       </Tabs>
 
       {modalReclamo}
 
-      {/* Modal de Apertura Animado en 3 Etapas con Confeti */}
-      <ModalAperturaSobre
-        open={modalAperturaOpen}
-        onOpenChange={setModalAperturaOpen}
-        resultado={resultadoApertura}
-        onAbrirOtro={() => {
-          setModalAperturaOpen(false);
-          setTab("tienda");
-        }}
-        onVerColeccion={() => {
-          setModalAperturaOpen(false);
-          setTab("coleccion");
-        }}
-      />
     </div>
     </div>
   );

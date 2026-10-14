@@ -77,7 +77,7 @@ export function evaluarRequisito(r: Requisito, ctx: ContextoRequisitos): Requisi
         cumplido: ctx.desbloqueadoPorPadre,
         actual: ctx.desbloqueadoPorPadre ? 1 : 0,
         objetivo: 1,
-        texto: "Pídele a tus padres que lo desbloqueen",
+        texto: "Pedile a tus padres que lo desbloqueen",
       };
   }
 }
