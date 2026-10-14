@@ -78,3 +78,13 @@ test("los módulos que usa el navegador no importan Prisma ni el servidor", () =
   }
   assert.deepEqual(fallos, []);
 });
+
+// H6-08 / D6: lo que un navegador no puede hacer (kiosco, batería, permisos del sistema) es de la APP nativa y no se promete acá
+test("Homeschooling no usa APIs que piden permisos del sistema ni promete kiosco", () => {
+  const fallos: string[] = [];
+  const prohibidas = /getBattery|wakeLock|requestPermission|getUserMedia|kiosk/i;
+  for (const dir of [...DIRS, "src/app/api/homeschooling", "src/app/dashboard/homeschooling"]) {
+    for (const f of archivos(dir)) if (prohibidas.test(readFileSync(join(RAIZ, f), "utf8"))) fallos.push(f);
+  }
+  assert.deepEqual(fallos, []);
+});

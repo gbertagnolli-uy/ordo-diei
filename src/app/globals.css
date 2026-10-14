@@ -516,3 +516,21 @@ body {
     break-inside: avoid;
   }
 }
+
+/* Modo relajado (Homeschooling H6): menos saturación y más contraste en el contenido, sin movimiento decorativo.
+   Sin colores propios: todo sale de los tokens que ya usa la app. */
+[data-relajado] {
+  --relajado-saturacion: 0.6;
+  --relajado-contraste: 1.06;
+}
+[data-relajado] [data-slot="sidebar-inset"] {
+  filter: saturate(var(--relajado-saturacion)) contrast(var(--relajado-contraste));
+}
+[data-relajado] *,
+[data-relajado] *::before,
+[data-relajado] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

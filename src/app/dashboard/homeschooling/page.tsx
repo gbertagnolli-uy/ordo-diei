@@ -13,6 +13,7 @@ import prisma from "@/lib/prisma";
 import { hoyEnFamilia } from "@/lib/habitos/server";
 import { asegurarTareasDeHoy } from "@/lib/homeschooling/servidor/tareas";
 import { leccionesDeHoy } from "@/lib/homeschooling/servidor/hoy";
+import { historiasPendientes, obtenerPreferencia } from "@/lib/homeschooling/servidor/neuro";
 
 // Homeschooling: el padre arma materias, cursos y planes; Hijo/Hija ve «Hoy aprendo».
 export default async function HomeschoolingPage() {
@@ -24,11 +25,13 @@ export default async function HomeschoolingPage() {
     // Hijo/Hija → «Hoy aprendo»: antes de dibujar, se asegura la Tarea de cada día lectivo de hoy
     const hoy = hoyEnFamilia();
     await asegurarTareasDeHoy(actor.id, hoy);
-    const [dias, yo] = await Promise.all([
+    const [dias, yo, preferencia, historias] = await Promise.all([
       leccionesDeHoy(actor.id, hoy),
       prisma.usuario.findUnique({ where: { id: actor.id }, select: { nombre: true, fotoUrl: true, streakDays: true } }),
+      obtenerPreferencia(actor, actor.id),
+      historiasPendientes(actor.id, hoy),
     ]);
-    return <HoyAprendo nombre={yo?.nombre ?? ""} fotoUrl={yo?.fotoUrl ?? null} racha={yo?.streakDays ?? 0} dias={dias} />;
+    return <HoyAprendo nombre={yo?.nombre ?? ""} fotoUrl={yo?.fotoUrl ?? null} racha={yo?.streakDays ?? 0} dias={dias} preferencia={preferencia} historias={historias} />;
   }
 
   const [materias, alumnos, progresos, evidencias, avisos] = await Promise.all([listarMaterias(actor), alumnosDeFamilia(), progresoPorAlumno(), estadisticasEvidencias(actor), avisosParaPadre(actor)]);
