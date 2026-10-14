@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calendar, Sun, Moon, Sparkles, BookOpen, Clock, Heart } from "lucide-react";
+import { Calendar, Sun, Sparkles, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DragScroll } from "@/components/ui/drag-scroll";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { EtapaRutina, RutinaSemanalConfig } from "@/lib/rutina/tipos";
 import { filtrarEtapasPorDia } from "@/lib/rutina/calculadorHorarios";
@@ -65,7 +66,7 @@ export function RutinaSemanalView({
       </Card>
 
       {/* Selector de días de la semana */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <DragScroll activeIndex={DIAS.findIndex((d) => d.num === diaSeleccionado)}>
         {DIAS.map((d) => {
           const esActivo = diaSeleccionado === d.num;
           return (
@@ -73,7 +74,7 @@ export function RutinaSemanalView({
               key={d.num}
               variant={esActivo ? "default" : "outline"}
               onClick={() => setDiaSeleccionado(d.num)}
-              className="flex-1 min-w-[90px] h-12 flex flex-col items-center justify-center rounded-xl p-1 font-semibold"
+              className="shrink-0 min-w-[96px] h-12 flex flex-col items-center justify-center rounded-xl p-1 font-semibold"
             >
               <span className="text-xs">{d.nombre}</span>
               <span className="text-[10px] opacity-75 font-normal">
@@ -82,7 +83,7 @@ export function RutinaSemanalView({
             </Button>
           );
         })}
-      </div>
+      </DragScroll>
 
       {/* Detalle del día seleccionado */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

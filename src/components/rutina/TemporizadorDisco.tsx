@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Play,
   Pause,
   Plus,
   SkipForward,
+  SkipBack,
+  BellRing,
+  BellOff,
   Volume2,
   VolumeX,
   Maximize2,
   Minimize2,
-  Clock,
   Sparkles,
-  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import { TipoSonidoRutina } from "@/lib/rutina/audioRutina";
 interface TemporizadorDiscoProps {
   etapaActual: EtapaRutina | null;
   proximaEtapa: EtapaRutina | null;
+  etapaAnterior?: EtapaRutina | null;
   restanteSeg: number;
   totalSeg: number;
   ratioRestante: number; // 0.0 a 1.0 continuo (con decimales) para fluidez absoluta
@@ -40,6 +42,9 @@ interface TemporizadorDiscoProps {
   onTogglePausa?: () => void;
   onExtenderTiempo?: () => void;
   onAvanzarEtapa?: () => void;
+  onRetrocederEtapa?: () => void;
+  puedeAvanzar?: boolean;
+  puedeRetroceder?: boolean;
   esFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   sonidoHabilitado: boolean;
@@ -49,11 +54,14 @@ interface TemporizadorDiscoProps {
   volumen: number;
   onChangeVolumen: (vol: number) => void;
   onProbarSonido: () => void;
+  notificacionesActivas?: boolean;
+  onToggleNotificaciones?: () => void;
 }
 
 export function TemporizadorDisco({
   etapaActual,
   proximaEtapa,
+  etapaAnterior = null,
   restanteSeg,
   totalSeg,
   ratioRestante,
@@ -62,6 +70,9 @@ export function TemporizadorDisco({
   onTogglePausa,
   onExtenderTiempo,
   onAvanzarEtapa,
+  onRetrocederEtapa,
+  puedeAvanzar = true,
+  puedeRetroceder = true,
   esFullscreen = false,
   onToggleFullscreen,
   sonidoHabilitado,
@@ -71,28 +82,53 @@ export function TemporizadorDisco({
   volumen,
   onChangeVolumen,
   onProbarSonido,
+  notificacionesActivas = false,
+  onToggleNotificaciones,
 }: TemporizadorDiscoProps) {
   const [mostrarAjustesAudio, setMostrarAjustesAudio] = useState(false);
-  const [montado, setMontado] = useState(false);
-
+  // El callback cambia en cada render del padre (reloj de 1 s); lo guardamos en un ref para que
+  // el efecto de pantalla completa no se reinicie ni salga del modo cada segundo.
+  const alSalirRef = useRef(onToggleFullscreen);
   useEffect(() => {
-    setMontado(true);
-  }, []);
+    alSalirRef.current = onToggleFullscreen;
+  }, [onToggleFullscreen]);
 
-  // Manejo de tecla Escape para salir de fullscreen
+  // Modo Enfoque: pide pantalla completa real al navegador y mantiene sincronizado el estado
+  // cuando se sale por fuera de la app (Esc nativo, gesto del sistema, etc.).
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && esFullscreen && onToggleFullscreen) {
-        onToggleFullscreen();
-      }
+    if (!esFullscreen) return;
+
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {
+        // Sin API de pantalla completa (p. ej. iOS): queda el overlay que cubre toda la ventana
+      });
+    }
+
+    const alCambiarFullscreen = () => {
+      if (!document.fullscreenElement) alSalirRef.current?.();
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [esFullscreen, onToggleFullscreen]);
+    const alPresionarTecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") alSalirRef.current?.();
+    };
+    document.addEventListener("fullscreenchange", alCambiarFullscreen);
+    window.addEventListener("keydown", alPresionarTecla);
+
+    // Evita que el layout haga scroll por detrás del overlay
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("fullscreenchange", alCambiarFullscreen);
+      window.removeEventListener("keydown", alPresionarTecla);
+      document.body.style.overflow = overflowPrevio;
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    };
+  }, [esFullscreen]);
 
   // Dimensiones del disco SVG
-  const tamano = esFullscreen ? 400 : 280;
-  const strokeWidth = esFullscreen ? 20 : 14;
+  // Unidades del viewBox; el tamaño real en pantalla lo da el contenedor (responsivo)
+  const tamano = 280;
+  const strokeWidth = 14;
   const center = tamano / 2;
   const radius = center - strokeWidth - 6;
   const circumference = 2 * Math.PI * radius;
@@ -129,17 +165,24 @@ export function TemporizadorDisco({
   // Contenido visual del temporizador
   const contenido = (
     <div
-      className={`relative flex flex-col items-center justify-center transition-all duration-300 ${
+      role={esFullscreen ? "dialog" : undefined}
+      aria-modal={esFullscreen || undefined}
+      aria-label={esFullscreen ? "Modo Enfoque" : undefined}
+      className={`flex flex-col items-center justify-center ${
         esFullscreen
-          ? "fixed inset-0 z-[9999] w-screen h-screen bg-background/95 backdrop-blur-2xl p-6 sm:p-12 overflow-y-auto"
-          : "w-full max-w-xl mx-auto rounded-3xl border bg-card/85 p-6 shadow-xl backdrop-blur-md"
+          ? "fixed inset-0 z-[9999] h-dvh w-screen overflow-y-auto bg-background p-4 sm:p-10"
+          : "relative w-full max-w-xl mx-auto rounded-3xl border bg-card/85 p-6 shadow-xl backdrop-blur-md"
       }`}
       style={{
         boxShadow: esFullscreen ? undefined : `0 10px 30px -10px ${colorFase.glow}`,
       }}
     >
       {/* Barra superior de controles en fullscreen o tarjeta normal */}
-      <div className="flex w-full items-center justify-between gap-3 mb-4 max-w-2xl">
+      <div
+        className={`flex w-full items-center justify-between gap-3 mb-4 ${
+          esFullscreen ? "max-w-4xl" : "max-w-2xl"
+        }`}
+      >
         <div className="flex items-center gap-2">
           {etapaActual ? (
             <Badge
@@ -249,6 +292,22 @@ export function TemporizadorDisco({
                 />
               </div>
 
+              {onToggleNotificaciones && (
+                <Button
+                  variant={notificacionesActivas ? "default" : "outline"}
+                  size="sm"
+                  className="w-full h-8 text-xs font-medium"
+                  onClick={onToggleNotificaciones}
+                >
+                  {notificacionesActivas ? (
+                    <BellRing className="size-3.5 mr-1.5" />
+                  ) : (
+                    <BellOff className="size-3.5 mr-1.5" />
+                  )}
+                  Avisos del navegador: {notificacionesActivas ? "activados" : "desactivados"}
+                </Button>
+              )}
+
               <Button
                 variant="secondary"
                 size="sm"
@@ -286,12 +345,13 @@ export function TemporizadorDisco({
       </div>
 
       {/* Temporizador Circular Central */}
-      <div className="relative my-4 flex items-center justify-center">
+      <div
+        className="relative my-4 flex items-center justify-center"
+        style={{ width: esFullscreen ? "min(54vh, 90vw, 600px)" : 280, aspectRatio: "1 / 1" }}
+      >
         <svg
-          width={tamano}
-          height={tamano}
           viewBox={`0 0 ${tamano} ${tamano}`}
-          className="rotate-[-90deg]"
+          className="rotate-[-90deg] size-full"
         >
           {/* Círculo de fondo / Track estático */}
           <circle
@@ -305,6 +365,7 @@ export function TemporizadorDisco({
 
           {/* Disco / Arco animado continuo (Time-Timer) */}
           <circle
+            key={etapaActual?.id ?? "sin-etapa"}
             cx={center}
             cy={center}
             r={radius}
@@ -315,8 +376,9 @@ export function TemporizadorDisco({
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             style={{
-              transition: estaPausado ? "none" : "stroke-dashoffset 0.1s linear, stroke 0.5s ease",
-              filter: `drop-shadow(0px 0px ${esFullscreen ? "14px" : "8px"} ${estaPausado ? "#eab308" : colorFase.stroke})`,
+              // El reloj avanza cada 1 s: una transición lineal de 1 s hace el giro continuo
+              transition: estaPausado ? "none" : "stroke-dashoffset 1s linear, stroke 0.5s ease",
+              filter: `drop-shadow(0px 0px 8px ${estaPausado ? "#eab308" : colorFase.stroke})`,
             }}
           />
         </svg>
@@ -331,7 +393,7 @@ export function TemporizadorDisco({
             >
               <IconoRutina
                 nombre={etapaActual.icono}
-                className={`${esFullscreen ? "size-10" : "size-7"} ${
+                className={`${esFullscreen ? "size-8 sm:size-10" : "size-7"} ${
                   categoriaInfo?.colorText || "text-primary"
                 }`}
               />
@@ -340,8 +402,9 @@ export function TemporizadorDisco({
 
           {/* Número Digital Grande */}
           <div
+            style={esFullscreen ? { fontSize: "clamp(2.25rem, min(9vh, 11vw), 6rem)", lineHeight: 1 } : undefined}
             className={`font-mono font-bold tracking-tight tabular-nums select-none ${
-              esFullscreen ? "text-7xl sm:text-8xl" : "text-4xl sm:text-5xl"
+              esFullscreen ? "" : "text-4xl sm:text-5xl"
             } ${
               estaPausado
                 ? "text-amber-500 animate-pulse"
@@ -360,8 +423,10 @@ export function TemporizadorDisco({
 
           {/* Título de la etapa actual */}
           <div
-            className={`mt-2 font-bold text-foreground max-w-[240px] sm:max-w-[320px] truncate ${
-              esFullscreen ? "text-xl sm:text-2xl" : "text-sm sm:text-base"
+            className={`mt-2 font-bold text-foreground truncate ${
+              esFullscreen
+                ? "max-w-[44vh] text-lg sm:text-2xl"
+                : "max-w-[240px] sm:max-w-[320px] text-sm sm:text-base"
             }`}
           >
             {etapaActual ? etapaActual.titulo : "Descanso general"}
@@ -380,22 +445,56 @@ export function TemporizadorDisco({
         </div>
       </div>
 
-      {/* Siguiente Etapa Preview */}
-      {proximaEtapa && (
-        <div className="w-full max-w-md mt-4 flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-2.5 text-xs border border-border/50">
-          <div className="flex items-center gap-2.5 text-muted-foreground truncate">
-            <span className="font-bold text-foreground">Siguiente:</span>
-            <IconoRutina nombre={proximaEtapa.icono} className="size-4 text-primary" />
-            <span className="truncate">{proximaEtapa.titulo}</span>
-          </div>
-          <span className="font-mono text-muted-foreground shrink-0 font-medium ml-2">
-            a las {proximaEtapa.horaInicio}
-          </span>
+      {/* Etapa anterior y siguiente */}
+      {(etapaAnterior || proximaEtapa) && (
+        <div className="w-full max-w-md mt-4 space-y-1.5">
+          {etapaAnterior && (
+            <div className="flex items-center justify-between rounded-2xl bg-muted/25 px-4 py-2 text-xs border border-border/40">
+              <div className="flex items-center gap-2.5 text-muted-foreground truncate">
+                <span className="font-bold text-foreground">Anterior:</span>
+                <IconoRutina nombre={etapaAnterior.icono} className="size-4 text-muted-foreground" />
+                <span className="truncate">{etapaAnterior.titulo}</span>
+              </div>
+              <span className="font-mono text-muted-foreground shrink-0 font-medium ml-2">
+                {etapaAnterior.horaInicio}
+              </span>
+            </div>
+          )}
+          {proximaEtapa && (
+            <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-2.5 text-xs border border-border/50">
+              <div className="flex items-center gap-2.5 text-muted-foreground truncate">
+                <span className="font-bold text-foreground">Siguiente:</span>
+                <IconoRutina nombre={proximaEtapa.icono} className="size-4 text-primary" />
+                <span className="truncate">{proximaEtapa.titulo}</span>
+              </div>
+              <span className="font-mono text-muted-foreground shrink-0 font-medium ml-2">
+                a las {proximaEtapa.horaInicio}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Botones de Control de la Rutina */}
-      <div className="flex items-center justify-center gap-2.5 mt-6 w-full max-w-md">
+      {/* Controles de la rutina: volver, pausar, +5 min, avanzar */}
+      <div className="flex flex-wrap items-center justify-center gap-2.5 mt-6 w-full max-w-lg">
+        {onRetrocederEtapa && (
+          <Button
+            variant="outline"
+            size={esFullscreen ? "lg" : "sm"}
+            onClick={onRetrocederEtapa}
+            disabled={!puedeRetroceder || !etapaActual}
+            className="h-10 px-3.5 gap-1.5 rounded-xl font-semibold"
+            title={
+              etapaAnterior
+                ? `Volver a «${etapaAnterior.titulo}»: se retoma ahora (hasta 15 min) y el resto del día se corre`
+                : "Es la primera etapa del día"
+            }
+          >
+            <SkipBack className="size-4" />
+            <span className="hidden sm:inline">Anterior</span>
+          </Button>
+        )}
+
         {onTogglePausa && (
           <Button
             variant={estaPausado ? "default" : "outline"}
@@ -408,7 +507,7 @@ export function TemporizadorDisco({
             {estaPausado ? (
               <>
                 <Play className="size-4 fill-current" />
-                <span>Reanudar Temporizador</span>
+                <span>Reanudar</span>
               </>
             ) : (
               <>
@@ -424,6 +523,7 @@ export function TemporizadorDisco({
             variant="outline"
             size={esFullscreen ? "lg" : "sm"}
             onClick={onExtenderTiempo}
+            disabled={!etapaActual}
             className="h-10 px-3.5 gap-1.5 rounded-xl font-semibold"
             title="Añadir 5 minutos a la etapa y desplazar el día"
           >
@@ -437,11 +537,16 @@ export function TemporizadorDisco({
             variant="secondary"
             size={esFullscreen ? "lg" : "sm"}
             onClick={onAvanzarEtapa}
+            disabled={!puedeAvanzar || !etapaActual}
             className="h-10 px-3.5 gap-1.5 rounded-xl font-semibold"
-            title="Pasar a la siguiente etapa de la rutina"
+            title={
+              proximaEtapa
+                ? `Terminar esta etapa ahora y pasar a «${proximaEtapa.titulo}»`
+                : "Es la última etapa del día"
+            }
           >
-            <SkipForward className="size-4" />
             <span className="hidden sm:inline">Siguiente</span>
+            <SkipForward className="size-4" />
           </Button>
         )}
       </div>
@@ -449,7 +554,7 @@ export function TemporizadorDisco({
   );
 
   // Si está en pantalla completa, usar createPortal para salir de cualquier contenedor
-  if (esFullscreen && montado && typeof document !== "undefined") {
+  if (esFullscreen && typeof document !== "undefined") {
     return createPortal(contenido, document.body);
   }
 

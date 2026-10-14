@@ -53,6 +53,13 @@ export interface ConfiguracionRutina {
   etapas: EtapaRutina[];
   metasMensuales: MetaMensual[];
   semanalConfig: RutinaSemanalConfig;
+  /**
+   * Horario modificado solo para un día (posponer, pausar, +5 min, adelantar/volver).
+   * No altera la rutina base: al cambiar la fecha deja de aplicarse.
+   */
+  ajusteDia?: { fecha: string; etapas: EtapaRutina[] } | null;
+  /** Etapas marcadas como cumplidas en una fecha concreta (YYYY-MM-DD). */
+  cumplidasDia?: { fecha: string; ids: string[] } | null;
 }
 
 export const CATEGORIAS_INFO: Record<

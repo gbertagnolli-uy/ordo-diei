@@ -1,26 +1,18 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  Plus,
-  Search,
-  Filter,
-  CheckCircle,
-  Clock,
-  Eye,
-  EyeOff,
-  Sparkles,
-  AlertCircle,
-} from "lucide-react";
+import { Plus, Search, CheckCircle, Clock, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { EtapaRutina, CategoriaRutina, CATEGORIAS_INFO } from "@/lib/rutina/tipos";
+import { DragScroll } from "@/components/ui/drag-scroll";
+import { EtapaRutina } from "@/lib/rutina/tipos";
 import { EtapaCard } from "./EtapaCard";
 import {
   horaAMinutos,
   dateAMinutos,
   calcularTermometroEjecucion,
+  filtrarEtapasPorDia,
 } from "@/lib/rutina/calculadorHorarios";
 
 interface TimelineDiarioProps {
@@ -58,10 +50,17 @@ export function TimelineDiario({
 }: TimelineDiarioProps) {
   const [busqueda, setBusqueda] = useState("");
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState<string>("todos");
-  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
   const [ocultarCompletadas, setOcultarCompletadas] = useState(false);
 
   const minActual = dateAMinutos(horaActual);
+
+  // Solo cuentan las etapas que aplican hoy (y sus cumplimientos)
+  const etapasHoy = useMemo(() => filtrarEtapasPorDia(etapas, horaActual), [etapas, horaActual]);
+  const idsHoy = useMemo(() => new Set(etapasHoy.map((e) => e.id)), [etapasHoy]);
+  const cantCompletadas = useMemo(
+    () => [...completadasIds].filter((id) => idsHoy.has(id)).length,
+    [completadasIds, idsHoy]
+  );
 
   // Termómetro de ejecución según el horario actual
   const termometro = useMemo(() => {
@@ -70,7 +69,7 @@ export function TimelineDiario({
 
   // Filtrado reactivo de etapas
   const etapasFiltradas = useMemo(() => {
-    return etapas.filter((e) => {
+    return etapasHoy.filter((e) => {
       // Ocultar completadas si está activo el interruptor
       if (ocultarCompletadas && completadasIds.has(e.id)) {
         return false;
@@ -91,18 +90,12 @@ export function TimelineDiario({
         if (e.bloqueMacro !== bloqueSeleccionado) return false;
       }
 
-      // Filtro de categoría
-      if (categoriaFiltro !== "todas") {
-        if (e.categoria !== categoriaFiltro) return false;
-      }
-
       return true;
     });
-  }, [etapas, busqueda, bloqueSeleccionado, categoriaFiltro, ocultarCompletadas, completadasIds]);
+  }, [etapasHoy, busqueda, bloqueSeleccionado, ocultarCompletadas, completadasIds]);
 
   // Totales
-  const totalEtapas = etapas.length;
-  const cantCompletadas = completadasIds.size;
+  const totalEtapas = etapasHoy.length;
   const porcentajeCumplimiento = totalEtapas > 0 ? Math.round((cantCompletadas / totalEtapas) * 100) : 0;
 
   return (
@@ -230,8 +223,8 @@ export function TimelineDiario({
         </div>
       </div>
 
-      {/* Selector rápido de bloques macro del día */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      {/* Selector rápido de bloques macro del día: se desliza arrastrando, sin barra de scroll */}
+      <DragScroll activeIndex={BLOQUES_MACRO.findIndex((b) => b.id === bloqueSeleccionado)}>
         {BLOQUES_MACRO.map((b) => (
           <Button
             key={b.id}
@@ -243,7 +236,7 @@ export function TimelineDiario({
             {b.label}
           </Button>
         ))}
-      </div>
+      </DragScroll>
 
       {/* Lista de Tarjetas de Rutina */}
       <div className="space-y-3">

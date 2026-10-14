@@ -21,6 +21,14 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
+/**
+ * Crea/reanuda el AudioContext. Debe llamarse dentro de un gesto del usuario para que el
+ * navegador permita luego que la campana suene sola al cambiar de etapa.
+ */
+export function prepararAudio() {
+  getAudioContext();
+}
+
 export function reproducirAlarma(tipo: TipoSonidoRutina = "campanilla", volumenPorcentaje = 75) {
   const ctx = getAudioContext();
   if (!ctx) return;

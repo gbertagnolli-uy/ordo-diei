@@ -15,6 +15,10 @@ import {
   posponerDesdeEtapa,
   extenderEtapaActiva,
   calcularTermometroEjecucion,
+  avanzarEtapaAhora,
+  retrocederEtapaAhora,
+  obtenerEtapaAnterior,
+  obtenerEtapaSiguiente,
 } from "./calculadorHorarios.ts";
 import { RUTINA_PREDETERMINADA } from "./tipos.ts";
 
@@ -211,3 +215,84 @@ test("extenderEtapaActiva alarga la etapa en curso y desplaza las siguientes", (
   assert.equal(res[2].horaFin, "10:00");
 });
 
+
+test("termómetro: un atraso parcial no es 0% y pondera por minutos desde el inicio del día", () => {
+  // 10:30 del lunes: ya terminaron las etapas 1..10 (08:00-10:20 aprox.)
+  const fecha = new Date(2026, 9, 12, 10, 30, 0);
+  // Solo se cumplieron las 4 primeras (08:00-09:00 = 60 min de ~140 transcurridos)
+  const parcial = new Set(["etapa-01", "etapa-02", "etapa-03", "etapa-04"]);
+  const r = calcularTermometroEjecucion(RUTINA_PREDETERMINADA, parcial, fecha);
+  assert.ok(r.porcentajeRitmo > 0 && r.porcentajeRitmo < 100);
+  assert.equal(r.estado, "demorado");
+  assert.equal(r.minutosCompletados, 60);
+  assert.ok(r.minutosEsperados > r.minutosCompletados);
+});
+
+test("termómetro: la etapa en curso sin marcar no cuenta como atraso", () => {
+  const fecha = new Date(2026, 9, 12, 9, 10, 0); // etapa 5 (09:00-09:25) en curso
+  const hechas = new Set(["etapa-01", "etapa-02", "etapa-03", "etapa-04"]);
+  const r = calcularTermometroEjecucion(RUTINA_PREDETERMINADA, hechas, fecha);
+  assert.equal(r.estado, "impecable");
+  assert.equal(r.porcentajeRitmo, 100);
+});
+
+test("termómetro: antes de comenzar el día queda en 'por_comenzar'", () => {
+  const fecha = new Date(2026, 9, 12, 7, 0, 0);
+  const r = calcularTermometroEjecucion(RUTINA_PREDETERMINADA, new Set(), fecha);
+  assert.equal(r.estado, "por_comenzar");
+});
+
+const BASE_NAV = [
+  { ...RUTINA_PREDETERMINADA[4], id: "n-1", horaInicio: "09:00", horaFin: "09:25", duracionMin: 25 },
+  { ...RUTINA_PREDETERMINADA[5], id: "n-2", horaInicio: "09:25", horaFin: "09:30", duracionMin: 5 },
+  { ...RUTINA_PREDETERMINADA[6], id: "n-3", horaInicio: "09:30", horaFin: "09:55", duracionMin: 25 },
+];
+
+test("avanzarEtapaAhora termina la etapa en este minuto y adelanta el resto", () => {
+  const fecha = new Date(2026, 9, 12, 9, 10, 30); // dentro de n-1
+  const res = avanzarEtapaAhora(BASE_NAV, fecha);
+  assert.equal(res[0].horaFin, "09:10");
+  assert.equal(res[0].duracionMin, 10);
+  assert.equal(res[1].horaInicio, "09:10");
+  assert.equal(res[1].horaFin, "09:15");
+  assert.equal(res[2].horaInicio, "09:15");
+  assert.equal(obtenerEtapaActual(res, fecha).etapa?.id, "n-2");
+});
+
+test("avanzarEtapaAhora no hace nada en la última etapa del día", () => {
+  const fecha = new Date(2026, 9, 12, 9, 40, 0); // n-3 es la última
+  assert.equal(avanzarEtapaAhora(BASE_NAV, fecha), BASE_NAV);
+  assert.equal(obtenerEtapaSiguiente(BASE_NAV, fecha), null);
+});
+
+test("retrocederEtapaAhora reinicia la etapa anterior y corre el resto", () => {
+  const fecha = new Date(2026, 9, 12, 9, 26, 0); // dentro de n-2 (pausa)
+  assert.equal(obtenerEtapaAnterior(BASE_NAV, fecha)?.id, "n-1");
+  const res = retrocederEtapaAhora(BASE_NAV, fecha);
+  // n-1 (25 min) se retoma ahora con un máximo de 15 min
+  assert.equal(res[0].horaInicio, "09:26");
+  assert.equal(res[0].horaFin, "09:41");
+  // n-2 y n-3 conservan su duración, corridas detrás de n-1
+  assert.equal(res[1].horaInicio, "09:41");
+  assert.equal(res[1].horaFin, "09:46");
+  assert.equal(res[2].horaInicio, "09:46");
+  assert.equal(res[2].horaFin, "10:11");
+  assert.equal(obtenerEtapaActual(res, fecha).etapa?.id, "n-1");
+});
+
+test("retrocederEtapaAhora no hace nada en la primera etapa del día", () => {
+  const fecha = new Date(2026, 9, 12, 9, 10, 0);
+  assert.equal(retrocederEtapaAhora(BASE_NAV, fecha), BASE_NAV);
+});
+
+test("el cambio de etapa y el cero del temporizador ocurren en el mismo instante", () => {
+  // Justo antes y justo en el límite 09:25
+  const antes = new Date(2026, 9, 12, 9, 24, 59, 500);
+  const ahora = new Date(2026, 9, 12, 9, 25, 0, 0);
+  const e1 = obtenerEtapaActual(BASE_NAV, antes).etapa!;
+  assert.equal(e1.id, "n-1");
+  assert.equal(calcularProgresoEtapa(e1, antes).restanteSeg, 1);
+  const e2 = obtenerEtapaActual(BASE_NAV, ahora).etapa!;
+  assert.equal(e2.id, "n-2");
+  assert.equal(calcularProgresoEtapa(e1, ahora).restanteSeg, 0);
+});

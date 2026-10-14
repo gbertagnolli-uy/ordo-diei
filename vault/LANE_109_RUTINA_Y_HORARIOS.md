@@ -136,25 +136,57 @@
   - Agregado en el grupo **Rutina** el ítem **`Horarios`** (con icono `CalendarClock`), direccionando a `/dashboard/horarios` y tooltip descriptivo.
   - Soporte de redirección en `/dashboard/rutina` -> `/dashboard/horarios`.
 
-### G. Correcciones y Mejoras de Pulido Exhaustivo (Feedback del Usuario)
-1. **Modo Enfoque / Pantalla Completa:**
-   - Implementado mediante `React Portal` montado directo en `document.body` + soporte nativo de la API de Pantalla Completa HTML5 (`requestFullscreen` / `exitFullscreen`) y tecla `Escape`.
-   - Salida del layout del dashboard sin restricciones de overflow, funcionando de manera impecable en tablets o monitores montados en pared.
-2. **Posponer en Cascada y Sincronización de Timers:**
-   - La función `posponerDesdeEtapa` y `posponerRutina` extienden la etapa actual o previa e incrementan en cascada la hora de inicio y fin de todas las etapas posteriores del día.
-   - En `BarraAlarmaActiva`, el menú desplegable permite posponer +5, +10, +15 o +30 minutos, actualizando el cronograma completo de la familia y persistiendo la configuración.
-   - Evita la desincronización (cuando una etapa llegaba a 13:15 y cambiaba antes de que el timer llegara a cero): ahora el reloj, el temporizador y el cronograma están 100% coordinados.
-3. **Botón de Pausa Real:**
-   - Congela el segundero y el ratio circular en el instante exacto del clic.
-   - Al reanudar, si la pausa superó los 30 segundos, desplaza automáticamente en cascada el horario de la etapa actual y las siguientes para que no se pierda el tiempo planificado.
-4. **Movimiento Continuo del Disco SVG (Time-Timer):**
-   - Se reemplazó el porcentaje entero redondeado (que saltaba en tramos cada 18 segundos) por un flotante de alta precisión `ratioRestante` (0.0 a 1.0) con transición CSS suave `stroke-dashoffset 0.1s linear`.
-5. **Termómetro de Ritmo y Ejecución:**
-   - Se implementó `calcularTermometroEjecucion` que compara las tareas completadas respecto a las que **deberían estar hechas según la hora actual** (indicando "¡Ritmo Impecable!", "Buen Ritmo", "Con Demora" o "Preparados"), evitando la desmotivación de mostrar solo un porcentaje global del día.
-6. **Ocultar Etapas Completadas en Tab "Diaria":**
-   - Interruptor conmutador `Ocultar completadas` / `Mostrar completadas` con icono, filtrado reactivo de tarjetas y banner discreto al final que permite volver a ver todas con un clic.
-7. **Diseño Pulido de Notificación Flotante:**
-   - `BarraAlarmaActiva` rediseñada con glassmorphism, glow ámbar, `DropdownMenu` nativo y badge distintivo.
+### G. Segunda ronda de correcciones (feedback textual del usuario, 2026-10-14)
+
+> Hay una rama en donde se estaba trabajando la pantalla de "Horarios", lamentablemente el otro agente es una porqueria y no es tan bueno cosas complejas, le va mejor en cosas puntuales o de copy (agy).
+> Problemas detectados (no son todos, debés revisar funcionalidad de todo):
+> Conmutador de ocultar completadas no funciona.
+> Notificación muestra pildora "Nueva etapa!" que ocupa espacio innecesario y hace que todo lo demas quede amontonado (eliminar pildora). Deberia mostrar el titulo mas pequeño y sin descripción.
+> En tab "Diaria" -en el filtro de etapa que muestra "Todo el dia", "Mañana", etc.- aparece una scroll bar horizontal, en vez de que sean scroleables con "drag and scroll" y existe un off canvas para lo elementos que no entran.
+> Termometro debe calcular el porcentaje de completitud desde que inició el dia hasta la hora actual, un atraso no significa 0% como dice ahora.
+> Modo enfoque no abre el cronometro en fullscreen, sino que lo expande en un div abajo del layout de la aplicación (ERROR GARRAFAL)
+> Tab en vivo, debajo del timer, debe permitir volver a la tarea/etapa anterior.
+> Botón "Modo Enfoque" aparece en todas las pantallas pero no funciona.
+>
+> (Lista previa pegada por el usuario) Timer no funciona en modo enfoque · "Comienza nueva etapa": posponer no funciona y debería posponer todos los horarios de ese día · Timers desincronizados (13:15 empezó uno nuevo sin que el anterior llegara a cero) · Botón de pausa sin efecto · Notificación flotante precaria · Diaria debe ocultar las completadas · Revisar todo de forma exhaustiva · Barra circular a "tramos" · El progreso debe compararse con el horario (termómetro de ejecución).
+
+**Causas encontradas y arreglos (en `lane-109`):**
+
+| Problema | Causa real | Arreglo |
+|---|---|---|
+| Modo Enfoque se expandía "debajo del layout" | El contenedor llevaba `relative` **y** `fixed`; en Tailwind v4 `relative` gana, así que el portal quedaba en flujo normal al final del `<body>`. Además solo existía la instancia dentro de la pestaña En Vivo, por eso el botón del encabezado no hacía nada en las otras pestañas | Overlay `fixed inset-0` real (`role=dialog`) renderizado a nivel de página (funciona desde cualquier pestaña) + **Fullscreen API** (`requestFullscreen`/`fullscreenchange`/Esc) + bloqueo del scroll del body. Disco y tipografías escalan con el viewport |
+| Pausa sin efecto / timers desincronizados | La pausa congelaba solo los números pero el reloj seguía: la etapa cambiaba (y sonaba la alarma) "por debajo" con el contador congelado | Pausa real: mientras está pausado, **todo** el tablero (etapa, cuenta regresiva, termómetro, alarmas) usa el instante congelado. Al reanudar, si pasaron ≥30 s, el resto del día se corre lo que duró |
+| Posponer del aviso "no funciona" | Al posponer, la etapa previa volvía a ser la vigente y el detector de alarmas la veía como "etapa nueva": sonaba y reabría el aviso en bucle | Se registra la etapa previa como ya avisada; el aviso se oculta cuando deja de ser la etapa vigente. Posponer corre **todas** las etapas posteriores del día |
+| Ajustes se guardaban en la rutina base | Posponer/pausar/+5 modificaban la rutina para siempre (mañana empezaba corrida) | Nuevo `ajusteDia` (por fecha) en la configuración: los ajustes aplican solo a hoy; la rutina base no cambia. Editar/borrar/restablecer en el editor descarta el ajuste del día |
+| Cumplimientos se perdían al recargar | Estaban solo en memoria de la página | `cumplidasDia` (por fecha) persistido junto a la configuración |
+| Barra circular a tramos | Transición de 0,1 s con tick de 1 s | Transición lineal de 1 s (giro continuo); el anillo se reinicia al cambiar de etapa |
+| Termómetro marcaba 0% con cualquier atraso | Contaba etapas enteras "esperadas" (≥50% transcurrido) | Ponderado por **minutos** desde el inicio del día hasta ahora; la etapa en curso no cuenta como atraso salvo que ya esté marcada. ≥100% de lo vencido ⇒ impecable; ≥70% bueno; menos ⇒ demorado |
+| Filtro con scroll horizontal | `overflow-x-auto` + clase `scrollbar-none` inexistente | Componente `ui/drag-scroll.tsx` sobre **Embla** (`dragFree`): se arrastra con mouse/touch, sin barra, con degradé en los bordes; lo que no entra queda fuera de cuadro. Usado también en el selector de días de Semanal |
+| Pastilla "¡Nueva Etapa!" | — | Aviso rediseñado en una sola fila compacta: título pequeño + horario, "Posponer" (+5/10/15/30) y "Listo". Sin descripción ni pastilla |
+| Falta "volver a la etapa anterior" | `Siguiente` solo cerraba el aviso, no avanzaba | Botones **Anterior / Siguiente** bajo el timer (+ filas "Anterior:" y "Siguiente:"). Siguiente: la actual termina ahora y el día se adelanta lo sobrante. Anterior: se retoma la anterior ahora (hasta 15 min, `RETOMAR_ETAPA_MAX_MIN`) y el resto se corre. Navegar no dispara campana ni aviso |
+| Sonaba la campana al abrir la página | El detector trataba la primera etapa leída como "nueva" | La primera lectura solo registra la etapa |
+| Alarma sin sonido si no hubo clic previo | Autoplay policy: el `AudioContext` nacía suspendido | `prepararAudio()` en el primer gesto del usuario |
+| Notificaciones del navegador nunca se pedían | `solicitarPermisoNotificacion` no se llamaba | Interruptor "Avisos del navegador" en el menú de audio; `notificacionesNavegador` se respeta |
+| Hidratación (hora del servidor ≠ cliente) | La página dibujaba hora/etapa en el servidor | Se dibuja solo en cliente (`useSyncExternalStore`), con skeleton |
+| Editor aceptaba inicio = fin | — | Validación y mensaje; el editor siempre toma la versión base de la etapa (no la corrida por ajustes) |
+| "Ocultar completadas" | En la prueba en navegador **funciona** (28→25 tarjetas con 3 marcadas, banner "Ver todas"). Si vuelve a fallar en el servidor del usuario, probablemente era un build viejo | Conteos ahora sobre las etapas de hoy; cumplimientos persistidos. Verificado en navegador |
+
+---
+
+## 2.b Pendientes / cosas para revisar (hallazgos de esta ronda)
+
+1. **Persistencia solo en el navegador.** La rutina, los ajustes del día y los cumplimientos viven en `localStorage`; `/api/rutina` guarda en memoria del servidor (se pierde al reiniciar y no se vuelve a leer). Cada dispositivo ve su propia rutina: una tablet de pared y el celular de los padres **no se sincronizan**. Falta modelo Prisma + migración (requiere SQL aditivo revisado, nunca `db push`).
+2. **Semanal indiferenciada.** Las 28 etapas son `diasSemana: "todos"`, así que Lun–Dom muestran lo mismo; sábado/domingo solo tienen notas de texto. Falta definir (con el usuario) las rutinas distintas.
+3. **Cascadas por índice.** `posponerDesdeEtapa`, `extenderEtapaActiva` y `posponerRutina` operan sobre toda la lista sin filtrar por `diasSemana`. Con etapas solo-laborables, la etapa "previa" podría no ser la de hoy. Las nuevas `avanzar/retrocederEtapaAhora` sí filtran por día.
+4. **Pausa al minuto.** El horario se guarda en `HH:mm`: al reanudar el desplazamiento se redondea a minutos enteros (±30 s de diferencia con lo pausado).
+5. **Anterior limitado a 15 min.** Decisión de diseño para no correr el día 100 min al volver a un bloque largo; se ajusta con +5 min. Confirmar con el usuario.
+6. **Alarma solo con la página abierta.** No hay push/background; en iOS el audio exige un toque previo. Para una tablet de pared conviene dejarla en Modo Enfoque.
+7. **Etapa nocturna (22:00–08:00)** cruza medianoche: al adelantar el día puede quedar un hueco antes de las 08:00 ("Descanso general"). Comportamiento aceptable pero sin tests específicos de UI.
+8. **Metas mensuales** traen `mes: "2026-10"` fijo en los datos de ejemplo; no rotan solas de mes.
+9. **Sin tests de componentes.** La lógica pura tiene 20 tests; la UI se verificó a mano con Chromium + puppeteer-core (scripts fuera del repo). Convendría un e2e liviano.
+10. **Dependencia nueva:** `embla-carousel-react` (base del Carousel de shadcn).
+11. **Lint heredado:** `react-hooks/set-state-in-effect` en `EditorEtapaModal` (sincronizar formulario) y un `eslint-disable` puntual en el detector de alarmas. Warnings de imports sin usar quedan en vistas Semanal/Mensual.
+12. **Worktree:** esta rama tiene `dev` mergeado (incluye modelos nuevos de Prisma); hay que correr `npx prisma generate` (solo codegen) en el worktree. No se tocó la base.
 
 ---
 
@@ -167,8 +199,9 @@
   - Desplazamiento en cascada (`posponerRutina`, `posponerDesdeEtapa`, `extenderEtapaActiva`).
   - Cálculo del Termómetro de Ejecución comparado con el momento presente.
 - **Resultado:**
-  - `npm test`: **112 tests** (109 aprobados, 3 tests de base de datos omitidos según regla de no escribir en DB de producción sin `PERMITIR_TESTS_DB=1`).
-  - `npx tsc --noEmit`: **0 errores de TypeScript**.
+  - `npm test` (con `dev` mergeado): **235 tests**, 219 aprobados, 0 fallan, 16 omitidos (DB de producción sin `PERMITIR_TESTS_DB=1`). Rutina: 20 tests de lógica (termómetro por minutos, avanzar/retroceder, sincronía en el límite).
+  - `npx tsc --noEmit`: **0 errores**. `npm run build`: OK.
+  - Verificación en navegador (Chromium headless, reloj simulado): Modo Enfoque a pantalla completa real desde En Vivo y Diaria (Esc/"Salir" lo cierran), pausa congela etapa y contador, Siguiente/Anterior, aviso + posponer (+10 corre el día, sin re-alarma), ocultar completadas, drag del filtro, recarga sin campana.
   - `npm run build`: compilación de producción exitosa con Turbopack.
   - Servidor de prueba: corriendo en puerto `3001` (`npx next start -p 3001`).
 

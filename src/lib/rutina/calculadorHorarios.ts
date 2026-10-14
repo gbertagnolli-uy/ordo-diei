@@ -334,18 +334,31 @@ export function extenderEtapaActiva(
 }
 
 export interface TermometroEjecucion {
+  /** Etapas que ya terminaron (o están completadas) hasta la hora actual. */
   esperadasTotal: number;
   completadasEsperadas: number;
   totalCompletadas: number;
+  /** Minutos de rutina transcurridos desde el inicio del día hasta ahora. */
+  minutosEsperados: number;
+  /** De esos minutos, cuántos corresponden a etapas marcadas como cumplidas. */
+  minutosCompletados: number;
   porcentajeRitmo: number; // 0 a 100
   estado: "impecable" | "bueno" | "demorado" | "por_comenzar";
   mensaje: string;
 }
 
+/** Fin de una etapa dentro del mismo día (una etapa que cruza medianoche termina a las 24:00). */
+function finEnElDia(e: EtapaRutina): number {
+  const ini = horaAMinutos(e.horaInicio);
+  const fin = horaAMinutos(e.horaFin);
+  return fin > ini ? fin : 1440;
+}
+
 /**
- * Calcula el Termómetro de Ejecución de la rutina comparado con la hora actual:
- * mide el ritmo real según lo que DEBERÍA estar hecho hasta el momento presente,
- * no un porcentaje desmotivante del total del día.
+ * Termómetro de ejecución: compara lo cumplido contra lo que el horario exigía
+ * desde que inició el día hasta la hora actual. El avance se pondera por minutos
+ * de rutina, de modo que un atraso parcial da un porcentaje parcial (no cero) y
+ * la etapa en curso no cuenta como atrasada: solo suma si ya fue marcada.
  */
 export function calcularTermometroEjecucion(
   etapas: EtapaRutina[],
@@ -353,84 +366,181 @@ export function calcularTermometroEjecucion(
   fechaActual: Date
 ): TermometroEjecucion {
   const etapasHoy = filtrarEtapasPorDia(etapas, fechaActual);
+  const base = {
+    esperadasTotal: 0,
+    completadasEsperadas: 0,
+    totalCompletadas: completadasIds.size,
+    minutosEsperados: 0,
+    minutosCompletados: 0,
+    porcentajeRitmo: 100,
+  };
   if (!etapasHoy.length) {
-    return {
-      esperadasTotal: 0,
-      completadasEsperadas: 0,
-      totalCompletadas: completadasIds.size,
-      porcentajeRitmo: 100,
-      estado: "por_comenzar",
-      mensaje: "Sin etapas programadas para hoy.",
-    };
+    return { ...base, estado: "por_comenzar", mensaje: "Sin etapas programadas para hoy." };
   }
 
   const minActual = dateAMinutos(fechaActual);
-  const primerInicio = horaAMinutos(etapasHoy[0].horaInicio);
+  const inicioDia = Math.min(...etapasHoy.map((e) => horaAMinutos(e.horaInicio)));
 
-  // Antes de comenzar la primera etapa del día
-  if (minActual < primerInicio) {
+  if (minActual < inicioDia) {
     return {
-      esperadasTotal: 0,
-      completadasEsperadas: 0,
-      totalCompletadas: completadasIds.size,
-      porcentajeRitmo: 100,
+      ...base,
       estado: "por_comenzar",
-      mensaje: `Listos para comenzar a las ${etapasHoy[0].horaInicio}.`,
+      mensaje: `Listos para comenzar a las ${minutosAHora(inicioDia)}.`,
     };
   }
 
-  // Etapas que ya deberían haberse completado o iniciado hasta la hora actual
-  const etapasEsperadas = etapasHoy.filter((e) => {
-    const fin = horaAMinutos(e.horaFin);
-    const ini = horaAMinutos(e.horaInicio);
-    if (ini <= fin) {
-      // Si la hora actual ya superó el fin, o está al menos a mitad de la etapa
-      return minActual >= ini + (fin - ini) * 0.5;
-    } else {
-      // Cruza medianoche
-      return minActual >= ini || minActual < fin;
-    }
-  });
+  let minutosEsperados = 0;
+  let minutosCompletados = 0;
+  let esperadasTotal = 0;
+  let completadasEsperadas = 0;
+  let pendientesTerminadas = 0;
 
-  const esperadasTotal = etapasEsperadas.length;
+  for (const e of etapasHoy) {
+    const ini = horaAMinutos(e.horaInicio);
+    const fin = finEnElDia(e);
+    const transcurrido = Math.max(0, Math.min(fin, minActual) - ini);
+    if (transcurrido <= 0) continue;
+
+    const terminada = minActual >= fin;
+    const completada = completadasIds.has(e.id);
+    // La etapa en curso solo se cuenta si ya fue marcada como cumplida
+    if (!terminada && !completada) continue;
+
+    esperadasTotal += 1;
+    minutosEsperados += transcurrido;
+    if (completada) {
+      completadasEsperadas += 1;
+      minutosCompletados += transcurrido;
+    } else {
+      pendientesTerminadas += 1;
+    }
+  }
+
   if (esperadasTotal === 0) {
     return {
-      esperadasTotal: 0,
-      completadasEsperadas: 0,
-      totalCompletadas: completadasIds.size,
-      porcentajeRitmo: 100,
+      ...base,
       estado: "impecable",
-      mensaje: "¡Ritmo al día! Primera etapa iniciada.",
+      mensaje: "¡Ritmo al día! Primera etapa en curso.",
     };
   }
 
-  const completadasEsperadas = etapasEsperadas.filter((e) => completadasIds.has(e.id)).length;
-  const porcentajeRitmo = Math.min(100, Math.round((completadasEsperadas / esperadasTotal) * 100));
+  const porcentajeRitmo = Math.min(
+    100,
+    Math.round((minutosCompletados / minutosEsperados) * 100)
+  );
 
-  let estado: TermometroEjecucion["estado"] = "impecable";
-  let mensaje = "";
-
-  if (porcentajeRitmo === 100) {
+  let estado: TermometroEjecucion["estado"];
+  let mensaje: string;
+  if (pendientesTerminadas === 0) {
     estado = "impecable";
-    mensaje = `¡Ritmo impecable! Todas las ${esperadasTotal} etapas hasta ahora están al día.`;
-  } else if (porcentajeRitmo >= 75) {
+    mensaje = `¡Ritmo impecable! Todo lo previsto hasta ahora está cumplido (${esperadasTotal} etapas).`;
+  } else if (porcentajeRitmo >= 70) {
     estado = "bueno";
-    const faltan = esperadasTotal - completadasEsperadas;
-    mensaje = `Buen ritmo (${porcentajeRitmo}%): solo falta ${faltan} etapa previa.`;
+    mensaje = `Buen ritmo: ${pendientesTerminadas} ${
+      pendientesTerminadas === 1 ? "etapa pendiente" : "etapas pendientes"
+    } de las que ya pasaron.`;
   } else {
     estado = "demorado";
-    const faltan = esperadasTotal - completadasEsperadas;
-    mensaje = `Con demora: hay ${faltan} etapas pendientes. Considera posponer para sincronizar.`;
+    mensaje = `Con demora: ${pendientesTerminadas} ${
+      pendientesTerminadas === 1 ? "etapa pendiente" : "etapas pendientes"
+    } de las que ya pasaron. Marcalas o pospone el día para sincronizar.`;
   }
 
   return {
     esperadasTotal,
     completadasEsperadas,
     totalCompletadas: completadasIds.size,
+    minutosEsperados,
+    minutosCompletados,
     porcentajeRitmo,
     estado,
     mensaje,
   };
+}
+
+function reprogramar(e: EtapaRutina, iniMin: number, finMin: number): EtapaRutina {
+  const horaInicio = minutosAHora(iniMin);
+  const horaFin = minutosAHora(finMin);
+  const duracionMin = Math.round(duracionEtapaSegundos(horaInicio, horaFin) / 60);
+  return { ...e, horaInicio, horaFin, duracionMin: Math.max(1, duracionMin) };
+}
+
+function desplazar(e: EtapaRutina, delta: number): EtapaRutina {
+  return reprogramar(e, horaAMinutos(e.horaInicio) + delta, horaAMinutos(e.horaFin) + delta);
+}
+
+/**
+ * Etapa que precede a la actual dentro de la rutina de hoy (null si la actual es la primera).
+ */
+export function obtenerEtapaAnterior(
+  etapas: EtapaRutina[],
+  fecha: Date
+): EtapaRutina | null {
+  const hoy = filtrarEtapasPorDia(etapas, fecha);
+  const { index } = obtenerEtapaActual(etapas, fecha);
+  return index > 0 ? hoy[index - 1] : null;
+}
+
+/**
+ * Etapa que sigue a la actual dentro de la rutina de hoy (null si la actual es la última).
+ */
+export function obtenerEtapaSiguiente(
+  etapas: EtapaRutina[],
+  fecha: Date
+): EtapaRutina | null {
+  const hoy = filtrarEtapasPorDia(etapas, fecha);
+  const { index } = obtenerEtapaActual(etapas, fecha);
+  return index >= 0 && index < hoy.length - 1 ? hoy[index + 1] : null;
+}
+
+/**
+ * Pasa a la etapa siguiente ahora mismo: la actual termina en este minuto y
+ * el resto del día se adelanta lo que sobraba de ella. Sin cambios si no hay siguiente.
+ */
+export function avanzarEtapaAhora(etapas: EtapaRutina[], fecha: Date): EtapaRutina[] {
+  const hoy = filtrarEtapasPorDia(etapas, fecha);
+  const { etapa, index } = obtenerEtapaActual(etapas, fecha);
+  if (!etapa || index < 0 || index >= hoy.length - 1) return etapas;
+
+  const ini = horaAMinutos(etapa.horaInicio);
+  const fin = finEnElDia(etapa);
+  const nuevoFin = Math.max(ini + 1, Math.floor(dateAMinutos(fecha)));
+  const delta = nuevoFin - fin;
+  if (delta >= 0) return etapas;
+
+  const posteriores = new Set(hoy.slice(index + 1).map((e) => e.id));
+  return etapas.map((e) => {
+    if (e.id === etapa.id) return reprogramar(e, ini, nuevoFin);
+    if (posteriores.has(e.id)) return desplazar(e, delta);
+    return e;
+  });
+}
+
+/** Tiempo máximo que se le devuelve a una etapa al volver a ella (se ajusta luego con +5 min). */
+export const RETOMAR_ETAPA_MAX_MIN = 15;
+
+/**
+ * Vuelve a la etapa anterior: se retoma ahora por su duración original (hasta
+ * RETOMAR_ETAPA_MAX_MIN) y la etapa actual y las siguientes se corren hacia adelante lo
+ * necesario. Sin cambios si la actual es la primera del día.
+ */
+export function retrocederEtapaAhora(etapas: EtapaRutina[], fecha: Date): EtapaRutina[] {
+  const hoy = filtrarEtapasPorDia(etapas, fecha);
+  const { etapa, index } = obtenerEtapaActual(etapas, fecha);
+  if (!etapa || index < 1) return etapas;
+
+  const previa = hoy[index - 1];
+  const ahora = Math.floor(dateAMinutos(fecha));
+  const nuevoFinPrevia = ahora + Math.min(previa.duracionMin, RETOMAR_ETAPA_MAX_MIN);
+  const delta = nuevoFinPrevia - horaAMinutos(etapa.horaInicio);
+  if (delta <= 0) return etapas;
+
+  const desdeActual = new Set(hoy.slice(index).map((e) => e.id));
+  return etapas.map((e) => {
+    if (e.id === previa.id) return reprogramar(e, ahora, nuevoFinPrevia);
+    if (desdeActual.has(e.id)) return desplazar(e, delta);
+    return e;
+  });
 }
 
 /**

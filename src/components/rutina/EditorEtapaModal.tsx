@@ -96,10 +96,11 @@ export function EditorEtapaModal({
 
   // Duración estimada en minutos
   const duracionMin = Math.round(duracionEtapaSegundos(horaInicio, horaFin) / 60);
+  const horariosInvalidos = !horaInicio || !horaFin || horaInicio === horaFin;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!titulo.trim()) return;
+    if (!titulo.trim() || horariosInvalidos) return;
 
     const nuevaEtapa: EtapaRutina = {
       id: etapaParaEditar ? etapaParaEditar.id : `etapa-${Date.now()}`,
@@ -176,6 +177,11 @@ export function EditorEtapaModal({
           <p className="text-[11px] text-muted-foreground font-mono">
             Duración calculada: <strong>{duracionMin} minutos</strong>
           </p>
+          {horariosInvalidos && (
+            <p className="text-[11px] text-rose-600">
+              La hora de inicio y la de fin no pueden ser iguales.
+            </p>
+          )}
 
           {/* Categoría */}
           <div className="space-y-1.5">
@@ -296,7 +302,7 @@ export function EditorEtapaModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" size="sm" className="rounded-xl">
+              <Button type="submit" size="sm" className="rounded-xl" disabled={horariosInvalidos || !titulo.trim()}>
                 Guardar Etapa
               </Button>
             </div>
