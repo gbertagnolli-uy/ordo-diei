@@ -17,7 +17,7 @@
 
 | Lane | Entrega | Base / Dependencias | Archivo de Especificación |
 |---|---|---|---|
-| **H1 Pacing y Snow Day** | Materias, recursos, calendario lectivo, motor `repartir()` y recálculo determinista | Prisma 7 / Vitest | [`LANE_H1_MODELO_Y_PACING.md`](LANE_H1_MODELO_Y_PACING.md) |
+| **H1 Pacing y Snow Day** | Materias, recursos, calendario lectivo, motor `repartir()` y recálculo determinista | Prisma 7 / node:test (el proyecto no usa Vitest) | [`LANE_H1_MODELO_Y_PACING.md`](LANE_H1_MODELO_Y_PACING.md) |
 | **H2 LMS y «Hoy aprendo»** | Doble interfaz (niño vs. padre), reproductor y navegación, candado secuencial | Roost (`LessonPlayer`, `LearnSidebar`) / H1 | [`LANE_H2_REPRODUCTOR_Y_LECCION.md`](LANE_H2_REPRODUCTOR_Y_LECCION.md) |
 | **H3 Evidencia y portafolio** | Botón de cámara en tablet, audio de 10s, subida a `Archivo`, swipe de aprobación de padres, portafolio | Roost (`Showcase`), Lane 75 (`SwipeRow`) / H2 | [`LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md`](LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md) |
 | **H4 Active Recall y quizzes** | Checkpoints en video interactivo, quizzes con umbral 70%, algoritmo SM-2 de repaso, cartas holográficas | YouTube API, `HoloCard.tsx` / H2 | [`LANE_H4_CHECKPOINTS_Y_QUIZZES.md`](LANE_H4_CHECKPOINTS_Y_QUIZZES.md) |

@@ -11,5 +11,5 @@ Texto completo de la conclusión: `vault/nuevas-features/DECISIONES.md` §5 (D16
 - Sin código ni cambios de base de datos.
 
 ## Pendiente
-- Revisar contra el código actual: la Tienda (lane 103) ya existe; H1–H6 mencionan Vitest pero el proyecto usa `node:test`.
+- Revisar contra el código actual: la Tienda (lane 103) ya existe; corregido Vitest → `node:test` en H1, SPEC y LANES_HOMESCHOOLING.
 - Ejecutar H1 cuando el usuario lo ordene.

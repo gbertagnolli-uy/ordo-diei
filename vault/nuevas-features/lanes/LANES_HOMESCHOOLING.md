@@ -43,7 +43,7 @@
 
 | Lane | Nombre | Alcance Principal | Componentes Base / Adaptados | Tamaño |
 | :--- | :--- | :--- | :--- | :--- |
-| **H1** | **Modelo DB, Pacing & Snow Day** | Prisma schema aditivo, función pura `repartir()` con lógica de nieve/enfermedad, Server Actions, tests unitarios matemáticos sin UI compleja. | `SPEC.md` §3.2, Prisma 7, Vitest | **M** |
+| **H1** | **Modelo DB, Pacing & Snow Day** | Prisma schema aditivo, función pura `repartir()` con lógica de nieve/enfermedad, Server Actions, tests unitarios matemáticos sin UI compleja. | `SPEC.md` §3.2, Prisma 7, node:test (el proyecto no usa Vitest) | **M** |
 | **H2** | **LMS, Reproductor & Hoy Aprendo** | Doble interfaz: "Hoy Aprendo" (niño, táctil gigante, XP/incienso) vs "Cockpit Curricular" (padre). Desbloqueo secuencial con candados. | `LessonPlayer.tsx`, `LearnSidebar.tsx`, `ProgressBar.tsx` de Roost | **L** |
 | **H3** | **Evidencia & Portafolio Digital** | Botón de cámara nativa en tablet, audio de 10s, subida a `Archivo`, panel de revisión con swipe del padre, galería anual de portafolio. | `ShowcaseSubmit.tsx`, `ShowcaseCard.tsx` de Roost, `SwipeRow.tsx` de Ordo Diei | **L** |
 | **H4** | **Active Recall, Checkpoints & Quizzes** | Pausas interactivas en video (YouTube IFrame API), quizzes con umbral $\ge 70\%$, algoritmo SM-2 de repaso espaciado, recompensas de cartas. | `LessonPlayer.tsx` extendido, `HoloCard.tsx`, motor de cartas de Ordo Diei | **L** |
