@@ -23,6 +23,8 @@
 | P-14 | 126 (H2a) | `complete` calcula el corte de las 22:00 (50 %) con la hora del servidor (`setHours(22…)`) y la hora feliz con UTC; el «a tiempo» de las 18:00 es exacto porque sale de `horaEjecucion` en `APP_TZ`. Si el servidor no corre en Montevideo, el 50 % termina a las 22:00 de otra zona. | Sin cambios en `complete` (solo se agregó la guardia). | Fijar `TZ` del servidor o corregir `complete`. |
 | P-15 | 126 (H2a) | Solo el propio alumno marca sus lecciones (`completarLeccion` usa la sesión). Un padre no puede "terminar la lección" por un hijo; sí puede completar la Tarea (HS-SEG) pero la guardia lo frena si faltan lecciones, y puede desmarcar (`DELETE …/completar?alumnoId=`). | Implementado así. | Permitir que el padre marque por el hijo. |
 | P-16 | 126 (H2a) | El gancho del quiz (H4) en `completarLeccion` es un comentario: hasta que exista H4 no se exige nada. Las lecciones de recursos tipo libro/PDF no tienen lecciones (solo «Terminé» del día). | — | Se completa en H4. |
+| P-17 | 127 (H2b) | La pantalla del niño («Hoy aprendo», visor, «Terminé» → `complete` → `TASK_SUCCESS`) solo está verificada con `tsc`, `eslint`, `next build` y la lógica pura; no se vio en el navegador ni con un hijo real (P-8 sigue abierto). El sonido de victoria (N2) y la marca de actividad (N4) no se conectaron: esas lanes no existen todavía. | — | Recorrerla con un hijo; conectar N2/N4 cuando existan. |
+| P-18 | 127 (H2b) | El visor decide «última lección del día» con la respuesta del servidor; si el niño abre el visor en dos pestañas, la segunda puede mandar «Terminé» sobre una Tarea ya completada y ver un 400 de `complete` ("ya fue completada"). | Se muestra el error como toast. | Refrescar y cerrar el visor ante ese 400. |
 
 ## Resueltos
 _(ninguno todavía)_

@@ -102,3 +102,19 @@ export async function desmarcarLeccion(actor: { id: number; rol: string }, alumn
   return { ok: true };
 }
 
+
+/**
+ * Tarea de un día para el alumno (días sin lecciones: libro, PDF…). Hoy ya la crea `asegurarTareasDeHoy`; esto cubre un día
+ * adelantable (navegación libre) que todavía no tiene. Devuelve la `tareaId`.
+ */
+export async function tareaDelDiaAlumno(alumnoId: number, diaId: number, hoy = hoyEnFamilia()) {
+  const dia = await prisma.diaLectivo.findUnique({ where: { id: diaId }, include: { plan: { include: { recurso: true } } } });
+  if (!dia || dia.plan.alumnoId !== alumnoId) throw new NoAutorizadoError("Ese día no es tuyo");
+  if (dia.estado !== "pendiente" && dia.estado !== "hecha") throw new ConflictoError("Ese día ya no está disponible");
+  const otros = await prisma.diaLectivo.findMany({ where: { planId: dia.planId, estado: { not: "movida" } }, orderBy: { fecha: "asc" }, select: { fecha: true, estado: true } });
+  const anterior = [...otros].reverse().find((d) => d.fecha < dia.fecha);
+  if (estaBloqueado({ fecha: aClave(dia.fecha), hoy, navegacionLibre: dia.plan.recurso.navegacionLibre, anteriorEstado: anterior?.estado ?? null })) {
+    throw new ConflictoError("Ese día todavía no está disponible");
+  }
+  return { tareaId: await crearTareaDelDia(prisma, dia.id) };
+}

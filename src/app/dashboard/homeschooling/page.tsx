@@ -4,24 +4,31 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { esPadre } from "@/lib/habitos/permisos";
 import { listarMaterias } from "@/lib/homeschooling/servidor/cursos";
-import { alumnosDeFamilia } from "@/lib/homeschooling/servidor/vistas";
+import { alumnosDeFamilia, progresoPorAlumno } from "@/lib/homeschooling/servidor/vistas";
 import PanelHomeschooling from "@/components/homeschooling/plan/PanelHomeschooling";
+import HoyAprendo from "@/components/homeschooling/hoy/HoyAprendo";
+import prisma from "@/lib/prisma";
+import { hoyEnFamilia } from "@/lib/habitos/server";
+import { asegurarTareasDeHoy } from "@/lib/homeschooling/servidor/tareas";
+import { leccionesDeHoy } from "@/lib/homeschooling/servidor/hoy";
 
-// Homeschooling: el padre arma materias, cursos y planes. Hijo/Hija → «Hoy aprendo» (lane H2).
+// Homeschooling: el padre arma materias, cursos y planes; Hijo/Hija ve «Hoy aprendo».
 export default async function HomeschoolingPage() {
   const session = await getSession();
   if (!session?.user) redirect("/");
   const actor = { id: Number(session.user.id), rol: String(session.user.rolFamiliar ?? "") };
 
   if (!esPadre(actor.rol)) {
-    return (
-      <div className="mx-auto max-w-xl p-6 text-center text-muted-foreground">
-        <h1 className="mb-2 text-xl font-bold text-foreground">Estudio</h1>
-        <p>Próximamente vas a ver acá lo que toca estudiar hoy.</p>
-      </div>
-    );
+    // Hijo/Hija → «Hoy aprendo»: antes de dibujar, se asegura la Tarea de cada día lectivo de hoy
+    const hoy = hoyEnFamilia();
+    await asegurarTareasDeHoy(actor.id, hoy);
+    const [dias, yo] = await Promise.all([
+      leccionesDeHoy(actor.id, hoy),
+      prisma.usuario.findUnique({ where: { id: actor.id }, select: { nombre: true, fotoUrl: true, streakDays: true } }),
+    ]);
+    return <HoyAprendo nombre={yo?.nombre ?? ""} fotoUrl={yo?.fotoUrl ?? null} racha={yo?.streakDays ?? 0} dias={dias} />;
   }
 
-  const [materias, alumnos] = await Promise.all([listarMaterias(actor), alumnosDeFamilia()]);
-  return <PanelHomeschooling materias={materias} alumnos={alumnos} />;
+  const [materias, alumnos, progresos] = await Promise.all([listarMaterias(actor), alumnosDeFamilia(), progresoPorAlumno()]);
+  return <PanelHomeschooling materias={materias} alumnos={alumnos} progresos={progresos} />;
 }
