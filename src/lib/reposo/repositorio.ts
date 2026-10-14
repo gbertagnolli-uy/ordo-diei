@@ -1,7 +1,7 @@
 // Implementación Prisma de RepoReposo (la lógica vive en unsplash.ts y se prueba con un repo en memoria).
-import prisma from "@/lib/prisma";
-import { CONFIG_POR_DEFECTO } from "./unsplash";
-import type { ConfigReposo, FotoPool, Orientacion, RepoReposo } from "./unsplash";
+import prisma from "../prisma.ts";
+import { CONFIG_POR_DEFECTO } from "./unsplash.ts";
+import type { ConfigReposo, FotoPool, Orientacion, RepoReposo } from "./unsplash.ts";
 
 const aConfig = (r: {
   segundosLogin: number; segundosSesion: number; unsplashTema: string; unsplashConsulta: string | null;
