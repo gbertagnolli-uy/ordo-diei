@@ -1,7 +1,7 @@
 // Portado de vendor/roost/src/db/adapters/mongodb/index.ts:472-515 (mapModule, mapRecording, mapLessonCompletion)
 // (msrbuilds/roost@492af47). Cambios: filas de Prisma (camelCase, ids numéricos) → DTO con los nombres de Roost.
-import type { DiaLectivo, LeccionCurso, Materia, RecursoCurso } from "@prisma/client";
-import type { Group, Module, ModuleWithProgress, Recording, RecordingWithCompletion } from "./tipos.ts";
+import type { DiaLectivo, EvidenciaAprendizaje, EvidenciaImagen, LeccionCurso, Materia, RecursoCurso } from "@prisma/client";
+import type { Group, Module, ModuleWithProgress, Recording, RecordingWithCompletion, ShowcaseWithDetails } from "./tipos.ts";
 
 export function mapGroup(m: Materia): Group {
   return {
@@ -80,4 +80,30 @@ export function mapModuleWithProgress(
   };
   if (incluirLecciones) base.recordings = lecciones.map((l) => mapRecording(l, cubiertas.has(l.orden)));
   return base;
+}
+
+/** Portado de `mapShowcase` (vendor/roost/src/db/adapters/mongodb/index.ts:363): evidencia → DTO con los nombres de Roost */
+export function mapShowcase(
+  e: EvidenciaAprendizaje & { imagenes: EvidenciaImagen[]; alumno: { nombre: string }; diaLectivo?: { plan: { recurso: { materia: { nombre: string } } } } | null }
+): ShowcaseWithDetails {
+  return {
+    id: e.id,
+    title: e.titulo ?? "",
+    description: e.nota,
+    author_id: e.alumnoId,
+    status: e.estado,
+    moderation_notes: e.comentarioPadre,
+    moderated_by: e.revisadaPorId,
+    moderated_at: e.revisadaEn?.toISOString() ?? null,
+    is_featured: e.destacada,
+    featured_at: e.destacadaEn?.toISOString() ?? null,
+    stars: e.estrellas,
+    dia_lectivo_id: e.diaLectivoId,
+    author_name: e.alumno.nombre,
+    materia_name: e.diaLectivo?.plan.recurso.materia.nombre ?? null,
+    created_at: e.createdAt.toISOString(),
+    images: [...e.imagenes]
+      .sort((a, b) => a.orden - b.orden || a.id - b.id)
+      .map((i) => ({ id: i.id, showcase_id: i.evidenciaId, image_url: i.archivoUrl, display_order: i.orden, caption: i.pie })),
+  };
 }

@@ -123,6 +123,23 @@ export interface ShowcaseImage {
   caption: string | null;
 }
 
+/** Evidencia con lo que muestran las pantallas (autor, materia, imágenes) */
+export interface ShowcaseWithDetails extends Showcase {
+  author_name: string;
+  materia_name: string | null;
+  created_at: string;
+  images: ShowcaseImage[];
+}
+
+export interface ShowcaseStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  featured: number;
+  thisMonth: number;
+}
+
 export const SHOWCASE_STATUS_INFO: Record<ShowcaseStatus, { label: string; color: string; bgColor: string }> = {
   pendiente: { label: "Pendiente de revisión", color: "text-warning", bgColor: "bg-warning/10" },
   aprobada: { label: "Aprobada", color: "text-success", bgColor: "bg-success/10" },

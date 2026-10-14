@@ -61,3 +61,21 @@ export const alumnoDe = (req: Request): number | null => {
 };
 
 export const leerJson = (req: Request) => req.json().catch(() => ({}));
+
+export const estadoEvidencia = z.enum(["pendiente", "aprobada", "ajustar"]);
+
+export const datosEvidencia = z.object({
+  alumnoId: idPositivo.optional(),
+  titulo: z.string().trim().max(150).nullable().optional(),
+  nota: z.string().trim().max(1000).nullable().optional(),
+  diaLectivoId: idPositivo.nullable().optional(),
+  imagenes: z.array(z.string().trim().max(200)).min(1, "Falta la foto").max(6),
+});
+
+export const accionEvidencia = z.discriminatedUnion("accion", [
+  z.object({ accion: z.literal("aprobar"), estrellas: z.number().int().min(1).max(5).nullable().optional() }),
+  z.object({ accion: z.literal("ajustar"), comentario: z.string().trim().min(1, "Escribí qué hay que ajustar").max(500) }),
+  z.object({ accion: z.literal("destacar") }),
+  z.object({ accion: z.literal("quitar_destacada") }),
+  z.object({ accion: z.literal("reenviar"), titulo: z.string().trim().max(150).nullable().optional(), nota: z.string().trim().max(1000).nullable().optional() }),
+]);

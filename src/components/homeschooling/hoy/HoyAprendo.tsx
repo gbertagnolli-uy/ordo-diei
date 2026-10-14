@@ -4,7 +4,9 @@
 // El saludo, el avatar y la racha son de solo lectura.
 
 import { useState } from "react";
-import { Flame, GraduationCap } from "lucide-react";
+import Link from "next/link";
+import { Camera, Flame, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
@@ -32,6 +34,12 @@ export default function HoyAprendo({ nombre, fotoUrl, racha, dias }: { nombre: s
           </span>
         )}
       </header>
+
+      <Button asChild variant="outline" className="w-full">
+        <Link href="/dashboard/homeschooling/portafolio">
+          <Camera /> Mi portafolio
+        </Link>
+      </Button>
 
       {dias.length === 0 ? (
         <Empty className="border border-dashed">

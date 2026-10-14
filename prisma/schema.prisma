@@ -96,12 +96,14 @@ model Usuario {
   metaTienda        MetaTienda?
 
   // Homeschooling (vault/nuevas-features/homeschooling/ARQUITECTURA_DETALLADA.md §3)
-  materiasCreadas   Materia[]         @relation("MateriasCreadas")
-  recursosCreados   RecursoCurso[]    @relation("RecursosCreados")
-  leccionesCreadas  LeccionCurso[]    @relation("LeccionesCreadas")
-  planesAlumno      PlanCurso[]       @relation("PlanesAlumno")
-  diasNoLectivos    DiaNoLectivo[]    @relation("DiasNoLectivosAlumno")
-  progresoLecciones ProgresoLeccion[] @relation("ProgresoAlumno")
+  materiasCreadas     Materia[]              @relation("MateriasCreadas")
+  recursosCreados     RecursoCurso[]         @relation("RecursosCreados")
+  leccionesCreadas    LeccionCurso[]         @relation("LeccionesCreadas")
+  planesAlumno        PlanCurso[]            @relation("PlanesAlumno")
+  diasNoLectivos      DiaNoLectivo[]         @relation("DiasNoLectivosAlumno")
+  progresoLecciones   ProgresoLeccion[]      @relation("ProgresoAlumno")
+  evidenciasHs        EvidenciaAprendizaje[] @relation("EvidenciasAlumno")
+  evidenciasRevisadas EvidenciaAprendizaje[] @relation("EvidenciasRevisadas")
 
   @@map("Usuarios")
 }
@@ -813,8 +815,9 @@ model DiaLectivo {
   tareaId     Int?             @unique @map("Tarea_ID")
   createdAt   DateTime         @default(now()) @map("Created_At")
 
-  plan  PlanCurso @relation(fields: [planId], references: [id], onDelete: Cascade)
-  tarea Tarea?    @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+  plan       PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tarea      Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+  evidencias EvidenciaAprendizaje[]
 
   @@unique([planId, fecha])
   @@index([fecha, estado])
@@ -849,4 +852,50 @@ model ProgresoLeccion {
   @@unique([alumnoId, leccionId])
   @@index([alumnoId, recursoId])
   @@map("Homeschool_Progreso")
+}
+
+enum EstadoEvidencia {
+  pendiente
+  aprobada
+  ajustar
+}
+
+// ← showcases de Roost (sin votos, reseñas ni URL pública): la foto de un trabajo, que el padre revisa
+model EvidenciaAprendizaje {
+  id              Int             @id @default(autoincrement())
+  alumnoId        Int             @map("Alumno_ID")
+  diaLectivoId    Int?            @map("Dia_Lectivo_ID")
+  titulo          String?         @map("Titulo")
+  nota            String?         @map("Nota")
+  estado          EstadoEvidencia @default(pendiente) @map("Estado")
+  comentarioPadre String?         @map("Comentario_Padre")
+  revisadaPorId   Int?            @map("Revisada_Por_ID")
+  revisadaEn      DateTime?       @map("Revisada_En")
+  estrellas       Int?            @map("Estrellas")
+  destacada       Boolean         @default(false) @map("Destacada")
+  destacadaEn     DateTime?       @map("Destacada_En")
+  createdAt       DateTime        @default(now()) @map("Created_At")
+
+  alumno      Usuario           @relation("EvidenciasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  revisadaPor Usuario?          @relation("EvidenciasRevisadas", fields: [revisadaPorId], references: [id], onDelete: SetNull)
+  diaLectivo  DiaLectivo?       @relation(fields: [diaLectivoId], references: [id], onDelete: SetNull)
+  imagenes    EvidenciaImagen[]
+
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Evidencias")
+}
+
+// ← showcase_images de Roost
+model EvidenciaImagen {
+  id          Int      @id @default(autoincrement())
+  evidenciaId Int      @map("Evidencia_ID")
+  archivoUrl  String   @map("Archivo_URL")
+  orden       Int      @default(0) @map("Orden")
+  pie         String?  @map("Pie")
+  createdAt   DateTime @default(now()) @map("Created_At")
+
+  evidencia EvidenciaAprendizaje @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+
+  @@index([archivoUrl])
+  @@map("Homeschool_Evidencia_Imagenes")
 }
