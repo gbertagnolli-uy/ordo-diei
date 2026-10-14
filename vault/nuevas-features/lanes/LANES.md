@@ -85,7 +85,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 | L5 Breviarium | ✅ integrada (lane 141) | L3 | 141 |
 | L6 Missale | ✅ integrada (lane 142) | L3 | 142 |
 | L7 Proprium | ✅ integrada (lane 143) | L3 | 143 |
-| L8 Ordinarium + Psalterium | ⏳ lista | L3 | — |
+| L8 Ordinarium + Psalterium | ✅ integrada (lane 144) | L3 | 144 |
 | L9 Rosarium | ⏳ lista | L3 | — |
 
 **N4 (detector de inactividad, hook y pruebas):** ✅ integrada (lane 138), hecha como prerrequisito de R3 (`PROMPT_REPOSO_LITURGIA.md` §3). N5 y N6 siguen pendientes.
