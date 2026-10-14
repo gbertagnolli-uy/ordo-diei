@@ -1,0 +1,225 @@
+# Correcciones del OCR de Torres Amat (edición de 1883-84): «Libro cap,vers[-vers] | texto completo del pasaje».
+# Reemplazan al texto extraído de ese pasaje. Ortografía ya actual (ver MODERNIZAR en generar-frases.ts).
+
+# ---- Salmos
+Ps 1,1-2 | de, los libert í- nos Sino => de los libertinos; sino
+Ps 2,11-12 | poseidos => poseídos
+Ps 22,4 | de- la, sombra => de la sombra
+Ps 22,4 | porque tu estás => porque tú estás
+Ps 24,4-5 | instruyeme => instrúyeme
+Ps 27,7 | asíle => así le
+Ps 36,5 | confia => confía
+Ps 45,2-3 | tier ra => tierra
+Ps 46,2 | jubilo => júbilo
+Ps 49,14-15 | É invócame => E invócame
+Ps 49,14-15 | libraré. y tú => libraré; y tú
+Ps 50,19 | mas grato Pa Dios => más grato para Dios
+Ps 50,19 | contrito humillado => contrito y humillado
+Ps 55,4-5 | las -promesas => las promesas
+Ps 62,2 | apuntala aurora => apunta la aurora
+Ps 62,4 | Mas apreciable => Más apreciable
+Ps 65,16 | Yenid => Venid
+Ps 65,16 | temeis => teméis
+Ps 68,17 | Oyeme => Óyeme
+Ps 83,2-3 | ej r citos => ejércitos
+Ps 92,1 | for a leza => fortaleza
+Ps 92,1 | re dondez => redondez
+Ps 96,10 | amais => amáis
+Ps 102,13-14 | ól => él
+Ps 102,13-14 | sér => ser
+Ps 103,24 | sábiamente => sabiamente
+Ps 118,50 !! el OCR perdió una palabra («y palabra me dio la vida»)
+Ps 123,8 !! texto ilegible en el escaneo
+Ps 138,23-24 !! el OCR perdió una palabra («ñame y reconoce»)
+Ps 144,3 | loado- su => loado: su
+# ---- Proverbios
+Pr 11,25 | embriaga 3 4 * => embriaga
+Pr 12,25 !! texto ilegible en el escaneo
+Pr 14,29 | prudencia- pero => prudencia; pero
+Pr 15,33 | g oria => gloria
+Pr 19,21 !! el OCR perdió palabras («la flue cumple»)
+Pr 21,23 | el que-guarda => el que guarda
+Pr 22,1 | riquezas n: => riquezas:
+# ---- Sabiduría
+Sap 1,13-14 !! supera los 300 caracteres
+Sap 11,24-25 | aborrecieras,, => aborrecieras,
+Sap 12,19 | sus*' pecados => sus pecados
+Ps 24,6-7 | mis necedades Acuérdate => mis necedades. Acuérdate
+Ps 85,5 | Siendo tú, Señor, como eres, suave, y benigno, y de gran clemencia para con todos los que te invocan, i. Oye propicio, oh Señor, mi oración y atiende a la voz de mis ruegos. => Siendo tú, Señor, como eres, suave, y benigno, y de gran clemencia para con todos los que te invocan.
+Ps 110,10 | sabiduría Sábios => sabiduría. Sabios
+# ---- Eclesiastés, Eclesiástico, Cantar
+Ecl 12,13 !! texto ilegible en el escaneo
+Sir 2,8 !! texto ilegible en el escaneo
+Sir 7,36 !! texto ilegible en el escaneo
+Sir 18,13 !! texto ilegible en el escaneo
+Sir 18,15 !! texto ilegible en el escaneo
+Ct 2,10 !! texto ilegible en el escaneo
+Ct 2,16 !! texto ilegible en el escaneo
+# ---- Pentateuco, históricos, Job, Tobías
+Job 1,21 | ella 2 3 4. => ella.
+Gn 2,18 | que e bre esté solo => que el hombre esté solo
+Gn 2,18 | semejante a e. => semejante a él.
+Gn 28,15 | 4e restituiré => te restituiré
+Gn 28,15 | ^ue cumpla => que cumpla
+Gn 50,20 | estáis- viendo => estáis viendo
+Ex 3,14 | Moysós => Moysés
+Ex 3,14 | anadió => añadió
+Ex 15,2 | ensalzar 1 2. => ensalzar.
+Ex 20,12 | Dios tuyo ¡ => Dios tuyo
+Dt 6,4-5 | fuerzas °. => fuerzas.
+Dt 8,3 !! el pasaje extraído no corresponde (capítulo mal alineado)
+# ---- Profetas
+Is 26,12 !! texto ilegible en el escaneo
+Is 40,1 | hé aquí => he aquí
+Is 40,31 | esperanza', => esperanza,
+Is 66,13 | así' yo => así yo
+Jr 31,13 | lds => los
+# ---- Evangelios
+Mt 5,7 | _ alcanzarán => alcanzarán
+Mt 6,6 | 'público => público
+Mt 9,12-13 | sacrificio 1 2. => sacrificio.
+Mt 10,29-31 | vuestro padre => vuestro Padre
+Mt 18,21-22 !! el OCR perdió una frase («cuando pecare contra mí? ¿hasta siete veces?»)
+Mt 20,28 | Hijo de hombre => Hijo del hombre
+Mt 25,21 | siervo • I diligente, y leal; ya que has sido fiel en lo poco, yo te con- ¡fiaré lo mucho, ven => siervo diligente, y leal; ya que has sido fiel en lo poco, yo te confiaré lo mucho, ven
+Mt 25,40 !! cortado por un salto de página
+Lc 10,41-42 | privada l. => privada.
+Lc 18,14 !! cortado por un salto de página
+Lc 18,27 | Eespondióles => Respondióles
+Lc 23,42-43 | cuan hayas => cuando hayas
+Lc 23,46 !! cortado por un salto de página
+Jo 1,1-3 | ya el Yerbo 2 3, y => ya el Verbo, y
+Jo 1,9 | de si alumbra => de sí alumbra
+Jo 1,14 | verdad M. => verdad.
+Jo 1,29 | venia => venía
+Jo 3,16 | él,no => él, no
+Jo 3,30 | él- crezca => él crezca
+Mt 21,22 !! el pasaje extraído no corresponde (capítulo mal alineado)
+Jo 8,31-32 | perseverá- reis => perseveráis
+Jo 8,31-32 | sereis => seréis
+Jo 10,14-15 | la& ovejas => las ovejas
+Jo 10,27-28 !! texto ilegible en el escaneo
+Jo 12,24 !! cortado por un salto de página
+Jo 12,26 | a i estará => allí estará
+Jo 13,34-35 | y es h Que => y es: Que
+Jo 13,34-35 | recíprocamente 1 2. => recíprocamente.
+Jo 14,15 | amais => amáis
+Jo 14,15 | observar mis => observad mis
+Jo 14,27 | La pap => La paz
+Jo 14,27 | no os la doy y°> como => no os la doy yo, como
+Jo 16,33 | mundo l. => mundo.
+Act 1,8 | Eecibireis => Recibiréis
+Act 1,8 | Jerusa- íem => Jerusalem
+Act 2,38 !! cortado por un salto de página
+Rom 5,5 | ha si o derramada => ha sido derramada
+Rom 5,5 | Espíritu fe anto => Espíritu Santo
+Rom 8,14-15 | escla- vos > sino => esclavos, sino
+Rom 8,14-15 | esto es > i Oh => esto es: ¡Oh
+Rom 12,9-10 | fra ternal => fraternal
+Rom 12,21 | venganz > mas => venganza: mas
+Rom 12,21 | o d fuerza de ben ficios => o a fuerza de beneficios
+1Cor 6,19-20 | en Muestro => en vuestro
+1Cor 13,7-8 | todo L La => todo. La
+1Cor 15,58 | y_ con ® tantes: => y constantes:
+2Cor 5,17 !! texto ilegible en el escaneo
+2Cor 12,9 !! texto ilegible en el escaneo
+Gal 5,22-23 | fidelidad u, => fidelidad,
+Gal 5,22-23 | Mansedumbre => mansedumbre
+Eph 2,8-9 | depura gracia => de pura gracia
+Phlp 2,3-4 | mis: mo => mismo
+1Tim 6,12 | arrebata y u&egura bien => arrebata y asegura bien
+Hbr 11,6 | Por cuanto e que => Por cuanto el que
+Hbr 11,6 | remu- nerador => remunerador
+Hbr 13,16 !! cortado por un salto de página
+1Ptr 5,6-7 !! el OCR perdió media frase
+1Ptr 5,8-9 | Eesistidle => Resistidle
+1Ptr 5,8-9 | tri bulacion => tribulación
+1Ptr 5,8-9 | en e mundo => en el mundo
+Apc 22,17 | Yen. Diga también quien escucha: Yen. => Ven. Diga también quien escucha: Ven.
+Apc 22,17 | tiene sed a, venga, y e que => tiene sed, venga, y el que
+Apc 7,17 | enjugará! => enjugará
+Apc 7,17 | ojos i *. => ojos.
+Ps 140,2 | incienso l: => incienso:
+Pr 3,13-14 | y sus, frutos => y sus frutos
+Pr 8,34-35 !! texto ilegible en el escaneo
+Sir 6,16 !! texto ilegible en el escaneo
+Is 43,4 | por ti. hombres => por ti hombres
+Is 43,4 | pueblos \ por => pueblos por
+# ---- segunda tanda de revisión
+Ps 103,1 !! es solo el título del salmo
+Ps 121,6-7 !! texto ilegible en el escaneo
+Ps 46,7-8 | cantada salmos sábiamente => cantad salmos sabiamente
+Ps 12,6 | haré, resonar => haré resonar
+Ps 24,8-9 | seguir x. => seguir.
+Ps 26,8-9 !! texto ilegible en el escaneo
+Ps 37,22-23 !! el OCR perdió media frase
+Ps 39,9 | oñ ios mío => oh Dios mío
+Ps 41,9 | cantare => cantaré
+Ps 41,9 | autor dé mi vida => autor de mi vida
+Ps 43,5-6 | decre-* tas => decretas
+Ps 48,16 | este 'mundo => este mundo
+Ps 50,17-18 !! texto ilegible en el escaneo
+Ps 5,12 | moraras => morarás
+Ps 5,12 | san o Nombre => santo Nombre
+Ps 56,8 | esta m corazón => está mi corazón
+Ps 6,3 | hada mis => hasta mis
+Ps 61,9 | aquí -congregados => aquí congregados
+Ps 70,22 | te cantare => te cantaré
+Ps 71,12-13 | pondrá € salvo => pondrá a salvo
+Ps 71,12-13 | pobres \ => pobres.
+Ps 72,28 | p° ner => poner
+Ps 83,8 | camina rán => caminarán
+Ps 83,8 | enSion => en Sión
+Ps 84,7-8 | volviendo tú él rostro => volviendo tú el rostro
+Ps 85,15 | . Pero tú => Pero tú
+Ps 87,2 | presencia.. => presencia.
+Ps 93,12 | a brás => habrás
+Ps 99,4-5 !! texto ilegible en el escaneo
+Sap 3,4 !! texto ilegible en el escaneo
+Sap 5,1 | Entonces 4 5 los => Entonces los
+Sir 11,29 !! texto ilegible en el escaneo
+Sir 11,5 !! texto ilegible en el escaneo
+Sir 21,5 !! texto ilegible en el escaneo
+Sir 6,5 !! texto ilegible en el escaneo
+Sir 4,10 | só misericordioso => sé misericordioso
+Pr 12,22 | fielmente,, esos => fielmente, esos
+Pr 14,26-27 | sus'hijos => sus hijos
+Pr 15,29 | sera oidas => serán oídas
+Pr 18,22 | - Quien => Quien
+Pr 22,4 | rique- " zas => riquezas
+Pr 4,25-26 !! texto ilegible en el escaneo
+Is 25,8 | tierra 1 2 el => tierra el
+Is 42,16 | y * los => y los
+Is 43,5 | Occi- ' dente => Occidente
+Is 54,13 | Se- nor > Y => Señor, y
+Lc 12,48 | me recen => merecen
+Lc 12,48 | se a confiado => se ha confiado
+Lc 18,16 | de Dios. _ => de Dios.
+Lc 18,17 | remo de Dios => reino de Dios
+Lc 24,46-47 | necesario Y que => necesario: que
+Lc 24,46-47 | y e perdón => y el perdón
+Lc 6,38 | se os dar a: => se os dará:
+Lc 9,62 | - Respondióle => Respondióle
+Mc 1,17 | Seguidme,y => Seguidme, y
+Mc 2,27 | para él bien de el hombre => para el bien del hombre
+Mc 9,35 !! texto cortado
+Mc 10,21 | mostro => mostró
+Mt 11,29 | ■que => que
+Mt 12,7 | sacrificio i: => sacrificio:
+Mt 12,7 | •condenado => condenado
+Mt 16,18 | ella.. => ella.
+Mt 20,16 | escogidos \ => escogidos.
+Mt 24,35 | fa-. liarán => faltarán
+Mt 24,44 | : * porque => : porque
+Mt 25,23 | , P ues => , pues
+Mt 28,18 | Jesús 'acercándose => Jesús acercándose
+Mt 19,21 | Eespondióle => Respondióle
+Mt 22,37-39 | de todo l tu => de todo tu
+Ecl 4,12 !! texto ilegible en el escaneo
+Ecl 5,1 !! texto ilegible en el escaneo
+Tob 12,8 | oro 1 2 => oro
+Rom 8,14-15 !! supera los 300 caracteres
+1Cor 15,55-57 | la- fuerza => la fuerza
+Ps 138,5-6 | venidero - tú => venidero; tú
+Ps 138,5-6 | creación- se => creación; se
+Ps 146,5 | he- c as => hechas
