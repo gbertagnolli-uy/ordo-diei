@@ -1,27 +1,34 @@
-# Homeschooling sobre Roost — plan de integración (v3)
+# Homeschooling sobre Roost — plan de integración (v3.1)
 
-> Lane 115 · 2026-10-14 · Roost en `vendor/roost/` (commit `492af47`, ver `vendor/roost/ORIGEN.md`).
-> **Este documento reemplaza** el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`» de `SPEC.md`, `ARQUITECTURA_DETALLADA.md` (v2), `MAPEO_COMPONENTES_ROOST.md` y `../lanes/LANES_HOMESCHOOLING.md`. Lo que esos documentos dicen del **pacing, del puente con `Tarea` y de las reglas de negocio** sigue vigente salvo donde este plan lo cambie de forma explícita (registro §10).
+> Lane 115 (v3) · lane 117 (v3.1, 2026-10-14: respuestas del usuario y contradicciones resueltas) · Roost en `vendor/roost/` (commit `492af47`, ver `vendor/roost/ORIGEN.md`).
+> **Este es el documento de entrada para implementar Homeschooling.** Reemplaza el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`». Todos los documentos de esta carpeta ya están alineados con él (§9).
 >
-> **Convención de evidencia.** **[V]** = VERIFICADA: leí el código o ejecuté el comando citado. **[S]** = SUPUESTA: no se pudo comprobar acá; la lane que la use debe confirmarla antes de codear. Las rutas sin prefijo son de Ordo (`src/…`); las de Roost llevan `vendor/roost/`.
+> **Convención de evidencia.** **[V]** = VERIFICADA: leí el código o ejecuté el comando citado. **[S]** = SUPUESTA: la lane que la use debe confirmarla antes de codear (cada una dice cómo y qué hacer si falla). Las rutas sin prefijo son de Ordo (`src/…`); las de Roost llevan `vendor/roost/`.
+
+## Cómo usar este plan (para el agente que implementa)
+
+1. Leer `AGENTS.md` (git, worktrees, `scripts/integrar.sh`, **prohibido `prisma db push`**) y la doc local de Next 16 (`node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md` y `15-route-handlers.md`).
+2. Leer este plan §2–§4 y [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md) (esquema Prisma definitivo, pacing, puente con Tareas).
+3. Elegir la siguiente lane de §6 cuyas dependencias ya estén integradas en `dev` y seguir **su** `LANE_*.md` (entregables, origen → destino, tests, aceptación).
+4. **Número de lane = el siguiente libre al crearla** (`git worktree list`, `git branch -a`, `ls vault/LANE_*`): otros agentes trabajan en paralelo y los números se ocupan rápido.
+5. Al terminar: registro `vault/LANE_NN_*.md`, `scripts/integrar.sh`, limpiar worktree y rama.
 
 ---
 
 ## 0. Resumen ejecutivo
 
-1. **Se porta Roost a Next (client components) y se reescribe solo la capa de datos** (opción a). El Express de Roost no aporta nada a Homeschooling: no tiene ni una ruta de cursos, eventos o showcase [V `vendor/roost/server/src/index.ts:126-139`]; esa lógica vive en el navegador contra Supabase + RLS.
-2. **No se escribe un adaptador Prisma del `DatabaseAdapter`**: ningún service ni componente lo llama [V grep de `db()`/`getDatabase` fuera de `src/db/`]. En su lugar, cada service se parte en dos con **la misma firma**: cliente (`fetch`) y servidor (Prisma). Los componentes portados solo cambian imports.
-3. **Modelo:** `groups→Materia`, `modules→RecursoCurso`, `recordings→LeccionCurso`, `lesson_completions→ProgresoLeccion`, `events`+`event_attendees→ActividadOffline`+`ParticipanteActividad`, `showcases`+`showcase_images→EvidenciaAprendizaje`+`EvidenciaImagen`. `Usuario`, `Tarea` y `Archivo` se reutilizan; el contenido es familiar y el **plan es por alumno** (como Roost: contenido compartido, avance por usuario).
-4. **HD1 se mantiene**: Roost no da puntos por lecciones [V `vendor/roost/schema.sql`, no hay trigger sobre `lesson_completions`], así que cada día lectivo sigue siendo una `Tarea`. **Corrección obligatoria:** la Tarea debe llevar `horaEjecucion`; con solo `fechaVencimiento` la ruta `complete` la paga siempre como tardía (§4.3).
-5. **Se revoca «extender `MissionCalendar`»**: se porta `CalendarView` de Roost (date-fns, como Ordo) y se le suma el addon de arrastre que ya trae `react-big-calendar`.
-6. **Estilos:** las clases Tailwind 3 de Roost se traducen con una tabla fija a los tokens y a `src/components/ui`; **no** se importa `index.css` ni la paleta `surface-*`/`primary-NNN` de Roost. Un test de guarda lo hace cumplir.
-7. **Lo único que se escribe desde cero** es lo que Roost no tiene: pacing, días no lectivos, puente con `Tarea`, corrección de quizzes y armado de reportes. Repaso espaciado con **ts-fsrs**, checkpoints con **react-player**, gráficos con **recharts** (ya instalado).
-8. **Dependencias nuevas:** `react-dropzone@14.3.8`, `react-player@3.4.0`, `ts-fsrs@5.4.2`. **No** entran `@supabase/supabase-js`, `react-router-dom`, `react-quill-new`, `dompurify`, `@aws-sdk/*`.
-9. **9 lanes:** 116 (base Roost) → 117 (H1a) → 118 (H1b) → 119 (H2) → 120–123 (H3, H4, H5, H6 en paralelo).
-10. **Se recorta a propósito:** feed, mensajes, live room, leaderboard, votos y reseñas públicas de showcase, Stripe, auth/2FA, administración de comunidad, búsqueda global y notificaciones de Roost.
+1. **Se porta Roost a Next (client components) y se reescribe solo la capa de datos** (opción a). El Express de Roost no aporta nada: no tiene ni una ruta de cursos, eventos o showcase [V `vendor/roost/server/src/index.ts:126-139`].
+2. **No se escribe un adaptador Prisma del `DatabaseAdapter`**: ningún service ni componente lo llama [V]. Cada service se parte en dos con **la misma firma**: cliente (`fetch`) y servidor (Prisma). Los componentes portados solo cambian imports.
+3. **Modelo:** `groups→Materia`, `modules→RecursoCurso`, `recordings→LeccionCurso`, `lesson_completions→ProgresoLeccion`, `events`+`event_attendees→ActividadOffline`+`ParticipanteActividad`, `showcases`+`showcase_images→EvidenciaAprendizaje`+`EvidenciaImagen`. `Usuario`, `Tarea` y `Archivo` se reutilizan. Contenido familiar, **plan por alumno**.
+4. **Cada día lectivo es una `Tarea`** (Roost no premia lecciones [V]). Paga completo **hasta las 18:00** (decisión del usuario): la Tarea se crea con `horaEjecucion = 18:00 − tiempo estimado`, porque `complete` suma ese tiempo [V L49-55].
+5. **Guardia en `complete`:** la Tarea de un día no se puede completar desde el tablero de Tareas sin haber hecho sus lecciones (una sola llamada agregada en la ruta, lane H2).
+6. **Se revoca «extender `MissionCalendar`»**: se porta `CalendarView` de Roost (date-fns) con el arrastre de `react-big-calendar`; `MissionCalendar` no se toca.
+7. **Estilos:** clases de Roost traducidas a tokens y `src/components/ui` con una tabla fija y un test de guarda.
+8. **Se escribe desde cero solo lo que Roost no tiene:** pacing, días no lectivos, puente con `Tarea`, corrección de quizzes, armado de reportes. Repaso con **ts-fsrs**, checkpoints con **react-player**, gráficos con **recharts** (ya instalado).
+9. **Dependencias nuevas:** `react-dropzone@14.3.8` (H3), `react-player@3.4.0` y `ts-fsrs@5.4.2` (H4).
+10. **Lanes:** HS0, H1a y HS-SEG (en paralelo) → H1b → H2 → H3, H4, H5, H6 (en paralelo). Se recorta feed, mensajes, live room, leaderboard, votos, Stripe y auth de Roost.
 
 ---
-
 ## 1. Inventario de Roost
 
 Tamaños medidos con `wc -l` [V]. Veredicto: **USAR** = se copia casi literal (cambian imports y clases); **PORTAR** = se copia y se adapta datos/router/auth/estilos; **DESCARTAR** = no entra (motivo).
@@ -30,23 +37,23 @@ Tamaños medidos con `wc -l` [V]. Veredicto: **USAR** = se copia casi literal (c
 
 | Archivo | Líneas | Qué hace | Depende de | Veredicto | Motivo / destino |
 |---|---|---|---|---|---|
-| `LearnGroupLayout.tsx` | 325 | Orquesta grilla → módulo → lección por `?module=&lesson=`; carga módulos y grabaciones; modales de alta | `react-router-dom` `useSearchParams`, `useAuth`, `services/module`, `CommentSection` | **PORTAR** | Esqueleto de la vista de materia (padre e hijo). Se quita `CommentSection` y `UploadAssetsModal`. Destino `src/components/homeschooling/cursos/MateriaLayout.tsx` (lane 118; modo hijo en 119) |
-| `LessonPlayer.tsx` | 152 | Iframe 16:9 YouTube/Vimeo (`getEmbedUrl` L30), anterior/siguiente, marcar/desmarcar (`handleToggleComplete` L39) | `services/module` | **PORTAR** | `VisorLeccion`. El «desmarcar» (L43) **se elimina para hijos** (sería premio repetible, AUDITORÍA A6). Dominio `youtube-nocookie.com`. Lane 119 |
-| `LearnSidebar.tsx` | 175 | Lista de módulos con progreso y lecciones con check; cajón móvil | `ProgressBar` | **PORTAR** | `LeccionesDelDia` con candado (`Lock`) y gris para lo bloqueado. El cajón móvil se reemplaza por `Sheet` de `ui/`. Lane 119 |
-| `ModuleGrid.tsx` | 87 | Grilla de módulos, estado vacío, «Add Module» si `canManage` | `ModuleCard` | **PORTAR** | `CursoGrid` (padre). Estado vacío con `Empty` de `ui/`. Lane 118 |
-| `ModuleCard.tsx` | 60 | Tarjeta con miniatura, título, % | — | **PORTAR** | `CursoCard` (padre, 118) y variante grande `TarjetaHoy` (hijo, 119) |
-| `ModuleDetail.tsx` | 290 | Cabecera de módulo, pestañas grabaciones/assets, miniaturas YouTube/Vimeo, editar/borrar | `services/module` | **PORTAR** | `CursoDetalle`. Pestaña «assets» fuera (ver `UploadAssetsModal`). Lane 118 |
-| `ManageModuleModal.tsx` | 242 | Alta/edición de módulo con portada (`uploadImage`) | `services/module`, `services/s3` | **PORTAR** | Campos del paso «Recurso» del asistente. `uploadImage` → `subirImagen` de Ordo (`src/lib/subirImagen.ts`, misma forma `{url}` [V]). Lane 118 |
-| `CompactGroupHeader.tsx` | 59 | Cabecera compacta del grupo | `react-router-dom`, `hasPermission` | **PORTAR** | `MateriaHeader`. Lane 118 |
+| `LearnGroupLayout.tsx` | 325 | Orquesta grilla → módulo → lección por `?module=&lesson=`; carga módulos y grabaciones; modales de alta | `react-router-dom` `useSearchParams`, `useAuth`, `services/module`, `CommentSection` | **PORTAR** | Esqueleto de la vista de materia (padre e hijo). Se quita `CommentSection` y `UploadAssetsModal`. Destino `src/components/homeschooling/cursos/MateriaLayout.tsx` (lane H1b; modo hijo en H2) |
+| `LessonPlayer.tsx` | 152 | Iframe 16:9 YouTube/Vimeo (`getEmbedUrl` L30), anterior/siguiente, marcar/desmarcar (`handleToggleComplete` L39) | `services/module` | **PORTAR** | `VisorLeccion`. El «desmarcar» (L43) **se elimina para hijos** (sería premio repetible, AUDITORÍA A6). Dominio `youtube-nocookie.com`. Lane H2 |
+| `LearnSidebar.tsx` | 175 | Lista de módulos con progreso y lecciones con check; cajón móvil | `ProgressBar` | **PORTAR** | `LeccionesDelDia` con candado (`Lock`) y gris para lo bloqueado. El cajón móvil se reemplaza por `Sheet` de `ui/`. Lane H2 |
+| `ModuleGrid.tsx` | 87 | Grilla de módulos, estado vacío, «Add Module» si `canManage` | `ModuleCard` | **PORTAR** | `CursoGrid` (padre). Estado vacío con `Empty` de `ui/`. Lane H1b |
+| `ModuleCard.tsx` | 60 | Tarjeta con miniatura, título, % | — | **PORTAR** | `CursoCard` (padre, H1b) y variante grande `TarjetaHoy` (hijo, H2) |
+| `ModuleDetail.tsx` | 290 | Cabecera de módulo, pestañas grabaciones/assets, miniaturas YouTube/Vimeo, editar/borrar | `services/module` | **PORTAR** | `CursoDetalle`. Pestaña «assets» fuera (ver `UploadAssetsModal`). Lane H1b |
+| `ManageModuleModal.tsx` | 242 | Alta/edición de módulo con portada (`uploadImage`) | `services/module`, `services/s3` | **PORTAR** | Campos del paso «Recurso» del asistente. `uploadImage` → `subirImagen` de Ordo (`src/lib/subirImagen.ts`, misma forma `{url}` [V]). Lane H1b |
+| `CompactGroupHeader.tsx` | 59 | Cabecera compacta del grupo | `react-router-dom`, `hasPermission` | **PORTAR** | `MateriaHeader`. Lane H1b |
 | `ProgressBar.tsx` | 30 | Barra de % | — | **DESCARTAR** | Ordo ya tiene `src/components/ui/progress.tsx` [V]; dos barras sería un duplicado (regla `ui-work-rules`) |
 
 ### 1.2 Grupos, video y adjuntos (`components/groups/`, resto)
 
 | Archivo | Líneas | Qué hace | Veredicto | Motivo / destino |
 |---|---|---|---|---|
-| `AddRecordingModal.tsx` | 257 | Alta de grabación por URL; parsea YouTube (L54) y Vimeo (L64), vista previa | **PORTAR** | `LeccionForm` (118). Las regex se extraen a `src/lib/homeschooling/video.ts` (116). La de YouTube **no reconoce `/embed/` ni `watch?…&v=`** [V lectura de la regex L54]: se amplía y se testea |
+| `AddRecordingModal.tsx` | 257 | Alta de grabación por URL; parsea YouTube (L54) y Vimeo (L64), vista previa | **PORTAR** | `LeccionForm` (H1b). Las regex se extraen a `src/lib/homeschooling/video.ts` (HS0). La de YouTube **no reconoce `/embed/` ni `watch?…&v=`** [V lectura de la regex L54]: se amplía y se testea |
 | `VideoPlayerModal.tsx` | 91 | Modal con iframe | **DESCARTAR** | `VisorLeccion` ya cubre el caso |
-| `CreateGroupModal.tsx` | 417 | Alta de grupo (nombre, descripción, privacidad, portada, modo) | **PORTAR (reducido)** | Solo nombre, descripción y portada → `MateriaForm` (118). Privacidad/modo/plan pago son de comunidad |
+| `CreateGroupModal.tsx` | 417 | Alta de grupo (nombre, descripción, privacidad, portada, modo) | **PORTAR (reducido)** | Solo nombre, descripción y portada (+ ícono, color y dificultad de Ordo) → `MateriaForm` (H1b). Privacidad/modo/plan pago son de comunidad |
 | `UploadAssetsModal.tsx`, `GroupAssets.tsx` | 246 + 249 | Adjuntos S3 por módulo | **DESCARTAR (v1)** | `Archivo` solo acepta imágenes [V `src/lib/archivos.ts:18`]; los PDF van como enlace en la lección |
 | `GroupMembers.tsx`, `GroupHeader.tsx`, `GroupTabs.tsx`, `GroupCard.tsx`, `GroupRecordings.tsx`, `RecordingCard.tsx`, `DefaultGroupLayout.tsx`, `SidebarGroupLayout.tsx`, `MarkdownPreviewModal.tsx`, `groupTabsConfig.ts` | ~1.400 | Comunidad: miembros, pestañas de feed, layouts de grupo | **DESCARTAR** | La «membresía» la da el plan por alumno; el resto es feed/comunidad |
 
@@ -54,33 +61,33 @@ Tamaños medidos con `wc -l` [V]. Veredicto: **USAR** = se copia casi literal (c
 
 | Archivo | Líneas | Qué hace | Veredicto | Motivo / destino |
 |---|---|---|---|---|
-| `components/calendar/CalendarView.tsx` | 303 | `react-big-calendar` con `dateFnsLocalizer` (L13), vistas mes/semana/día/agenda, colores por estado, `<style>` oscuro con hex (L114) | **PORTAR** | `src/components/homeschooling/roost/CalendarView.tsx` (116): locale `es`, se quita el `<style>` y se usa la clase `mission-calendar` (tokens, `src/components/tasks/mission-calendar.css` [V]); se desacopla de `EventDetails/EventForm` (pasan a props) y se envuelve con `withDragAndDrop` [V existe `node_modules/react-big-calendar/lib/addons/dragAndDrop/withDragAndDrop.js`] |
-| `pages/Calendar.tsx` | 218 | Página: carga eventos del mes, próximos, crear | **PORTAR** | `PlanCalendario` del padre (118). Se elimina el N+1 de L42-55 (§7.6) |
-| `components/events/EventForm.tsx` | 275 | Título, descripción, inicio/fin `datetime-local`, lugar, virtual, grupo | **PORTAR** | `ActividadForm` (122): sin virtual/meeting/grupo; con materia y alumnos |
-| `EventCard.tsx`, `EventDetails.tsx` | 132 + 207 | Tarjeta y detalle con RSVP | **PORTAR** | `ActividadCard`, `ActividadDetalle` (122), sin RSVP |
-| `AttendeeList.tsx` | 160 | Lista de asistentes | **PORTAR** | `ParticipantesList`: qué hijos participaron (122) |
+| `components/calendar/CalendarView.tsx` | 303 | `react-big-calendar` con `dateFnsLocalizer` (L13), vistas mes/semana/día/agenda, colores por estado, `<style>` oscuro con hex (L114) | **PORTAR** | `src/components/homeschooling/roost/CalendarView.tsx` (HS0): locale `es`, se quita el `<style>` y se usa la clase `mission-calendar` (tokens, `src/components/tasks/mission-calendar.css` [V]); se desacopla de `EventDetails/EventForm` (pasan a props) y se envuelve con `withDragAndDrop` [V existe `node_modules/react-big-calendar/lib/addons/dragAndDrop/withDragAndDrop.js`] |
+| `pages/Calendar.tsx` | 218 | Página: carga eventos del mes, próximos, crear | **PORTAR** | `PlanCalendario` del padre (H1b). Se elimina el N+1 de L42-55 (§7.6) |
+| `components/events/EventForm.tsx` | 275 | Título, descripción, inicio/fin `datetime-local`, lugar, virtual, grupo | **PORTAR** | `ActividadForm` (H5): sin virtual/meeting/grupo; con materia y alumnos |
+| `EventCard.tsx`, `EventDetails.tsx` | 132 + 207 | Tarjeta y detalle con RSVP | **PORTAR** | `ActividadCard`, `ActividadDetalle` (H5), sin RSVP |
+| `AttendeeList.tsx` | 160 | Lista de asistentes | **PORTAR** | `ParticipantesList`: qué hijos participaron (H5) |
 | `RSVPButton.tsx` | 101 | going/maybe/not going | **DESCARTAR** | En familia no hay confirmación de asistencia |
 
 ### 1.4 Showcase → evidencia y portafolio
 
 | Archivo | Líneas | Qué hace | Veredicto | Motivo / destino |
 |---|---|---|---|---|
-| `pages/ShowcaseSubmit.tsx` | 726 | Asistente de 3 pasos; `useDropzone` (L229, L237); borrador en `localStorage` (L33, L80-156) | **PORTAR (parcial)** | Solo el bloque de imágenes (dropzone + vista previa) y el borrador → `EnviarEvidencia` (120). URL, tagline, categoría, stack y editor rico no aplican |
-| `pages/admin/Showcases.tsx` | 459 | Moderación: contadores, filtro por estado, aprobar, rechazar con motivo, destacar/quitar | **PORTAR** | `RevisionEvidencias` (120). Cada fila usa `SwipeRow` de Ordo (izq. aprueba) [V `src/components/SwipeRow.tsx`] |
-| `pages/Showcase.tsx` | 425 | Galería con filtros y estados | **PORTAR** | `Portafolio` (120) |
-| `components/showcase/ShowcaseCard.tsx` | 140 | Tarjeta | **PORTAR** | `EvidenciaCard` (120); `Link` de react-router → `next/link` |
-| `ShowcaseFilters.tsx` | 198 | Filtros categoría/tags | **PORTAR** | Filtros alumno/materia/mes (120). `ShowcaseFilterSidebar.tsx` (239) **DESCARTAR**: duplica a `ShowcaseFilters` |
-| `ShowcaseReviews.tsx` | 444 | Reseñas; incluye `StarRating` (L22-64) | **PORTAR solo `StarRating`** | Estrellas del padre (116). Reseñas múltiples y respuesta del autor no aplican |
+| `pages/ShowcaseSubmit.tsx` | 726 | Asistente de 3 pasos; `useDropzone` (L229, L237); borrador en `localStorage` (L33, L80-156) | **PORTAR (parcial)** | Solo el bloque de imágenes (dropzone + vista previa) y el borrador → `EnviarEvidencia` (H3). URL, tagline, categoría, stack y editor rico no aplican |
+| `pages/admin/Showcases.tsx` | 459 | Moderación: contadores, filtro por estado, aprobar, rechazar con motivo, destacar/quitar | **PORTAR** | `RevisionEvidencias` (H3). Cada fila usa `SwipeRow` de Ordo (izq. aprueba) [V `src/components/SwipeRow.tsx`] |
+| `pages/Showcase.tsx` | 425 | Galería con filtros y estados | **PORTAR** | `Portafolio` (H3) |
+| `components/showcase/ShowcaseCard.tsx` | 140 | Tarjeta | **PORTAR** | `EvidenciaCard` (H3); `Link` de react-router → `next/link` |
+| `ShowcaseFilters.tsx` | 198 | Filtros categoría/tags | **PORTAR** | Filtros alumno/materia/mes (H3). `ShowcaseFilterSidebar.tsx` (239) **DESCARTAR**: duplica a `ShowcaseFilters` |
+| `ShowcaseReviews.tsx` | 444 | Reseñas; incluye `StarRating` (L22-64) | **PORTAR solo `StarRating`** | Estrellas del padre (HS0). Reseñas múltiples y respuesta del autor no aplican |
 | `ShowcaseVoteButton.tsx`, `pages/ShowcaseDetail.tsx` | 113 + 606 | Votos y detalle público con `DOMPurify` | **DESCARTAR** | Sin votos ni HTML rico; el detalle es un `Sheet` con la `EvidenciaCard` |
 
 ### 1.5 Services (`vendor/roost/src/services/`, 28 archivos, 8.783 líneas)
 
 | Service | Líneas | Funciones que se portan (mismo nombre y firma) | Veredicto |
 |---|---|---|---|
-| `module.ts` | 371 | `getModulesWithProgress`, `getModuleById`, `createModule`, `updateModule`, `deleteModule`, `reorderModules`, `getModuleRecordings`, `markLessonComplete`, `getAdjacentRecordings`, `getRecordingById`. `markLessonIncomplete` solo para padres. `getModuleAssets` y `getUserCompletionsForGroup` fuera | **PORTAR** (118/119) |
-| `group.ts` | 783 | `createRecording` (L699), `updateRecording`, `deleteRecording` (L736), `hasPermission` (L599, con roles mapeados) | **PORTAR parcial** (118) |
-| `event.ts` | 403 | `getEventsInRange`, `createEvent`, `updateEvent`, `deleteEvent`, `getEventAttendees` | **PORTAR parcial** (122) |
-| `showcase.ts` | 921 | `createShowcase`, `getShowcaseById`, `getUserShowcases`, `addShowcaseImage`, `removeShowcaseImage`, `getShowcasesForModeration`, `approveShowcase`, `rejectShowcase`, `featureShowcase`, `unfeatureShowcase`, `getShowcaseStats` | **PORTAR parcial** (120) |
+| `module.ts` | 371 | `getModulesWithProgress`, `getModuleById`, `createModule`, `updateModule`, `deleteModule`, `reorderModules`, `getModuleRecordings`, `markLessonComplete`, `getAdjacentRecordings`, `getRecordingById`. `markLessonIncomplete` solo para padres. `getModuleAssets` y `getUserCompletionsForGroup` fuera | **PORTAR** (H1b/H2) |
+| `group.ts` | 783 | `createRecording` (L699), `updateRecording`, `deleteRecording` (L736), `hasPermission` (L599, con roles mapeados) | **PORTAR parcial** (H1b) |
+| `event.ts` | 403 | `getEventsInRange`, `createEvent`, `updateEvent`, `deleteEvent`, `getEventAttendees` | **PORTAR parcial** (H5) |
+| `showcase.ts` | 921 | `createShowcase`, `getShowcaseById`, `getUserShowcases`, `addShowcaseImage`, `removeShowcaseImage`, `getShowcasesForModeration`, `approveShowcase`, `rejectShowcase`, `featureShowcase`, `unfeatureShowcase`, `getShowcaseStats` | **PORTAR parcial** (H3) |
 | `s3.ts`, `asset.ts` | 190 + 131 | Subidas S3 | **DESCARTAR**: se usa `subirImagen` + `POST /api/upload` de Ordo [V] |
 | `leaderboard.ts`, `post.ts`, `comment.ts`, `commentVote.ts`, `reaction.ts`, `message.ts`, `notification.ts`, `follow.ts`, `live-room.ts`, `live-chat.ts`, `search.ts`, `profile.ts`, `subscription.ts`, `activation.ts`, `feature-request.ts`, `admin.ts`, `backup.ts`, `supabase.ts`, `index.ts` y sus `*.test.ts` (vitest) | ~6.000 | Comunidad, pagos, admin de plataforma | **DESCARTAR** (§8) |
 
@@ -93,7 +100,7 @@ Tamaños medidos con `wc -l` [V]. Veredicto: **USAR** = se copia casi literal (c
 | `src/db/adapters/supabase/index.ts` | 1.855 | **DESCARTAR** | Duplica a los services |
 | `src/auth/**`, `contexts/AuthContext.tsx` (379), `pages/auth/**` (1.907), `components/settings/**` | — | **DESCARTAR**, salvo un *shim* `useAuth()` | Ordo tiene su sesión (`src/lib/session.ts`, JWT `jose`) [V]; el shim expone `user.id` y el rol a los componentes portados |
 | `contexts/ThemeContext.tsx`, `SiteSettingsContext.tsx`, `SidebarContext.tsx`, `layouts/**`, `navigation/**` | — | **DESCARTAR** | Ordo tiene `ThemeProvider`, `AppSidebar`, `MainDock` y el layout de `/dashboard` [V] |
-| `components/admin/StatsCard.tsx` | 61 | **USAR** | KPI de reportes y de la bandeja de revisión (116) |
+| `components/admin/StatsCard.tsx` | 61 | **USAR** | KPI de reportes y de la bandeja de revisión (HS0) |
 | `types/index.ts`, `types/showcase.ts` | 95 + 104 | **PORTAR** | Tipos `ModuleWithProgress`, `RecordingWithCompletion`, estados de showcase → `src/lib/homeschooling/roost/tipos.ts` con ids `number` |
 | `types/database.ts` | 2.543 | **DESCARTAR** | Tipos generados de Supabase |
 | `src/index.css` | 327 | **DESCARTAR** | `@layer base` pinta `body` y bordes globales (L9-31) y define `.btn/.card/.input` (L39-114): sería un segundo sistema de diseño |
@@ -125,6 +132,7 @@ Tamaños medidos con `wc -l` [V]. Veredicto: **USAR** = se copia casi literal (c
 3. Estilos con la tabla §2.3. Primitivas propias de Roost (botones, modales con `createPortal` + Escape, inputs, spinners, `confirm()`/`alert()`) → `Button`, `Dialog`/`Sheet`, `Input`/`Label`, `Spinner`, `toast` (`src/lib/toast.ts` [V]).
 4. Textos al español.
 5. **No** se cambia la lógica de estado/navegación del componente salvo lo que la lane diga.
+6. Un componente de `src/components/homeschooling/**` que **no** viene de Roost (p. ej. `CheckpointOverlay`) lleva la marca `// Propio de Ordo: <motivo>`; el test de guarda de HS0 exige una de las dos cabeceras.
 
 ### 2.3 Tailwind 3 → 4 y diseño
 
@@ -198,22 +206,22 @@ Reglas:
 
 ## 4. Modelo de datos
 
-Convención de Ordo: modelo en español, columnas `@map("Snake_Case")`, tablas `@@map("Homeschool_*")` (como ARQ v2). **Solo SQL aditivo** con `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`; si aparece `DROP`, no se aplica (AGENTS.md §6). **Nunca `db push`.**
+Convención de Ordo: modelo en español, columnas `@map("Snake_Case")`, tablas `@@map("Homeschool_*")` (ARQ §3). **Solo SQL aditivo** con `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`; si aparece `DROP`, no se aplica (AGENTS.md §6). **Nunca `db push`.**
 
 ### 4.1 Tablas de Roost que se traducen
 
 | Roost (schema.sql) | Ordo | Campos que se conservan → nombre Ordo | Se agrega | Se descarta | Lane |
 |---|---|---|---|---|---|
-| `groups` | `Materia` (familiar) | `name→nombre`, `description→descripcion`, `cover_url→portadaUrl`, `created_by→creadorId` | `icono` (Lucide), `color` (token), `dificultad` (`DificultadTarea`, se copia a la Tarea), `orden`, `activa` | `slug`, `avatar_url`, `is_private`, `is_premium`, `layout_mode` | 117 |
-| `modules` | `RecursoCurso` | `title→titulo`, `description→descripcion`, `thumbnail_url→portadaUrl`, `display_order→orden`, `created_by→creadorId` | `materiaId`, `tipo`, `unidadTipo`, `totalUnidades`, `url`, `libroId?`, `minutosPorUnidad`, `umbralAprobacion`, `navegacionLibre` (ARQ §3) | `group_id` (pasa a `materiaId`) | 117 |
-| `recordings` | `LeccionCurso` | `title→titulo`, `description→instrucciones`, `video_url→url` (**opcional**: hay lecciones de texto/PDF), `video_platform→videoPlataforma`, `video_id→videoId`, `thumbnail_url→miniaturaUrl`, `display_order→orden`, `published_by→creadorId` | `recursoId` (obligatorio), `@@unique([recursoId, orden])` | `group_id` | 117 |
-| `lesson_completions` | `ProgresoLeccion` | `user_id→alumnoId`, `recording_id→leccionId`, `module_id→recursoId`, `completed_at→completadaEn`, `UNIQUE(user_id, recording_id)` | — (la fila **es** la completitud, como en Roost; las notas van en `IntentoQuiz`) | — | 119 |
-| `events` | `ActividadOffline` | `title→titulo`, `description→descripcion`, `start_time→inicio`, `end_time→fin`, `location→lugar`, `created_by→creadorId`, `CHECK (end_time > start_time)` | `materiaId` | `is_virtual`, `meeting_url`, `group_id` | 122 |
-| `event_attendees` | `ParticipanteActividad` | `event_id→actividadId`, `user_id→alumnoId`, `UNIQUE(event_id, user_id)` | — | `status` (RSVP) | 122 |
-| `showcases` | `EvidenciaAprendizaje` | `title→titulo`, `description→nota` (texto plano), `author_id→alumnoId`, `status→estado` (`pending/approved/rejected` → `pendiente/aprobada/ajustar`), `moderation_notes→comentarioPadre`, `moderated_by→revisadaPorId`, `moderated_at→revisadaEn`, `is_featured→destacada`, `featured_at→destacadaEn` | `diaLectivoId?`, `estrellas` (1-5, de `showcase_reviews.rating`; **no dan monedas**) | tagline, url, category, tech_stack, votos, reseñas, launch_date | 120 |
-| `showcase_images` | `EvidenciaImagen` | `image_url→archivoUrl` (`/api/archivos/<uuid>`), `display_order→orden`, `caption→pie` | `evidenciaId` | — | 120 |
+| `groups` | `Materia` (familiar) | `name→nombre`, `description→descripcion`, `cover_url→portadaUrl`, `created_by→creadorId` | `icono` (Lucide), `color` (token), `dificultad` (`DificultadTarea`, se copia a la Tarea), `orden`, `activa` | `slug`, `avatar_url`, `is_private`, `is_premium`, `layout_mode` | H1a |
+| `modules` | `RecursoCurso` | `title→titulo`, `description→descripcion`, `thumbnail_url→portadaUrl`, `display_order→orden`, `created_by→creadorId` | `materiaId`, `tipo`, `unidadTipo`, `totalUnidades`, `url`, `libroId?`, `minutosPorUnidad`, `umbralAprobacion`, `navegacionLibre` (ARQ §3) | `group_id` (pasa a `materiaId`) | H1a |
+| `recordings` | `LeccionCurso` | `title→titulo`, `description→instrucciones`, `video_url→url` (**opcional**: hay lecciones de texto/PDF), `video_platform→videoPlataforma`, `video_id→videoId`, `thumbnail_url→miniaturaUrl`, `display_order→orden`, `published_by→creadorId` | `recursoId` (obligatorio), `@@unique([recursoId, orden])` | `group_id` | H1a |
+| `lesson_completions` | `ProgresoLeccion` | `user_id→alumnoId`, `recording_id→leccionId`, `module_id→recursoId`, `completed_at→completadaEn`, `UNIQUE(user_id, recording_id)` | — (la fila **es** la completitud, como en Roost; las notas van en `IntentoQuiz`) | — | H2 |
+| `events` | `ActividadOffline` | `title→titulo`, `description→descripcion`, `start_time→inicio`, `end_time→fin`, `location→lugar`, `created_by→creadorId`, `CHECK (end_time > start_time)` | `materiaId` | `is_virtual`, `meeting_url`, `group_id` | H5 |
+| `event_attendees` | `ParticipanteActividad` | `event_id→actividadId`, `user_id→alumnoId`, `UNIQUE(event_id, user_id)` | — | `status` (RSVP) | H5 |
+| `showcases` | `EvidenciaAprendizaje` | `title→titulo`, `description→nota` (texto plano), `author_id→alumnoId`, `status→estado` (`pending/approved/rejected` → `pendiente/aprobada/ajustar`), `moderation_notes→comentarioPadre`, `moderated_by→revisadaPorId`, `moderated_at→revisadaEn`, `is_featured→destacada`, `featured_at→destacadaEn` | `diaLectivoId?`, `estrellas` (1-5, de `showcase_reviews.rating`; **no dan monedas**) | tagline, url, category, tech_stack, votos, reseñas, launch_date | H3 |
+| `showcase_images` | `EvidenciaImagen` | `image_url→archivoUrl` (`/api/archivos/<uuid>`), `display_order→orden`, `caption→pie` | `evidenciaId` | — | H3 |
 
-Tablas nuevas sin equivalente en Roost (de ARQ v2, con los cambios marcados): `PlanCurso` (**+ `alumnoId`**, `@@unique([recursoId, alumnoId])`), `DiaLectivo`, `DiaNoLectivo`, `PreguntaLeccion`, `IntentoQuiz` (reemplaza los contadores `mejorNota/intentos/fallosSeguidos` de ARQ, como pedía la AUDITORÍA B6), `TarjetaRepaso` (estado de ts-fsrs), `MetaHoras` (alumno, materia, horas; sale de `Materia.metaHoras`), `PreferenciaAlumno`, `HistoriaSocial`.
+Tablas nuevas sin equivalente en Roost (esquema Prisma completo en ARQ §3): `PlanCurso` (**+ `alumnoId`**, `@@unique([recursoId, alumnoId])`), `DiaLectivo`, `DiaNoLectivo`, `PreguntaLeccion`, `IntentoQuiz` (reemplaza los contadores `mejorNota/intentos/fallosSeguidos` de ARQ, como pedía la AUDITORÍA B6), `TarjetaRepaso` (estado de ts-fsrs), `MetaHoras` (alumno, materia, horas; sale de `Materia.metaHoras`), `PreferenciaAlumno`, `HistoriaSocial`.
 
 ### 4.2 Lo que **no** se traduce y se reemplaza por lo existente
 
@@ -225,13 +233,13 @@ Tablas nuevas sin equivalente en Roost (de ARQ v2, con los cambios marcados): `P
 | `group_members` | El plan por alumno define quién ve qué | — |
 | `notifications` | Contadores del layout de `/dashboard` | [V `src/app/dashboard/layout.tsx:27-36`] |
 
-### 4.3 Día lectivo = `Tarea` (HD1): se mantiene, con una corrección
+### 4.3 Día lectivo = `Tarea` (HD1), «a tiempo» hasta las 18:00
 
-- **Roost no cambia la decisión.** No da puntos por completar lecciones: los `award_points` de `schema.sql` cuelgan de posts, comentarios, reacciones y aprobación de showcases (triggers L2611-2628), ninguno de `lesson_completions` [V]. No hay en Roost un mecanismo de premios aprovechable para lecciones, y el de Ordo ya maneja racha, aprobación y tope de una vez (`complete` rechaza si la tarea ya está `Completada`, `Aprobada` o `Esperando_Aprobacion` [V L30]).
-- **Corrección (contradice ARQ §5, que pone `fechaVencimiento = hoy` y nada más):** en `complete`, `esATiempo = now <= fechaVencimientoReal`, y sin `horaEjecucion` `fechaVencimientoReal = fechaVencimiento` [V L49-54, L77]. `POST /api/tasks` guarda la fecha como **medianoche al inicio del día** (`new Date(fecha + "T00:00:00")`) [V `src/app/api/tasks/route.ts:51`], y `aFecha()` la daría a medianoche UTC [V `src/lib/habitos/server.ts:41`]. En los dos casos **una lección hecha a cualquier hora de ese día cuenta como tardía (50 %)** y, pasado `fechaLimite` (22:00 en la hora del servidor, L57-73), vale 0. **Regla para la lane 119:** la Tarea del día se crea con `horaEjecucion` = fecha del día + **hora límite de la familia** en `APP_TZ` (pregunta P3), `tiempoEjecucionEstimadoSeg` = unidades × minutos. No se modifica la ruta `complete`.
-- Lo que el niño gana: puntos (al aprobar), estrellas y racha. **No gana XP de hábitos**: `approve` no toca `experienciaHabitos` [V `approve/route.ts:38-52`] (ARQ HD1 dice «XP»: es inexacto).
-
----
+- **Roost no cambia la decisión.** No da puntos por completar lecciones: los `award_points` de `schema.sql` cuelgan de posts, comentarios, reacciones y aprobación de showcases (triggers L2611-2628), ninguno de `lesson_completions` [V]. El mecanismo de Ordo ya maneja racha, aprobación y tope de una vez (`complete` rechaza si la tarea ya está `Completada`, `Aprobada` o `Esperando_Aprobacion` [V L30]).
+- **Cómo se logra «a tiempo hasta las 18:00» sin tocar el cálculo de puntos.** En `complete`, `fechaVencimientoReal = horaEjecucion + tiempoEjecucionEstimadoSeg` (L49-55) y paga completo si `now <= fechaVencimientoReal` (L77) [V]. Por eso la Tarea se crea con `horaEjecucion = 18:00 (APP_TZ) − tiempo estimado` (función pura `vencimientoLeccion`, ARQ §5.2). Resultado: completo hasta las 18:00; 50 % hasta las 22:00 (`fechaLimite`, L57-73, hora del servidor); después 0, y el cron la pasa a `No_Realizada` [V `cron/daily/route.ts`, «EXPIRAR TAREAS»]. Con solo `fechaVencimiento` (como decía la v2) se pagaba siempre como tardía [V `tasks/route.ts:51` + `complete` L77].
+- **Atrasos:** una lección no hecha no bloquea las siguientes: al abrir «Hoy aprendo» o en el cron, `asegurarTareasDeHoy` recalcula el plan y reparte esas unidades desde hoy sin mover la fecha de fin (ARQ §4 regla 5, §5.1).
+- **Guardia:** la Tarea de un día también aparece en el tablero de Tareas [V `useTaskActions.ts:63` llama a `complete` para cualquier tarea]. H2 agrega una sola llamada en `complete` (`motivoBloqueoTarea`) que la rechaza si faltan lecciones del día o si el día fue reprogramado (ARQ §5.5). Las demás Tareas no cambian.
+- Lo que el niño gana: puntos (al aprobar), estrellas y racha. **No gana XP de hábitos**: `approve` no toca `experienciaHabitos` [V `approve/route.ts:38-52`].
 
 ## 5. Lo que Roost no tiene (y con qué se cubre)
 
@@ -241,7 +249,7 @@ Tablas nuevas sin equivalente en Roost (de ARQ v2, con los cambios marcados): `P
 | Días no lectivos / feriados | No | `date-holidays@3.37.0` (ISC + datos CC-BY-3.0) [V npm] tiene feriados por país [S: cobertura de Uruguay] | v1: **carga manual** (HD4). Botón «Importar feriados» con `date-holidays` solo si el usuario lo pide (P4) |
 | Arrastrar días en el calendario | No | `withDragAndDrop` del propio `react-big-calendar@1.19.4` [V] | **Usar** el addon; `onEventDrop` → `moverDia` |
 | Quizzes con corrección en servidor | No [V grep `quiz|poll|question` sin resultados de dominio] | SurveyJS es demasiado para 3-5 preguntas de opción múltiple; la corrección son aciertos/total | **Se escribe** `calcularNota()` y la ruta que nunca envía `correcta`. UI con `radio-group` de shadcn (se agrega con el CLI de shadcn, ya instalado [V `shadcn@^4.21.4`]) |
-| Checkpoints en video | No (iframe plano) | `react-player@3.4.0` (MIT; peer React ^19 [V npm]) unifica YouTube y Vimeo con eventos de tiempo [S: nombres exactos de eventos y soporte de `youtube-nocookie` en v3; verificar en su README] | **Usar** react-player en `VisorLeccion` (lane 121); la lógica de disparo (`t >= segundo` y no respondido) es pura y testeada |
+| Checkpoints en video | No (iframe plano) | `react-player@3.4.0` (MIT; peer React ^19 [V npm]) unifica YouTube y Vimeo con eventos de tiempo [S: nombres exactos de eventos y soporte de `youtube-nocookie` en v3; verificar en su README] | **Usar** react-player en `VisorLeccion` (lane H4); la lógica de disparo (`t >= segundo` y no respondido) es pura y testeada |
 | Repaso espaciado | No | `ts-fsrs@5.4.2` (MIT, node ≥ 20 [V npm]; algoritmo FSRS de Anki) | **Usar** ts-fsrs en lugar de los intervalos fijos de HD8 (D-11). Acierto = `Good`, fallo = `Again` |
 | Horas y reportes | No (el `StatsCard` de admin sí) | `recharts@3.8.0` + `ui/chart.tsx` ya en Ordo [V]; PDF = `window.print()` con `@media print` | **Usar** `StatsCard` + gráficos de `ui/chart`; se escribe solo `resumenHoras()` (agregación) |
 | Subida con cámara | Sí (`react-dropzone` en ShowcaseSubmit) | `react-dropzone@14.3.8` (versión del lockfile de Roost [V]; peer `react >= 16.8` [V]) | **Usar**; `capture="environment"` se pasa por `getInputProps` [S] y la compresión es la de Ordo (`browser-image-compression` en `subirImagen`) |
@@ -252,112 +260,33 @@ Tablas nuevas sin equivalente en Roost (de ARQ v2, con los cambios marcados): `P
 
 ## 6. Plan por lanes
 
-Números libres verificados el 2026-10-14 con `git worktree list`, `git branch -a` y `git log --all` [V]: el último usado es 114; este documento es la **115**. **Antes de crear cada lane, volver a verificar**: si el número está tomado, usar el siguiente libre y anotarlo acá.
+Las lanes se nombran por **código**; el número se asigna al crearlas (el siguiente libre). El 2026-10-14 la 116 ya la tomó otro agente mientras se escribía este plan.
 
 ```
-116 HS0 base Roost ─► 117 H1a modelo+pacing ─► 118 H1b padre: materias, cursos, plan ─► 119 H2 hoy aprendo
-                                                                                       ├─► 120 H3 evidencia (showcase)
-                                                                                       ├─► 121 H4 quizzes+repaso
-                                                                                       ├─► 122 H5 horas (events)+reportes
-                                                                                       └─► 123 H6 neurodivergencia
+HS0 base Roost ──────────┐
+H1a modelo + pacing ─────┼─► H1b padre: materias, cursos, plan ─► H2 hoy aprendo ─┬─► H3 evidencia (Showcase)
+HS-SEG completar asignado┘                    (H2 exige HS-SEG integrada)          ├─► H4 quizzes + repaso
+                                                                                     ├─► H5 horas (Events) + reportes
+                                                                                     └─► H6 neurodivergencia
 ```
 
-**Protocolo común (todas):** `git worktree add -b task/lane-NN-<desc> ../ordo-diei-lanes/lane-NN dev` → `npm install` → leer `AGENTS.md`, este documento §2-§4 y `node_modules/next/dist/docs/01-app/01-getting-started/{05-server-and-client-components,15-route-handlers}.md` → `git merge dev` antes de tocar `schema.prisma` → SQL aditivo revisado (sin `DROP`) → `npm test` + `npx tsc --noEmit` + `npx eslint <archivos nuevos>` → registrar `vault/LANE_NN_*.md` con el pedido textual → `scripts/integrar.sh` → `git worktree remove` + `git branch -d`. Ningún archivo de `vendor/roost/` se edita. Cada archivo portado lleva la cabecera de §2.2. Tests con base real solo con `PERMITIR_TESTS_DB=1`.
+| Código | Spec | Depende de | Tamaño | Toca `schema.prisma` | Deps nuevas |
+|---|---|---|---|---|---|
+| **HS0** | [`LANE_HS0_BASE_ROOST.md`](LANE_HS0_BASE_ROOST.md) | — | M | No | — |
+| **H1a** | [`LANE_H1A_MODELO_Y_PACING.md`](LANE_H1A_MODELO_Y_PACING.md) | — | M | Sí | — |
+| **HS-SEG** | [`LANE_HSEG_COMPLETAR_SOLO_ASIGNADO.md`](LANE_HSEG_COMPLETAR_SOLO_ASIGNADO.md) | — | S | No | — |
+| **H1b** | [`LANE_H1B_ALTA_Y_PLAN_PADRE.md`](LANE_H1B_ALTA_Y_PLAN_PADRE.md) | HS0, H1a | L | No | — |
+| **H2** | [`LANE_H2_HOY_APRENDO.md`](LANE_H2_HOY_APRENDO.md) | H1b, HS-SEG | L | Sí | — |
+| **H3** | [`LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md`](LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md) | H2 | M | Sí | `react-dropzone@14.3.8` |
+| **H4** | [`LANE_H4_QUIZZES_Y_REPASO.md`](LANE_H4_QUIZZES_Y_REPASO.md) | H2 | L | Sí | `react-player@3.4.0`, `ts-fsrs@5.4.2` |
+| **H5** | [`LANE_H5_HORAS_Y_REPORTES.md`](LANE_H5_HORAS_Y_REPORTES.md) | H2 (usa H3 si existe) | M | Sí | — |
+| **H6** | [`LANE_H6_NEURODIVERGENCIA.md`](LANE_H6_NEURODIVERGENCIA.md) | H2 | M | Sí | — |
 
-### Lane 116 — HS0: base de Roost (sin base de datos, sin pantallas)
-
-- **Objetivo:** dejar la capa de compatibilidad y las piezas de Roost sin datos, para que las lanes siguientes solo porten.
-- **Entregables (origen → destino):**
-  - `vendor/roost/src/types/index.ts` + `src/db/interfaces/types.ts` (solo `Module`, `Recording`, `LessonCompletion`, `ModuleWithProgress`, `RecordingWithCompletion`, `Event`, `EventAttendee`, `Showcase`, `ShowcaseImage`) + `types/showcase.ts` (`SHOWCASE_STATUS_INFO`) → `src/lib/homeschooling/roost/tipos.ts` (ids `number`).
-  - *Shim* de router → `src/lib/homeschooling/roost/router.ts` (§2.4).
-  - *Shim* de auth → `src/components/homeschooling/roost/auth.tsx` (§2.4), adaptado de `contexts/AuthContext.tsx`.
-  - `LessonPlayer.tsx:30` (`getEmbedUrl`) + `AddRecordingModal.tsx:54-69` + `feed/VideoEmbed.tsx` → `src/lib/homeschooling/video.ts`: `parsearEnlaceVideo(url)` → `{plataforma, videoId, miniaturaUrl} | null` y `urlEmbed()` con `youtube-nocookie.com`. Regex ampliada a `youtu.be/ID`, `watch?v=ID`, `watch?…&v=ID`, `/embed/ID`, `/shorts/ID`, `vimeo.com/ID`.
-  - `components/calendar/CalendarView.tsx` → `src/components/homeschooling/roost/CalendarView.tsx`: `dateFnsLocalizer` con `es` de date-fns, `withDragAndDrop` + su CSS, clase `mission-calendar` (sin `<style>` propio), props `events`, `eventPropGetter`, `onSelectEvent`, `onSelectSlot`, `onEventDrop`, `messages` en español (los de `MissionCalendar.tsx` [V L56-69]).
-  - `ShowcaseReviews.tsx:22-64` (`StarRating`) → `src/components/homeschooling/roost/StarRating.tsx`.
-  - `components/admin/StatsCard.tsx` → `src/components/homeschooling/roost/StatsCard.tsx`.
-  - Test de guarda `src/lib/homeschooling/roost/guarda.test.ts` (`node:test`): recorre `src/**/homeschooling/**` y falla si encuentra `react-router-dom`, `@supabase/`, `services/supabase`, clases `surface-\d`, `primary-\d{2,3}`, `dark:` o un `.tsx` portado sin la cabecera «Portado de vendor/roost/».
-  - Cabecera de atribución en `THIRD_PARTY_NOTICES.md` (raíz): Roost, commit, permiso del usuario (D23).
-- **Tests:** `video.test.ts` (los 6 formatos + basura + id de 11 caracteres), `guarda.test.ts`.
-- **Aceptación:** `npm test`, `tsc`, eslint en verde; ningún cambio en `prisma/`; ninguna dependencia nueva; `MissionCalendar.tsx` intacto.
-- **Depende de:** nada.
-
-### Lane 117 — H1a: modelo y pacing (sin UI)
-
-- **Entregables:** `LANE_H1A_MODELO_Y_PACING.md` vigente **con estos cambios**: modelos `Materia` (familiar, sin `alumnoId`), `RecursoCurso` (campos de `modules` §4.1), `LeccionCurso` (campos de `recordings`; adelantado desde H2 porque el padre carga lecciones en 118), `PlanCurso` (+`alumnoId`), `DiaLectivo`, `DiaNoLectivo`, enums; relaciones inversas en `Usuario`, `Tarea`, `Libro`. `config.ts`, `pacing.ts` (`repartir`) y `servidor/planes.ts` como dice H1a; `crearPlan` recibe `alumnoId` y crea `PlanCurso` por alumno.
-- **Origen Roost:** ninguno de UI; los nombres de campos salen de `vendor/roost/schema.sql:892-930` y `:459-473`.
-- **Tests:** los 10 de `pacing.test.ts` (H1a) + «dos alumnos, mismo recurso → dos planes independientes».
-- **Aceptación:** H1a + SQL aplicado sin `DROP`, anotado en el vault.
-- **Depende de:** nada (puede ir en paralelo con 116).
-
-### Lane 118 — H1b: el padre arma materias, cursos y plan
-
-- **Entregables (origen → destino):**
-  - `services/module.ts` (funciones de §1.5 salvo `markLessonComplete`) y `services/group.ts:599-750` (`hasPermission`, `createRecording`, `updateRecording`, `deleteRecording`) → cliente `src/lib/homeschooling/roost/services/{module,group}.ts` + servidor `src/lib/homeschooling/servidor/cursos.ts` + `dto.ts` (desde `mongodb/index.ts:472-503`) + rutas `src/app/api/homeschooling/{materias,cursos,lecciones}/…` con `conSesion({ soloPadres: true })` para escribir.
-  - `CreateGroupModal.tsx` (reducido) → `components/homeschooling/cursos/MateriaForm.tsx`.
-  - `learn/LearnGroupLayout.tsx` → `cursos/MateriaLayout.tsx` (modo padre); `ModuleGrid` → `CursoGrid`; `ModuleCard` → `CursoCard`; `ModuleDetail` → `CursoDetalle`; `CompactGroupHeader` → `MateriaHeader`; `AddRecordingModal` → `LeccionForm` (usa `video.ts`).
-  - Asistente «Nuevo curso»: `Stepper` de Ordo [V `src/components/Stepper.tsx`] con 4 pasos; el paso «Recurso» son los campos de `ManageModuleModal.tsx`; el paso «Vista previa» llama `vistaPrevia` (117).
-  - `pages/Calendar.tsx` → `plan/PlanCalendario.tsx` con el `CalendarView` de 116: eventos = `DiaLectivo` (color de la materia), días no lectivos rayados, arrastrar → `moverDia`, clic → `Sheet` con *Omitir/Mover*; botón «Hoy no hay clase» (H1b §5).
-  - Rutas: `src/app/dashboard/homeschooling/page.tsx` (servidor; bifurca por rol; para Hijo/Hija muestra «Próximamente» hasta 119), `…/materias/[id]/page.tsx` (con `?module=&lesson=` como Roost), `…/plan/page.tsx`, `…/dias-sin-clase/page.tsx`. Enlace «Estudio» (`GraduationCap` [V existe]) en `AppSidebar` y `MainDock`.
-- **Tests:** permisos de `servidor/cursos.ts` (un Hijo no crea/edita/borra), `dto.ts` (forma Roost), `reorderModules` estable, `hasPermission` con roles mapeados.
-- **Aceptación:** H1b §Aceptación + alta/edición/orden de lecciones de video con miniatura; `MissionCalendar` y `/dashboard/tasks` sin cambios; capturas móvil y escritorio.
-- **Depende de:** 116, 117.
-
-### Lane 119 — H2: «Hoy aprendo»
-
-- **Entregables (origen → destino):**
-  - Modelo `ProgresoLeccion` (§4.1).
-  - `services/module.ts` `markLessonComplete` → `completarLeccion` en servidor con el *upsert* idempotente de `mongodb/index.ts:2528` + chequeo de bloqueo; `markLessonIncomplete` solo para padres.
-  - `learn/LessonPlayer.tsx` → `hoy/VisorLeccion.tsx` (`Sheet` a pantalla completa): `urlEmbed` de 116; botón único «Terminé» (sin desmarcar); sin `commentSection`; en la última lección del día → `POST /api/tasks/[id]/complete` con `elapsedSeconds` y confeti existente (`canvas-confetti`).
-  - `learn/LearnSidebar.tsx` → `hoy/LeccionesDelDia.tsx` (candado y gris en lo bloqueado; cajón móvil → `Sheet`).
-  - `learn/ModuleCard.tsx` → `hoy/TarjetaHoy.tsx` (variante grande, ≥ 96 px, objetivo táctil ≥ 44 px).
-  - `MateriaLayout` en modo hijo (vista «hoy» = grilla de `TarjetaHoy`).
-  - `servidor/hoy.ts`: `asegurarTareasDeHoy` (ARQ §5) **con `horaEjecucion`** (§4.3) y llamado desde `src/app/api/cron/daily/route.ts` [V existe]; `leccionesDeHoy`; `servidor/progreso.ts` (`sincronizarDia`, `estaBloqueado`).
-- **Tests:** `estaBloqueado`; `vencimientoLeccion(fecha, horaLimite, APP_TZ)` (pura) → una lección completada a las 10:00 de Montevideo es «a tiempo» según la fórmula de `complete` [V L77]; `asignadoId` y `creadorId` correctos; idempotencia de `asegurarTareasDeHoy` (con `PERMITIR_TESTS_DB=1`).
-- **Aceptación:** H2 §Aceptación; un hijo no puede completar lecciones de otro alumno vía las rutas de homeschooling.
-- **Depende de:** 118.
-
-### Lane 120 — H3: evidencia y portafolio (desde Showcase)
-
-- **Entregables (origen → destino):**
-  - Modelos `EvidenciaAprendizaje`, `EvidenciaImagen`.
-  - `services/showcase.ts` (funciones de §1.5) → cliente `roost/services/showcase.ts` + `servidor/evidencia.ts` (desde `mapShowcase`, `mongodb/index.ts:363`). **No** se porta `trg_showcase_approval_points`: aprobar no da puntos.
-  - `pages/ShowcaseSubmit.tsx` (dropzone L229-260 + borrador L33, L80-156) → `evidencia/EnviarEvidencia.tsx` (`Sheet`), con `react-dropzone@14.3.8` y `subirImagen`; botón de cámara en `VisorLeccion` y `TarjetaHoy`.
-  - `pages/admin/Showcases.tsx` → `revision/RevisionEvidencias.tsx`: contadores con `StatsCard`, filtro por estado, **aprobar** (con `StarRating` opcional), **pedir ajuste** (el modal de rechazo: estado L45, `handleReject` L94, modal L418; comentario obligatorio), destacar/quitar; cada fila con `SwipeRow` (izq. aprueba, der. pide ajuste).
-  - `pages/Showcase.tsx` + `ShowcaseCard.tsx` + `ShowcaseFilters.tsx` → `portafolio/{Portafolio,EvidenciaCard,FiltrosPortafolio}.tsx`.
-  - Borrado: si una `EvidenciaImagen` se borra y ninguna otra fila usa ese `Archivo`, se borra el `Archivo`.
-- **Tests:** permisos (Hijo solo ve y crea lo suyo; no aprueba), `limpiarArchivo`, que `aprobar` no cambie ningún saldo del `Usuario`.
-- **Aceptación:** H3 §Aceptación.
-- **Depende de:** 119. **Dependencia nueva:** `react-dropzone@14.3.8` (exacta).
-
-### Lane 121 — H4: preguntas, checkpoints y repaso
-
-- **Entregables:** modelos `PreguntaLeccion`, `IntentoQuiz`, `TarjetaRepaso`; `servidor/quiz.ts` (H4, pero la nota y los fallos seguidos se derivan de `IntentoQuiz`); `servidor/repaso.ts` con ts-fsrs (crear tarjeta al 2.º fallo seguido o a pedido del padre; `repasosDeHoy` máx. 3); `VisorLeccion` cambia el iframe por `react-player` para leer el tiempo y pausar; `CheckpointOverlay`, `QuizFinal`, editor de preguntas del padre; `radio-group` de shadcn.
-- **Origen Roost:** ninguno (no existe).
-- **Tests:** `calcularNota` (0, 70 exacto, 100, sin preguntas), «la respuesta de `preguntasParaAlumno` no tiene `correcta` ni `explicacion`», disparo de checkpoint con salto de tiempo, ts-fsrs: acierto aleja la fecha, fallo la acerca.
-- **Aceptación:** H4 §Aceptación.
-- **Depende de:** 119. **Dependencias nuevas:** `react-player@3.4.0`, `ts-fsrs@5.4.2`.
-
-### Lane 122 — H5: horas y reportes (desde Events)
-
-- **Entregables (origen → destino):**
-  - Modelos `ActividadOffline`, `ParticipanteActividad`, `MetaHoras`.
-  - `services/event.ts` (funciones de §1.5) → cliente + `servidor/actividades.ts` (desde `mapEvent`, `mongodb/index.ts:311`).
-  - `events/EventForm.tsx` → `horas/ActividadForm.tsx`; `EventCard` → `ActividadCard`; `EventDetails` → `ActividadDetalle`; `AttendeeList` → `ParticipantesList`. Las actividades también se ven en `PlanCalendario`.
-  - `servidor/horas.ts`: `resumenHoras` (lecciones = `Tarea.tiempoRealEjecucionSeg` o estimado; actividades = `fin − inicio` por participante).
-  - `reportes/page.tsx`: `StatsCard`, gráfico de `ui/chart` (recharts), evidencias destacadas (si 120 está integrada), `@media print` y botón `window.print()`.
-- **Tests:** `resumenHoras` (solo lecciones, solo actividades, mezcla, recorte de período, varios participantes).
-- **Aceptación:** H5 §Aceptación.
-- **Depende de:** 119 (usa 120 si existe).
-
-### Lane 123 — H6: neurodivergencia
-
-Sin cambios respecto de `LANE_H6_NEURODIVERGENCIA.md`; Roost no tiene nada aplicable [V]. Depende de 119.
-
----
+**Protocolo común:** `git worktree add -b task/lane-NN-<desc> ../ordo-diei-lanes/lane-NN dev` → `npm install` → `git merge dev` antes de tocar `schema.prisma` → `npx prisma validate` → SQL con `migrate diff`, revisado (sin `DROP`) → `npm test` + `npx tsc --noEmit` + `npx eslint <archivos nuevos>` → registro `vault/LANE_NN_*.md` con el pedido textual y el SQL aplicado → `scripts/integrar.sh` → `git worktree remove` + `git branch -d`. Las lanes que tocan `schema.prisma` se integran **de a una**. `vendor/roost/` no se edita. Tests con base real solo con `PERMITIR_TESTS_DB=1`.
 
 ## 7. Riesgos y conflictos
 
-1. **Base de producción.** Solo SQL aditivo generado con `migrate diff`. Nunca correr `vendor/roost/schema.sql` ni `vendor/roost/prisma` (es MongoDB [V]). Las lanes 117, 119, 120, 121, 122 y 123 tocan `schema.prisma`: integrar **de a una** y hacer `git merge dev` antes de generar el SQL.
+1. **Base de producción.** Solo SQL aditivo generado con `migrate diff`. Nunca correr `vendor/roost/schema.sql` ni `vendor/roost/prisma` (es MongoDB [V]). Las lanes H1a, H2, H3, H4, H5 y H6 tocan `schema.prisma`: integrar **de a una** y hacer `git merge dev` antes de generar el SQL.
 2. **Dependencias.**
 
 | Paquete | Versión | Choque | Evidencia |
@@ -368,14 +297,15 @@ Sin cambios respecto de `LANE_H6_NEURODIVERGENCIA.md`; Roost no tiene nada aplic
 | `react-big-calendar`, `date-fns`, `lucide-react`, `recharts` | ya instalados (1.19.4, 4.4.0, 1.7.0, 3.8.0) | — | [V `package.json`] |
 
 3. **Duplicación.** Dos localizadores de calendario (`momentLocalizer` en `MissionCalendar` [V L4-11], `dateFnsLocalizer` en el portado): las dos libs ya están; se acepta y se unifica en otra lane si el usuario quiere. Barra de progreso, subida de imágenes y toasts: se usan los de Ordo (no se portan los de Roost).
-4. **CSS.** Importar `vendor/roost/src/index.css` pisaría `body` y los bordes globales (`@layer base`, L9-31) → prohibido. Clases sin traducir **fallan en silencio** (§2.3) → test de guarda (116).
+4. **CSS.** Importar `vendor/roost/src/index.css` pisaría `body` y los bordes globales (`@layer base`, L9-31) → prohibido. Clases sin traducir **fallan en silencio** (§2.3) → test de guarda (HS0).
 5. **Seguridad / roles.**
    - Roost protege con RLS y `auth.uid()`; al pasar a Prisma esa protección desaparece. Cada función de `servidor/*` debe repetir los chequeos de §3.2. Un Hijo nunca recibe datos de otro alumno.
    - Roost deja que cada usuario **desmarque** su lección (política «Users can unmark lessons», `schema.sql:3456` [V]); en Ordo eso solo lo hace un padre.
-   - **Existente, fuera de alcance:** `POST /api/tasks/[id]/complete` no verifica que quien completa sea el asignado [V L11-30]: un hermano podría completar la tarea-lección de otro. Recomiendo una lane aparte (cambia el comportamiento de todas las tareas, así que lo decide el usuario).
+   - `POST /api/tasks/[id]/complete` no verifica que quien completa sea el asignado [V L11-30]. **Resuelto por la lane HS-SEG** (el usuario aprobó el cambio para todas las tareas), que se integra antes de H2.
+   - La Tarea de un día se podía completar desde el tablero sin hacer las lecciones: **guardia** en `complete` (ARQ §5.5, H2).
    - Fotos: `GET /api/archivos/<uuid>` es público a propósito [V `src/app/api/archivos/[clave]/route.ts:6-8`]; HD6 lo acepta para uso doméstico.
 6. **Rendimiento.** Roost hace N+1: `LearnGroupLayout` pide las grabaciones de cada módulo por separado (L79-83) y `pages/Calendar.tsx` hace 2 consultas por evento (L42-55) [V]. Con `fetch` → ruta → Supabase serían N viajes. En la ruta de servidor se devuelve todo en una consulta (`include`) y el cliente mantiene la firma. Las fotos viven en Postgres (`Archivo.datos`): medir tamaño por mes (AUDITORÍA E3).
-7. **Fechas.** `complete` mezcla hora local del servidor (`setHours(22)`, L57-73) y UTC (`getUTCHours`, L75) [V]. Con `horaEjecucion` fijada en `APP_TZ` (§4.3) la lección queda bien; se asume que el servidor corre en la casa con la zona de Montevideo [S].
+7. **Fechas.** `complete` mezcla hora local del servidor (`setHours(22)`, L57-73) y UTC (`getUTCHours`, L75) [V]. Con `horaEjecucion` calculada en `APP_TZ` el corte de las 18:00 es exacto en cualquier servidor; el de las 22:00 (50 %) usa la hora del servidor, que se asume Montevideo por ser uso en casa [S] (si no, cambia solo ese corte; no hay error).
 8. **Next 16.** Páginas con `params` asíncronos; leer los docs locales antes de codear (AGENTS.md).
 
 ---
@@ -398,51 +328,63 @@ Sin cambios respecto de `LANE_H6_NEURODIVERGENCIA.md`; Roost no tiene nada aplic
 
 ---
 
-## 9. Contradicciones encontradas
+## 9. Contradicciones encontradas y cómo quedaron resueltas
 
-| # | Dónde | Qué dice | Qué hay en el código | Resolución |
-|---|---|---|---|---|
-| X1 | `SPEC.md`, `ARQUITECTURA_DETALLADA.md` §7, `MAPEO_COMPONENTES_ROOST.md`, `LANES_HOMESCHOOLING.md` | Roost es «solo referencia visual»; «no se copian archivos» | Revocado por el usuario | Este plan |
-| X2 | `MAPEO_COMPONENTES_ROOST.md`, `AUDITORIA.md` | Roost está en `/home/x7/Downloads/dev/roost` | Está en `vendor/roost/` [V `ORIGEN.md`] | Usar `vendor/roost/` |
-| X3 | `ARQUITECTURA_DETALLADA.md` HD6, `LANE_H3` | Subir fotos con `POST /api/archivos` | No existe; `api/archivos` solo tiene `GET [clave]`; la subida es `POST /api/upload` [V] | `POST /api/upload` vía `subirImagen` |
-| X4 | `ARQUITECTURA_DETALLADA.md` HD1 | `/complete` + `/approve` dan «puntos, XP, racha» | Dan puntos, estrellas y racha; **no** XP (`experienciaHabitos`) [V `approve/route.ts:38-52`] | Corregido en §4.3 |
-| X5 | `ARQUITECTURA_DETALLADA.md` §5 | La Tarea del día lleva `fechaVencimiento = hoy` | Así se paga siempre como tardía [V §4.3] | `horaEjecucion` obligatoria |
-| X6 | `ARQUITECTURA_DETALLADA.md` §6, `LANE_H1B` | «`MissionCalendar` extendido» con arrastre | `MissionCalendar` usa `momentLocalizer` y no tiene arrastre [V] | Se porta `CalendarView` + `withDragAndDrop` |
-| X7 | `MAPEO_COMPONENTES_ROOST.md` | No agregar `react-dropzone` | Lo usa el código de Roost que se porta | Se agrega 14.3.8 (D-8) |
-| X8 | `AUDITORIA.md` E1 vs `ARQUITECTURA_DETALLADA.md` HD6 | E1: servir evidencias con sesión. HD6: URL pública aceptada | DECISIONES D19 dice que la auditoría manda sobre los `LANE_H*`, pero HD6 es posterior y responde a D23 (uso doméstico) | Se mantiene HD6; se puede revertir sin tocar el modelo |
-| X9 | `vendor/roost/CLAUDE.md` | Services «migrando a `db()`», adaptadores «listos» | Ningún service usa `db()` [V] | §3 |
-| X10 | `ARQUITECTURA_DETALLADA.md` HD8 | Repaso con intervalos fijos 1-3-7-14-30 | Hay librería madura (ts-fsrs) y la regla del usuario pide reutilizar | D-11 |
+Todas resueltas en la lane 117 (2026-10-14). «Dónde» = documento corregido.
 
----
+| # | Contradicción | Evidencia | Resolución aplicada |
+|---|---|---|---|
+| X1 | `SPEC`, `ARQUITECTURA` §7, `MAPEO`, `LANES_HOMESCHOOLING`: Roost «solo referencia visual», «no se copian archivos» | Revocado por el usuario (D26) | Los cuatro documentos reescritos para portar código |
+| X2 | `MAPEO`, `AUDITORIA`: Roost en `/home/x7/Downloads/dev/roost` | Está en `vendor/roost/` [V `ORIGEN.md`] | `MAPEO` reescrito; nota en `AUDITORIA` |
+| X3 | `ARQUITECTURA` HD6 y `LANE_H3`: subir con `POST /api/archivos` | No existe; la subida es `POST /api/upload` [V] | ARQ HD8 y H3 usan `subirImagen` → `/api/upload` |
+| X4 | `ARQUITECTURA` HD1: «puntos, XP, racha» | `approve` no toca `experienciaHabitos` [V L38-52] | ARQ HD1: puntos, estrellas y racha |
+| X5 | `ARQUITECTURA` §5: Tarea con `fechaVencimiento = hoy` | Se pagaba siempre como tardía [V] | `horaEjecucion = 18:00 − estimado` (§4.3, ARQ §5.2, H2) |
+| X6 | `ARQUITECTURA` §6 y `LANE_H1B`: «`MissionCalendar` extendido» con arrastre | `momentLocalizer`, sin arrastre [V] | `CalendarView` portado + `withDragAndDrop` (HS0, H1b) |
+| X7 | `MAPEO`: no agregar `react-dropzone` | Lo usa el código que se porta | Se agrega 14.3.8 en H3 |
+| X8 | `AUDITORIA` E1 (evidencias con sesión) vs `ARQUITECTURA` HD6 (URL pública) | D19 hacía mandar la auditoría | URL pública **aceptada** (uso doméstico): ARQ HD8, nota en `AUDITORIA` E1 y en `DECISIONES` D31 |
+| X9 | `vendor/roost/CLAUDE.md`: services «migrando a `db()`» | Ningún service usa `db()` [V] | No se edita `vendor/`; el plan §3 lo documenta |
+| X10 | `ARQUITECTURA` HD8: repaso con intervalos fijos | Regla «reusar open source» | ts-fsrs (ARQ HD10, H4) |
+| X11 | `ARQUITECTURA` §5: Tarea «`Vencida`» deja el día pendiente | El cron marca `No_Realizada`, no `Vencida` [V `cron/daily/route.ts`] | ARQ §5.3 lista todos los estados; los atrasos se reprograman (ARQ §5.1) |
+| X12 | `ARQUITECTURA` §5: «el día N exige el N−1 hecho» | Un día perdido bloqueaba todo el curso | ARQ §5.4: hoy siempre disponible; los atrasos se reparten desde hoy |
+| X13 | La Tarea de un día se puede completar desde el tablero de Tareas sin hacer las lecciones | `useTaskActions.ts:63` llama a `complete` para cualquier tarea [V] | Guardia `motivoBloqueoTarea` en `complete` (ARQ §5.5, H2) |
+| X14 | `LANE_H1B`: enlace «Estudio» en `AppSidebar` **y** `MainDock` | Regla de no duplicar (`ui-work-rules`) | Solo `AppSidebar` (ARQ HD16) |
+| X15 | `LANE_H2`: «mostrar el confeti ya usado» con `canvas-confetti` directo | El confeti sale de `ModalManager` al abrir `TASK_SUCCESS` [V L48] | H2 abre `TASK_SUCCESS`; H6 lo condiciona en modo relajado |
+| X16 | `LANE_H1B`: «Omitir» sin definir | Sin regla | ARQ §4 regla 7 |
+| X17 | `@@unique([recursoId, orden])` vs `reorderModules` de Roost (actualiza de a una fila) | Chocaría al intercambiar | Reordenar en dos fases dentro de una transacción (H1b) |
+| X18 | Plan v3: lanes numeradas 116–123 | La 116 la tomó otro agente [V `git branch -a`] | Lanes por código; número al crearlas (§6) |
+| X19 | `ARQUITECTURA` §3 (v2): `enum X { a b c }` en una línea | Prisma no lo acepta: `prisma validate` daba 35 errores [V] | Enums en varias líneas. El esquema de ARQ §3 **completo** y el **subconjunto de H1a** validan contra el `schema.prisma` actual de `dev` (`prisma validate` 7.6.0 en una copia temporal, sin tocar la base) [V] |
 
 ## 10. Registro de decisiones
 
 | # | Decisión | Alternativas | Razón | Cómo revertir |
 |---|---|---|---|---|
-| D-1 | Portar componentes a Next y reescribir solo datos (opción a) | (b) Express aparte; (c) híbrido con Supabase/RLS | El Express no tiene cursos/eventos/showcase; (b)/(c) exigen correr `schema.sql` o duplicar usuarios | Ninguna lane bloquea correr Roost aparte en el futuro; habría que sincronizar usuarios |
-| D-2 | Partir cada service (cliente `fetch` + servidor Prisma) con la misma firma | Adaptador del `DatabaseAdapter`; Server Functions | El adaptador no lo usa nadie; las Server Functions serializan lecturas y no se usan en Ordo | Cambiar el cuerpo del cliente por `'use server'` en el mismo archivo; los componentes no cambian |
-| D-3 | DTO con nombres de Roost (snake_case) e ids numéricos | Renombrar en todos los componentes | Menos cambios en los archivos portados | Renombrar con búsqueda/reemplazo en `roost/` |
-| D-4 | Contenido familiar (`Materia`, `RecursoCurso`, `LeccionCurso`) y plan por alumno | `Materia.alumnoId` (ARQ v2) | Es el modelo de Roost (contenido compartido, avance por usuario) y evita cargar dos veces un curso para hermanos | Agregar `alumnoId` a `Materia` y filtrar; los planes ya son por alumno |
-| D-5 | Día lectivo = `Tarea` (HD1) con `horaEjecucion` en `APP_TZ` | Premios propios de lecciones; `lesson_completions` con puntos | Roost no premia lecciones; Ordo ya resuelve aprobación, racha y tope | Quitar la creación de Tareas en `asegurarTareasDeHoy`; el avance sigue en `DiaLectivo` |
-| D-6 | Traducir clases a tokens/`ui/` con tabla fija + test de guarda | Puente `@theme` con la paleta de Roost | Coherencia visual y `ui-work-rules` | Agregar la paleta en `@theme` y relajar el test |
-| D-7 | Portar `CalendarView` (date-fns) + `withDragAndDrop`; `MissionCalendar` no se toca | Extender `MissionCalendar` (moment) | Restricción del usuario + no cambiar comportamiento de Tareas | Reemplazar el portado por `MissionCalendar` con las mismas props |
-| D-8 | `react-dropzone@14.3.8` exacta | `<input type=file>`; v20 | Es el código de Roost; la 14.3.8 es la que Roost probó | Cambiar `useDropzone` por `<input>` en un archivo |
-| D-9 | `LeccionCurso` en H1a/117 (no en H2) | Como ARQ v2 | El padre carga lecciones con `AddRecordingModal` en 118 | Mover el modelo a 119 |
-| D-10 | `ProgresoLeccion` = `lesson_completions` (la fila es la completitud) + `IntentoQuiz` aparte | Contadores mutables (ARQ v2) | Copia literal de Roost y historial de intentos (AUDITORÍA B6) | Agregar columnas a `ProgresoLeccion` |
-| D-11 | Repaso con ts-fsrs | Intervalos fijos 1-3-7-14-30 (HD8) | Regla «reusar open source»; FSRS es el estándar de Anki | `TarjetaRepaso` guarda `due`; volver a intervalos fijos es reemplazar una función |
-| D-12 | Checkpoints con `react-player` | YouTube IFrame API a mano (ARQ H4) | Una sola API para YouTube y Vimeo; no se escribe el cargador | Volver al iframe de Roost y a la IFrame API |
-| D-13 | Evidencia = Showcase sin votos/reseñas; estrellas sin monedas | Tabla propia desde cero | Moderación, destacado e imágenes ya existen en Roost | — |
-| D-14 | Horas fuera de pantalla = Events + attendees | `ActividadOffline` con un solo alumno (ARQ v2) | Una salida familiar suma horas a varios hijos con una carga | Restringir a un participante |
-| D-15 | Feriados a mano en v1 | `date-holidays` | HD4 y P4 | Agregar botón de importación |
+| D-1 | Portar componentes a Next y reescribir solo datos (opción a) | (b) Express aparte; (c) híbrido con Supabase/RLS | El Express no tiene cursos/eventos/showcase; (b)/(c) exigen correr `schema.sql` o duplicar usuarios | Correr Roost aparte en el futuro, sincronizando usuarios |
+| D-2 | Partir cada service (cliente `fetch` + servidor Prisma) con la misma firma | Adaptador del `DatabaseAdapter`; Server Functions | El adaptador no lo usa nadie; las Server Functions serializan lecturas y no se usan en Ordo | Cambiar el cuerpo del cliente por `'use server'`; los componentes no cambian |
+| D-3 | DTO con nombres de Roost (snake_case) e ids numéricos | Renombrar en todos los componentes | Menos cambios en los archivos portados | Búsqueda/reemplazo en `roost/` |
+| D-4 | Contenido familiar y plan por alumno | `Materia.alumnoId` (ARQ v2) | Modelo de Roost; un curso sirve a varios hijos | Agregar `alumnoId` a `Materia` |
+| D-5 | Día lectivo = `Tarea` con `horaEjecucion = 18:00 − estimado` | Premios propios de lecciones | Roost no premia lecciones; Ordo ya resuelve aprobación, racha y tope | Quitar la creación de Tareas; el avance sigue en `DiaLectivo` |
+| D-6 | Traducir clases a tokens/`ui/` + test de guarda | Puente `@theme` con la paleta de Roost | Coherencia visual y `ui-work-rules` | Agregar la paleta y relajar el test |
+| D-7 | Portar `CalendarView` + `withDragAndDrop`; `MissionCalendar` intacto | Extender `MissionCalendar` | Restricción del usuario; no cambiar Tareas | Reemplazar por `MissionCalendar` con las mismas props |
+| D-8 | `react-dropzone@14.3.8` exacta | `<input type=file>`; v20 | Es el código de Roost | `<input>` en un archivo |
+| D-9 | `LeccionCurso` en H1a | En H2 (v2) | El padre carga lecciones en H1b | Mover el modelo a H2 |
+| D-10 | `ProgresoLeccion` = `lesson_completions` + `IntentoQuiz` aparte | Contadores mutables (v2) | Copia de Roost; historial de intentos (AUDITORÍA B6) | Agregar columnas |
+| D-11 | Repaso con ts-fsrs | Intervalos fijos (v2) | Regla «reusar open source» | Reemplazar `servidor/repaso.ts` |
+| D-12 | Checkpoints con `react-player` | IFrame API a mano | Una API para YouTube y Vimeo | Volver al iframe |
+| D-13 | Evidencia = Showcase sin votos/reseñas; estrellas sin monedas | Tabla propia | Moderación, destacado e imágenes ya existen | — |
+| D-14 | Horas fuera de pantalla = Events + participantes | Un solo alumno por actividad | Una salida suma horas a varios hijos | Limitar a un participante |
+| D-15 | Feriados a mano | `date-holidays` | Respuesta P4 del usuario | Botón de importación |
+| D-16 | «A tiempo» hasta las 18:00 (`HORA_LIMITE_LECCION`) | 20:00 (recomendación inicial) | Respuesta P3 del usuario | Cambiar la constante en `config.ts` |
+| D-17 | Atrasos se reprograman solos; hoy nunca está bloqueado | Bloqueo estricto día a día (v2) | Evita que un día perdido trabe el curso | Volver a exigir el día anterior en `estaBloqueado` |
+| D-18 | Guardia en `complete` para Tareas de días lectivos | Ocultarlas del tablero | No cambia la UI existente; protege por API | Quitar la llamada |
+| D-19 | Lane HS-SEG: solo el asignado o un padre completa | Dejarlo como está | Respuesta P5 del usuario | Quitar el chequeo |
+| D-20 | Lanes por código, número al crearlas | Números reservados | Ya hubo choques entre agentes | — |
 
----
+## 11. Respuestas del usuario (2026-10-14)
 
-## 11. Preguntas abiertas (solo el usuario puede responderlas)
-
-| # | Pregunta | Recomendación por defecto |
+| # | Pregunta | Respuesta |
 |---|---|---|
-| P1 | ¿Los cursos se comparten entre hermanos (un curso, un plan por hijo) o cada hijo tiene sus materias propias? | **Compartidos** (D-4). |
-| P2 | ¿Un hermano puede ver las evidencias aprobadas de otro (en Roost los showcases aprobados son públicos) o solo las suyas? | **Solo las suyas**; los padres ven todo. |
-| P3 | ¿Hasta qué hora una lección del día cuenta «a tiempo» (puntos completos)? Después de esa hora paga 50 % y desde las 22:00, 0 (regla actual de Tareas). | **20:00**, configurable por familia. |
-| P4 | ¿Querés importar los feriados de Uruguay automáticamente o cargarlos a mano? | **A mano** en v1; importación como mejora. |
-| P5 | ¿Abrimos una lane para que `complete` exija que quien completa sea el asignado (o un padre)? Afecta a todas las tareas. | **Sí**, como lane aparte antes de 119. |
+| P1 | ¿Cursos compartidos entre hermanos? | **Sí**: contenido familiar, un plan por hijo (D-4) |
+| P2 | ¿Un hermano ve las evidencias de otro? | **No**: solo las suyas; los padres ven todo (ARQ HD15) |
+| P3 | ¿Hasta qué hora cuenta «a tiempo»? | **18:00** (D-16) |
+| P4 | ¿Feriados automáticos o a mano? | **A mano** (D-15) |
+| P5 | ¿Lane para que `complete` exija al asignado? | **Sí**: HS-SEG, antes de H2 (D-19) |

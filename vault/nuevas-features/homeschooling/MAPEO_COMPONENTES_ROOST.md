@@ -1,18 +1,35 @@
-# Roost como referencia visual → Ordo Diei
+# Roost → Ordo Diei: qué se porta y adónde
 
-> ⚠️ **2026-10-14 (lane 115): el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`» fue REVOCADO por el usuario.** Manda [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) (porte de código de `vendor/roost/`, modelo y lanes 116–123). Lo que sigue vale solo donde ese plan no lo cambie.
+> 2026-10-14 (v3.1). Roost está clonado sin modificar en `vendor/roost/` (commit `492af47`). Se **porta** su código a `src/` (no es solo referencia visual). Inventario completo con tamaños y motivos: [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) §1. Cada archivo portado lleva `// Portado de vendor/roost/<ruta> (msrbuilds/roost@492af47). Cambios: …`.
 
-> Repo local: `/home/x7/Downloads/dev/roost` (Vite + React Router 7 + Tailwind 3 + Supabase en el navegador). Uso autorizado por el usuario. **No se copian archivos tal cual**: se reescriben con `src/components/ui`, los tokens del tema y Prisma. Busque cada pieza por nombre de función, no por número de línea.
+| Roost (`vendor/roost/src/…`) | Ordo (`src/…`) | Lane |
+|---|---|---|
+| `types/index.ts`, `db/interfaces/types.ts`, `types/showcase.ts` | `lib/homeschooling/roost/tipos.ts` | HS0 |
+| `contexts/AuthContext.tsx` (solo `user`/`profile`) | `components/homeschooling/roost/auth.tsx` | HS0 |
+| `react-router-dom` (uso) | `lib/homeschooling/roost/router.ts` (shim) | HS0 |
+| `groups/learn/LessonPlayer.tsx` `getEmbedUrl`, `groups/AddRecordingModal.tsx` regex, `feed/VideoEmbed.tsx` | `lib/homeschooling/video.ts` | HS0 |
+| `calendar/CalendarView.tsx` | `components/homeschooling/roost/CalendarView.tsx` (+ `withDragAndDrop`) | HS0 |
+| `showcase/ShowcaseReviews.tsx` (`StarRating`) | `components/homeschooling/roost/StarRating.tsx` | HS0 |
+| `admin/StatsCard.tsx` | `components/homeschooling/roost/StatsCard.tsx` | HS0 |
+| `services/module.ts`, `services/group.ts` (grabaciones, `hasPermission`) | `lib/homeschooling/roost/services/{module,group}.ts` + `servidor/cursos.ts` | H1b |
+| `db/adapters/mongodb/index.ts` (`mapModule`, `mapRecording`, `mapLessonCompletion`, `mapEvent`, `mapShowcase`, `completelesson`) | `lib/homeschooling/roost/dto.ts` y cuerpos de `servidor/*` | H1b, H2, H3, H5 |
+| `groups/CreateGroupModal.tsx` (reducido) | `components/homeschooling/cursos/MateriaForm.tsx` | H1b |
+| `groups/learn/LearnGroupLayout.tsx` | `cursos/MateriaLayout.tsx` | H1b (padre), H2 (hijo) |
+| `groups/learn/CompactGroupHeader.tsx` | `cursos/MateriaHeader.tsx` | H1b |
+| `groups/learn/ModuleGrid.tsx`, `ModuleCard.tsx` | `cursos/CursoGrid.tsx`, `CursoCard.tsx`; `hoy/TarjetaHoy.tsx` | H1b, H2 |
+| `groups/learn/ModuleDetail.tsx` | `cursos/CursoDetalle.tsx` | H1b |
+| `groups/learn/ManageModuleModal.tsx` | paso «Recurso» del asistente | H1b |
+| `groups/AddRecordingModal.tsx` | `cursos/LeccionForm.tsx` | H1b |
+| `pages/Calendar.tsx` | `plan/PlanCalendario.tsx` | H1b |
+| `groups/learn/LessonPlayer.tsx` | `hoy/VisorLeccion.tsx` (sin desmarcar, sin comentarios) | H2 |
+| `groups/learn/LearnSidebar.tsx` | `hoy/LeccionesDelDia.tsx` | H2 |
+| `services/showcase.ts` | `lib/homeschooling/roost/services/showcase.ts` + `servidor/evidencia.ts` | H3 |
+| `pages/ShowcaseSubmit.tsx` (dropzone + borrador) | `evidencia/EnviarEvidencia.tsx` | H3 |
+| `pages/admin/Showcases.tsx` | `revision/RevisionEvidencias.tsx` (+ `SwipeRow` de Ordo) | H3 |
+| `pages/Showcase.tsx`, `showcase/ShowcaseCard.tsx`, `ShowcaseFilters.tsx` | `portafolio/{Portafolio,EvidenciaCard,FiltrosPortafolio}.tsx` | H3 |
+| `services/event.ts` | `lib/homeschooling/roost/services/event.ts` + `servidor/actividades.ts` | H5 |
+| `events/EventForm.tsx`, `EventCard.tsx`, `EventDetails.tsx`, `AttendeeList.tsx` | `horas/{ActividadForm,ActividadCard,ActividadDetalle,ParticipantesList}.tsx` | H5 |
 
-| Pieza en Roost | Qué aporta | Qué hace Ordo en su lugar | Lane |
-|---|---|---|---|
-| `groups/learn/LessonPlayer.tsx` (152 líneas) | Contenedor 16:9, `getEmbedUrl` (YouTube/Vimeo), botón completar, anterior/siguiente | `VisorLeccion` (`Sheet`) con embed `youtube-nocookie`; completar = `POST /api/tasks/[id]/complete` (no `markLessonComplete`) | H2 |
-| `groups/learn/LearnSidebar.tsx` (175) | Lista numerada con checks | Lista de lecciones del día con candado (`Lock`) en escala de grises, igual que cartas/Tienda | H2 |
-| `groups/learn/ProgressBar.tsx` (30) | `completadas/total` | `Progress` de `ui/` con color de la materia | H2 |
-| `calendar/CalendarView.tsx` (303) | Vistas mes/semana/día/agenda, selección de eventos y slots | **No se copia**: se extiende `components/tasks/MissionCalendar.tsx` (ya usa `react-big-calendar`) | H1b |
-| `pages/ShowcaseSubmit.tsx` (726) | Subida con vista previa, borrador en `localStorage` | `<input capture>` + `POST /api/archivos`; borrador por el sistema N5 si existe. Sin `react-dropzone` | H3 |
-| `showcase/ShowcaseCard.tsx` (140) | Tarjeta de portafolio | `EvidenciaCard` con `Card`/`Badge` | H3 |
-| `pages/admin/Showcases.tsx` | Moderación | `SwipeRow` (izq. aprueba, der. rechaza) | H3 |
-| `services/module.ts` (371) | Consultas Supabase del cliente | Funciones de `lib/homeschooling/servidor/*` con Prisma | todas |
+**No se portan** (motivo en el plan §1 y §8): `ProgressBar` (Ordo tiene `ui/progress`), `VideoPlayerModal`, `UploadAssetsModal`/`GroupAssets`, `RSVPButton`, `ShowcaseFilterSidebar`, `ShowcaseVoteButton`, `ShowcaseDetail`, `index.css`, el adaptador Supabase, `src/auth`, el servidor Express, y todo feed/mensajes/live room/leaderboard/Stripe/admin de comunidad.
 
-Dependencias a **no** agregar: `react-dropzone`, `@supabase/supabase-js`, `react-router-dom`.
+**Dependencias:** se agregan `react-dropzone@14.3.8` (H3), `react-player@3.4.0` y `ts-fsrs@5.4.2` (H4). **No** se agregan `@supabase/supabase-js`, `react-router-dom`, `react-quill-new`, `dompurify`, `@aws-sdk/*`.

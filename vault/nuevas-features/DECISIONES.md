@@ -92,6 +92,18 @@ Conclusión de la evaluación de bases open source, pegada por el usuario (textu
 
 | # | Decisión |
 |---|---|
-| D26 | **Se revoca D16 en lo que dice «cantera de referencia»**: Roost (clonado en `vendor/roost/`, lane 114) se **porta** a `src/`. Plan, modelo, lanes 116–123 y registro de decisiones D-1…D-15 en `homeschooling/PLAN_INTEGRACION_ROOST.md`. |
+| D26 | **Se revoca D16 en lo que dice «cantera de referencia»**: Roost (clonado en `vendor/roost/`, lane 114) se **porta** a `src/`. Plan, modelo, lanes (HS0…H6, ver D31) y registro de decisiones D-1…D-15 en `homeschooling/PLAN_INTEGRACION_ROOST.md`. |
 | D27 | Se mantiene **HD1** (día lectivo = `Tarea`), con `horaEjecucion` obligatoria para que `complete` no la pague como tardía. |
-| D28 | Preguntas P1–P5 del plan pendientes del usuario; mientras tanto rigen sus recomendaciones por defecto. |
+| D28 | ~~Preguntas P1–P5 pendientes~~ → respondidas en la ronda 7 (D29–D31). |
+
+## 8. Ronda 7 (2026-10-14) — Respuestas P1–P5 y contradicciones (lane 117)
+
+> «De las preguntas, la unica que quiero modificar es "¿Hasta qué hora una lección cuenta «a tiempo» y paga puntos completos?" debe ser hasta las 18:00.»
+>
+> «Resuelve las contradicciones encontradas, para que funcione todo correctamente y no hayan errores.»
+
+| # | Decisión |
+|---|---|
+| D29 | **Una lección paga puntos completos si se termina antes de las 18:00** (`HORA_LIMITE_LECCION`). Entre las 18:00 y las 22:00, 50 %; después, 0 (regla existente de Tareas). |
+| D30 | Se aceptan las demás recomendaciones: **cursos compartidos entre hermanos con un plan por hijo** (P1), **cada hijo ve solo sus evidencias** (P2), **feriados a mano** (P4) y **lane HS-SEG** para que solo el asignado o un padre complete una tarea, antes de H2 (P5). |
+| D31 | Contradicciones X1–X18 resueltas (`homeschooling/PLAN_INTEGRACION_ROOST.md` §9). Sobre AUDITORÍA E1: **la URL pública de las fotos queda aceptada** por uso doméstico (excepción a D19). Las lanes de Homeschooling se nombran por código (HS0, H1a, HS-SEG, H1b, H2–H6) y el número se toma al crearlas. |
