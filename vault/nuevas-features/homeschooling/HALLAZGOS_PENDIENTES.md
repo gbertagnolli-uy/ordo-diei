@@ -34,6 +34,10 @@
 | P-25 | 129 (H4a) | `calificarFinal` responde acierto/fallo y explicación por pregunta, **no** el índice correcto (para que no se memorice la respuesta); la spec decía solo "explicaciones". | Implementado así. | Mostrar también la respuesta correcta tras aprobar. |
 | P-26 | 129 (H4a) | Una lección con quiz exige un intento aprobado; si el padre desmarca la lección, el intento aprobado sigue valiendo (no hace falta repetir el quiz). El umbral sale de `RecursoCurso.umbralAprobacion` (70 por defecto); no hay pantalla para cambiarlo. | — | Campo en `CursoForm`. |
 | P-27 | 129 (H4a) | Tests con base real de H4 (quiz, repaso) saltados sin `PERMITIR_TESTS_DB=1` (ver P-4). El comportamiento de ts-fsrs sí está probado sin base (acierto aleja, fallo acerca, resolución). | — | Correrlos con la base autorizada. |
+| P-28 | 130 (H4b) | `react-player` 3.4.0 no se probó en un navegador: que el checkpoint pause justo en el segundo (el `onTimeUpdate` de YouTube/Vimeo no dispara en cada segundo exacto, por eso la lógica usa `>=`), que «Volver 30 s» haga seek bien en la tablet y que `youtube-nocookie` funcione con el embed. | La lógica de disparo es pura y está testeada (`proximoCheckpoint`). | Probar con un video real y una pregunta a los 10 s. |
+| P-29 | 130 (H4b) | El CLI de `shadcn add radio-group` agregó por error un paquete externo `cn` (importaba `from "cn"`); se corrigió el import a `@/lib/utils` y se desinstaló. Otros componentes generados por ese CLI podrían traer el mismo problema. | Corregido en `ui/radio-group.tsx`. | Revisar `ui/` si se agregan más componentes con el CLI. |
+| P-30 | 130 (H4b) | Si un niño falla un checkpoint, el video vuelve 30 s y la misma pregunta reaparece hasta acertarla (no hay límite de intentos ni penalización). El quiz final sí cuenta intentos y activa el repaso con 2 fallos seguidos. | Implementado así. | Límite o ayuda tras N fallos. |
+| P-31 | 130 (H4b) | El editor del padre reemplaza **todas** las preguntas de la lección al guardar; no hay edición parcial ni historial. Editar preguntas después de que hubo intentos no recalcula las notas viejas. | — | — |
 
 ## Resueltos
 _(ninguno todavía)_
