@@ -71,7 +71,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 
 ## Ronda 9 (2026-10-14) — Reposo v2 y Liturgia (lane 122)
 
-**Estado (2026-10-14, D56): todas «⏳ lista para implementar», ninguna empezada.** Prompt de entrega para el agente: [`PROMPT_REPOSO_LITURGIA.md`](PROMPT_REPOSO_LITURGIA.md).
+**Estado (2026-10-14): las 12 lanes «✅ integrada» (más N4). Quedan abiertos, a decisión del usuario: revisión de la selección de citas de R1 (se integró antes de mostrársela) y fuente impresa de la regla dominical del Rosario (L9); ver [`PENDIENTES_REPOSO_LITURGIA.md`](PENDIENTES_REPOSO_LITURGIA.md).** Prompt de entrega para el agente: [`PROMPT_REPOSO_LITURGIA.md`](PROMPT_REPOSO_LITURGIA.md).
 
 | Lane | Estado | Depende de | Lane real (al crearla) |
 |---|---|---|---|
@@ -86,7 +86,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 | L6 Missale | ✅ integrada (lane 142) | L3 | 142 |
 | L7 Proprium | ✅ integrada (lane 143) | L3 | 143 |
 | L8 Ordinarium + Psalterium | ✅ integrada (lane 144) | L3 | 144 |
-| L9 Rosarium | ✅ integrada (lane 145) | L3 | 145 |
+| L9 Rosarium | ✅ integrada (lane 145) — falta la fuente impresa de la regla dominical | L3 | 145 |
 
 **N4 (detector de inactividad, hook y pruebas):** ✅ integrada (lane 138), hecha como prerrequisito de R3 (`PROMPT_REPOSO_LITURGIA.md` §3). N5 y N6 siguen pendientes.
 
