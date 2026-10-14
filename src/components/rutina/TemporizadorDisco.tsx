@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Play,
   Pause,
@@ -12,20 +13,19 @@ import {
   Minimize2,
   Clock,
   Sparkles,
-  SlidersHorizontal,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EtapaRutina, CATEGORIAS_INFO } from "@/lib/rutina/tipos";
-import { formatearSegundos, formatearTiempoHumano } from "@/lib/rutina/calculadorHorarios";
+import { formatearSegundos } from "@/lib/rutina/calculadorHorarios";
 import { IconoRutina } from "./IconoRutina";
 import { TipoSonidoRutina } from "@/lib/rutina/audioRutina";
 
@@ -34,7 +34,7 @@ interface TemporizadorDiscoProps {
   proximaEtapa: EtapaRutina | null;
   restanteSeg: number;
   totalSeg: number;
-  porcentajeRestante: number;
+  ratioRestante: number; // 0.0 a 1.0 continuo (con decimales) para fluidez absoluta
   fase: "verde" | "ambar" | "rojo";
   estaPausado?: boolean;
   onTogglePausa?: () => void;
@@ -56,7 +56,7 @@ export function TemporizadorDisco({
   proximaEtapa,
   restanteSeg,
   totalSeg,
-  porcentajeRestante,
+  ratioRestante,
   fase,
   estaPausado = false,
   onTogglePausa,
@@ -73,75 +73,98 @@ export function TemporizadorDisco({
   onProbarSonido,
 }: TemporizadorDiscoProps) {
   const [mostrarAjustesAudio, setMostrarAjustesAudio] = useState(false);
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => {
+    setMontado(true);
+  }, []);
+
+  // Manejo de tecla Escape para salir de fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && esFullscreen && onToggleFullscreen) {
+        onToggleFullscreen();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [esFullscreen, onToggleFullscreen]);
 
   // Dimensiones del disco SVG
-  const tamano = esFullscreen ? 360 : 280;
-  const strokeWidth = esFullscreen ? 18 : 14;
+  const tamano = esFullscreen ? 400 : 280;
+  const strokeWidth = esFullscreen ? 20 : 14;
   const center = tamano / 2;
   const radius = center - strokeWidth - 6;
   const circumference = 2 * Math.PI * radius;
 
-  // Offset del círculo: representa la proporción de tiempo que RESTA (Time-Timer)
-  const ratioRestante = Math.max(0, Math.min(1, porcentajeRestante / 100));
-  const strokeDashoffset = circumference * (1 - ratioRestante);
+  // Offset continuo: ratioRestante es un float de 0.0 a 1.0 (Time-Timer)
+  const ratioClamped = Math.max(0, Math.min(1, ratioRestante));
+  const strokeDashoffset = circumference * (1 - ratioClamped);
 
   // Paleta armónica según fase
   const colorFase =
     fase === "rojo"
       ? {
-          stroke: "#f43f5e", // Rose 500
-          glow: "rgba(244, 63, 94, 0.35)",
+          stroke: "#f43f5e",
+          glow: "rgba(244, 63, 94, 0.4)",
           badgeBg: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
           texto: "¡Últimos minutos!",
         }
       : fase === "ambar"
       ? {
-          stroke: "#f59e0b", // Amber 500
-          glow: "rgba(245, 158, 11, 0.25)",
+          stroke: "#f59e0b",
+          glow: "rgba(245, 158, 11, 0.3)",
           badgeBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-          texto: "Tiempo medio",
+          texto: "Mitad de tiempo",
         }
       : {
-          stroke: "#10b981", // Emerald 500
-          glow: "rgba(16, 185, 129, 0.25)",
+          stroke: "#10b981",
+          glow: "rgba(16, 185, 129, 0.3)",
           badgeBg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
           texto: "En curso",
         };
 
   const categoriaInfo = etapaActual ? CATEGORIAS_INFO[etapaActual.categoria] : null;
 
-  return (
+  // Contenido visual del temporizador
+  const contenido = (
     <div
-      className={`relative flex flex-col items-center justify-center rounded-3xl border bg-card/85 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ${
+      className={`relative flex flex-col items-center justify-center transition-all duration-300 ${
         esFullscreen
-          ? "fixed inset-0 z-50 rounded-none border-none p-10 bg-background/95"
-          : "w-full max-w-xl mx-auto"
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-background/95 backdrop-blur-2xl p-6 sm:p-12 overflow-y-auto"
+          : "w-full max-w-xl mx-auto rounded-3xl border bg-card/85 p-6 shadow-xl backdrop-blur-md"
       }`}
       style={{
-        boxShadow: `0 10px 30px -10px ${colorFase.glow}`,
+        boxShadow: esFullscreen ? undefined : `0 10px 30px -10px ${colorFase.glow}`,
       }}
     >
-      {/* Barra superior de estado / Controles rápidos */}
-      <div className="flex w-full items-center justify-between gap-3 mb-4">
+      {/* Barra superior de controles en fullscreen o tarjeta normal */}
+      <div className="flex w-full items-center justify-between gap-3 mb-4 max-w-2xl">
         <div className="flex items-center gap-2">
           {etapaActual ? (
             <Badge
               variant="outline"
-              className={`px-3 py-1 font-medium transition-colors ${colorFase.badgeBg}`}
+              className={`px-3 py-1 font-medium transition-colors ${
+                estaPausado ? "bg-amber-500/20 text-amber-600 border-amber-500/40" : colorFase.badgeBg
+              }`}
             >
               <span className="relative flex size-2 mr-2">
                 <span
-                  className={`absolute inline-flex size-full animate-ping rounded-full opacity-75 ${
-                    fase === "rojo" ? "bg-rose-400" : "bg-emerald-400"
+                  className={`absolute inline-flex size-full rounded-full opacity-75 ${
+                    estaPausado
+                      ? "bg-amber-400"
+                      : fase === "rojo"
+                      ? "bg-rose-400 animate-ping"
+                      : "bg-emerald-400 animate-ping"
                   }`}
                 />
                 <span
                   className={`relative inline-flex size-2 rounded-full ${
-                    fase === "rojo" ? "bg-rose-500" : "bg-emerald-500"
+                    estaPausado ? "bg-amber-500" : fase === "rojo" ? "bg-rose-500" : "bg-emerald-500"
                   }`}
                 />
               </span>
-              {estaPausado ? "Pausado" : colorFase.texto}
+              {estaPausado ? "⏸️ EN PAUSA" : colorFase.texto}
             </Badge>
           ) : (
             <Badge variant="outline" className="px-3 py-1">
@@ -159,20 +182,20 @@ export function TemporizadorDisco({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* Menú de sonido y alarmas */}
+        <div className="flex items-center gap-2">
+          {/* Ajustes de audio */}
           <DropdownMenu open={mostrarAjustesAudio} onOpenChange={setMostrarAjustesAudio}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-8 rounded-full text-muted-foreground hover:text-foreground"
-                title="Configuración de audio de la alarma"
+                className="size-9 rounded-full text-muted-foreground hover:text-foreground"
+                title="Configuración de audio de la campana"
               >
                 {sonidoHabilitado ? <Volume2 className="size-4" /> : <VolumeX className="size-4 text-rose-500" />}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-3 space-y-3">
+            <DropdownMenuContent align="end" className="w-64 p-3 space-y-3 z-[10001]">
               <DropdownMenuLabel className="flex items-center justify-between text-xs font-semibold">
                 <span>Alarma Sonora de Rutina</span>
                 <Button
@@ -233,35 +256,44 @@ export function TemporizadorDisco({
                 onClick={onProbarSonido}
               >
                 <Sparkles className="size-3.5 mr-1.5" />
-                Probar sonido ahora
+                Probar campana ahora
               </Button>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Toggle Fullscreen / Modo Kiosk */}
+          {/* Botón de Enfoque / Salir de Fullscreen */}
           {onToggleFullscreen && (
             <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-full text-muted-foreground hover:text-foreground"
+              variant={esFullscreen ? "default" : "ghost"}
+              size="sm"
               onClick={onToggleFullscreen}
-              title={esFullscreen ? "Salir de pantalla completa" : "Modo Enfoque Pantalla Completa"}
+              className={`rounded-xl gap-1.5 text-xs font-semibold ${
+                esFullscreen ? "h-9 px-3 bg-primary text-primary-foreground" : "size-9 p-0"
+              }`}
+              title={esFullscreen ? "Salir de pantalla completa (Esc)" : "Modo Enfoque Pantalla Completa"}
             >
-              {esFullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+              {esFullscreen ? (
+                <>
+                  <Minimize2 className="size-4" />
+                  <span>Salir de Enfoque</span>
+                </>
+              ) : (
+                <Maximize2 className="size-4" />
+              )}
             </Button>
           )}
         </div>
       </div>
 
       {/* Temporizador Circular Central */}
-      <div className="relative my-2 flex items-center justify-center">
+      <div className="relative my-4 flex items-center justify-center">
         <svg
           width={tamano}
           height={tamano}
           viewBox={`0 0 ${tamano} ${tamano}`}
-          className="rotate-[-90deg] transition-transform duration-500 ease-out"
+          className="rotate-[-90deg]"
         >
-          {/* Círculo de fondo / Track sutil */}
+          {/* Círculo de fondo / Track estático */}
           <circle
             cx={center}
             cy={center}
@@ -271,20 +303,20 @@ export function TemporizadorDisco({
             fill="transparent"
           />
 
-          {/* Disco / Arco coloreado de cuenta regresiva (Time-Timer) */}
+          {/* Disco / Arco animado continuo (Time-Timer) */}
           <circle
             cx={center}
             cy={center}
             r={radius}
             strokeWidth={strokeWidth}
             fill="transparent"
-            stroke={colorFase.stroke}
+            stroke={estaPausado ? "#eab308" : colorFase.stroke}
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             style={{
-              transition: "stroke-dashoffset 0.8s ease, stroke 0.5s ease",
-              filter: `drop-shadow(0px 0px 8px ${colorFase.stroke})`,
+              transition: estaPausado ? "none" : "stroke-dashoffset 0.1s linear, stroke 0.5s ease",
+              filter: `drop-shadow(0px 0px ${esFullscreen ? "14px" : "8px"} ${estaPausado ? "#eab308" : colorFase.stroke})`,
             }}
           />
         </svg>
@@ -293,13 +325,13 @@ export function TemporizadorDisco({
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
           {etapaActual?.icono && (
             <div
-              className={`mb-1 p-2 rounded-2xl ${
+              className={`mb-2 p-2.5 rounded-2xl ${
                 categoriaInfo?.colorBg || "bg-primary/10"
               } transition-transform hover:scale-110`}
             >
               <IconoRutina
                 nombre={etapaActual.icono}
-                className={`${esFullscreen ? "size-8" : "size-6"} ${
+                className={`${esFullscreen ? "size-10" : "size-7"} ${
                   categoriaInfo?.colorText || "text-primary"
                 }`}
               />
@@ -309,25 +341,39 @@ export function TemporizadorDisco({
           {/* Número Digital Grande */}
           <div
             className={`font-mono font-bold tracking-tight tabular-nums select-none ${
-              esFullscreen ? "text-6xl" : "text-4xl sm:text-5xl"
-            } ${fase === "rojo" && !estaPausado ? "text-rose-500 animate-pulse" : "text-foreground"}`}
+              esFullscreen ? "text-7xl sm:text-8xl" : "text-4xl sm:text-5xl"
+            } ${
+              estaPausado
+                ? "text-amber-500 animate-pulse"
+                : fase === "rojo"
+                ? "text-rose-500 animate-pulse"
+                : "text-foreground"
+            }`}
           >
             {formatearSegundos(restanteSeg)}
           </div>
 
-          {/* Etiqueta de tiempo */}
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">
+          {/* Etiqueta de estado */}
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-1">
             {estaPausado ? "Temporizador en Pausa" : "Tiempo Restante"}
           </span>
 
           {/* Título de la etapa actual */}
-          <div className="mt-2 max-w-[200px] sm:max-w-[240px] truncate text-sm font-semibold text-foreground">
+          <div
+            className={`mt-2 font-bold text-foreground max-w-[240px] sm:max-w-[320px] truncate ${
+              esFullscreen ? "text-xl sm:text-2xl" : "text-sm sm:text-base"
+            }`}
+          >
             {etapaActual ? etapaActual.titulo : "Descanso general"}
           </div>
 
           {/* Horario de la etapa */}
           {etapaActual && (
-            <span className="text-[11px] font-mono text-muted-foreground">
+            <span
+              className={`font-mono text-muted-foreground mt-0.5 ${
+                esFullscreen ? "text-sm" : "text-xs"
+              }`}
+            >
               {etapaActual.horaInicio} – {etapaActual.horaFin} ({etapaActual.duracionMin} min)
             </span>
           )}
@@ -336,10 +382,10 @@ export function TemporizadorDisco({
 
       {/* Siguiente Etapa Preview */}
       {proximaEtapa && (
-        <div className="w-full mt-4 flex items-center justify-between rounded-xl bg-muted/40 px-3.5 py-2 text-xs border border-border/50">
-          <div className="flex items-center gap-2 text-muted-foreground truncate">
-            <span className="font-semibold text-foreground">Siguiente:</span>
-            <IconoRutina nombre={proximaEtapa.icono} className="size-3.5 text-primary" />
+        <div className="w-full max-w-md mt-4 flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-2.5 text-xs border border-border/50">
+          <div className="flex items-center gap-2.5 text-muted-foreground truncate">
+            <span className="font-bold text-foreground">Siguiente:</span>
+            <IconoRutina nombre={proximaEtapa.icono} className="size-4 text-primary" />
             <span className="truncate">{proximaEtapa.titulo}</span>
           </div>
           <span className="font-mono text-muted-foreground shrink-0 font-medium ml-2">
@@ -349,18 +395,20 @@ export function TemporizadorDisco({
       )}
 
       {/* Botones de Control de la Rutina */}
-      <div className="flex items-center justify-center gap-2 mt-5 w-full">
+      <div className="flex items-center justify-center gap-2.5 mt-6 w-full max-w-md">
         {onTogglePausa && (
           <Button
             variant={estaPausado ? "default" : "outline"}
-            size="sm"
+            size={esFullscreen ? "lg" : "sm"}
             onClick={onTogglePausa}
-            className="h-9 px-3 gap-1.5 rounded-xl font-medium"
+            className={`h-10 px-4 gap-2 rounded-xl font-bold transition-all ${
+              estaPausado ? "bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/30" : ""
+            }`}
           >
             {estaPausado ? (
               <>
                 <Play className="size-4 fill-current" />
-                <span>Reanudar</span>
+                <span>Reanudar Temporizador</span>
               </>
             ) : (
               <>
@@ -374,10 +422,10 @@ export function TemporizadorDisco({
         {onExtenderTiempo && (
           <Button
             variant="outline"
-            size="sm"
+            size={esFullscreen ? "lg" : "sm"}
             onClick={onExtenderTiempo}
-            className="h-9 px-3 gap-1.5 rounded-xl font-medium"
-            title="Añadir 5 minutos al bloque actual"
+            className="h-10 px-3.5 gap-1.5 rounded-xl font-semibold"
+            title="Añadir 5 minutos a la etapa y desplazar el día"
           >
             <Plus className="size-4" />
             <span>+5 min</span>
@@ -387,9 +435,9 @@ export function TemporizadorDisco({
         {onAvanzarEtapa && (
           <Button
             variant="secondary"
-            size="sm"
+            size={esFullscreen ? "lg" : "sm"}
             onClick={onAvanzarEtapa}
-            className="h-9 px-3 gap-1.5 rounded-xl font-medium"
+            className="h-10 px-3.5 gap-1.5 rounded-xl font-semibold"
             title="Pasar a la siguiente etapa de la rutina"
           >
             <SkipForward className="size-4" />
@@ -399,4 +447,11 @@ export function TemporizadorDisco({
       </div>
     </div>
   );
+
+  // Si está en pantalla completa, usar createPortal para salir de cualquier contenedor
+  if (esFullscreen && montado && typeof document !== "undefined") {
+    return createPortal(contenido, document.body);
+  }
+
+  return contenido;
 }

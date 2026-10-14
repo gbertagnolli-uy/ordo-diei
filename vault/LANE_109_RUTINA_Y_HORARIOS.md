@@ -136,6 +136,26 @@
   - Agregado en el grupo **Rutina** el ítem **`Horarios`** (con icono `CalendarClock`), direccionando a `/dashboard/horarios` y tooltip descriptivo.
   - Soporte de redirección en `/dashboard/rutina` -> `/dashboard/horarios`.
 
+### G. Correcciones y Mejoras de Pulido Exhaustivo (Feedback del Usuario)
+1. **Modo Enfoque / Pantalla Completa:**
+   - Implementado mediante `React Portal` montado directo en `document.body` + soporte nativo de la API de Pantalla Completa HTML5 (`requestFullscreen` / `exitFullscreen`) y tecla `Escape`.
+   - Salida del layout del dashboard sin restricciones de overflow, funcionando de manera impecable en tablets o monitores montados en pared.
+2. **Posponer en Cascada y Sincronización de Timers:**
+   - La función `posponerDesdeEtapa` y `posponerRutina` extienden la etapa actual o previa e incrementan en cascada la hora de inicio y fin de todas las etapas posteriores del día.
+   - En `BarraAlarmaActiva`, el menú desplegable permite posponer +5, +10, +15 o +30 minutos, actualizando el cronograma completo de la familia y persistiendo la configuración.
+   - Evita la desincronización (cuando una etapa llegaba a 13:15 y cambiaba antes de que el timer llegara a cero): ahora el reloj, el temporizador y el cronograma están 100% coordinados.
+3. **Botón de Pausa Real:**
+   - Congela el segundero y el ratio circular en el instante exacto del clic.
+   - Al reanudar, si la pausa superó los 30 segundos, desplaza automáticamente en cascada el horario de la etapa actual y las siguientes para que no se pierda el tiempo planificado.
+4. **Movimiento Continuo del Disco SVG (Time-Timer):**
+   - Se reemplazó el porcentaje entero redondeado (que saltaba en tramos cada 18 segundos) por un flotante de alta precisión `ratioRestante` (0.0 a 1.0) con transición CSS suave `stroke-dashoffset 0.1s linear`.
+5. **Termómetro de Ritmo y Ejecución:**
+   - Se implementó `calcularTermometroEjecucion` que compara las tareas completadas respecto a las que **deberían estar hechas según la hora actual** (indicando "¡Ritmo Impecable!", "Buen Ritmo", "Con Demora" o "Preparados"), evitando la desmotivación de mostrar solo un porcentaje global del día.
+6. **Ocultar Etapas Completadas en Tab "Diaria":**
+   - Interruptor conmutador `Ocultar completadas` / `Mostrar completadas` con icono, filtrado reactivo de tarjetas y banner discreto al final que permite volver a ver todas con un clic.
+7. **Diseño Pulido de Notificación Flotante:**
+   - `BarraAlarmaActiva` rediseñada con glassmorphism, glow ámbar, `DropdownMenu` nativo y badge distintivo.
+
 ---
 
 ## 3. Pruebas y Verificación
@@ -143,17 +163,18 @@
   - Conversión precisa de horas `HH:mm` a minutos.
   - Detección de etapas activas en horas diurnas y nocturnas (cruce de medianoche 22:00 a 08:00).
   - Cálculo de tiempo restante y duración en segundos.
-  - Cálculo de fases cromáticas (verde, ámbar, rojo).
-  - Formato legible de segundos (`MM:SS`, `HH:MM:SS`, humano).
-  - Filtro por días laborables, fines de semana y días específicos.
+  - Cálculo de fases cromáticas (verde, ámbar, rojo) y `ratioRestante` continuo.
+  - Desplazamiento en cascada (`posponerRutina`, `posponerDesdeEtapa`, `extenderEtapaActiva`).
+  - Cálculo del Termómetro de Ejecución comparado con el momento presente.
 - **Resultado:**
-  - `npm test`: **108 tests** (105 aprobados, 3 tests de base de datos omitidos por no tener `PERMITIR_TESTS_DB=1`).
+  - `npm test`: **112 tests** (109 aprobados, 3 tests de base de datos omitidos según regla de no escribir en DB de producción sin `PERMITIR_TESTS_DB=1`).
   - `npx tsc --noEmit`: **0 errores de TypeScript**.
-  - `npm run build`: compilación de producción exitosa.
+  - `npm run build`: compilación de producción exitosa con Turbopack.
+  - Servidor de prueba: corriendo en puerto `3001` (`npx next start -p 3001`).
 
 ---
 
 ## 4. Estado Git y Reglas de Lanes
 - Rama: `task/lane-109-rutina-y-horarios`
 - Worktree: `../ordo-diei-lanes/lane-109`
-- **NO MERGEADA:** Según instrucción explícita del usuario (*"pero no la mergees al finalizar"*), la rama y worktree quedan intactos y listos para revisión.
+- **NO MERGEADA:** Según instrucción explícita del usuario (*"pero no la mergees al finalizar"*), la rama y worktree quedan intactos y listos para revisión y testing.

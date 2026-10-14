@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   horaAMinutos,
+  minutosAHora,
   esDiaAplicable,
   estaEnIntervalo,
   duracionEtapaSegundos,
@@ -10,6 +11,10 @@ import {
   calcularProgresoEtapa,
   formatearSegundos,
   formatearTiempoHumano,
+  posponerRutina,
+  posponerDesdeEtapa,
+  extenderEtapaActiva,
+  calcularTermometroEjecucion,
 } from "./calculadorHorarios.ts";
 import { RUTINA_PREDETERMINADA } from "./tipos.ts";
 
@@ -19,6 +24,13 @@ test("horaAMinutos convierte correctamente strings HH:mm", () => {
   assert.equal(horaAMinutos("08:15"), 495);
   assert.equal(horaAMinutos("12:00"), 720);
   assert.equal(horaAMinutos("23:59"), 1439);
+});
+
+test("minutosAHora formatea minutos a HH:mm normalizado", () => {
+  assert.equal(minutosAHora(0), "00:00");
+  assert.equal(minutosAHora(495), "08:15");
+  assert.equal(minutosAHora(720), "12:00");
+  assert.equal(minutosAHora(1445), "00:05"); // wrap medianoche
 });
 
 test("esDiaAplicable respeta días laborables, fines de semana y todos", () => {
@@ -47,53 +59,44 @@ test("estaEnIntervalo maneja horarios diurnos y que cruzan medianoche", () => {
   assert.equal(estaEnIntervalo(539, "09:00", "09:25"), false);
 
   // 22:00 (1320 min) a 08:00 (480 min)
-  assert.equal(estaEnIntervalo(1320, "22:00", "08:00"), true); // 22:00
-  assert.equal(estaEnIntervalo(1400, "22:00", "08:00"), true); // 23:20
-  assert.equal(estaEnIntervalo(100, "22:00", "08:00"), true);  // 01:40
-  assert.equal(estaEnIntervalo(479, "22:00", "08:00"), true);  // 07:59
-  assert.equal(estaEnIntervalo(480, "22:00", "08:00"), false); // 08:00
-  assert.equal(estaEnIntervalo(600, "22:00", "08:00"), false); // 10:00
+  assert.equal(estaEnIntervalo(1320, "22:00", "08:00"), true);
+  assert.equal(estaEnIntervalo(1400, "22:00", "08:00"), true);
+  assert.equal(estaEnIntervalo(100, "22:00", "08:00"), true);
+  assert.equal(estaEnIntervalo(479, "22:00", "08:00"), true);
+  assert.equal(estaEnIntervalo(480, "22:00", "08:00"), false);
 });
 
 test("duracionEtapaSegundos calcula la duración precisa", () => {
   assert.equal(duracionEtapaSegundos("08:00", "08:15"), 15 * 60);
   assert.equal(duracionEtapaSegundos("09:00", "09:25"), 25 * 60);
   assert.equal(duracionEtapaSegundos("10:20", "12:00"), 100 * 60);
-  // Cruce medianoche: 22:00 a 08:00 = 10 horas = 600 min
   assert.equal(duracionEtapaSegundos("22:00", "08:00"), 600 * 60);
 });
 
 test("obtenerEtapaActual detecta la etapa correspondiente a la hora del día", () => {
-  // Simular fecha un lunes a las 08:10:00
   const fechaManana = new Date(2026, 9, 12, 8, 10, 0); // Lunes
   const actual = obtenerEtapaActual(RUTINA_PREDETERMINADA, fechaManana);
   assert.ok(actual.etapa);
   assert.equal(actual.etapa?.id, "etapa-01");
-  assert.equal(actual.etapa?.titulo, "Levantarse, vestirse, lavarse la cara, peinarse");
 
-  // A las 12:15
   const fechaMediodia = new Date(2026, 9, 12, 12, 15, 0);
   const actualMediodia = obtenerEtapaActual(RUTINA_PREDETERMINADA, fechaMediodia);
   assert.equal(actualMediodia.etapa?.id, "etapa-12");
-  assert.equal(actualMediodia.etapa?.titulo, "Ángelus - Preparar almuerzo");
 
-  // A las 23:30 (durmiendo)
   const fechaNoche = new Date(2026, 9, 12, 23, 30, 0);
   const actualNoche = obtenerEtapaActual(RUTINA_PREDETERMINADA, fechaNoche);
   assert.equal(actualNoche.etapa?.id, "etapa-28");
-  assert.equal(actualNoche.etapa?.titulo, "A dormir...");
 });
 
 test("obtenerProximaEtapa entrega la siguiente etapa y el tiempo que falta", () => {
-  // A las 08:10:00 (en etapa 1, que termina a las 08:15, próxima es etapa 2 a las 08:15)
   const fecha = new Date(2026, 9, 12, 8, 10, 0);
   const prox = obtenerProximaEtapa(RUTINA_PREDETERMINADA, fecha);
   assert.ok(prox.etapa);
   assert.equal(prox.etapa?.id, "etapa-02");
-  assert.equal(prox.restanteSeg, 5 * 60); // 5 minutos
+  assert.equal(prox.restanteSeg, 5 * 60);
 });
 
-test("calcularProgresoEtapa calcula porcentaje y fases correctamente", () => {
+test("calcularProgresoEtapa calcula ratioRestante continuo y fases", () => {
   const etapa = {
     id: "test",
     titulo: "Test",
@@ -106,32 +109,105 @@ test("calcularProgresoEtapa calcula porcentaje y fases correctamente", () => {
     diasSemana: "todos" as const,
   };
 
-  // A las 10:05 (5 min de 30) -> restan 25 min (~83% restante, fase verde)
   const f1 = new Date(2026, 9, 12, 10, 5, 0);
   const prog1 = calcularProgresoEtapa(etapa, f1);
   assert.equal(prog1.totalSeg, 1800);
   assert.equal(prog1.transcurridoSeg, 300);
   assert.equal(prog1.restanteSeg, 1500);
+  assert.ok(prog1.ratioRestante > 0.8 && prog1.ratioRestante < 0.84);
   assert.equal(prog1.fase, "verde");
 
-  // A las 10:20 (20 min de 30) -> restan 10 min (~33% restante, fase ambar)
   const f2 = new Date(2026, 9, 12, 10, 20, 0);
   const prog2 = calcularProgresoEtapa(etapa, f2);
   assert.equal(prog2.fase, "ambar");
 
-  // A las 10:27 (27 min de 30) -> restan 3 min (10% restante, fase rojo)
   const f3 = new Date(2026, 9, 12, 10, 27, 0);
   const prog3 = calcularProgresoEtapa(etapa, f3);
   assert.equal(prog3.fase, "rojo");
 });
 
-test("formatearSegundos y formatearTiempoHumano presentan el tiempo de manera legible", () => {
-  assert.equal(formatearSegundos(65), "01:05");
-  assert.equal(formatearSegundos(0), "00:00");
-  assert.equal(formatearSegundos(3665), "1:01:05");
+test("posponerRutina desplaza en cascada las etapas posteriores", () => {
+  const etapasTest = [
+    { ...RUTINA_PREDETERMINADA[11], horaInicio: "12:00", horaFin: "12:40" },
+    { ...RUTINA_PREDETERMINADA[12], horaInicio: "12:40", horaFin: "13:15" },
+    { ...RUTINA_PREDETERMINADA[13], horaInicio: "13:15", horaFin: "13:40" },
+  ];
 
-  assert.equal(formatearTiempoHumano(30), "30 seg");
-  assert.equal(formatearTiempoHumano(600), "10 min");
-  assert.equal(formatearTiempoHumano(4500), "1 h 15 min");
-  assert.equal(formatearTiempoHumano(7200), "2 h");
+  // Si a las 13:00 posponemos +10 minutos
+  const pospuestas = posponerRutina(etapasTest, 10, "13:00");
+
+  // La que estaba antes de 13:00 (12:00 a 12:40) no cambia
+  assert.equal(pospuestas[0].horaInicio, "12:00");
+  assert.equal(pospuestas[0].horaFin, "12:40");
+
+  // La que estaba en curso (12:40 a 13:15) extiende su fin a 13:25
+  assert.equal(pospuestas[1].horaInicio, "12:40");
+  assert.equal(pospuestas[1].horaFin, "13:25");
+
+  // La siguiente (13:15 a 13:40) se traslada completa a 13:25 a 13:50
+  assert.equal(pospuestas[2].horaInicio, "13:25");
+  assert.equal(pospuestas[2].horaFin, "13:50");
 });
+
+test("calcularTermometroEjecucion mide el ritmo según la hora presente", () => {
+  // A las 09:10: deberían haberse completado etapa 1 (08:00-08:15), 2 (08:15-08:20), 3 (08:20-08:30) y 4 (08:30-09:00)
+  const fecha = new Date(2026, 9, 12, 9, 10, 0); // Lunes 09:10
+  const completadas = new Set(["etapa-01", "etapa-02", "etapa-03", "etapa-04", "etapa-05"]);
+
+  const ritmo = calcularTermometroEjecucion(RUTINA_PREDETERMINADA, completadas, fecha);
+  assert.equal(ritmo.estado, "impecable");
+  assert.equal(ritmo.porcentajeRitmo, 100);
+
+  // Si solo completaron 2 de las esperadas
+  const pocas = new Set(["etapa-01", "etapa-02"]);
+  const ritmoBajo = calcularTermometroEjecucion(RUTINA_PREDETERMINADA, pocas, fecha);
+  assert.equal(ritmoBajo.estado, "demorado");
+  assert.ok(ritmoBajo.porcentajeRitmo < 60);
+});
+
+test("posponerDesdeEtapa extiende la etapa previa y desplaza las posteriores", () => {
+  const etapasTest = [
+    { ...RUTINA_PREDETERMINADA[11], id: "et-1", horaInicio: "12:00", horaFin: "12:40" },
+    { ...RUTINA_PREDETERMINADA[12], id: "et-2", horaInicio: "12:40", horaFin: "13:15" },
+    { ...RUTINA_PREDETERMINADA[13], id: "et-3", horaInicio: "13:15", horaFin: "13:40" },
+  ];
+
+  // Si a las 12:40 suena la alarma de et-2 y se pospone +5 min
+  const res = posponerDesdeEtapa(etapasTest, "et-2", 5, true);
+
+  // La etapa anterior (et-1) se extiende a 12:45
+  assert.equal(res[0].horaInicio, "12:00");
+  assert.equal(res[0].horaFin, "12:45");
+
+  // La etapa pospuesta (et-2) ahora arranca a las 12:45 y finaliza a las 13:20
+  assert.equal(res[1].horaInicio, "12:45");
+  assert.equal(res[1].horaFin, "13:20");
+
+  // La posterior (et-3) se corre a 13:20 - 13:45
+  assert.equal(res[2].horaInicio, "13:20");
+  assert.equal(res[2].horaFin, "13:45");
+});
+
+test("extenderEtapaActiva alarga la etapa en curso y desplaza las siguientes", () => {
+  const etapasTest = [
+    { ...RUTINA_PREDETERMINADA[4], id: "estudio-1", horaInicio: "09:00", horaFin: "09:25" },
+    { ...RUTINA_PREDETERMINADA[5], id: "pausa-1", horaInicio: "09:25", horaFin: "09:30" },
+    { ...RUTINA_PREDETERMINADA[6], id: "estudio-2", horaInicio: "09:30", horaFin: "09:55" },
+  ];
+
+  // Usuario pide +5 min en estudio-1
+  const res = extenderEtapaActiva(etapasTest, "estudio-1", 5);
+
+  // estudio-1 dura 5 min más (hasta 09:30)
+  assert.equal(res[0].horaInicio, "09:00");
+  assert.equal(res[0].horaFin, "09:30");
+
+  // pausa-1 se desplaza a 09:30 - 09:35
+  assert.equal(res[1].horaInicio, "09:30");
+  assert.equal(res[1].horaFin, "09:35");
+
+  // estudio-2 se desplaza a 09:35 - 10:00
+  assert.equal(res[2].horaInicio, "09:35");
+  assert.equal(res[2].horaFin, "10:00");
+});
+

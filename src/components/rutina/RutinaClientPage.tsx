@@ -29,6 +29,8 @@ import {
   obtenerEtapaActual,
   obtenerProximaEtapa,
   calcularProgresoEtapa,
+  posponerDesdeEtapa,
+  extenderEtapaActiva,
 } from "@/lib/rutina/calculadorHorarios";
 import {
   obtenerConfiguracionRutina,
@@ -63,8 +65,12 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
   const [config, setConfig] = useState<ConfiguracionRutina>(CONFIGURACION_DEFAULT);
   const [horaActual, setHoraActual] = useState<Date>(new Date());
   const [estaPausado, setEstaPausado] = useState(false);
-  const [segundosOffsetManual, setSegundosOffsetManual] = useState(0);
   const [esFullscreen, setEsFullscreen] = useState(false);
+
+  // Referencias para congelar el tiempo exacto en pausa y calcular el desfase
+  const pausaInicioRef = useRef<number | null>(null);
+  const pausedRemainingRef = useRef<number | null>(null);
+  const pausedRatioRef = useRef<number | null>(null);
 
   // Etapa con alarma activa para el banner superior
   const [alarmaActivaEtapa, setAlarmaActivaEtapa] = useState<EtapaRutina | null>(null);
@@ -111,8 +117,8 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
     return obtenerProximaEtapa(config.etapas, horaActual);
   }, [config.etapas, horaActual]);
 
-  // Cálculo del progreso y cuenta regresiva
-  const progreso = useMemo(() => {
+  // Cálculo del progreso y cuenta regresiva continua
+  const progresoCalculado = useMemo(() => {
     if (!etapaActual) {
       return {
         totalSeg: segHastaProxima > 0 ? segHastaProxima : 3600,
@@ -120,24 +126,25 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
         restanteSeg: segHastaProxima > 0 ? segHastaProxima : 0,
         porcentaje: 0,
         porcentajeRestante: 100,
+        ratioRestante: 1.0,
         fase: "verde" as const,
       };
     }
-    const res = calcularProgresoEtapa(etapaActual, horaActual);
-    // Aplicar offset manual (+5 min etc) si existe
-    if (segundosOffsetManual !== 0) {
-      const rest = Math.max(0, res.restanteSeg + segundosOffsetManual);
-      const total = res.totalSeg + Math.max(0, segundosOffsetManual);
-      const pctRestante = Math.min(100, Math.round((rest / total) * 100));
+    return calcularProgresoEtapa(etapaActual, horaActual);
+  }, [etapaActual, horaActual, segHastaProxima]);
+
+  // Progreso con soporte de pausa real: si está pausado, congelamos el valor
+  const progreso = useMemo(() => {
+    if (estaPausado && pausedRemainingRef.current !== null && pausedRatioRef.current !== null) {
       return {
-        ...res,
-        totalSeg: total,
-        restanteSeg: rest,
-        porcentajeRestante: pctRestante,
+        ...progresoCalculado,
+        restanteSeg: pausedRemainingRef.current,
+        ratioRestante: pausedRatioRef.current,
+        porcentajeRestante: pausedRatioRef.current * 100,
       };
     }
-    return res;
-  }, [etapaActual, horaActual, segHastaProxima, segundosOffsetManual]);
+    return progresoCalculado;
+  }, [estaPausado, progresoCalculado]);
 
   // Detector de alarmas por transición de etapa
   useEffect(() => {
@@ -146,7 +153,6 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
     // Si cambió la etapa activa y tiene alarma configurada
     if (etapaActual.id !== ultimaEtapaIdAlarmaRef.current) {
       ultimaEtapaIdAlarmaRef.current = etapaActual.id;
-      setSegundosOffsetManual(0); // Reiniciar extensiones manuales
 
       if (etapaActual.alarmaSonora && config.sonidoHabilitado) {
         reproducirAlarma(config.tipoSonido, config.volumen);
@@ -160,18 +166,56 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
     }
   }, [etapaActual, config.sonidoHabilitado, config.tipoSonido, config.volumen]);
 
-  // Manejadores de acciones
-  const handleTogglePausa = () => setEstaPausado((prev) => !prev);
+  // Manejador del botón de Pausa: congela el temporizador y al reanudar desplaza la rutina
+  const handleTogglePausa = () => {
+    if (!estaPausado) {
+      // Activar pausa: congelar valores en este instante exacto
+      pausaInicioRef.current = Date.now();
+      pausedRemainingRef.current = progresoCalculado.restanteSeg;
+      pausedRatioRef.current = progresoCalculado.ratioRestante;
+      setEstaPausado(true);
+    } else {
+      // Reanudar: si se pausó por 30s o más, trasladar el horario en cascada
+      if (pausaInicioRef.current && etapaActual) {
+        const segPausados = Math.max(0, Math.round((Date.now() - pausaInicioRef.current) / 1000));
+        if (segPausados >= 30) {
+          const minutosShift = Math.max(1, Math.round(segPausados / 60));
+          const nuevas = extenderEtapaActiva(config.etapas, etapaActual.id, minutosShift);
+          const nuevaConfig = { ...config, etapas: nuevas };
+          setConfig(nuevaConfig);
+          guardarConfiguracionRutina(nuevaConfig);
+        }
+      }
+      pausaInicioRef.current = null;
+      pausedRemainingRef.current = null;
+      pausedRatioRef.current = null;
+      setEstaPausado(false);
+    }
+  };
 
+  // Manejador de Extender Tiempo (+5 min): alarga la etapa actual y corre las siguientes en cascada
   const handleExtenderTiempo = () => {
-    setSegundosOffsetManual((prev) => prev + 300); // +5 min
+    if (!etapaActual) return;
+    const nuevas = extenderEtapaActiva(config.etapas, etapaActual.id, 5);
+    const nuevaConfig = { ...config, etapas: nuevas };
+    setConfig(nuevaConfig);
+    guardarConfiguracionRutina(nuevaConfig);
+  };
+
+  // Manejador de Posponer desde la Notificación Flotante:
+  // Extiende la etapa previa para no dejar bache y traslada la nueva etapa y siguientes en cascada
+  const handlePosponerDesdeAlarma = (minutos: number) => {
+    if (!alarmaActivaEtapa) return;
+    const nuevas = posponerDesdeEtapa(config.etapas, alarmaActivaEtapa.id, minutos, true);
+    const nuevaConfig = { ...config, etapas: nuevas };
+    setConfig(nuevaConfig);
+    guardarConfiguracionRutina(nuevaConfig);
+    setAlarmaActivaEtapa(null);
   };
 
   const handleAvanzarEtapa = () => {
     if (proximaEtapa) {
-      // Notificar avance
       setAlarmaActivaEtapa(null);
-      setSegundosOffsetManual(0);
     }
   };
 
@@ -286,7 +330,7 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
       <BarraAlarmaActiva
         etapa={alarmaActivaEtapa}
         onCerrar={() => setAlarmaActivaEtapa(null)}
-        onExtender={handleExtenderTiempo}
+        onPosponer={handlePosponerDesdeAlarma}
       />
 
       {/* Encabezado Principal */}
@@ -382,7 +426,7 @@ export function RutinaClientPage({ currentUser }: RutinaClientPageProps) {
                 proximaEtapa={proximaEtapa}
                 restanteSeg={progreso.restanteSeg}
                 totalSeg={progreso.totalSeg}
-                porcentajeRestante={progreso.porcentajeRestante}
+                ratioRestante={progreso.ratioRestante}
                 fase={progreso.fase}
                 estaPausado={estaPausado}
                 onTogglePausa={handleTogglePausa}
