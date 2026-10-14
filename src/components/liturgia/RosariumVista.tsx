@@ -34,13 +34,13 @@ interface RosariumVistaProps {
  *    - Lunes y jueves: Gozosos (Mysteria Gaudiosa)
  *    - Martes y viernes: Dolorosos (Mysteria Dolorosa)
  *    - Miércoles y sábado: Gloriosos (Mysteria Gloriosa)
- *    - Domingos según el tiempo litúrgico (The Raccolta 1910, n.º 219; Manuale Precum 1898):
+ *    - Domingos según el tiempo litúrgico (regla tradicional; fuente impresa por confirmar):
  *        * Adviento, Navidad, Epifanía: Gozosos
  *        * Septuagésima, Cuaresma, Pasión: Dolorosos
  *        * Pascua y Pentecostés (per annum): Gloriosos
  * 2. 5 misterios del día con número romano, título en latín y español, fruto espiritual y cita bíblica.
  * 3. Explorador de las 3 coronas tradicionales completas (15 misterios; sin misterios luminosos de 2002).
- * 4. Oraciones tradicionales bilingües (latín/español) de fuentes preconciliares impresas:
+ * 4. Oraciones tradicionales bilingües (latín/español) tradicionales:
  *    Signum Crucis, Credo, Pater Noster, Ave Maria, Gloria Patri,
  *    Oración de Fátima (con marca «desde 1917»), Salve Regina (con versículo y respuesta),
  *    Oremus final y Litaniæ Lauretanæ completas.
@@ -100,7 +100,7 @@ export function RosariumVista({ className }: RosariumVistaProps) {
 
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border border-border/60 bg-background/60 px-2.5 py-1 rounded-md">
                 <ShieldCheck className="size-3.5 text-primary shrink-0" />
-                <span>Regla preconciliar: The Raccolta (1910, n.º 219)</span>
+                <span>Regla dominical tradicional preconciliar</span>
               </div>
             </div>
           </CardHeader>

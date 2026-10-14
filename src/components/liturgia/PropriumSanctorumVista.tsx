@@ -45,15 +45,16 @@ export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProp
     rutaLiturgia("kalendarium", { version }),
   );
 
-  const todosLosSantos = kalendariumLectura.estado === "ok" ? kalendariumLectura.datos : [];
+  const datosKalendarium = kalendariumLectura.estado === "ok" ? kalendariumLectura.datos : null;
 
   // Filtrado por búsqueda o por mes
   const santosVisibles = useMemo(() => {
+    const todosLosSantos = datosKalendarium ?? [];
     if (busqueda.trim()) {
       return buscarSantos(todosLosSantos, busqueda);
     }
     return filtrarSantosPorMes(todosLosSantos, mesActivo);
-  }, [todosLosSantos, busqueda, mesActivo]);
+  }, [datosKalendarium, busqueda, mesActivo]);
 
   // Rutas de detalle Missa y Officium
   const docMissaRuta = santoSeleccionado
@@ -106,7 +107,7 @@ export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProp
                 {santoSeleccionado.fecha}
               </Badge>
               <Badge variant="secondary" className="text-xs">
-                {textoRango(santoSeleccionado.rango)}
+                {santoSeleccionado.rangoTexto ?? textoRango(santoSeleccionado.rango)}
               </Badge>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <ColorLiturgicoPunto color={deducirColorSanto(santoSeleccionado.nombre)} />
@@ -120,7 +121,7 @@ export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProp
 
             {santoSeleccionado.conmemoracion ? (
               <p className="text-xs text-muted-foreground font-serif italic">
-                Commemoratio: {santoSeleccionado.conmemoracion.nombre} ({textoRango(santoSeleccionado.conmemoracion.rango)})
+                Commemoratio: {santoSeleccionado.conmemoracion.nombre} ({santoSeleccionado.conmemoracion.rangoTexto ?? textoRango(santoSeleccionado.conmemoracion.rango)})
               </p>
             ) : null}
           </div>
@@ -263,7 +264,7 @@ export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProp
                             {s.nombre}
                           </h4>
                           <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <span>{textoRango(s.rango)}</span>
+                            <span>{s.rangoTexto ?? textoRango(s.rango)}</span>
                             {s.conmemoracion ? (
                               <span className="truncate max-w-[12rem] italic">
                                 · Com. {s.conmemoracion.nombre}

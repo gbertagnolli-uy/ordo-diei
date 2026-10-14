@@ -1,9 +1,8 @@
 // Lógica de los Misterios del Rosario tradicional (SPEC liturgia §10.8, D49).
-// Fuente impresa preconciliar para la regla dominical citada en el código (§10.8, §12):
-// The Raccolta (ed. 1910, n.º 219) y Manuale Precum (Ratisbona, 1898, p. 342):
-// «In diebus dominicis ab Adventu usque ad primam Dominicam Quadragesimæ: Gaudiosa;
-//  a prima Dominica Quadragesimæ usque ad Pascha: Dolorosa;
-//  a Pascha usque ad Adventum: Gloriosa.»
+// Regla dominical (tradición preconciliar): Adviento y Navidad → Gozosos; de Septuagésima a Pascua → Dolorosos;
+// Pascua y tiempo después de Pentecostés → Gloriosos.
+// PENDIENTE (SPEC §10.8, §12): citar aquí la edición impresa preconciliar que la confirme. Las citas que había
+// (Raccolta 1910 n.º 219, Manuale Precum 1898) no pudieron verificarse y se quitaron para no dar una fuente inventada.
 
 import type { TiempoLiturgico } from "./tipos.ts";
 import rosariumJson from "../../data/liturgia/rosarium.json" with { type: "json" };
@@ -174,7 +173,7 @@ export const MISTERIOS_GLORIOSA: Misterio[] = [
     latino: "Assumptio Beatæ Mariæ Virginis",
     castellano: "La Asunción en cuerpo y alma de la Santísima Virgen",
     fruto: "La perseverancia final y devoción filial a María",
-    cita: "Cant 2, 10-13",
+    cita: "cf. Cant 2, 10-13",
   },
   {
     numero: 5,
@@ -209,7 +208,7 @@ export const GRUPOS_INFO: Record<GrupoMisterios, { latino: string; castellano: s
  * Lunes y Jueves: Gozosos.
  * Martes y Viernes: Dolorosos.
  * Miércoles y Sábado: Gloriosos.
- * Domingo según el tiempo litúrgico (The Raccolta 1910, n.º 219):
+ * Domingo según el tiempo litúrgico (regla tradicional; fuente impresa por confirmar):
  *  - Adviento, Navidad, Epifanía: Gozosos
  *  - Septuagésima, Cuaresma, Pasión: Dolorosos
  *  - Pascua, Pentecostés (tiempo per annum): Gloriosos

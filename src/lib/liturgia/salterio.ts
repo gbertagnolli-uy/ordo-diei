@@ -14,15 +14,14 @@ export interface EntradaSalmoInfo {
 }
 
 /**
- * Cánticos tradicionales del Oficio Divino incluidos en el Salterio de DO.
+ * Cánticos evangélicos que sí están cargados en la base (derivados.ts los toma de Psalterium/* de DO).
+ * El Te Deum, el Benedicite y el Quicumque NO se listan: DO no los trae como documentos de Psalterium
+ * (el Te Deum va en el Ordinarium del Oficio), así que el enlace llevaría a una página vacía.
  */
 export const CANTICOS_TRADICIONALES: readonly EntradaSalmoInfo[] = [
   { numero: "Benedictus", clave: "Psalterium/Benedictus", incipitLa: "Benedíctus Dóminus, Deus Israël", incipitEs: "Bendito sea el Señor, Dios de Israel (Cántico de Zacarías, Lc 1)", tipo: "cantico" },
   { numero: "Magnificat", clave: "Psalterium/Magnificat", incipitLa: "Magníficat ánima mea Dóminum", incipitEs: "Proclama mi alma la grandeza del Señor (Cántico de la Virgen María, Lc 1)", tipo: "cantico" },
   { numero: "NuncDimittis", clave: "Psalterium/NuncDimittis", incipitLa: "Nunc dimíttis servum tuum, Dómine", incipitEs: "Ahora, Señor, puedes dejar a tu siervo irse en paz (Cántico de Simeón, Lc 2)", tipo: "cantico" },
-  { numero: "TeDeum", clave: "Psalterium/TeDeum", incipitLa: "Te Deum laudámus: te Dóminum confitémur", incipitEs: "A ti, oh Dios, te alabamos; a ti, Señor, te reconocemos (Himno Ambrosiano)", tipo: "cantico" },
-  { numero: "Benedicite", clave: "Psalterium/Benedicite", incipitLa: "Benedícite, ómnia ópera Dómini, Dómino", incipitEs: "Obras todas del Señor, bendecid al Señor (Cántico de los Tres Jóvenes, Dn 3)", tipo: "cantico" },
-  { numero: "Quicumque", clave: "Psalterium/Quicumque", incipitLa: "Quicúmque vult salvus esse", incipitEs: "Todo el que quiera salvarse (Símbolo Atanasiano)", tipo: "cantico" },
 ];
 
 /** Incípits seleccionados de salmos frecuentes con numeración Vulgata. */

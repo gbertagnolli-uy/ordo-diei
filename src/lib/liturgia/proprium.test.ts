@@ -25,10 +25,11 @@ test("textoRango: traduce números de rango a etiquetas latinas de rúbricas", (
   assert.equal(textoRango(1), "Simplex");
   assert.equal(textoRango(2), "Semiduplex");
   assert.equal(textoRango(3), "Duplex");
-  assert.equal(textoRango(4), "Duplex II. classis");
-  assert.equal(textoRango(5), "Duplex I. classis");
-  assert.equal(textoRango(6), "Duplex I. classis cum octava");
-  assert.equal(textoRango(0), "Memoria");
+  assert.equal(textoRango(4), "Duplex majus");
+  assert.equal(textoRango(5), "Duplex II. classis");
+  assert.equal(textoRango(6), "Duplex I. classis");
+  assert.equal(textoRango(7), "Dies privilegiatus");
+  assert.equal(textoRango(0), "Commemoratio");
 });
 
 test("deducirColorSanto: mártires son rojos, vigilias moradas, resto blanco", () => {

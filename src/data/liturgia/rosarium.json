@@ -5,7 +5,7 @@
       "tituloEs": "La Señal de la Cruz",
       "textoLa": "Per signum Sanctæ Crucis, de inimícis nostris líbera nos, Deus noster. In nómine Patris, et Fílii, et Spíritus Sancti. Amen.",
       "textoEs": "Por la señal de la Santa Cruz, de nuestros enemigos líbranos, Señor Dios nuestro. En el nombre del Padre, y del Hijo, y del Espíritu Santo. Amén.",
-      "fuente": "Manuale Precum (Ratisbona, 1898); devocionario tradicional"
+      "fuente": "Devocionario tradicional (edición impresa por confirmar)"
     },
     "credo": {
       "tituloLa": "Symbolum Apostolorum (Credo)",
@@ -57,13 +57,13 @@
       "tituloEs": "Oración Final del Santo Rosario",
       "textoLa": "Orémus. Deus, cuius Unigénitus per vitam, mortem et resurrectiónem suam nobis salútis ætérnæ præmia comparávit: concéde, quǽsumus; ut hæc mystéria sacratíssimo beátæ Maríæ Vírginis Rosário recoléntes, et imitémur quod cóntinent, et quod promíttunt assequámur. Per eúndem Christum Dóminum nostrum. Amen.",
       "textoEs": "Oremos. Oh Dios, cuyo Hijo unigénito, por su vida, muerte y resurrección nos obtuvo los premios de la salvación eterna: te rogamos nos concedas que, meditando estos misterios en el sacratísimo Rosario de la bienaventurada Virgen María, imitemos lo que contienen y alcancemos lo que prometen. Por el mismo Jesucristo Nuestro Señor. Amén.",
-      "fuente": "Manuale Precum (1898, p. 344) y The Raccolta (1910, n.º 219)"
+      "fuente": "Oración tradicional del Rosario (edición impresa por confirmar)"
     }
   },
   "litaniaeLauretanae": {
     "tituloLa": "Litaniæ Lauretanæ",
     "tituloEs": "Letanías Lauretanas de la Santísima Virgen María",
-    "fuente": "Rituale Romanum y The Raccolta (1910, n.º 218)",
+    "fuente": "Letanías Lauretanas, texto tradicional preconciliar (edición impresa por confirmar)",
     "invocaciones": [
       { "la": "Kýrie, eléison.", "es": "Señor, ten piedad." },
       { "la": "Christe, eléison.", "es": "Cristo, ten piedad." },
@@ -78,7 +78,6 @@
       { "la": "Sancta Dei Génetrix, ora pro nobis.", "es": "Santa Madre de Dios, ruega por nosotros." },
       { "la": "Sancta Virgo vírginum, ora pro nobis.", "es": "Santa Virgen de las vírgenes, ruega por nosotros." },
       { "la": "Mater Christi, ora pro nobis.", "es": "Madre de Cristo, ruega por nosotros." },
-      { "la": "Mater Ecclésiæ, ora pro nobis.", "es": "Madre de la Iglesia, ruega por nosotros." },
       { "la": "Mater divínæ grátiæ, ora pro nobis.", "es": "Madre de la divina gracia, ruega por nosotros." },
       { "la": "Mater puríssima, ora pro nobis.", "es": "Madre purísima, ruega por nosotros." },
       { "la": "Mater castíssima, ora pro nobis.", "es": "Madre castísima, ruega por nosotros." },

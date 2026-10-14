@@ -125,3 +125,22 @@
 - **Hecha** (ver L2). **Sin verificar**: las pantallas y `/api/liturgia/*` contra estos datos en el navegador (nadie las abrió con datos reales todavía); y `--importar` de `generar.ts` conviene pasarlo a lectura en streaming con deduplicación de bloques (hoy carga `bloques.jsonl`, 145 656 líneas, entero en memoria).
 - **Revisar el espacio**: el JSON sin comprimir es ~130 MB; el tamaño real en Postgres (TOAST) conviene mirarlo en el panel de Supabase.
 - Los volcados (`.cache/ensayo-full`, `.cache/ensayo-cal`, 383 MB) vivían en el worktree de la lane 133, que se borró: si hace falta recargar, hay que volver a generar (`npm run liturgia:generar`, ~1 h).
+
+## Revisión de lo que hizo AGY (lane 147)
+Pedido del usuario: «Revisalo por las dudas, seguramente hayan errores» / «no creo que lo haya resuelto con la misma profundidad de los agentes». Se releyó el código y los datos de R2, R3 y L3–L9 contra el SPEC. Resultado: la suite pasaba (324 tests), pero había errores de contenido y de comportamiento que los tests no ven.
+
+**Corregido en la lane 147**
+- **Fotos del Breviarium (L5)**: los IDs y autores de Unsplash eran inventados. Se reemplazaron por fotos reales consultadas a la API (`src/lib/liturgia/horas.ts`), con enlace a la foto y al fotógrafo con UTM, y un párrafo de créditos de los 8 fotógrafos. El velo pasó a `via-black/60`; el contraste del texto blanco se midió con `scripts/liturgia/medir-contraste.py` (p95 de luminancia de la zona de texto): ≥ 5,3:1 en las 8 horas (con el velo anterior, Sexta quedaba por debajo de 4,5).
+- **Ordo Missae y cánticos (L6/L8)**: la pantalla pedía documentos que no existían en la base (`Missa/Ordo/Ordo`, `Psalterium/Benedictus|Magnificat|NuncDimittis`). Se generan a partir de los datos ya cargados con `scripts/liturgia/derivados.ts` (idempotente, ya corrido contra la base real). El Te Deum, el Benedicite y el Quicumque se **quitaron del índice** del Salterio: DO no los trae como documentos de `Psalterium`, el enlace llevaba a una página vacía.
+- **Rangos (L4/L7)**: el mapeo de rango estaba mal (la escala de DO es 1 Simplex … 4 Duplex majus, 5 Duplex II. classis, 6 Duplex I. classis, 7+ privilegiado) y el rango numérico de `Tabulae/Kalendaria` es el de 1570. `derivados.ts` guarda `rangoTexto` real por versión en el Kalendarium y las vistas lo usan (`textoRango` queda de respaldo).
+- **Tarjeta del Martirologio (L4)**: apuntaba al lugar equivocado; corregida, con atribución y velo.
+- **Reposo (R3)**: la frase se elegía al azar al renderizar (HTML distinto en servidor y cliente → error de hidratación) y había efectos secundarios dentro de updaters de `setState` (StrictMode los ejecuta dos veces). Ahora la primera frase se elige tras montar y el estado de la secuencia vive en refs. `/api/reposo/dia` servía el título de ayer hasta 25 h (SWR de un día con la misma URL): el cliente ahora manda `?fecha=` local y el caché es solo `s-maxage=3600`.
+- **Rosario (L9)**: se quitó «Mater Ecclésiæ» de las Letanías (invocación de 1980, no preconciliar). Las citas «The Raccolta 1910 n.º 219 / n.º 218» y «Manuale Precum 1898 p. 342/344» no se pudieron verificar y la cita latina del encabezado de `rosario.ts` era inventada (además decía «Quadragesima» mientras el código usa Septuagésima): se sustituyeron por «fuente impresa por confirmar». La cita de la Asunción quedó como «cf. Cant 2, 10-13».
+- Aviso de eslint (`useMemo`) en `PropriumSanctorumVista`.
+
+**Sigue pendiente / sin verificar**
+- **Regla dominical del Rosario (L9)**: el SPEC §10.8 exige confirmarla con una fuente impresa preconciliar citada en el código. No está hecho; hay un `PENDIENTE` en `rosario.ts`.
+- Nada de esto se probó en navegador (lo hace el usuario): reposo con fotos reales, hidratación, el Breviarium con los créditos, Calendarium con rangos.
+- No se revisó línea por línea: `CalendariumMes.tsx`, `PropriumDeTemporeVista.tsx`, `MissaleVista.tsx`, `PanelReposo.tsx` y los tests de las lanes de AGY. Conviene una segunda pasada con datos reales.
+- `deducirColorSanto` (L7) deduce el color por el título: apóstoles y evangelistas deberían ser rojos y hoy salen blancos.
+- Si `derivados.ts` no se corre tras una recarga completa (`npm run liturgia:generar`), vuelven a faltar Ordo, cánticos y `rangoTexto`: conviene encadenarlo al generador.
