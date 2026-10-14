@@ -16,6 +16,10 @@ export type LeccionHoy = {
   completada: boolean;
   bloqueada: boolean;
   motivo: string | null;
+  /** Tiene quiz final: para terminarla hay que aprobarlo */
+  quiz: boolean;
+  /** Cantidad de checkpoints (pausas con pregunta) dentro del video */
+  checkpoints: number;
 };
 
 export type DiaHoy = {
@@ -63,6 +67,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
     if (elegidos.length === 0) continue;
 
     const conLecciones = TIPOS_CON_LECCIONES.includes(recurso.tipo);
+    const preguntas = conLecciones ? await prisma.preguntaLeccion.findMany({ where: { leccion: { recursoId: recurso.id } }, select: { leccionId: true, segundoVideo: true } }) : [];
     const vistas = conLecciones ? await unidadesVistas(prisma, alumnoId, recurso.id) : null;
     const totalHecho = vistas ? new Set([...vistas.conProgreso, ...vistas.cubiertas]).size : dias.filter((d) => d.estado === "hecha" || d.estado === "omitida").reduce((n, d) => n + d.unidadHasta - d.unidadDesde + 1, 0);
 
@@ -81,6 +86,8 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
                 url: l.url,
                 videoPlataforma: l.videoPlataforma,
                 videoId: l.videoId,
+                quiz: preguntas.some((q) => q.leccionId === l.id && q.segundoVideo === null),
+                checkpoints: preguntas.filter((q) => q.leccionId === l.id && q.segundoVideo !== null).length,
                 completada: vistas?.conProgreso.has(l.orden) ?? false,
                 bloqueada: !!motivo,
                 motivo,

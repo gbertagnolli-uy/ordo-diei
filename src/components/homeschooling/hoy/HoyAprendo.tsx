@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
+import RepasoDeHoy from "./RepasoDeHoy";
 import TarjetaHoy from "./TarjetaHoy";
 import VisorLeccion from "./VisorLeccion";
 
@@ -40,6 +41,8 @@ export default function HoyAprendo({ nombre, fotoUrl, racha, dias }: { nombre: s
           <Camera /> Mi portafolio
         </Link>
       </Button>
+
+      <RepasoDeHoy />
 
       {dias.length === 0 ? (
         <Empty className="border border-dashed">
