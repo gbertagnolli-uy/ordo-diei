@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, GraduationCap, Plus } from "lucide-react";
+import { CalendarDays, CalendarOff, Camera, ClipboardCheck, GraduationCap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +17,7 @@ import AsistenteCurso from "./AsistenteCurso";
 
 export type ProgresoAlumno = AlumnoLite & { cursos: number; porcentaje: number };
 
-export default function PanelHomeschooling({ materias, alumnos, progresos }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[]; progresos: ProgresoAlumno[] }) {
+export default function PanelHomeschooling({ materias, alumnos, progresos, pendientes }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[]; progresos: ProgresoAlumno[]; pendientes: number }) {
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
   const [asistente, setAsistente] = useState(false);
@@ -32,6 +32,16 @@ export default function PanelHomeschooling({ materias, alumnos, progresos }: { m
           <Button asChild variant="outline">
             <Link href="/dashboard/homeschooling/plan">
               <CalendarDays /> Plan
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/homeschooling/revision">
+              <ClipboardCheck /> Revisión{pendientes > 0 ? ` (${pendientes})` : ""}
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/homeschooling/portafolio">
+              <Camera /> Portafolio
             </Link>
           </Button>
           <Button asChild variant="outline">

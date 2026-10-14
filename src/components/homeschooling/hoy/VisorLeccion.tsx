@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,6 +16,7 @@ import { urlEmbed } from "@/lib/homeschooling/video";
 import type { DiaHoy, LeccionHoy } from "@/lib/homeschooling/servidor/hoy";
 import { useModalStore } from "@/store/modalStore";
 import { toast } from "@/lib/toast";
+import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidencia";
 import LeccionesDelDia from "./LeccionesDelDia";
 
 export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onClose: () => void }) {
@@ -24,6 +25,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
   const [completadas, setCompletadas] = useState<Set<number>>(new Set());
   const [activaId, setActivaId] = useState<number | undefined>();
   const [cargando, setCargando] = useState(false);
+  const [foto, setFoto] = useState(false);
   const inicio = useRef(Date.now());
 
   // Al abrir un día: arranca en la primera lección pendiente y empieza a contar el tiempo
@@ -150,6 +152,10 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                 </div>
               )}
 
+              <Button variant="outline" size="lg" className="w-full" onClick={() => setFoto(true)}>
+                <Camera /> Sacar una foto de mi trabajo
+              </Button>
+
               <div className="flex items-center justify-between gap-2 border-t pt-4">
                 <Button variant="outline" size="lg" disabled={indice <= 0} onClick={() => cambiar(lecciones[indice - 1])}>
                   <ArrowLeft /> Anterior
@@ -174,6 +180,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
           </>
         )}
       </SheetContent>
+      <EnviarEvidencia open={foto} onClose={() => setFoto(false)} diaLectivoId={dia?.diaId ?? null} titulo={dia ? `${dia.recurso.titulo}: ${dia.rango}` : undefined} />
     </Sheet>
   );
 }
