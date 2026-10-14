@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/homeschooling/roost/auth";
 import { useSearchParams } from "@/lib/homeschooling/roost/router";
-import { deleteModule, getModulesWithRecordings } from "@/lib/homeschooling/roost/services/module";
+import { deleteModule, getModulesWithRecordings, updateModule } from "@/lib/homeschooling/roost/services/module";
 import { deleteRecording, rolDeGrupo } from "@/lib/homeschooling/roost/services/group";
 import type { Group, Module, ModuleWithProgress, RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
 import { toast } from "@/lib/toast";
@@ -144,6 +144,14 @@ export default function MateriaLayout({
               onEditModule={() => setCursoForm({ open: true, editing: activeModule })}
               onDeleteModule={() => setBorrar({ tipo: "curso", id: activeModule.id, nombre: activeModule.title })}
               onAsignar={() => setAsignar(activeModule)}
+              onToggleLibre={async (libre) => {
+                try {
+                  await updateModule(activeModule.id, { navegacion_libre: libre });
+                  refrescar();
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "No se pudo cambiar");
+                }
+              }}
             />
           )}
 

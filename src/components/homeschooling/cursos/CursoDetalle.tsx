@@ -7,6 +7,7 @@
 import { ArrowLeft, CalendarDays, CheckCircle2, Circle, Edit2, FileText, Play, Plus, Trash2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
@@ -24,6 +25,7 @@ export default function CursoDetalle({
   onEditModule,
   onDeleteModule,
   onAsignar,
+  onToggleLibre,
 }: {
   module: ModuleWithProgress;
   userRole: GroupRole | null;
@@ -34,6 +36,7 @@ export default function CursoDetalle({
   onEditModule: () => void;
   onDeleteModule: () => void;
   onAsignar: () => void;
+  onToggleLibre: (libre: boolean) => void;
 }) {
   const canManage = hasPermission(userRole, "editar_curso");
   const recordings = module.recordings ?? [];
@@ -75,6 +78,13 @@ export default function CursoDetalle({
               Asignar a…
             </Button>
           </div>
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <span>
+              <span className="block font-medium text-foreground">Navegación libre</span>
+              <span className="text-xs text-muted-foreground">El alumno puede adelantar el día siguiente si el anterior está hecho.</span>
+            </span>
+            <Switch checked={module.navegacion_libre} onCheckedChange={onToggleLibre} />
+          </label>
           {planes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {module.total_unidades < 1 ? "Cargá lecciones para poder asignar el curso." : "Nadie tiene este curso asignado todavía."}

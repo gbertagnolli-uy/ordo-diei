@@ -8,13 +8,16 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, CalendarOff, GraduationCap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Progress } from "@/components/ui/progress";
 import type { Group } from "@/lib/homeschooling/roost/tipos";
 import { colorCss, iconoDe } from "@/components/homeschooling/cursos/iconos";
 import MateriaForm from "@/components/homeschooling/cursos/MateriaForm";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
 import AsistenteCurso from "./AsistenteCurso";
 
-export default function PanelHomeschooling({ materias, alumnos }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[] }) {
+export type ProgresoAlumno = AlumnoLite & { cursos: number; porcentaje: number };
+
+export default function PanelHomeschooling({ materias, alumnos, progresos }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[]; progresos: ProgresoAlumno[] }) {
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
   const [asistente, setAsistente] = useState(false);
@@ -44,6 +47,22 @@ export default function PanelHomeschooling({ materias, alumnos }: { materias: (G
           </Button>
         </div>
       </div>
+
+      {progresos.some((p) => p.cursos > 0) && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {progresos.filter((p) => p.cursos > 0).map((p) => (
+            <div key={p.id} className="space-y-2 rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-foreground">{p.nombre}</span>
+                <span className="text-muted-foreground">
+                  {p.porcentaje}% · {p.cursos} {p.cursos === 1 ? "curso" : "cursos"}
+                </span>
+              </div>
+              <Progress value={p.porcentaje} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {materias.length === 0 ? (
         <Empty className="border border-dashed">

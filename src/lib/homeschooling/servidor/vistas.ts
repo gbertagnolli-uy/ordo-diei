@@ -53,3 +53,21 @@ export async function noLectivosDelAlumno(alumnoId: number) {
   const filas = await prisma.diaNoLectivo.findMany({ where: { alumnoId }, orderBy: { fecha: "asc" } });
   return filas.map((f) => ({ id: f.id, fecha: aClave(f.fecha), motivo: f.motivo }));
 }
+
+/** Avance global de cada alumno: unidades hechas u omitidas sobre las de sus planes activos */
+export async function progresoPorAlumno() {
+  const alumnos = await alumnosDeFamilia();
+  const planes = await prisma.planCurso.findMany({
+    where: { estado: "activo", alumnoId: { in: alumnos.map((a) => a.id) } },
+    include: { recurso: { select: { totalUnidades: true } }, dias: { select: { estado: true, unidadDesde: true, unidadHasta: true } } },
+  });
+  return alumnos.map((a) => {
+    const suyos = planes.filter((p) => p.alumnoId === a.id);
+    const total = suyos.reduce((n, p) => n + p.recurso.totalUnidades, 0);
+    const hechas = suyos.reduce(
+      (n, p) => n + p.dias.filter((d) => d.estado === "hecha" || d.estado === "omitida").reduce((m, d) => m + d.unidadHasta - d.unidadDesde + 1, 0),
+      0
+    );
+    return { ...a, cursos: suyos.length, porcentaje: total > 0 ? Math.min(100, Math.round((hechas / total) * 100)) : 0 };
+  });
+}
