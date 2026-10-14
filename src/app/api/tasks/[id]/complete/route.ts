@@ -5,6 +5,8 @@ import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
 import { puntosBase } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
+import { puedeCompletarTarea } from "@/lib/tareas/permisos";
+import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -27,10 +29,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     }
 
+    if (!puedeCompletarTarea({ id: Number(session.user.id), rolFamiliar: session.user.rolFamiliar }, task)) {
+      return NextResponse.json({ error: "Solo quien tiene asignada la tarea (o un padre) puede completarla" }, { status: 403 });
+    }
+
     if (task.estado === "Completada" || task.estado === "Aprobada" || task.estado === "Esperando_Aprobacion") {
       console.warn(`[API/Complete] Tarea ${taskId} ya estaba en estado ${task.estado}`);
       return NextResponse.json({ error: "La tarea ya fue completada o está en revisión" }, { status: 400 });
     }
+
+    // Homeschooling: la Tarea de un día lectivo exige haber hecho sus lecciones
+    const motivoHs = await motivoBloqueoTarea(taskId);
+    if (motivoHs) return NextResponse.json({ error: motivoHs }, { status: 400 });
 
     // Business Rule: Checklist completion is COMPUTED (100% required)
     if (task.isChecklist && task.checklistItems.length > 0) {

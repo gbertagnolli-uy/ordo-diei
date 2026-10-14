@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { crearEntregaPremio } from "@/lib/recompensas/vales";
 import { NextResponse } from "next/server";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { hoyEnFamilia } from "@/lib/habitos/server";
+import { alumnosConPlanActivo, asegurarTareasDeHoy } from "@/lib/homeschooling/servidor/tareas";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +56,17 @@ export async function GET(req: Request) {
     // B) GENERAR TAREAS PARA HOY (la regla recurrente se conserva)
     const generadasCount = await generarTareasRecurrentes(prisma, new Date());
     console.log(`[Cron Daily] ${generadasCount} generadas`);
+
+    // B2) HOMESCHOOLING: Tarea de cada día lectivo de hoy (un alumno que falla no frena al resto)
+    let hsCreadas = 0;
+    for (const alumnoId of await alumnosConPlanActivo()) {
+      try {
+        hsCreadas += await asegurarTareasDeHoy(alumnoId, hoyEnFamilia());
+      } catch (err) {
+        console.error(`[Cron Daily] Homeschooling alumno ${alumnoId}:`, err);
+      }
+    }
+    console.log(`[Cron Daily] ${hsCreadas} tareas de estudio`);
 
     // =====================
     // C) RECALCULAR %

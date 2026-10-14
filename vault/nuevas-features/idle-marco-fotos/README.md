@@ -1,4 +1,4 @@
-> **Reemplazado por [`SPEC.md`](SPEC.md) (2026-10-13):** el marco usa **Google Fotos** y es una pantalla de reposo con logo, nombre y botón «Entrar»; la interpretación «fotos de usuarios para login» de §3 ya no aplica.
+> **Reemplazado** por [`SPEC.md`](SPEC.md) (v2, 2026-10-14): fondo de **Unsplash** con **frases** (Vulgata + Torres Amat, Catecismo de San Pío X) y título litúrgico del día. La versión con Google Fotos quedó en [`SPEC_V1_GOOGLE_FOTOS.md`](SPEC_V1_GOOGLE_FOTOS.md).
 
 # Idle state — marco de fotos dinámico con login por foto
 

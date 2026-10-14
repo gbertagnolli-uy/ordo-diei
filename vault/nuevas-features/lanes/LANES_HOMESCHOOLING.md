@@ -1,93 +1,42 @@
-# Plan Maestro de Lanes — Módulo de Homeschooling
+# Plan de lanes — Homeschooling (v3.1, sobre Roost)
 
-> ⚠️ **Auditado el 2026-10-13** (ver [`../homeschooling/AUDITORIA.md`](../homeschooling/AUDITORIA.md)). Esta versión ya incluye el orden y las dependencias corregidos.
+> 2026-10-14. Documento de entrada: [`../homeschooling/PLAN_INTEGRACION_ROOST.md`](../homeschooling/PLAN_INTEGRACION_ROOST.md). Esquema y reglas: [`../homeschooling/ARQUITECTURA_DETALLADA.md`](../homeschooling/ARQUITECTURA_DETALLADA.md).
+> **Números de lane:** se asignan al crear cada una (el siguiente libre: `git worktree list`, `git branch -a`, `ls vault/LANE_*`). Ya hubo choques entre agentes.
 
-> **Contexto:** Especificación detallada de las 6 lanes de trabajo para implementar el ecosistema completo de Homeschooling en Ordo Diei, siguiendo las directrices de `AGENTS.md` (un worktree por lane, commits aislados, integración exclusiva vía `scripts/integrar.sh` y cero `db push`).
-
----
-
-## 1. Mapa de Dependencias y Fases
+## Orden y dependencias
 
 ```
-                    ┌────────────────────────────────────────┐
-                    │ LANE H1: Modelo DB, Pacing & Snow Day │
-                    └───────────────────┬────────────────────┘
-                                        │
-                                        ▼
-                    ┌────────────────────────────────────────┐
-                    │ LANE H2: LMS, Reproductor & Hoy Aprendo│
-                    └───────────┬───────────────────┬────────┘
-                                │                   │
-                                ▼                   ▼
-┌──────────────────────────────────────┐ ┌──────────────────────────────────────┐
-│ LANE H3: Evidencia & Portafolio      │ │ LANE H4: Active Recall & Quizzes     │
-│ (Showcase Roost, Cámara, Voz, Swipe) │ │ (Checkpoints de Video, SM-2, Cartas) │
-└───────────────────┬──────────────────┘ └──────────────────┬───────────────────┘
-                    │                                       │
-                    └───────────────────┬───────────────────┘
-                                        │
-                                        ▼
-                    ┌────────────────────────────────────────┐
-                    │ LANE H5: Compliance, Transcripts & PDF │
-                    │ (Leyes Estatales, Carnegie, Reportes)  │
-                    └───────────────────┬────────────────────┘
-                                        │
-                                        ▼
-                    ┌────────────────────────────────────────┐
-                    │ LANE H6: Neurodivergencia & Kiosk      │
-                    │ (First/Then, Low Sensory, Curfew Mode) │
-                    └────────────────────────────────────────┘
+HS0 base Roost ──────────┐
+H1a modelo + pacing ─────┼─► H1b padre ─► H2 hoy aprendo ─┬─► H3 evidencia
+HS-SEG completar asignado┘   (H2 exige HS-SEG)            ├─► H4 quizzes + repaso
+                                                           ├─► H5 horas + reportes (usa H3 si existe)
+                                                           └─► H6 neurodivergencia
 ```
+HS0, H1a y HS-SEG pueden ir en paralelo. H3–H6 son independientes entre sí; las que tocan `schema.prisma` se integran de a una.
 
----
+**Verificación:** cada lane se autoverifica antes de integrar y otra sesión la verifica después en `dev`; al final hay una auditoría completa. Proceso, vectores de referencia y script: [`../homeschooling/PLAN_VERIFICACION.md`](../homeschooling/PLAN_VERIFICACION.md).
 
-## 1.b Plan integrado con el resto de las features (auditoría §G)
-
-| Orden | Lane | Depende de | Notas |
+| Código | Tamaño | Spec | Nota clave |
 |---|---|---|---|
-| 1 | **H1a** modelo + `repartir()` + tests | nada | Puede ir ya; sin UI. |
-| 2 | **H1b** asistente de alta + plan del padre | H1a, `MissionCalendar` | Extiende el calendario existente. |
-| 3 | N2 audio · N4/N5/N6 inactividad y borradores | — | Antes de H2 (sonido de victoria, lección sin cerrar sesión). |
-| 4 | **H2** «Hoy aprendo» + reproductor | H1b, **decisión C2/C3** (recompensa por pipeline con tope/aprobación) | Riesgo mayor. |
-| 5 | **H3** evidencia | H2, **E1–E3** (archivos privados, audio, espacio) | Requiere ampliar `Archivo`. |
-| 6 | **H4** checkpoints y quizzes | H2, B6 (modelos de quiz) | Corrección en servidor. Cartas solo si el usuario lo decide. |
-| 7 | N13 temporizadores visuales | N2, N4 | Antes de H5/H6. |
-| 8 | **H5** compliance/transcripts | H3, H4, N13, **jurisdicción definida por el usuario** | Sin cifras legales en código. |
-| 9 | **H6** neurodivergencia (sin kiosk/curfew) | H2, N2 | Kiosk/curfew → APP nativa. |
+| HS0 | M | [`LANE_HS0_BASE_ROOST.md`](../homeschooling/LANE_HS0_BASE_ROOST.md) | Shims, tipos, video, `CalendarView`, test de guarda. Sin base ni pantallas |
+| H1a | M | [`LANE_H1A_MODELO_Y_PACING.md`](../homeschooling/LANE_H1A_MODELO_Y_PACING.md) | Esquema base + `repartir()` |
+| HS-SEG | S | [`LANE_HSEG_COMPLETAR_SOLO_ASIGNADO.md`](../homeschooling/LANE_HSEG_COMPLETAR_SOLO_ASIGNADO.md) | `complete` solo asignado o padre |
+| H1b | L | [`LANE_H1B_ALTA_Y_PLAN_PADRE.md`](../homeschooling/LANE_H1B_ALTA_Y_PLAN_PADRE.md) | LMS de Roost (vista padre) + calendario con arrastre |
+| H2 | L | [`LANE_H2_HOY_APRENDO.md`](../homeschooling/LANE_H2_HOY_APRENDO.md) | Día = `Tarea`, a tiempo hasta las 18:00, guardia en `complete` |
+| H3 | M | [`LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md`](../homeschooling/LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md) | Showcase de Roost; swipe izq. aprueba |
+| H4 | L | [`LANE_H4_QUIZZES_Y_REPASO.md`](../homeschooling/LANE_H4_QUIZZES_Y_REPASO.md) | Corrección en servidor; react-player; ts-fsrs |
+| H5 | M | [`LANE_H5_HORAS_Y_REPORTES.md`](../homeschooling/LANE_H5_HORAS_Y_REPORTES.md) | Events de Roost; sin datos legales |
+| H6 | M | [`LANE_H6_NEURODIVERGENCIA.md`](../homeschooling/LANE_H6_NEURODIVERGENCIA.md) | Sin Kiosk/Curfew |
 
-**Preguntas que bloquean H2+:** ver `../homeschooling/AUDITORIA.md` §H.
+## Integración con las otras features (todas opcionales)
+- **N2 audio / N3 música:** H2 reproduce el sonido de victoria si existe; H6 los silencia en modo relajado.
+- **N4–N6 inactividad/borradores:** H2 marca actividad al ver video; H3 guarda la nota a medias como borrador.
+- **N13 temporizador visual:** H5 («Cronometrar») y H6 (Primero/Después) lo usan si existe.
+- **Tienda:** el premio por terminar un curso es un producto/vale que crea el padre.
 
-## 2. Resumen de Lanes de Homeschooling
-
-| Lane | Nombre | Alcance Principal | Componentes Base / Adaptados | Tamaño |
-| :--- | :--- | :--- | :--- | :--- |
-| **H1** | **Modelo DB, Pacing & Snow Day** | Prisma schema aditivo, función pura `repartir()` con lógica de nieve/enfermedad, Server Actions, tests unitarios matemáticos sin UI compleja. | `SPEC.md` §3.2, Prisma 7, node:test (el proyecto no usa Vitest) | **M** |
-| **H2** | **LMS, Reproductor & Hoy Aprendo** | Doble interfaz: "Hoy Aprendo" (niño, táctil gigante, XP/incienso) vs "Cockpit Curricular" (padre). Desbloqueo secuencial con candados. | `LessonPlayer.tsx`, `LearnSidebar.tsx`, `ProgressBar.tsx` de Roost | **L** |
-| **H3** | **Evidencia & Portafolio Digital** | Botón de cámara nativa en tablet, audio de 10s, subida a `Archivo`, panel de revisión con swipe del padre, galería anual de portafolio. | `ShowcaseSubmit.tsx`, `ShowcaseCard.tsx` de Roost, `SwipeRow.tsx` de Ordo Diei | **L** |
-| **H4** | **Active Recall, Checkpoints & Quizzes** | Pausas interactivas en video (YouTube IFrame API), quizzes con umbral $\ge 70\%$, algoritmo SM-2 de repaso espaciado, recompensas de cartas. | `LessonPlayer.tsx` extendido, `HoloCard.tsx`, motor de cartas de Ordo Diei | **L** |
-| **H5** | **Compliance Legal & Transcripts** | Activity Journal para horas offline, catálogo de leyes estatales, cálculo automático de Créditos Carnegie y exportador de Transcripts oficiales en PDF. | `CalendarView.tsx` de Roost, `@react-pdf/renderer` o Print CSS | **M** |
-| **H6** | **Neurodivergencia & Command Center** | Tableros Primero/Después (First/Then), historias sociales, Modo Baja Estimulación Sensorial, Modo Kiosk y Battery Health Curfew para tablets de pared. | Radix UI, Framer Motion (reduced motion), PWA API | **M** |
-
----
-
-## 3. Protocolo de Ejecución de Cada Lane (Recordatorio de AGENTS.md)
-
-1. **Creación de Worktree aislado:**
-   ```bash
-   git worktree add -b task/lane-NN-homeschooling-fase-X ../ordo-diei-lanes/lane-NN dev
-   cd ../ordo-diei-lanes/lane-NN && npm install
-   ```
-2. **Actualizaciones de Base de Datos:**
-   - **PROHIBIDO `npx prisma db push`** o `prisma migrate reset`.
-   - Generar únicamente el diff SQL:
-     ```bash
-     npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > /tmp/cambio.sql
-     ```
-   - Validar que no contenga sentencias `DROP`.
-   - Aplicar con `npx prisma db execute --file /tmp/cambio.sql` y luego `npx prisma generate`.
-3. **Calidad y Verificación:**
-   - Correr suite de pruebas: `npm test` y comprobación de tipos: `npx tsc --noEmit`.
-4. **Integración Exclusiva:**
-   - Ejecutar `./scripts/integrar.sh` desde el worktree de la lane (toma lock, hace merge de dev, corre tests y hace merge `--no-ff`).
-5. **Limpieza posterior:**
-   - Remover el worktree desde el repo base: `git worktree remove ../ordo-diei-lanes/lane-NN` y borrar la rama local con `git branch -d`.
+## Protocolo de cada lane (AGENTS.md)
+1. `git worktree add -b task/lane-NN-… ../ordo-diei-lanes/lane-NN dev` y `npm install`. Nunca trabajar en `ordo-diei/`.
+2. Antes de tocar `prisma/schema.prisma`: `git merge dev`, `npx prisma validate`, SQL con `prisma migrate diff … --script`, **sin `DROP`**, `db execute`, `generate`. **Nunca `db push`.**
+3. UI: lo portado de Roost con la tabla de estilos del plan §2.3 y los componentes de `src/components/ui`; sin duplicar ni cambiar comportamientos existentes.
+4. `npm test` + `npx tsc --noEmit` + eslint de los archivos nuevos; probar con la base real solo con un usuario temporal que se borra al terminar.
+5. Registrar la lane en `vault/LANE_NN_*.md` (con el pedido textual), integrar con `scripts/integrar.sh`, limpiar worktree y rama (`-d`).

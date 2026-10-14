@@ -1,370 +1,470 @@
-# Arquitectura Detallada del Sistema de Homeschooling para Ordo Diei
+# Homeschooling — Arquitectura (v3, sobre Roost)
 
-> **Estado:** BORRADOR de documentación (2026-10-13), auditado — ver [`AUDITORIA.md`](AUDITORIA.md). No está aprobado ni implementado.  
-> **Estrategia técnica:** Adaptación de componentes del repositorio de referencia **Roost (MIT)** (`msrbuilds/roost`), integrándolos de forma nativa en **Next.js 16 (App Router)**, **React 19.2.4**, **Tailwind CSS 4** y **Supabase PostgreSQL** vía **Prisma 7**.
+> Estado: **lista para implementar** (2026-10-14, lane 117). Reemplaza a la v2. Decisiones de integración con Roost: [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md). Specs por lane: `LANE_*.md` de esta carpeta (índice en el plan §6).
+> Stack: Next 16.2.1 (App Router, `params` asíncronos — leer `node_modules/next/dist/docs/` antes de codear), React 19.2.4, Tailwind 4, Prisma 7 + Supabase (solo Postgres, sin `supabase-js`), `node:test`.
+> Uso: **solo esta familia, en casa**. Roost (`vendor/roost/`) se **porta** a `src/` con permiso del usuario (D23, D26).
 
----
+## 1. Decisiones cerradas
 
-## 1. Visión del Producto y Pilares
+| # | Decisión |
+|---|---|
+| HD1 | **Cada día lectivo es una `Tarea` real.** El niño la completa con `POST /api/tasks/[id]/complete`; el padre la aprueba con `/approve`. Eso da **puntos, estrellas y racha** (no XP de hábitos: `approve` no toca `experienciaHabitos`). No se escribe código de premios. `DiaLectivo.tareaId` las une. |
+| HD2 | **«A tiempo» = hasta las 18:00** (hora de la familia, `APP_TZ`). Entre las 18:00 y las 22:00 paga 50 %; después, 0 (regla existente de `complete`). Se logra con `horaEjecucion` (§5.2), sin tocar el cálculo de puntos. |
+| HD3 | **Un día está «hecho»** cuando su Tarea está en `Esperando_Aprobacion`, `Aprobada` o `Completada`. Los puntos llegan al aprobar (flujo actual). |
+| HD4 | **`DiaLectivo` es la única fuente de verdad del avance.** `ProgresoLeccion` solo existe para recursos con lecciones (`LeccionCurso`); para libros/PDF no hay filas. |
+| HD5 | **Contenido familiar, plan por alumno** (modelo de Roost: contenido compartido, avance por usuario). `Materia`, `RecursoCurso` y `LeccionCurso` no tienen alumno; `PlanCurso` sí (`@@unique([recursoId, alumnoId])`). |
+| HD6 | **Feriados y días sin clase los carga el padre** a mano (una fila por alumno). |
+| HD7 | **Sin datos legales** (ni jurisdicciones, ni Carnegie, ni GPA). Reportes = horas, lecciones y fotos, imprimibles. |
+| HD8 | **Evidencia = fotos** en `Archivo`, subidas con `POST /api/upload` (vía `subirImagen`). La URL `/api/archivos/<uuid>` es pública pero imposible de adivinar: **aceptado** por uso doméstico (resuelve AUDITORÍA E1). Audio fuera de v1. |
+| HD9 | **Quizzes corregidos en el servidor**; el cliente nunca recibe la respuesta correcta antes de responder. Umbral por recurso (70 % por defecto). |
+| HD10 | **Repaso espaciado con `ts-fsrs`** (reemplaza los intervalos fijos de la v2). |
+| HD11 | **Sin cartas en v1.** Premio por terminar un curso = vale/producto de la Tienda que crea el padre. |
+| HD12 | Sonido, temporizador e inactividad (N2/N13/N4) son **opcionales**: si existen se usan; ninguna lane H los espera. |
+| HD13 | Fuera de alcance: Kiosk/Curfew (D6), xAPI/LTI, IA, clases en vivo, pizarra con OCR, audio. |
+| HD14 | Fechas: strings `YYYY-MM-DD` en `APP_TZ`. Reutilizar `APP_TZ`, `hoyEnFamilia()`, `aFecha()`, `aClave()` de `src/lib/habitos/server.ts` y `TZDate` de `@date-fns/tz`. `repartir()` es pura: nunca llama a `Date.now()`. |
+| HD15 | **Las evidencias de un hijo solo las ven él y los padres.** |
+| HD16 | Navegación: un solo enlace **«Estudio»** en `AppSidebar` (no en `MainDock`, para no duplicar). |
 
-El sistema de Homeschooling de Ordo Diei no es un simple calendario ni una lista de tareas pasiva; es un **LMS B2C de alta retención**, un **motor de cumplimiento legal automático (Compliance Moat)** y una **plataforma de evidencia del mundo real** adaptada a la dinámica familiar de pantalla compartida (pantalla de pared / tablets infantiles).
+## 2. Mapa de módulos
 
 ```
-+---------------------------------------------------------------------------------------------------------+
-|                                  ORDO DIEI — ECOSISTEMA HOMESCHOOLING                                   |
-+------------------------------------+------------------------------------+-------------------------------+
-| PILAR 1: Motor LMS y Contenido     | PILAR 2: Hub Legal y Compliance    | PILAR 3: Evidencia y RPG      |
-+------------------------------------+------------------------------------+-------------------------------+
-| - Pacing dinámico ("Set & Forget") | - Mapeo de leyes por estado/país   | - Captura rápida con cámara   |
-| - Desbloqueo secuencial (Drip)     | - Horas anuales y alertas déficit  | - Portafolio Digital anual    |
-| - Checkpoints en video interactivo | - Generador Transcript Carnegie    | - RPG de Cartas (HoloCards)   |
-| - Repaso espaciado (Algoritmo SM-2)| - Rescheduling "Snow Day" líquido  | - Marketplace clases en vivo  |
-| - Doble interfaz (Niño vs. Padre)  | - Activity Journal (Horas offline) | - Aprobación swipe por padres |
-+------------------------------------+------------------------------------+-------------------------------+
-| FUERA DE ALCANCE (no pedido, no planificado): xAPI/LTI · Co-piloto IA · Marketplace de clases en vivo   |
-| RELACIONADO, EN OTRAS LANES: Kiosk (APP nativa, D6) · Marco de fotos (N7) · Temporizador visual (N13)   |
-+---------------------------------------------------------------------------------------------------------+
+src/lib/homeschooling/
+  config.ts                 MAX_POR_DIA, UMBRAL_APROBACION, HORA_LIMITE_LECCION = "18:00"
+  pacing.ts (+ .test.ts)    repartir() — pura
+  video.ts (+ .test.ts)     parsearEnlaceVideo(), urlEmbed() — portado de Roost
+  roost/
+    tipos.ts                tipos de Roost con ids number
+    router.ts               shim react-router → next/navigation
+    dto.ts                  mapModule/mapRecording/... (de vendor/roost/src/db/adapters/mongodb)
+    services/*.ts           cliente: mismas firmas que vendor/roost/src/services/*, cuerpo = fetch
+    guarda.test.ts          prohíbe react-router, supabase, clases de Roost sin traducir
+  servidor/
+    planes.ts               crearPlan, vistaPrevia, marcarNoLectivo, recalcular, moverDia, omitirDia
+    cursos.ts               materias, recursos y lecciones (Prisma)
+    hoy.ts                  asegurarTareasDeHoy, leccionesDeHoy, vencimientoLeccion
+    progreso.ts             sincronizarDia, estaBloqueado, completarLeccion
+    guardia.ts              motivoBloqueoTarea(tareaId) — la usa /api/tasks/[id]/complete
+    evidencia.ts · quiz.ts · repaso.ts · actividades.ts · horas.ts
+src/app/api/homeschooling/...        rutas finas con conSesion + zod
+src/app/dashboard/homeschooling/     page.tsx (bifurca por rol) + materias/[id] · plan · dias-sin-clase · revision · portafolio · horas · reportes
+src/components/homeschooling/        roost/ (piezas sin datos) · cursos/ · plan/ · hoy/ · evidencia/ · revision/ · portafolio/ · quiz/ · horas/ · reportes/ · sensorial/
 ```
+Permisos: Padre/Madre pueden todo sobre cualquier alumno; Hijo/Hija solo lo suyo. `conSesion` (`src/lib/tienda/http.ts`) y `usuariosObjetivo`/`esPadre` (`src/lib/habitos/permisos.ts`). Los `userId` que manden los services portados se **ignoran** si quien llama es hijo (se usa la sesión).
 
----
+## 3. Esquema Prisma (aditivo, definitivo)
 
-## 2. Esquema de Datos Integrado (Prisma 7 / Supabase PostgreSQL)
+Solo tablas nuevas y **relaciones inversas** (no agregan columnas) en `Usuario`, `Libro` y `Tarea`. Cada lane agrega **solo sus modelos** (tabla §3.2) y, en el mismo commit, las relaciones inversas que esos modelos necesitan. Antes: `git merge dev`; SQL con `prisma migrate diff … --script`; **si hay `DROP`, no se aplica**; nunca `db push`.
 
-El esquema es **100% aditivo**, compatible con las reglas de migración de Ordo Diei (`AGENTS.md`: nunca `db push`, solo migraciones SQL aditivas validadas con `migrate diff`). Referencia `Usuario`, `Libro` y `Archivo` (por clave). **Aún no se vincula con la Tienda ni con las Cartas** (AUDITORIA B7). Faltan las back-relations en `Usuario`/`Libro` (B5) y los modelos de quiz/intentos (B6).
+### 3.1 Modelos
 
 ```prisma
-// =============================================================================
-// MÓDULO HOMESCHOOLING — ORDO DIEI
-// =============================================================================
-
-enum TipoRecursoEducativo {
+enum TipoRecurso {
   libro
   curso_videos
   pdf
   enlaces
   libre
 }
-
 enum UnidadContenido {
   pagina
   capitulo
   leccion
   unidad
 }
-
+enum EstadoPlan {
+  activo
+  pausado
+  finalizado
+}
 enum EstadoDiaLectivo {
   pendiente
-  en_progreso
-  completada
-  omitida
+  hecha
   movida
-  repaso
+  omitida
 }
-
+enum PlataformaVideo {
+  youtube
+  vimeo
+}
 enum EstadoEvidencia {
-  pendiente_revision
+  pendiente
   aprobada
-  requiere_ajuste
+  ajustar
 }
 
-// ── 1. Materias y Configuración del Alumno ───────────────────────────────────
+// ← groups de Roost
 model Materia {
-  id                 Int              @id @default(autoincrement())
-  alumnoId           Int              @map("Alumno_ID")
-  nombre             String           @map("Nombre") // Ej: "Matemáticas", "Historia Sagrada", "Ciencias"
-  categoria          String           @default("general") @map("Categoria") // "stem", "humanidades", "arte", "deporte"
-  icono              String?          @map("Icono") // Nombre de icono Lucide
-  color              String?          @map("Color") // Clave Tailwind o Hex
-  horasAnualesMeta   Int              @default(120) @map("Horas_Anuales_Meta") // Meta legal (ej. 120h = 1 Carnegie)
-  activa             Boolean          @default(true) @map("Activa")
-  orden              Int              @default(0) @map("Orden")
-  createdAt          DateTime         @default(now()) @map("Created_At")
-  updatedAt          DateTime         @updatedAt @map("Updated_At")
+  id          Int             @id @default(autoincrement())
+  nombre      String          @map("Nombre")
+  descripcion String?         @map("Descripcion")
+  portadaUrl  String?         @map("Portada_URL")
+  icono       String?         @map("Icono")          // nombre Lucide
+  color       String?         @map("Color")          // token del tema, no hex
+  dificultad  DificultadTarea @default(Media) @map("Dificultad") // se copia a cada Tarea
+  orden       Int             @default(0) @map("Orden")
+  activa      Boolean         @default(true) @map("Activa")
+  creadorId   Int             @map("Creador_ID")
+  createdAt   DateTime        @default(now()) @map("Created_At")
 
-  alumno             Usuario          @relation("MateriasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
-  recursos           Recurso[]
-  actividadesOffline ActividadOffline[]
-
+  creador     Usuario         @relation("MateriasCreadas", fields: [creadorId], references: [id])
+  recursos    RecursoCurso[]
+  actividades ActividadOffline[]   // H5
+  metas       MetaHoras[]          // H5
+  @@index([activa, orden])
   @@map("Homeschool_Materias")
 }
 
-// ── 2. Recursos y Planes de Estudio (Pacing) ──────────────────────────────────
-model Recurso {
-  id                 Int                   @id @default(autoincrement())
-  materiaId          Int                   @map("Materia_ID")
-  titulo             String                @map("Titulo")
-  descripcion        String?               @map("Descripcion")
-  tipo               TipoRecursoEducativo  @default(curso_videos) @map("Tipo")
-  unidadTipo         UnidadContenido       @default(leccion) @map("Unidad_Tipo")
-  totalUnidades      Int                   @map("Total_Unidades") // Ej. 120 lecciones o 300 páginas
-  url                String?               @map("URL") // Enlace externo, playlist o PDF
-  libroId            Int?                  @map("Libro_ID") // Conexión opcional con modelo Libro de Ordo Diei
-  modoLibrePadres    Boolean               @default(false) @map("Modo_Libre_Padres") // true = sin candados secuenciales
-  createdAt          DateTime              @default(now()) @map("Created_At")
-  updatedAt          DateTime              @updatedAt @map("Updated_At")
+// ← modules de Roost + campos de pacing
+model RecursoCurso {
+  id               Int             @id @default(autoincrement())
+  materiaId        Int             @map("Materia_ID")
+  titulo           String          @map("Titulo")
+  descripcion      String?         @map("Descripcion")
+  portadaUrl       String?         @map("Portada_URL")
+  orden            Int             @default(0) @map("Orden")
+  creadorId        Int             @map("Creador_ID")     // será el creadorId de las Tareas
+  tipo             TipoRecurso     @map("Tipo")
+  unidadTipo       UnidadContenido @map("Unidad_Tipo")
+  totalUnidades    Int             @map("Total_Unidades") // curso_videos/enlaces: = cantidad de lecciones (se sincroniza)
+  url              String?         @map("URL")
+  libroId          Int?            @map("Libro_ID")        // informativo
+  minutosPorUnidad Int             @default(20) @map("Minutos_Por_Unidad")
+  umbralAprobacion Int             @default(70) @map("Umbral_Aprobacion")
+  navegacionLibre  Boolean         @default(false) @map("Navegacion_Libre")
+  createdAt        DateTime        @default(now()) @map("Created_At")
+  updatedAt        DateTime        @updatedAt @map("Updated_At")
 
-  materia            Materia               @relation(fields: [materiaId], references: [id], onDelete: Cascade)
-  libro              Libro?                @relation(fields: [libroId], references: [id], onDelete: SetNull)
-  planCurso          PlanCurso?
-  leccionesDetalle   LeccionContenido[]
-
+  materia   Materia           @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador   Usuario           @relation("RecursosCreados", fields: [creadorId], references: [id])
+  libro     Libro?            @relation("RecursoLibro", fields: [libroId], references: [id], onDelete: SetNull)
+  planes    PlanCurso[]
+  lecciones LeccionCurso[]
+  progresos ProgresoLeccion[]  // H2
+  @@index([materiaId, orden])
   @@map("Homeschool_Recursos")
 }
 
-model PlanCurso {
-  id                 Int          @id @default(autoincrement())
-  recursoId          Int          @unique @map("Recurso_ID")
-  fechaInicio        DateTime     @map("Fecha_Inicio") @db.Date
-  fechaFin           DateTime     @map("Fecha_Fin") @db.Date
-  diasSemana         Int[]        @map("Dias_Semana") // [1, 2, 3, 4, 5] (1=Lunes, 7=Domingo)
-  // unidadesPorDia eliminado: se deriva del reparto (AUDITORIA B8)
-  estado             String       @default("activo") @map("Estado") // "activo", "pausado", "finalizado"
-  createdAt          DateTime     @default(now()) @map("Created_At")
-  updatedAt          DateTime     @updatedAt @map("Updated_At")
+// ← recordings de Roost
+model LeccionCurso {
+  id              Int              @id @default(autoincrement())
+  recursoId       Int              @map("Recurso_ID")
+  orden           Int              @map("Orden")              // = número de unidad 1..N, sin huecos
+  titulo          String           @map("Titulo")
+  instrucciones   String?          @map("Instrucciones")      // texto plano (description de Roost)
+  url             String?          @map("URL")                // video_url de Roost; opcional
+  videoPlataforma PlataformaVideo? @map("Video_Plataforma")
+  videoId         String?          @map("Video_ID")
+  miniaturaUrl    String?          @map("Miniatura_URL")
+  creadorId       Int              @map("Creador_ID")
+  createdAt       DateTime         @default(now()) @map("Created_At")
 
-  recurso            Recurso      @relation(fields: [recursoId], references: [id], onDelete: Cascade)
-  diasLectivos       DiaLectivo[]
-
-  @@map("Homeschool_Planes_Curso")
+  recurso   RecursoCurso      @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  creador   Usuario           @relation("LeccionesCreadas", fields: [creadorId], references: [id])
+  progresos ProgresoLeccion[] // H2
+  preguntas PreguntaLeccion[] // H4
+  intentos  IntentoQuiz[]     // H4
+  repasos   TarjetaRepaso[]   // H4
+  @@unique([recursoId, orden])
+  @@map("Homeschool_Lecciones")
 }
 
-// Días materializados por el motor de Pacing
+model PlanCurso {
+  id         Int        @id @default(autoincrement())
+  recursoId  Int        @map("Recurso_ID")
+  alumnoId   Int        @map("Alumno_ID")
+  inicio     DateTime   @db.Date @map("Inicio")
+  fin        DateTime   @db.Date @map("Fin")
+  diasSemana Int[]      @map("Dias_Semana")   // ISO: 1=lunes … 7=domingo
+  estado     EstadoPlan @default(activo) @map("Estado")
+  createdAt  DateTime   @default(now()) @map("Created_At")
+
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  alumno  Usuario      @relation("PlanesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  dias    DiaLectivo[]
+  @@unique([recursoId, alumnoId])
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Planes")
+}
+
 model DiaLectivo {
-  id                 Int               @id @default(autoincrement())
-  planId             Int               @map("Plan_ID")
-  fecha              DateTime          @map("Fecha") @db.Date
-  unidadDesde        Int               @map("Unidad_Desde") // Ej: página 12 o lección 5
-  unidadHasta        Int               @map("Unidad_Hasta") // Ej: página 15 o lección 5
-  estado             EstadoDiaLectivo  @default(pendiente) @map("Estado")
-  tiempoDedicadoSeg  Int               @default(0) @map("Tiempo_Dedicado_Seg")
-  completadaEn       DateTime?         @map("Completada_En")
-  createdAt          DateTime          @default(now()) @map("Created_At")
-  updatedAt          DateTime          @updatedAt @map("Updated_At")
+  id          Int              @id @default(autoincrement())
+  planId      Int              @map("Plan_ID")
+  fecha       DateTime         @db.Date @map("Fecha")
+  unidadDesde Int              @map("Unidad_Desde")   // 1-based, inclusive
+  unidadHasta Int              @map("Unidad_Hasta")   // inclusive; >= desde
+  estado      EstadoDiaLectivo @default(pendiente) @map("Estado")
+  tareaId     Int?             @unique @map("Tarea_ID")
+  createdAt   DateTime         @default(now()) @map("Created_At")
 
-  plan               PlanCurso         @relation(fields: [planId], references: [id], onDelete: Cascade)
-  evidencias         EvidenciaAprendizaje[]
-
-  @@unique([planId, fecha]) // un día, una fila (AUDITORIA B8)
+  plan       PlanCurso @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tarea      Tarea?    @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+  evidencias EvidenciaAprendizaje[] // H3
+  @@unique([planId, fecha])
   @@index([fecha, estado])
   @@map("Homeschool_Dias_Lectivos")
 }
 
 model DiaNoLectivo {
-  id                 Int       @id @default(autoincrement())
-  fecha              DateTime  @map("Fecha") @db.Date
-  alumnoId           Int?      @map("Alumno_ID") // null = feriado/enfermedad para toda la familia
-  motivo             String    @map("Motivo") // "Enfermedad", "Feriado Nacional", "Excursión", "Día de Nieve"
-  createdAt          DateTime  @default(now()) @map("Created_At")
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int      @map("Alumno_ID")   // «toda la familia» = una fila por alumno
+  fecha     DateTime @db.Date @map("Fecha")
+  motivo    String   @map("Motivo")
+  createdAt DateTime @default(now()) @map("Created_At")
 
-  alumno             Usuario?  @relation("DiasNoLectivosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
-
-  // OJO (AUDITORIA B2): con alumnoId NULL Postgres permite duplicados. Agregar a mano en el SQL:
-  //   CREATE UNIQUE INDEX "Homeschool_Dias_No_Lectivos_familia_key" ON "Homeschool_Dias_No_Lectivos"("Fecha") WHERE "Alumno_ID" IS NULL;
-  @@unique([fecha, alumnoId])
+  alumno Usuario @relation("DiasNoLectivosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  @@unique([alumnoId, fecha])
   @@map("Homeschool_Dias_No_Lectivos")
 }
 
-// ── 3. Lecciones, Checkpoints y Active Recall ────────────────────────────────
-model LeccionContenido {
-  id                 Int               @id @default(autoincrement())
-  recursoId          Int               @map("Recurso_ID")
-  orden              Int               @map("Orden") // 1..N
-  titulo             String            @map("Titulo")
-  descripcion        String?           @map("Descripcion")
-  videoPlataforma    String?           @map("Video_Plataforma") // "youtube", "vimeo", "directo"
-  videoId            String?           @map("Video_ID")
-  duracionSegundos   Int               @default(0) @map("Duracion_Segundos")
-  contenidoMarkdown  String?           @map("Contenido_Markdown")
-  puntosXP           Int               @default(20) @map("Puntos_XP")
-  inciensoRecompensa Int               @default(1) @map("Incienso_Recompensa")
-  createdAt          DateTime          @default(now()) @map("Created_At")
-  updatedAt          DateTime          @updatedAt @map("Updated_At")
-
-  recurso            Recurso           @relation(fields: [recursoId], references: [id], onDelete: Cascade)
-  checkpoints        VideoCheckpoint[]
-  completiones       ProgresoLeccion[]
-
-  @@unique([recursoId, orden])
-  @@map("Homeschool_Lecciones_Contenido")
-}
-
-model VideoCheckpoint {
-  id                 Int       @id @default(autoincrement())
-  leccionId          Int       @map("Leccion_ID")
-  segundoPausa       Int       @map("Segundo_Pausa") // Momento en que el video se detiene
-  pregunta           String    @map("Pregunta")
-  opciones           Json      @map("Opciones") // ["A", "B", "C"]
-  respuestaCorrecta  Int       @map("Respuesta_Correcta") // Índice de la correcta
-  explicacion        String?   @map("Explicacion")
-  esObligatorio      Boolean   @default(true) @map("Es_Obligatorio")
-
-  leccion            LeccionContenido @relation(fields: [leccionId], references: [id], onDelete: Cascade)
-
-  @@map("Homeschool_Video_Checkpoints")
-}
-
+// ← lesson_completions de Roost: la fila ES la completitud (H2)
 model ProgresoLeccion {
-  id                 Int       @id @default(autoincrement())
-  usuarioId          Int       @map("Usuario_ID")
-  leccionId          Int       @map("Leccion_ID")
-  calificacion       Float?    @map("Calificacion") // 0 a 100; null = sin quiz (AUDITORIA B4)
-  intentosQuiz       Int       @default(0) @map("Intentos_Quiz")
-  segundosVistos     Int       @default(0) @map("Segundos_Vistos")
-  completada         Boolean   @default(false) @map("Completada")
-  fechaCompletado    DateTime  @default(now()) @map("Fecha_Completado")
+  id           Int      @id @default(autoincrement())
+  alumnoId     Int      @map("Alumno_ID")
+  leccionId    Int      @map("Leccion_ID")
+  recursoId    Int      @map("Recurso_ID")
+  completadaEn DateTime @default(now()) @map("Completada_En")
 
-  usuario            Usuario   @relation("ProgresoLeccionesUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
-  leccion            LeccionContenido @relation(fields: [leccionId], references: [id], onDelete: Cascade)
-
-  @@unique([usuarioId, leccionId])
-  @@map("Homeschool_Progreso_Lecciones")
+  alumno  Usuario      @relation("ProgresoAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  @@unique([alumnoId, leccionId])
+  @@index([alumnoId, recursoId])
+  @@map("Homeschool_Progreso")
 }
 
-// ── 4. Evidencia de Aprendizaje y Portafolio Digital ─────────────────────────
+// ← showcases de Roost (H3)
 model EvidenciaAprendizaje {
-  id                 Int              @id @default(autoincrement())
-  diaLectivoId       Int?             @map("Dia_Lectivo_ID")
-  alumnoId           Int              @map("Alumno_ID")
-  archivoClave       String           @map("Archivo_Clave") // Clave en modelo Archivo de Ordo Diei
-  audioVozClave      String?          @map("Audio_Voz_Clave") // Nota de voz del niño de 10s
-  titulo             String?          @map("Titulo")
-  notaEstudiante     String?          @map("Nota_Estudiante")
-  retroalimentacion  String?          @map("Retroalimentacion_Padre")
-  estado             EstadoEvidencia  @default(pendiente_revision) @map("Estado")
-  calificacionEstrellas Int?          @map("Calificacion_Estrellas") // 1..5
-  aprobadaPorId      Int?             @map("Aprobada_Por_ID")
-  aprobadaEn         DateTime?        @map("Aprobada_En")
-  destacada          Boolean          @default(false) @map("Destacada") // Para el portafolio de fin de año
-  createdAt          DateTime         @default(now()) @map("Created_At")
-  updatedAt          DateTime         @updatedAt @map("Updated_At")
+  id              Int             @id @default(autoincrement())
+  alumnoId        Int             @map("Alumno_ID")
+  diaLectivoId    Int?            @map("Dia_Lectivo_ID")
+  titulo          String?         @map("Titulo")
+  nota            String?         @map("Nota")
+  estado          EstadoEvidencia @default(pendiente) @map("Estado")
+  comentarioPadre String?         @map("Comentario_Padre")
+  revisadaPorId   Int?            @map("Revisada_Por_ID")
+  revisadaEn      DateTime?       @map("Revisada_En")
+  estrellas       Int?            @map("Estrellas")       // 1-5, no dan monedas
+  destacada       Boolean         @default(false) @map("Destacada")
+  destacadaEn     DateTime?       @map("Destacada_En")
+  createdAt       DateTime        @default(now()) @map("Created_At")
 
-  diaLectivo         DiaLectivo?      @relation(fields: [diaLectivoId], references: [id], onDelete: SetNull)
-  alumno             Usuario          @relation("EvidenciasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
-  aprobador          Usuario?         @relation("EvidenciasAprobadas", fields: [aprobadaPorId], references: [id], onDelete: SetNull)
-
+  alumno      Usuario           @relation("EvidenciasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  revisadaPor Usuario?          @relation("EvidenciasRevisadas", fields: [revisadaPorId], references: [id], onDelete: SetNull)
+  diaLectivo  DiaLectivo?       @relation(fields: [diaLectivoId], references: [id], onDelete: SetNull)
+  imagenes    EvidenciaImagen[]
   @@index([alumnoId, estado])
   @@map("Homeschool_Evidencias")
 }
 
-// ── 5. Activity Journal (Registro de Horas Offline) ──────────────────────────
+// ← showcase_images de Roost (H3)
+model EvidenciaImagen {
+  id          Int      @id @default(autoincrement())
+  evidenciaId Int      @map("Evidencia_ID")
+  archivoUrl  String   @map("Archivo_URL")   // /api/archivos/<uuid>
+  orden       Int      @default(0) @map("Orden")
+  pie         String?  @map("Pie")
+  createdAt   DateTime @default(now()) @map("Created_At")
+
+  evidencia EvidenciaAprendizaje @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+  @@map("Homeschool_Evidencia_Imagenes")
+}
+
+// (H4)
+model PreguntaLeccion {
+  id           Int     @id @default(autoincrement())
+  leccionId    Int     @map("Leccion_ID")
+  orden        Int     @map("Orden")
+  segundoVideo Int?    @map("Segundo_Video")   // null = quiz final; número = checkpoint
+  enunciado    String  @map("Enunciado")
+  opciones     Json    @map("Opciones")        // string[] (2 a 4)
+  correcta     Int     @map("Correcta")        // índice; NUNCA viaja al cliente antes de responder
+  explicacion  String? @map("Explicacion")
+
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  @@unique([leccionId, orden])
+  @@map("Homeschool_Preguntas")
+}
+
+model IntentoQuiz {
+  id         Int      @id @default(autoincrement())
+  alumnoId   Int      @map("Alumno_ID")
+  leccionId  Int      @map("Leccion_ID")
+  nota       Int      @map("Nota")             // 0-100
+  aprobado   Boolean  @map("Aprobado")
+  respuestas Json     @map("Respuestas")       // { preguntaId: índice elegido }
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  alumno  Usuario      @relation("IntentosQuizAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  @@index([alumnoId, leccionId, createdAt])
+  @@map("Homeschool_Intentos_Quiz")
+}
+
+model TarjetaRepaso {
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int      @map("Alumno_ID")
+  leccionId Int      @map("Leccion_ID")
+  tarjeta   Json     @map("Tarjeta")            // Card de ts-fsrs serializada tal cual
+  proximo   DateTime @map("Proximo")            // = tarjeta.due, para consultar
+  resuelta  Boolean  @default(false) @map("Resuelta")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  alumno  Usuario      @relation("RepasosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  @@unique([alumnoId, leccionId])
+  @@index([alumnoId, proximo, resuelta])
+  @@map("Homeschool_Repasos")
+}
+
+// ← events de Roost (H5)
 model ActividadOffline {
-  id                 Int       @id @default(autoincrement())
-  alumnoId           Int       @map("Alumno_ID")
-  materiaId          Int       @map("Materia_ID")
-  titulo             String    @map("Titulo") // Ej: "Visita al Museo Histórico"
-  descripcion        String?   @map("Descripcion")
-  fecha              DateTime  @map("Fecha") @db.Date
-  duracionMinutos    Int       @map("Duracion_Minutos") // Ej: 180 min
-  tipoActividad      String    @default("excursion") @map("Tipo_Actividad") // "excursion", "experimento", "lectura", "deporte"
-  evidenciaFotoClave String?   @map("Evidencia_Foto_Clave")
-  aprobada           Boolean   @default(true) @map("Aprobada")
-  createdAt          DateTime  @default(now()) @map("Created_At")
+  id          Int      @id @default(autoincrement())
+  materiaId   Int      @map("Materia_ID")
+  titulo      String   @map("Titulo")
+  descripcion String?  @map("Descripcion")
+  inicio      DateTime @map("Inicio")
+  fin         DateTime @map("Fin")               // > inicio (se valida con zod)
+  lugar       String?  @map("Lugar")
+  creadorId   Int      @map("Creador_ID")
+  createdAt   DateTime @default(now()) @map("Created_At")
+  updatedAt   DateTime @updatedAt @map("Updated_At")
 
-  alumno             Usuario   @relation("ActividadesOfflineAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
-  materia            Materia   @relation(fields: [materiaId], references: [id], onDelete: Cascade)
-
-  @@index([alumnoId, fecha])
-  @@map("Homeschool_Actividades_Offline")
+  materia       Materia                 @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador       Usuario                 @relation("ActividadesCreadas", fields: [creadorId], references: [id])
+  participantes ParticipanteActividad[]
+  @@index([inicio])
+  @@map("Homeschool_Actividades")
 }
 
-// ── 6. Repaso Espaciado Adaptativo ───────────────────────────────────────────
-model RegistroRepaso {
-  id                 Int       @id @default(autoincrement())
-  alumnoId           Int       @map("Alumno_ID")
-  materiaId          Int       @map("Materia_ID")
-  conceptoClave      String    @map("Concepto_Clave") // Ej: "Fracciones equivalentes"
-  leccionOrigenId    Int?      @map("Leccion_Origen_ID")
-  fallosConsecutivos Int       @default(1) @map("Fallos_Consecutivos")
-  intervaloDias      Int       @default(1) @map("Intervalo_Dias")
-  factorFacilidad    Float     @default(2.5) @map("Factor_Facilidad") // Algoritmo SM-2
-  proximaFechaRepaso DateTime  @map("Proxima_Fecha_Repaso") @db.Date
-  resuelto           Boolean   @default(false) @map("Resuelto")
-  createdAt          DateTime  @default(now()) @map("Created_At")
-  updatedAt          DateTime  @updatedAt @map("Updated_At")
+// ← event_attendees de Roost (H5)
+model ParticipanteActividad {
+  id          Int      @id @default(autoincrement())
+  actividadId Int      @map("Actividad_ID")
+  alumnoId    Int      @map("Alumno_ID")
+  createdAt   DateTime @default(now()) @map("Created_At")
 
-  alumno             Usuario   @relation("RepasosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
-
-  @@index([alumnoId, proximaFechaRepaso, resuelto])
-  @@map("Homeschool_Registros_Repaso")
-}
-```
-
----
-
-## 3. Algoritmo de Pacing Dinámico ("Snow Day Logic")
-
-Ubicación: `src/lib/homeschooling/pacing.ts`  
-Contrato: **Función pura determinista**, sin efectos secundarios, testeable unitariamente al 100%.
-
-```typescript
-export interface ParametrosPacing {
-  totalUnidades: number;       // Cantidad total de páginas, videos o lecciones
-  unidadesHechas: number;      // Unidades ya completadas con éxito
-  fechaInicio: Date;           // Fecha de arranque del cómputo
-  fechaFin: Date;              // Fecha tope inamovible (fin de año escolar)
-  diasSemanaLectivos: number[];// [1..5] donde 1=Lunes, 7=Domingo
-  diasNoLectivos: string[];    // Array de 'YYYY-MM-DD' (enfermedad, feriados)
+  actividad ActividadOffline @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  alumno    Usuario          @relation("ActividadesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  @@unique([actividadId, alumnoId])
+  @@map("Homeschool_Participantes")
 }
 
-export interface DiaLectivoPlanificado {
-  fecha: string;               // 'YYYY-MM-DD'
-  unidadDesde: number;
-  unidadHasta: number;
-  cantidadUnidades: number;
+model MetaHoras {   // (H5) la fija el padre; sin cifras precargadas
+  id        Int @id @default(autoincrement())
+  alumnoId  Int @map("Alumno_ID")
+  materiaId Int @map("Materia_ID")
+  horas     Int @map("Horas")
+
+  alumno  Usuario @relation("MetasHorasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  @@unique([alumnoId, materiaId])
+  @@map("Homeschool_Metas_Horas")
 }
 
-export interface ResultadoPacing {
-  dias: DiaLectivoPlanificado[];
-  totalDiasDisponibles: number;
-  unidadesPendientes: number;
-  promedioUnidadesPorDia: number;
-  alertaSobrecarga?: string;    // Advertencia si faltan días para cumplir la meta
+model PreferenciaAlumno {   // H6
+  alumnoId          Int     @id @map("Alumno_ID")
+  modoRelajado      Boolean @default(false) @map("Modo_Relajado")
+  primeroDespues    Boolean @default(false) @map("Primero_Despues")
+  recompensaDespues String? @map("Recompensa_Despues")
+  alumno Usuario @relation("PreferenciaAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  @@map("Homeschool_Preferencias")
+}
+
+model HistoriaSocial {      // H6
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int?     @map("Alumno_ID")   // null = para todos (sin relación a propósito)
+  titulo    String   @map("Titulo")
+  pasos     Json     @map("Pasos")       // [{texto, icono}] (3 a 5)
+  createdAt DateTime @default(now()) @map("Created_At")
+  @@map("Homeschool_Historias")
 }
 ```
 
-### Reglas Matemáticas:
-1. **Días hábiles disponibles ($D$):** Se filtran todos los días entre `fechaInicio` y `fechaFin` que pertenezcan a `diasSemanaLectivos` y que no estén en el conjunto `diasNoLectivos`.
-2. **Unidades pendientes ($U$):** $U = \text{totalUnidades} - \text{unidadesHechas}$.
-3. **Distribución uniforme (AUDITORIA D3):** el día $i$ ($0 \le i < D$) recibe $\lfloor (i+1)U/D \rfloor - \lfloor iU/D \rfloor$ unidades (el resto queda repartido parejo, no concentrado al inicio). Si $U < D$ no se crean días vacíos. Días de semana en ISO (1=lunes…7=domingo): usar `getISODay`, nunca `getDay()` (D1). Fechas como `YYYY-MM-DD` en `APP_TZ` (D2).
-4. **Snow Day (Día de Nieve / Enfermedad):** Cuando un día es marcado como no lectivo, el recálculo se ejecuta desde `hoy` hasta `fechaFin`. Las unidades asignadas al día anulado se redistribuyen de forma transparente en los días futuros.
-5. **Aviso de Sobrecarga:** Si el promedio diario supera un umbral configurable por `unidadTipo` (valores iniciales: 4 lecciones/día, 30 páginas/día; AUDITORIA C8), el sistema emite sugerencias proactivas al padre:
-   - *"Opción A: Extender fecha fin al [Fecha sugerida]"*
-   - *"Opción B: Sumar los sábados como día lectivo"*
-   - *"Opción C: Aceptar acelerar el ritmo"*
+### 3.2 Qué agrega cada lane
 
----
+| Lane | Enums y modelos | Relaciones inversas que agrega en el mismo commit |
+|---|---|---|
+| H1a | `TipoRecurso`, `UnidadContenido`, `EstadoPlan`, `EstadoDiaLectivo`, `PlataformaVideo`; `Materia`, `RecursoCurso`, `LeccionCurso`, `PlanCurso`, `DiaLectivo`, `DiaNoLectivo` | `Usuario`: `materiasCreadas Materia[] @relation("MateriasCreadas")`, `recursosCreados RecursoCurso[] @relation("RecursosCreados")`, `leccionesCreadas LeccionCurso[] @relation("LeccionesCreadas")`, `planesAlumno PlanCurso[] @relation("PlanesAlumno")`, `diasNoLectivos DiaNoLectivo[] @relation("DiasNoLectivosAlumno")`; `Libro`: `recursosCurso RecursoCurso[] @relation("RecursoLibro")`; `Tarea`: `diaLectivo DiaLectivo? @relation("DiaLectivoTarea")`. **Sin** los campos marcados `// H2…H5` |
+| H2 | `ProgresoLeccion` | `Usuario.progresoLecciones ProgresoLeccion[] @relation("ProgresoAlumno")`; `LeccionCurso.progresos`; `RecursoCurso.progresos` |
+| H3 | `EstadoEvidencia`; `EvidenciaAprendizaje`, `EvidenciaImagen` | `Usuario.evidenciasHs … @relation("EvidenciasAlumno")`, `Usuario.evidenciasRevisadas … @relation("EvidenciasRevisadas")`; `DiaLectivo.evidencias` |
+| H4 | `PreguntaLeccion`, `IntentoQuiz`, `TarjetaRepaso` | `Usuario.intentosQuiz … @relation("IntentosQuizAlumno")`, `Usuario.repasos … @relation("RepasosAlumno")`; `LeccionCurso.preguntas/intentos/repasos` |
+| H5 | `ActividadOffline`, `ParticipanteActividad`, `MetaHoras` | `Usuario.actividadesCreadas … @relation("ActividadesCreadas")`, `Usuario.actividadesAlumno … @relation("ActividadesAlumno")`, `Usuario.metasHoras … @relation("MetasHorasAlumno")`; `Materia.actividades`, `Materia.metas` |
+| H6 | `PreferenciaAlumno`, `HistoriaSocial` | `Usuario.preferenciaHs PreferenciaAlumno? @relation("PreferenciaAlumno")` |
 
-## 4. Arquitectura de Doble Interfaz (Padre vs. Alumno)
+Validar con `npx prisma validate` antes de generar el SQL.
 
-Para evitar la sobrecarga cognitiva en los niños y mantener la profundidad administrativa en los padres, la interfaz de Homeschooling se bifurca según el rol del usuario activo (`Usuario.rolFamiliar`):
+## 4. Algoritmo de pacing (`pacing.ts`, puro)
 
-### A. Vista del Alumno: "Hoy Aprendo" (`/dashboard/homeschooling`, rol Hijo/Hija; E9)
-- **Diseño táctil gigante:** Tarjetas de colores vivos por materia con pictogramas de Lucide.
-- **Progreso visual:** Barras circulares tipo "SloshGauge" o indicadores de avance horizontales.
-- **Botón "Empezar":** Abre directamente el reproductor interactivo o las instrucciones de lectura ("Lee las páginas 14 a 18").
-- **Botón "Terminé":** Sonido (cuando exista N2), confeti (`canvas-confetti`) y recompensa **por el pipeline existente de hábitos/tareas, una sola vez y con tope/aprobación** (AUDITORIA C1–C3). Las cartas, solo si el usuario lo decide (B7).
-- **Botón de Cámara Flotante:** Acceso inmediato para capturar maquetas o trabajos físicos.
-
-### B. Vista del Padre: "Cockpit Curricular" (`/dashboard/homeschooling` con rol Padre/Madre, subrutas `/plan`, `/revision`, `/portafolio`; E9)
-- **Calendario Líquido:** Basado en `CalendarView.tsx` de Roost con `react-big-calendar`. Arrastrar y soltar lecciones para reprogramar.
-- **Botón de Emergencia:** *"Hoy no hay clase"* (por hijo o familia completa) con recálculo en 1 clic.
-- **Bandeja de Aprobación:** Lista de evidencias pendientes de revisión con interfaz táctil de deslizamiento (`SwipeRow.tsx`).
-- **Cockpit de Compliance:** Barra de horas anuales por materia frente a los requisitos legales de la jurisdicción elegida.
-
----
-
-## 5. Extracción y Adaptación de Componentes de Roost (MIT)
-
-Roost sirve de **referencia visual**; no se copia tal cual (AUDITORIA A1–A5: sin LICENSE, Vite/Tailwind 3/Supabase, y ya hay `MissionCalendar`):
-
+```ts
+export type EntradaPacing = {
+  totalUnidades: number;
+  unidadesBase: number;        // unidades ya cubiertas por días conservados (§4 regla 5)
+  desde: string; hasta: string; // 'YYYY-MM-DD', inclusive
+  diasSemana: number[];         // ISO 1..7
+  noLectivos: string[];         // 'YYYY-MM-DD' (incluye las fechas ocupadas por días conservados)
+  unidadTipo: "pagina" | "capitulo" | "leccion" | "unidad";
+};
+export type SalidaPacing = {
+  dias: { fecha: string; unidadDesde: number; unidadHasta: number }[];
+  diasDisponibles: number; pendientes: number; promedio: number;
+  aviso?: { tipo: "sin_dias" | "sobrecarga"; promedio?: number; opciones: string[] };
+};
 ```
-Repositorio Roost (MIT)                            Ordo Diei (Next.js 16 + Tailwind 4)
------------------------------------------------    ---------------------------------------------------------
-src/components/groups/learn/LessonPlayer.tsx    -> src/components/homeschooling/lms/LessonPlayer.tsx
-src/components/groups/learn/LearnSidebar.tsx    -> src/components/homeschooling/lms/LearnSidebar.tsx
-src/components/groups/learn/ProgressBar.tsx     -> src/components/homeschooling/lms/CourseProgressBar.tsx
-src/components/tasks/MissionCalendar.tsx (Ordo)  -> extender; NO copiar CalendarView de Roost
-src/pages/ShowcaseSubmit.tsx                    -> src/components/homeschooling/portfolio/EvidenceModal.tsx
-src/components/showcase/ShowcaseCard.tsx        -> src/components/homeschooling/portfolio/PortfolioCard.tsx
-src/services/module.ts (queries Supabase)       -> src/lib/homeschooling/server/queries.ts (Server Actions)
-```
+Reglas:
+1. Disponibles = fechas en `[desde, hasta]` cuyo día ISO ∈ `diasSemana` y ∉ `noLectivos`. Día ISO con `getISODay(parseISO(f))`, nunca `getDay()`.
+2. `U = total − base`; si `U ≤ 0` → `dias = []`. Si `D = 0` y `U > 0` → `aviso: sin_dias`.
+3. Reparto uniforme: el día `i` (0-based) recibe `floor((i+1)·U/D) − floor(i·U/D)`; **solo se crean días con cantidad > 0**. Las unidades se numeran correlativas desde `base+1`.
+4. Sobrecarga: si `promedio = U/D` supera `MAX_POR_DIA[unidadTipo]` (lección 4, página 30, capítulo 1, unidad 3) → `aviso.sobrecarga` con «extender hasta <fecha sugerida>», «sumar el sábado», «aceptar el ritmo».
+5. **`recalcular(planId, hoy)`** (en `servidor/planes.ts`, transacción):
+   - **Conservados** = días `hecha` u `omitida`, más todo día con `fecha ≥ hoy` cuya Tarea exista y **no** esté en `Pendiente` (ya empezada).
+   - `unidadesBase` = máx. `unidadHasta` de los conservados (como el avance es en orden —§5.4—, cubren de la unidad 1 en adelante sin huecos).
+   - Días con `fecha < hoy` en `pendiente` → `movida` (su Tarea queda como historial; la guardia impide completarla).
+   - Se borran los días `pendiente` con `fecha ≥ hoy` no conservados, y sus Tareas **solo si siguen en `Pendiente`**.
+   - `repartir({ desde: hoy, hasta: plan.fin, unidadesBase, noLectivos: no lectivos del alumno ∪ fechas de días conservados con fecha ≥ hoy })`.
+   - **`fin` nunca cambia** salvo que el padre acepte «extender».
+6. **`moverDia(diaId, nuevaFecha)`**: solo un día `pendiente` cuya Tarea no exista o siga `Pendiente`; la nueva fecha debe ser lectiva, libre y **estar entre el día anterior y el siguiente del mismo plan** (así el orden de fechas sigue al de unidades). Si había Tarea `Pendiente`, se borra (se recrea el día que toque). No recalcula nada más.
+7. **`omitirDia(diaId)`** (padre): `estado = omitida`; sus unidades cuentan como vistas para el avance; si había Tarea `Pendiente`, se borra. No da puntos.
+8. Recursos `curso_videos`/`enlaces`: `totalUnidades` = cantidad de lecciones; al agregar o borrar una lección se actualiza y se `recalcular` cada plan activo. No se puede borrar una lección cubierta por un día `hecha`/`omitida` (409).
+
+## 5. Puente con Tareas
+
+### 5.1 `asegurarTareasDeHoy(alumnoId, hoy)` (idempotente)
+Se llama al abrir «Hoy aprendo» y desde `src/app/api/cron/daily/route.ts` (después de generar las recurrentes) para cada alumno con planes activos.
+1. Para cada plan activo con algún día `pendiente` de fecha `< hoy` → `recalcular(plan, hoy)`.
+2. Para cada `DiaLectivo` de hoy en `pendiente` y sin `tareaId`: crear la `Tarea` y asignarla **sin carreras**: `create` + `diaLectivo.updateMany({ where: { id, tareaId: null }, data: { tareaId } })`; si actualizó 0 filas (otra pestaña ganó), borrar la Tarea recién creada.
+
+### 5.2 Campos de la Tarea
+| Campo | Valor |
+|---|---|
+| `titulo` | «<Materia>: <Recurso> — lección N» / «— lecciones N a M» / «— páginas A a B» |
+| `asignadoId` | el alumno del plan |
+| `creadorId` | `RecursoCurso.creadorId` |
+| `tiempoEjecucionEstimadoSeg` | `(hasta − desde + 1) · minutosPorUnidad · 60` |
+| `dificultad` | `Materia.dificultad` |
+| `generaPuntosYRecompensa` | `true` |
+| `tipoRecurrencia` | `Unica` |
+| `fechaVencimiento` | inicio del día en `APP_TZ` (`new TZDate(a, m, d, 0, 0, APP_TZ)`) |
+| `horaEjecucion` | **`vencimientoLeccion(hoy, "18:00", estimadoSeg)`** = 18:00 en `APP_TZ` − `estimadoSeg` (nunca antes de las 00:00 de ese día) |
+
+Por qué: `complete` calcula `fechaVencimientoReal = horaEjecucion + tiempoEjecucionEstimadoSeg` (L49-55) y paga completo si `now <= fechaVencimientoReal` (L77) → **completo hasta las 18:00**; `fechaLimite` es ese día a las 22:00 en la hora del servidor (L57-73) → 50 % hasta las 22:00, después 0. El cron pasa a `No_Realizada` lo que siga `Pendiente`/`En_progreso` después de las 22:00 (`cron/daily/route.ts`, «EXPIRAR TAREAS»). En `MissionCalendar` la Tarea aparece como un bloque que termina a las 18:00. **Supuesto:** el servidor corre con la zona de Montevideo (uso en casa); si no, el 50 % termina a las 22:00 de la zona del servidor.
+
+### 5.3 Estado del día
+- `sincronizarDia(dia)` (al leer, con `include: { tarea }`), **solo para días `pendiente`**: pasa a `hecha` si `tarea.estado ∈ {Completada, Esperando_Aprobacion, Aprobada}`. Cualquier otro estado (`Pendiente`, `En_progreso`, `Pausada`, `Rechazada`, `Vencida`, `Expirada`, `No_Realizada`) lo deja `pendiente`. Los días `movida`/`omitida` no cambian.
+- `Rechazada` → el niño puede volver a completarla (`complete` solo bloquea `Completada`, `Aprobada`, `Esperando_Aprobacion`, L30).
+- Si el padre borra la Tarea, `tareaId` queda `null` (SetNull) y se recrea solo si el día es hoy.
+
+### 5.4 Candados (`estaBloqueado`)
+- Orden = orden de unidades. **Hoy** siempre está disponible (los atrasos se reprograman en §5.1).
+- Un día **futuro** está bloqueado, salvo `navegacionLibre` **y** el día anterior del plan `hecha`/`omitida` (adelantar sí, saltear no).
+- Dentro de un día con lecciones, la lección k exige `ProgresoLeccion` de la k−1.
+
+### 5.5 Guardia en `complete` (lane H2)
+La Tarea de un día también aparece en el tablero de Tareas y se podría completar desde ahí sin hacer las lecciones. Por eso H2 agrega **una** llamada al principio de `src/app/api/tasks/[id]/complete/route.ts`, después del chequeo de estado: `motivoBloqueoTarea(taskId)` (`servidor/guardia.ts`) devuelve un texto (→ 400) si la Tarea es de un `DiaLectivo` y: el día no está `pendiente` (p. ej. `movida`), o el recurso tiene lecciones y falta algún `ProgresoLeccion` del rango del día. Las Tareas que no son de Homeschooling no cambian (devuelve `null` sin más consultas que un `findUnique` por `tareaId`). Con H4, `ProgresoLeccion` solo se crea al aprobar el quiz, así que la guardia también lo cubre.
+
+## 6. Doble interfaz
+
+`/dashboard/homeschooling` (página servidor) bifurca por `rolFamiliar`: **Hijo/Hija → «Hoy aprendo»** (grilla de `TarjetaHoy`, `VisorLeccion`); **Padre/Madre → materias y plan** (`MateriaLayout` portado de Roost, `PlanCalendario` con el `CalendarView` portado y arrastre, «Hoy no hay clase», bandeja de revisión). Subrutas: `materias/[id]` (con `?module=&lesson=` como Roost), `plan`, `dias-sin-clase`, `revision`, `portafolio`, `horas`, `reportes`. Enlace «Estudio» (`GraduationCap`) solo en `AppSidebar`.
+
+## 7. Roost
+
+Se porta el código de `vendor/roost/` según [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) §1–§3: cada archivo con cabecera `// Portado de vendor/roost/<ruta> (msrbuilds/roost@492af47). Cambios: …`, clases traducidas con la tabla del plan §2.3, datos por los services partidos (§3 del plan). `vendor/roost/` no se edita.

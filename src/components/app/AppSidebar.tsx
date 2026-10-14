@@ -10,6 +10,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Gift,
+  GraduationCap,
   History,
   Hourglass,
   Layers,
@@ -151,6 +152,14 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/homeschooling")} tooltip="Estudio">
+                <Link href="/dashboard/homeschooling">
+                  <GraduationCap />
+                  <span>Estudio</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/mis-premios"} tooltip="Mis premios">

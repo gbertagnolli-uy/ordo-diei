@@ -1,103 +1,38 @@
-# Lane H3 — Evidencia Rápida y Portafolio Digital
+# Lane H3 — Evidencia con foto y portafolio (portado del Showcase de Roost)
 
-> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+> Lista para implementar. Depende de **H2**. Tamaño **M**. Solo fotos (HD8). Las evidencias de un hijo solo las ven él y los padres (HD15).
+> Número: el siguiente libre al crearla. Rama sugerida `task/lane-NN-hs-evidencia`. **Dependencia nueva:** `react-dropzone@14.3.8` (versión exacta, la del lockfile de Roost).
 
-> ### Correcciones de auditoría (obligatorias)
-> 1. **Privacidad (E1):** `/api/archivos/<uuid>` es público. Las fotos/audios de los niños deben servirse **con sesión y permiso** (padres + el propio alumno): ruta nueva o flag privado en `Archivo`.
-> 2. **Audio (E2):** `Archivo` solo acepta imágenes. Hay que ampliarlo (MIME `audio/webm` y `audio/mp4`, iOS no graba webm; tope ~200 KB y 10 s) o dejar la nota de voz fuera de v1.
-> 3. **Espacio (E3):** fotos y audio van en Postgres (`Bytes`). Medir y poner tope por alumno/mes; plan B Supabase Storage.
-> 4. **Swipe invertido (C6):** en Ordo (lane 75) **izquierda = aprobar (verde), derecha = rechazar**. Respetarlo.
-> 5. Bonus de XP/estrellas con tope diario, por el pipeline existente (C2/C3). Limpiar `Archivo` huérfanos al borrar (B10).
-> 6. Sin `react-dropzone` (A3): `<input type=file capture>` alcanza. Borrador de la nota con el sistema de borradores (N5).
+## Objetivo
+El niño fotografía un trabajo, el padre lo revisa deslizando, y las mejores quedan en un portafolio.
 
-> **Estado:** Lista para ejecución cuando H2 esté integrada en `dev`.  
-> **Dependencias:** Lane H2 (LMS y Lecciones).  
-> **Componentes Fuente:** `src/pages/ShowcaseSubmit.tsx`, `src/components/showcase/ShowcaseCard.tsx` de **Roost (MIT)** y `src/components/SwipeRow.tsx` de **Ordo Diei**.  
-> **Tamaño:** L (Cámara web/nativa + Audio + Subida WebP + Aprobación Swipe + Galería).
+## Modelo (esta lane agrega)
+`EstadoEvidencia`, `EvidenciaAprendizaje`, `EvidenciaImagen` y sus relaciones inversas (ARQ §3.2).
 
----
+## Servidor
+- Cliente `src/lib/homeschooling/roost/services/showcase.ts` con las funciones de `vendor/roost/src/services/showcase.ts` (mismos nombres y tipos): `createShowcase`, `getShowcaseById`, `getUserShowcases`, `addShowcaseImage`, `removeShowcaseImage`, `getShowcasesForModeration`, `approveShowcase`, `rejectShowcase`, `featureShowcase`, `unfeatureShowcase`, `getShowcaseStats`.
+- Servidor `src/lib/homeschooling/servidor/evidencia.ts` + `mapShowcase` traducido en `dto.ts` (de `vendor/roost/src/db/adapters/mongodb/index.ts:363`). Mapeo de estados: `pending↔pendiente`, `approved↔aprobada`, `rejected↔ajustar`; `featured` = `destacada: true`.
+- `approveShowcase` acepta `estrellas` (1-5) opcionales; `rejectShowcase` exige comentario (va a `comentarioPadre`). **No** se porta el trigger `trg_showcase_approval_points` de Roost: aprobar o destacar **no** cambia ningún saldo.
+- Las fotos se suben con `subirImagen` (`src/lib/subirImagen.ts` → `POST /api/upload`, compresión y WebP ya implementados); se guarda la URL `/api/archivos/<uuid>`. Validar con `claveDeUrl` (`src/lib/archivos.ts`) que la URL sea de `Archivo`.
+- Al borrar una evidencia o una imagen: `limpiarArchivo(url)` borra el `Archivo` si ninguna otra `EvidenciaImagen` usa esa URL.
+- Permisos: el Hijo crea y ve solo las suyas; solo Padre/Madre listan pendientes, aprueban, piden ajuste y destacan.
+- API: `POST /api/homeschooling/evidencias`, `GET /api/homeschooling/evidencias?estado=&alumnoId=&materiaId=&mes=`, `PATCH /api/homeschooling/evidencias/[id]`, `POST|DELETE /api/homeschooling/evidencias/[id]/imagenes`.
 
-## 1. Objetivo de la Lane
+## UI (origen → destino)
+| Roost | Ordo | Cambios |
+|---|---|---|
+| `pages/ShowcaseSubmit.tsx` (solo dropzone L229-260, vista previa y borrador L33, L80-156) | `evidencia/EnviarEvidencia.tsx` (`Sheet`) | `useDropzone` de react-dropzone; título y nota opcionales; sin URL, tagline, categoría, stack ni editor rico; borrador en `localStorage` como Roost (si existe el sistema de borradores N5, usar ese) |
+| `pages/admin/Showcases.tsx` | `revision/RevisionEvidencias.tsx` | Contadores con `StatsCard` (HS0); filtro por estado; **aprobar** con `StarRating` opcional; **pedir ajuste** = el modal de rechazo (estado L45, `handleReject` L94, modal L418) con comentario obligatorio; destacar/quitar. Cada fila con `SwipeRow` de Ordo (`src/components/SwipeRow.tsx`) con su sentido existente: **izquierda = aprobar, derecha = pedir ajuste**, más los botones equivalentes (como `ParentReviewPanel`) |
+| `pages/Showcase.tsx` + `components/showcase/ShowcaseCard.tsx` + `ShowcaseFilters.tsx` | `portafolio/Portafolio.tsx` + `EvidenciaCard.tsx` + `FiltrosPortafolio.tsx` | Filtros alumno/materia/mes (en lugar de categoría/tags); tarjeta con foto, fecha, estrellas y materia; interruptor «Destacar» para padres |
 
-Permitir al estudiante capturar de forma inmediata evidencias visuales (fotos de dibujos, maquetas, experimentos científicos) y notas de audio de sus actividades académicas, almacenándolas de forma comprimida en el modelo `Archivo` de Ordo Diei. Proveer al padre un panel de revisión táctil con gesto de deslizamiento (Swipe) para aprobar con estrellas/comentarios, alimentando el **Portafolio Digital Anual** del estudiante.
+- **Cámara:** botón en `VisorLeccion` y en `TarjetaHoy`. Pasar `capture="environment"` y `accept="image/*"` por `getInputProps({ capture: "environment" })`. **Si react-dropzone no reenvía `capture`** (verificarlo en el navegador de la tablet), agregar un botón «Cámara» con `<input type="file" accept="image/*" capture="environment">` oculto que llama al mismo `onDrop`.
+- Páginas: `/dashboard/homeschooling/revision` (padres) y `/dashboard/homeschooling/portafolio` (todos; el hijo ve solo lo suyo). `Empty`/`Skeleton` de `ui/` para vacíos y carga.
 
----
+## Tests
+Permisos (un Hijo no aprueba ni ve evidencias ajenas), `limpiarArchivo`, validación de URL, y que aprobar/destacar no modifique `availablePoints`, `lockedPoints`, `stars` ni `experienciaHabitos`.
 
-## 2. Componentes a Extraer y Adaptar
-
-### 2.1 Botón Flotante de Cámara y Modal de Captura
-- **Ubicación destino:** `src/components/homeschooling/portfolio/CapturaEvidenciaModal.tsx`
-- **Adaptado de:** `roost/src/pages/ShowcaseSubmit.tsx`.
-- **Mecánica de Captura Táctil:**
-  ```tsx
-  {/* Disparador nativo para tablets y smartphones */}
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/*"
-    capture="environment"
-    className="hidden"
-    onChange={handleFileSelected}
-  />
-  ```
-  - Si el dispositivo no tiene cámara o está en escritorio, permite seleccionar archivo o arrastrar y soltar (`useDropzone`).
-  - Previsualización instantánea de la imagen capturada con opción de reintentar.
-
-### 2.2 Grabadora de Audio de 10 Segundos
-- **Mecánica:** Mediante la Web MediaRecorder API (`navigator.mediaDevices.getUserMedia({ audio: true })`):
-  - Botón de micrófono: al mantener presionado o tocar "Grabar", inicia la captura.
-  - Temporizador visual de cuenta regresiva (10 segundos máximo).
-  - Generación de blob comprimido `audio/webm`.
-  - Permite al niño explicar verbalmente su creación: *"Esta es mi maqueta del volcán hecha con plastilina y bicarbonato"*.
-
-### 2.3 Procesamiento y Almacenamiento en Ordo Diei
-- Se envía la foto y el audio al endpoint `/api/archivos` de Ordo Diei.
-- El servidor procesa la imagen con `sharp`, optimizándola a formato WebP progresivo y generando una clave única UUID (`Archivo.clave`).
-- Se crea el registro relacional en `EvidenciaAprendizaje`:
-  ```prisma
-  model EvidenciaAprendizaje {
-    id           Int              @id @default(autoincrement())
-    diaLectivoId Int?
-    alumnoId     Int
-    archivoClave String
-    audioVozClave String?
-    notaEstudiante String?
-    estado       EstadoEvidencia  @default(pendiente_revision)
-    ...
-  }
-  ```
-
----
-
-## 3. Panel de Aprobación de Padres (Swipe de Moderación)
-
-- **Ubicación:** `/dashboard/homeschooling/revision`
-- **Reutilización de Componente:** `src/components/SwipeRow.tsx` (creado en Lane 75 de Ordo Diei).
-- **Flujo de Interacción:**
-  - El padre ve una tarjeta con la foto del trabajo, el audio de 10s reproducible y los datos de la materia.
-  - **Deslizar a la izquierda (Verde):** Aprueba la evidencia, asigna 1 a 5 estrellas opcionales y acredita una bonificación de XP al alumno.
-  - **Deslizar a la derecha (Ámbar/rojo):** Solicita ajustes o agrega una nota correctiva *"Por favor rehacer la página 14 corrigiendo los signos"*.
-
----
-
-## 4. Galería del Portafolio Anual
-
-- **Ubicación:** `/dashboard/homeschooling/portafolio`
-- **Adaptado de:** `roost/src/components/showcase/ShowcaseCard.tsx`.
-- **Características:**
-  - Grilla visual estilo Pinterest/Showcase filtrable por:
-    - Alumno (Leo, Sofía).
-    - Materia (Historia, Arte, Ciencias).
-    - Mes / Trimestre escolar.
-  - Cada tarjeta muestra la fotografía en alta calidad, fecha de realización, estrellas otorgadas por el padre y etiqueta de materia.
-  - Opción **«Destacar para el reporte oficial»**: Marca las mejores evidencias del año para ser incluidas automáticamente en la exportación de cumplimiento legal (Lane H5).
-
----
-
-## 5. Criterios de Aceptación
-
-1. En la vista de lección del niño aparece el botón de cámara accesible en 1 clic.
-2. Al tomar la foto en una tablet, se previsualiza y sube exitosamente a la base de datos a través de `/api/archivos`.
-3. La nota de voz de 10s se graba y reproduce limpiamente en el navegador.
-4. Las evidencias pendientes se listan en el panel del padre y pueden aprobarse mediante gesto swipe.
-5. El portafolio anual muestra las fotos aprobadas con sus fechas y materias correspondientes.
+## Aceptación
+1. Desde la tablet se toma la foto y llega a la bandeja del padre.
+2. Deslizar a la izquierda aprueba, a la derecha pide ajuste; los botones hacen lo mismo.
+3. Las destacadas se ven en el portafolio y las usa el reporte de H5.
+4. Un Hijo solo ve sus evidencias.

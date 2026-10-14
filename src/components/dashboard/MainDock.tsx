@@ -59,7 +59,7 @@ export function MainDock({
   ];
 
   return (
-    <div className="fixed bottom-6 inset-x-0 z-50 pointer-events-none flex justify-center px-4">
+    <div className="fixed bottom-6 inset-x-0 z-50 pointer-events-none flex justify-center px-4 print:hidden">
       <div className="pointer-events-auto">
         <FloatingDock
           items={dockItems}
