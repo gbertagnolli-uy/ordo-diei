@@ -6,7 +6,12 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   AlarmClock,
+  BookMarked,
+  BookOpen,
   CalendarCheck,
+  CalendarDays,
+  CalendarRange,
+  CircleDot,
   CheckCircle2,
   Gift,
   GraduationCap,
@@ -14,10 +19,13 @@ import {
   Hourglass,
   Layers,
   ListTodo,
+  Music,
   Network,
+  ScrollText,
   ShieldCheck,
   ShoppingCart,
   Sprout,
+  Sparkles,
   Timer,
 } from "lucide-react";
 import {
@@ -35,6 +43,18 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "./NavUser";
 import { isDueToday, isLate, taskGroup } from "@/components/tasks/taskUtils";
+
+/** Pantallas de la liturgia (SPEC liturgia §8): nombre latino en el menú, castellano en el tooltip. */
+export const NAV_LITURGIA: { href: string; label: string; tooltip: string; icon: LucideIcon }[] = [
+  { href: "/dashboard/liturgia", label: "Calendarium", tooltip: "Calendario litúrgico", icon: CalendarDays },
+  { href: "/dashboard/liturgia/breviarium", label: "Breviarium", tooltip: "Breviario", icon: BookOpen },
+  { href: "/dashboard/liturgia/missale", label: "Missale", tooltip: "Misal", icon: BookMarked },
+  { href: "/dashboard/liturgia/proprium-de-tempore", label: "Proprium de Tempore", tooltip: "Propio del Tiempo", icon: CalendarRange },
+  { href: "/dashboard/liturgia/proprium-sanctorum", label: "Proprium Sanctorum", tooltip: "Propio de los Santos", icon: Sparkles },
+  { href: "/dashboard/liturgia/ordinarium", label: "Ordinarium", tooltip: "Ordinario", icon: ScrollText },
+  { href: "/dashboard/liturgia/psalterium", label: "Psalterium", tooltip: "Salterio", icon: Music },
+  { href: "/dashboard/liturgia/rosarium", label: "Rosarium", tooltip: "Rosario", icon: CircleDot },
+];
 
 export type SectionId = "todo" | "progress" | "review" | "done" | "today" | "late" | "history" | "family";
 
@@ -157,6 +177,26 @@ export function AppSidebar({
               </SidebarMenuButton>
               {!!premiosPendientes && <SidebarMenuBadge className="tabular-nums">{premiosPendientes}</SidebarMenuBadge>}
             </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Liturgia</SidebarGroupLabel>
+          <SidebarMenu>
+            {NAV_LITURGIA.map(({ href, label, tooltip, icon: Icon }) => (
+              <SidebarMenuItem key={href}>
+                <SidebarMenuButton
+                  asChild
+                  // El Calendarium es la raíz del grupo: solo activo en su ruta exacta.
+                  isActive={href === "/dashboard/liturgia" ? pathname === href : pathname?.startsWith(href)}
+                  tooltip={tooltip}
+                >
+                  <Link href={href}>
+                    <Icon />
+                    <span>{label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>

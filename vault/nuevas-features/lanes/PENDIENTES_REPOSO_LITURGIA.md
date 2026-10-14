@@ -51,3 +51,10 @@
 - **Revisar — alineación de capítulos**: la extracción asigna cada capítulo del escaneo al de la Vulgata por el último versículo y, si hay empate, por afinidad léxica; la prueba `datos.test.ts` solo fija unos pocos pasajes (Salmo 22, 50, 117). Detecté y descarté a mano casos mal alineados (Dt 8,3; Mt 21,22; Mt 21,13/16), pero **puede quedar alguno más**: conviene leer unos 50 al azar contra la Vulgata.
 - **Revisar — «no se tipea a mano»**: las correcciones del OCR sí son texto escrito por el modelo (p. ej. «contrito y humillado» en el Salmo 50,19, donde el OCR perdió la «y»). Están todas en `ref/torres-amat-correcciones.txt` para que se vean y se revierta la que no guste.
 - **Sin verificar**: el contraste y la presentación visual (R3); el orden de los salmos con título en el v. 1 (los refs que empiezan en el versículo 1 de un salmo con título usan solo el cuerpo, sin el título: Ps 22,1-2 → «El Señor me pastorea…»).
+
+## L3 · API y componentes base (lane 136)
+- **Sin verificar**: las rutas `/api/liturgia/*` contra la base real: no hay datos hasta la primera carga de L2. Sin datos responden 404 `{"estado":"no-generado"}` (probado con repositorio en memoria, no contra Supabase).
+- **Revisar**: se agregó `GET /api/liturgia/kalendarium` (no estaba en la tabla de la SPEC §6) porque L7 necesita el índice por mes del Proprium Sanctorum.
+- **Revisar**: `LiturgiaTexto` usa una fila con `no-scrollbar` para los chips de sección porque `ui/drag-scroll` vive en la lane 109 (sin integrar). Cambiarlo cuando 109 llegue a `dev`.
+- **Revisar**: el Rosario no está en la base (DO no lo trae): L9 lo lee de `src/data/liturgia/rosarium.json`; el prefijo de clave `Rosarium/` quedó reservado en `parametros.ts` por si se prefiere guardarlo en `Documentos_Liturgicos`.
+- **Aviso para L4–L9**: las pantallas que usen `useParametrosLiturgia` (`useSearchParams`) necesitan `<Suspense>` en la página.

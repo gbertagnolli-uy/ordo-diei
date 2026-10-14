@@ -80,7 +80,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 | R3 Reposo v2 UI | ⏳ lista | N4, R1, R2 | — |
 | L1 Spike DO | ✅ integrada (lane 131) | — | 131 |
 | L2 Generador + modelo | ✅ integrada (lane 133) — falta la primera carga: espera el OK del usuario | L1 | 133 |
-| L3 API + componentes | ⏳ lista | L2 | — |
+| L3 API + componentes | ✅ integrada (lane 136) | L2 | 136 |
 | L4 Calendarium | ⏳ lista | L3 | — |
 | L5 Breviarium | ⏳ lista | L3 | — |
 | L6 Missale | ⏳ lista | L3 | — |
