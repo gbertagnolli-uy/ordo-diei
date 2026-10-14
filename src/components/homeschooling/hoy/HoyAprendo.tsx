@@ -6,7 +6,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Camera, Compass, Flame, GraduationCap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { decidirVista } from "@/lib/homeschooling/neuro";
+import { api } from "@/lib/homeschooling/roost/services/http";
+import type { HistoriaVista, Preferencia } from "@/lib/homeschooling/servidor/neuro";
+import { toast } from "@/lib/toast";
+import HistoriaCard from "@/components/homeschooling/neuro/HistoriaCard";
+import PrimeroDespues from "@/components/homeschooling/neuro/PrimeroDespues";
+import VisorHistoria from "@/components/homeschooling/neuro/VisorHistoria";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
@@ -14,8 +23,37 @@ import RepasoDeHoy from "./RepasoDeHoy";
 import TarjetaHoy from "./TarjetaHoy";
 import VisorLeccion from "./VisorLeccion";
 
-export default function HoyAprendo({ nombre, fotoUrl, racha, dias }: { nombre: string; fotoUrl: string | null; racha: number; dias: DiaHoy[] }) {
+export default function HoyAprendo({
+  nombre,
+  fotoUrl,
+  racha,
+  dias,
+  preferencia,
+  historias,
+}: {
+  nombre: string;
+  fotoUrl: string | null;
+  racha: number;
+  dias: DiaHoy[];
+  preferencia: Preferencia;
+  historias: HistoriaVista[];
+}) {
+  const router = useRouter();
   const [abierto, setAbierto] = useState<number | null>(null);
+  const [historia, setHistoria] = useState<HistoriaVista | null>(null);
+  const vistaElegida = decidirVista(preferencia);
+
+  // El alumno puede apagar o prender su modo calmo; el atributo se aplica enseguida y se guarda en segundo plano
+  const cambiarCalma = async (activo: boolean) => {
+    if (activo) document.documentElement.dataset.relajado = "1";
+    else delete document.documentElement.dataset.relajado;
+    try {
+      await api("/api/homeschooling/preferencias", { method: "PUT", body: { modoRelajado: activo } });
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
+    }
+  };
   const dia = dias.find((d) => d.diaId === abierto) ?? null;
 
   return (
@@ -47,9 +85,20 @@ export default function HoyAprendo({ nombre, fotoUrl, racha, dias }: { nombre: s
         </Link>
       </Button>
 
+      <label className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 text-sm">
+        <span className="font-medium text-foreground">Modo calmo</span>
+        <Switch checked={preferencia.modoRelajado} onCheckedChange={cambiarCalma} aria-label="Modo calmo" />
+      </label>
+
+      {historias.map((h) => (
+        <HistoriaCard key={h.id} historia={h} onClick={setHistoria} />
+      ))}
+
       <RepasoDeHoy />
 
-      {dias.length === 0 ? (
+      {vistaElegida.layout === "primero-despues" && dias.length > 0 ? (
+        <PrimeroDespues dias={dias} recompensa={preferencia.recompensaDespues} onAbrir={(d) => setAbierto(d.diaId)} />
+      ) : dias.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -68,6 +117,7 @@ export default function HoyAprendo({ nombre, fotoUrl, racha, dias }: { nombre: s
       )}
 
       <VisorLeccion dia={dia} onClose={() => setAbierto(null)} />
+      <VisorHistoria key={historia?.id ?? 0} historia={historia} onClose={() => setHistoria(null)} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
+import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     contarReconocimientosSinAbrir(Number(session.user.id)),
   ]);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
+  const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
   const tasks = myTasks.map((t) => ({
@@ -61,6 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <NoticeBar />
         <div className="flex flex-1 flex-col pb-24">{children}</div>
       </SidebarInset>
+      <ModoRelajado activo={modoRelajado} />
       <ActualizarPremios />
       <ModalManager />
       <MainDock currentUser={currentUser} allUsers={users} />
