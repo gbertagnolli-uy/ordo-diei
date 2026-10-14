@@ -1,8 +1,8 @@
 // Lógica de los Misterios del Rosario tradicional (SPEC liturgia §10.8, D49).
-// Regla dominical (tradición preconciliar): Adviento y Navidad → Gozosos; de Septuagésima a Pascua → Dolorosos;
-// Pascua y tiempo después de Pentecostés → Gloriosos.
-// PENDIENTE (SPEC §10.8, §12): citar aquí la edición impresa preconciliar que la confirme. Las citas que había
-// (Raccolta 1910 n.º 219, Manuale Precum 1898) no pudieron verificarse y se quitaron para no dar una fuente inventada.
+// Regla dominical (D49, SPEC §10.8). Fuente: texto aportado por el usuario el 2026-10-14, «Mysteries for Rosary Meditation /
+// Meditationes Rosarii» (página web de devoción tradicional; NO es una edición impresa preconciliar, y sigue pendiente
+// citar una): Lun y Jue Gozosos; Mar y Vie Dolorosos; Mié y Sáb Gloriosos; Domingo Gloriosos, salvo en el tiempo de
+// Adviento/Navidad (Gozosos) y en Cuaresma (Dolorosos). La Septuagésima NO cuenta como Cuaresma.
 
 import type { TiempoLiturgico } from "./tipos.ts";
 import rosariumJson from "../../data/liturgia/rosarium.json" with { type: "json" };
@@ -208,10 +208,10 @@ export const GRUPOS_INFO: Record<GrupoMisterios, { latino: string; castellano: s
  * Lunes y Jueves: Gozosos.
  * Martes y Viernes: Dolorosos.
  * Miércoles y Sábado: Gloriosos.
- * Domingo según el tiempo litúrgico (regla tradicional; fuente impresa por confirmar):
+ * Domingo según el tiempo litúrgico (fuente: ver el encabezado del archivo):
  *  - Adviento, Navidad, Epifanía: Gozosos
- *  - Septuagésima, Cuaresma, Pasión: Dolorosos
- *  - Pascua, Pentecostés (tiempo per annum): Gloriosos
+ *  - Cuaresma y Pasión: Dolorosos
+ *  - el resto (Septuagésima, Pascua, Pentecostés, per annum): Gloriosos
  */
 export function misteriosDelDia(fechaISO: string, tiempo?: TiempoLiturgico | string): InformacionRosarioDia {
   const [y, m, d] = fechaISO.split("-").map(Number);
@@ -249,12 +249,12 @@ export function misteriosDelDia(fechaISO: string, tiempo?: TiempoLiturgico | str
       if (tiempo === "adviento" || tiempo === "navidad" || tiempo === "epifania") {
         grupo = "gaudiosa";
         motivo = `domingo de ${tiempo === "adviento" ? "Adviento" : tiempo === "navidad" ? "Navidad" : "Epifanía"}`;
-      } else if (tiempo === "septuagesima" || tiempo === "cuaresma" || tiempo === "pasion") {
+      } else if (tiempo === "cuaresma" || tiempo === "pasion") {
         grupo = "dolorosa";
-        motivo = `domingo de ${tiempo === "septuagesima" ? "Septuagésima" : tiempo === "cuaresma" ? "Cuaresma" : "Pasión"}`;
+        motivo = `domingo de ${tiempo === "cuaresma" ? "Cuaresma" : "Pasión"}`;
       } else {
         grupo = "gloriosa";
-        motivo = `domingo de ${tiempo === "pascua" ? "Pascua" : "Pentecostés"}`;
+        motivo = `domingo de ${tiempo === "pascua" ? "Pascua" : tiempo === "septuagesima" ? "Septuagésima" : "Pentecostés"}`;
       }
       break;
   }

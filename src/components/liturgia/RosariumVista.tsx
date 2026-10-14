@@ -34,13 +34,13 @@ interface RosariumVistaProps {
  *    - Lunes y jueves: Gozosos (Mysteria Gaudiosa)
  *    - Martes y viernes: Dolorosos (Mysteria Dolorosa)
  *    - Miércoles y sábado: Gloriosos (Mysteria Gloriosa)
- *    - Domingos según el tiempo litúrgico (regla tradicional; fuente impresa por confirmar):
+ *    - Domingos según el tiempo litúrgico (regla tradicional; fuente en rosario.ts):
  *        * Adviento, Navidad, Epifanía: Gozosos
- *        * Septuagésima, Cuaresma, Pasión: Dolorosos
- *        * Pascua y Pentecostés (per annum): Gloriosos
+ *        * Cuaresma, Pasión: Dolorosos
+ *        * el resto (Septuagésima, Pascua, Pentecostés, per annum): Gloriosos
  * 2. 5 misterios del día con número romano, título en latín y español, fruto espiritual y cita bíblica.
  * 3. Explorador de las 3 coronas tradicionales completas (15 misterios; sin misterios luminosos de 2002).
- * 4. Oraciones tradicionales bilingües (latín/español) tradicionales:
+ * 4. Oraciones tradicionales bilingües (latín/español):
  *    Signum Crucis, Credo, Pater Noster, Ave Maria, Gloria Patri,
  *    Oración de Fátima (con marca «desde 1917»), Salve Regina (con versículo y respuesta),
  *    Oremus final y Litaniæ Lauretanæ completas.
@@ -100,7 +100,7 @@ export function RosariumVista({ className }: RosariumVistaProps) {
 
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border border-border/60 bg-background/60 px-2.5 py-1 rounded-md">
                 <ShieldCheck className="size-3.5 text-primary shrink-0" />
-                <span>Regla dominical tradicional preconciliar</span>
+                <span>Regla dominical tradicional</span>
               </div>
             </div>
           </CardHeader>
@@ -176,8 +176,8 @@ export function RosariumVista({ className }: RosariumVistaProps) {
                       {g === "gaudiosa"
                         ? "Lunes y jueves. Domingos de Adviento, Navidad y Epifanía."
                         : g === "dolorosa"
-                          ? "Martes y viernes. Domingos de Septuagésima, Cuaresma y Pasión."
-                          : "Miércoles y sábados. Domingos del tiempo pascual y per annum (Pentecostés)."}
+                          ? "Martes y viernes. Domingos de Cuaresma y Pasión."
+                          : "Miércoles y sábados. Domingos del resto del año (Septuagésima, tiempo pascual y per annum)."}
                     </p>
                   </div>
                   {infoHoy.grupo === g && (

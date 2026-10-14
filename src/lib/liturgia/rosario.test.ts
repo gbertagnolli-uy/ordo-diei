@@ -37,8 +37,8 @@ test("misteriosDelDia: regla dominical tradicional según el tiempo litúrgico (
   // Epifanía -> Gozosos
   assert.equal(misteriosDelDia("2026-10-18", "epifania").grupo, "gaudiosa");
 
-  // Septuagésima -> Dolorosos
-  assert.equal(misteriosDelDia("2026-10-18", "septuagesima").grupo, "dolorosa");
+  // Septuagésima no es Cuaresma -> Gloriosos
+  assert.equal(misteriosDelDia("2026-10-18", "septuagesima").grupo, "gloriosa");
   // Cuaresma -> Dolorosos
   assert.equal(misteriosDelDia("2026-10-18", "cuaresma").grupo, "dolorosa");
   // Pasión -> Dolorosos
