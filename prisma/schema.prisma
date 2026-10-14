@@ -104,6 +104,8 @@ model Usuario {
   progresoLecciones   ProgresoLeccion[]      @relation("ProgresoAlumno")
   evidenciasHs        EvidenciaAprendizaje[] @relation("EvidenciasAlumno")
   evidenciasRevisadas EvidenciaAprendizaje[] @relation("EvidenciasRevisadas")
+  intentosQuiz        IntentoQuiz[]          @relation("IntentosQuizAlumno")
+  repasos             TarjetaRepaso[]        @relation("RepasosAlumno")
 
   @@map("Usuarios")
 }
@@ -781,6 +783,9 @@ model LeccionCurso {
   recurso   RecursoCurso      @relation(fields: [recursoId], references: [id], onDelete: Cascade)
   creador   Usuario           @relation("LeccionesCreadas", fields: [creadorId], references: [id])
   progresos ProgresoLeccion[]
+  preguntas PreguntaLeccion[]
+  intentos  IntentoQuiz[]
+  repasos   TarjetaRepaso[]
 
   @@unique([recursoId, orden])
   @@map("Homeschool_Lecciones")
@@ -898,4 +903,55 @@ model EvidenciaImagen {
 
   @@index([archivoUrl])
   @@map("Homeschool_Evidencia_Imagenes")
+}
+
+// Pregunta de una lección: checkpoint dentro del video (segundoVideo) o del quiz final (null). `correcta` nunca viaja al cliente.
+model PreguntaLeccion {
+  id           Int     @id @default(autoincrement())
+  leccionId    Int     @map("Leccion_ID")
+  orden        Int     @map("Orden")
+  segundoVideo Int?    @map("Segundo_Video")
+  enunciado    String  @map("Enunciado")
+  opciones     Json    @map("Opciones")
+  correcta     Int     @map("Correcta")
+  explicacion  String? @map("Explicacion")
+
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@unique([leccionId, orden])
+  @@map("Homeschool_Preguntas")
+}
+
+model IntentoQuiz {
+  id         Int      @id @default(autoincrement())
+  alumnoId   Int      @map("Alumno_ID")
+  leccionId  Int      @map("Leccion_ID")
+  nota       Int      @map("Nota")
+  aprobado   Boolean  @map("Aprobado")
+  respuestas Json     @map("Respuestas")
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  alumno  Usuario      @relation("IntentosQuizAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@index([alumnoId, leccionId, createdAt])
+  @@map("Homeschool_Intentos_Quiz")
+}
+
+// Repaso espaciado (ts-fsrs): `tarjeta` guarda la Card tal cual más `_aciertos` (aciertos seguidos)
+model TarjetaRepaso {
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int      @map("Alumno_ID")
+  leccionId Int      @map("Leccion_ID")
+  tarjeta   Json     @map("Tarjeta")
+  proximo   DateTime @map("Proximo")
+  resuelta  Boolean  @default(false) @map("Resuelta")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  alumno  Usuario      @relation("RepasosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, leccionId])
+  @@index([alumnoId, proximo, resuelta])
+  @@map("Homeschool_Repasos")
 }
