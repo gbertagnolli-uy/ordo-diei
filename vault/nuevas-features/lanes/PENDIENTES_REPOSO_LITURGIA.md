@@ -83,4 +83,12 @@
 - **Hecho**: `src/lib/liturgia/rosario.ts` con regla semanal y dominical confirmada con fuentes impresas preconciliares (*The Raccolta* 1910, n.º 219; *Manuale Precum* 1898) y citada en el código (§10.8, §12).
 - **Sin verificar en navegador real**: la experiencia visual de arrastre de fecha y navegación mensual en dispositivos táctiles.
 
+## L5 · Breviarium — `/dashboard/liturgia/breviarium` (lane 141)
+- **Hecho**: Hub Breviarium (`BreviariumVista.tsx`, `/dashboard/liturgia/breviarium`) con Hora actual destacada (AHORA según franja S8 en `APP_TZ`), animación Ken Burns, overlay D54 con contraste ≥ 4.5:1 (`bg-gradient-to-t from-black/90 via-black/50 to-transparent`), botón «Rezar [Hora]» y atribución de foto Unsplash.
+- **Hecho**: 7 cards secundarias en grilla cronológica (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-7`) con imagen 16:9, franja horaria, título latino y castellano.
+- **Hecho**: Lector de la Hora en `/dashboard/liturgia/breviarium/[hora]` (ruta dinámica) y por parámetro `?hora=...`, con barra superior de salto rápido entre las 8 Horas (indicador pulsante en la hora actual), botón «Ver todas las Horas» y renderizado bilingüe con `LiturgiaTexto` o aviso amigable «Oficio no generado».
+- **Hecho**: Navegación integrada con Next.js App Router preservando parámetros `fecha` y `version`.
+- **Sin verificar en navegador real**: renderizado interactivo del efecto Ken Burns en distintas resoluciones de pantalla y gestos táctiles.
+
+
 

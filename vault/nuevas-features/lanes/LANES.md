@@ -82,7 +82,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 | L2 Generador + modelo | ✅ integrada (lane 133) — falta la primera carga: espera el OK del usuario | L1 | 133 |
 | L3 API + componentes | ✅ integrada (lane 136) | L2 | 136 |
 | L4 Calendarium | ✅ integrada (lane 140) | L3 | 140 |
-| L5 Breviarium | 🔨 en curso (lane 141) | L3 | 141 |
+| L5 Breviarium | ✅ integrada (lane 141) | L3 | 141 |
 | L6 Missale | ⏳ lista | L3 | — |
 | L7 Proprium | ⏳ lista | L3 | — |
 | L8 Ordinarium + Psalterium | ⏳ lista | L3 | — |
