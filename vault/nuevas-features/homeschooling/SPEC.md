@@ -1,5 +1,7 @@
 # Homeschooling — Especificación (Ecosistema Completo por Lanes H1..H6)
 
+> ⚠️ **2026-10-14 (lane 115): el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`» fue REVOCADO por el usuario.** Manda [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) (porte de código de `vendor/roost/`, modelo y lanes 116–123). Lo que sigue vale solo donde ese plan no lo cambie.
+
 > Estado: **lista para implementar** (2026-10-13). Fuente de verdad: [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md). Roost es solo referencia visual: [`MAPEO_COMPONENTES_ROOST.md`](MAPEO_COMPONENTES_ROOST.md).
 
 ## 1. Conceptos
