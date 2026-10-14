@@ -58,3 +58,7 @@
 - **Revisar**: `LiturgiaTexto` usa una fila con `no-scrollbar` para los chips de sección porque `ui/drag-scroll` vive en la lane 109 (sin integrar). Cambiarlo cuando 109 llegue a `dev`.
 - **Revisar**: el Rosario no está en la base (DO no lo trae): L9 lo lee de `src/data/liturgia/rosarium.json`; el prefijo de clave `Rosarium/` quedó reservado en `parametros.ts` por si se prefiere guardarlo en `Documentos_Liturgicos`.
 - **Aviso para L4–L9**: las pantallas que usen `useParametrosLiturgia` (`useSearchParams`) necesitan `<Suspense>` en la página.
+
+## N4 · Detector de inactividad (lane 138; prerrequisito de R3)
+- **Sin verificar en navegador**: los eventos reales, el canal entre pestañas (`BroadcastChannel` + `storage`) y `visibilitychange`/`pageshow`. Las pruebas usan un reloj y un bus simulados.
+- **Pendiente (N6)**: nada cierra sesión todavía; `useInactividad` solo avisa. La sesión deslizante de 5 min (S3) tampoco está.
