@@ -1,5 +1,22 @@
 # Auditoría de la documentación de Homeschooling (escrita por agy)
 
+> ## ✅ Estado: TODO RESUELTO en la v2 (lane 112)
+> Los documentos fueron reescritos (`ARQUITECTURA_DETALLADA.md`, `LANE_H1A…H6`). Esta tabla queda como registro de qué se encontró y **dónde se resolvió**. Cambios de alcance del usuario: Roost con permiso (el punto A1 de licencia queda **descartado**) y uso solo doméstico (se eliminó el cumplimiento legal, Carnegie/GPA y el SaaS).
+>
+> | Hallazgos | Resolución |
+> |---|---|
+> | A1 | Descartado por el usuario (permiso). |
+> | A2–A6 | `MAPEO_COMPONENTES_ROOST.md` (referencia, no copia; se extiende `MissionCalendar`). |
+> | B1–B11 | Esquema único en ARQ §3 (relaciones inversas, `DiaNoLectivo` por alumno, defaults, quiz/intentos, sin Tienda/cartas). |
+> | C1–C3, C6 | HD1/HD2: cada día = `Tarea` existente; premios por `/complete` y `/approve`; estrellas sin monedas (H3). |
+> | C4–C5, C7 | H4: corrección en servidor, comparar con `>=`, repaso 1-3-7-14-30. |
+> | C8, D1–D7 | ARQ §4 y H1a: ISO, `APP_TZ`, reparto uniforme, sin días vacíos, feriados manuales, mover ≠ recalcular, fechas fijas. |
+> | E1–E3 | HD6: solo fotos, URL pública aceptada (uso doméstico), audio fuera de v1. |
+> | E4–E5, E12 | H6 sin Kiosk/Curfew; modo relajado sin promesas imposibles. |
+> | E6–E7 | HD5: sin jurisdicciones, Carnegie ni GPA; H5 = horas y reportes. |
+> | E8–E11, F | HD10 (dependencias N blandas), rutas únicas, encabezado y pilares inventados eliminados. |
+> | §H preguntas | Respondidas como decisiones HD1–HD14 (ARQ §1); el usuario puede revertirlas. |
+
 > 2026-10-13. Verificado contra el código de `dev` (schema Prisma, `src/`, `package.json`) y contra el repo Roost clonado en `/home/x7/Downloads/dev/roost`.
 > Severidad: 🔴 bloquea o rompe datos/seguridad · 🟠 error que hay que corregir antes de implementar · 🟡 imprecisión o limpieza.
 > «Corregido» = ya se cambió en esta lane. «Para la lane» = queda como condición obligatoria al implementar (ver cada `LANE_H*`).

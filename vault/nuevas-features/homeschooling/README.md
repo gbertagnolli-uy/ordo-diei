@@ -1,6 +1,6 @@
 # Homeschooling — casi una app nueva extra
 
-> Estado: **planificación** (2026-10-13). Sin lanes creadas todavía. **Documentación de agy auditada: leer primero [`AUDITORIA.md`](AUDITORIA.md).**
+> Estado: **planificación** (2026-10-13). Sin lanes creadas todavía. **Listo para implementar: ver [`SPEC.md`](SPEC.md) y [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md). Auditoría resuelta: [`AUDITORIA.md`](AUDITORIA.md).**
 
 ## 1. Pedido del usuario (textual)
 
@@ -58,7 +58,7 @@ Es grande: dividir en lanes encadenadas, cada una entregable sola.
 4. **Portafolio/PDF** y horas registradas.
 5. (Más adelante) transcript, pizarra.
 
-## 5. Preguntas abiertas
+## 5. Preguntas abiertas (RESUELTAS como decisiones HD1–HD14 en `ARQUITECTURA_DETALLADA.md` §1)
 
 1. ¿Quién es el usuario objetivo: solo esta familia o producto para otras familias (SaaS)? Cambia compliance/monetización.
 2. ¿Jurisdicción para los reportes (Uruguay u otra)?
