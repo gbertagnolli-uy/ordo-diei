@@ -1,5 +1,7 @@
 # Roost como referencia visual → Ordo Diei
 
+> ⚠️ **2026-10-14 (lane 115): el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`» fue REVOCADO por el usuario.** Manda [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) (porte de código de `vendor/roost/`, modelo y lanes 116–123). Lo que sigue vale solo donde ese plan no lo cambie.
+
 > Repo local: `/home/x7/Downloads/dev/roost` (Vite + React Router 7 + Tailwind 3 + Supabase en el navegador). Uso autorizado por el usuario. **No se copian archivos tal cual**: se reescriben con `src/components/ui`, los tokens del tema y Prisma. Busque cada pieza por nombre de función, no por número de línea.
 
 | Pieza en Roost | Qué aporta | Qué hace Ordo en su lugar | Lane |

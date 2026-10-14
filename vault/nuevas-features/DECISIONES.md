@@ -85,3 +85,13 @@ Conclusión de la evaluación de bases open source, pegada por el usuario (textu
 | D23 | **Licencia de Roost: sin trámite** (permiso del usuario). Uso **solo doméstico**: no hay SaaS, premium ni cumplimiento legal. |
 | D24 | Las preguntas abiertas de la auditoría se resolvieron como **HD1–HD14** (`homeschooling/ARQUITECTURA_DETALLADA.md` §1). Lo principal: cada día lectivo es una `Tarea` existente (premios y aprobación sin código nuevo); solo fotos como evidencia; sin cartas, jurisdicciones ni Carnegie en v1; Kiosk fuera. |
 | D25 | Lanes definitivas: H1a, H1b, H2, H3, H4, H5 (horas y reportes), H6 (neurodivergencia). Ver `lanes/LANES_HOMESCHOOLING.md`. |
+
+## 7. Ronda 6 (2026-10-14) — Roost como base de código (lane 115)
+
+> «Quiero usar Roost como base para la feature Homeschooling (cursos, lecciones, progreso, calendario, evidencia, portafolio, reportes) de Ordo Diei.» · «NO se programa nada de cero que Roost ya tenga. […] Se reutiliza el código existente de `vendor/roost`: se copia/porta a `src/` y se adapta SOLO lo necesario (llamadas a datos, router, auth, estilos). Cada archivo portado debe llevar un comentario con su archivo de origen. `vendor/roost/` no se edita.»
+
+| # | Decisión |
+|---|---|
+| D26 | **Se revoca D16 en lo que dice «cantera de referencia»**: Roost (clonado en `vendor/roost/`, lane 114) se **porta** a `src/`. Plan, modelo, lanes 116–123 y registro de decisiones D-1…D-15 en `homeschooling/PLAN_INTEGRACION_ROOST.md`. |
+| D27 | Se mantiene **HD1** (día lectivo = `Tarea`), con `horaEjecucion` obligatoria para que `complete` no la pague como tardía. |
+| D28 | Preguntas P1–P5 del plan pendientes del usuario; mientras tanto rigen sus recomendaciones por defecto. |
