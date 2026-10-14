@@ -904,5 +904,6 @@ export async function registrar(input: {
     }
 
     return resultados;
-  });
+    // Un hábito en familia hace varias consultas por persona contra una base remota: 5 s (el default) no alcanza
+  }, { maxWait: 10_000, timeout: 30_000 });
 }
