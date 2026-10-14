@@ -1,5 +1,13 @@
 # Lane H5 — Compliance Legal, Créditos Carnegie y Transcripts PDF
 
+> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+
+> ### Correcciones de auditoría (obligatorias)
+> 1. **Ninguna cifra legal en el código (E6).** El `JURISDICCIONES` de abajo es solo un ejemplo de forma y **contiene datos inventados** (UY 800 h, NY «portafolio», FL sin horas mínimas…). La jurisdicción es un perfil que **el padre completa** (horas, días, materias, tipo de reporte) con el aviso «no es asesoramiento legal». Primero hay que saber qué pide Uruguay realmente (pregunta H.3).
+> 2. **Carnegie (E7):** es la unidad de **secundaria de EE.UU.** (≈120 h = 1 crédito), no «universitaria». Definir `horasPorCredito` por materia (120 estándar, 150 laboratorio) y corregir `calcularCreditos`; definir notas < 70 (D/F) en el GPA.
+> 3. **Dependencias (E8):** el cronómetro reutiliza `TemporizadorVisual` (**N13**, aún no existe).
+> 4. PDF: empezar por impresión CSS (cero dependencias).
+
 > **Estado:** Lista para ejecución cuando H3 y H4 estén integradas en `dev`.  
 > **Dependencias:** Lane H3 (Portafolio) y Lane H4 (Calificaciones y Horas).  
 > **Tamaño:** M (Modelado legal + Activity Journal + Generador de PDF oficial).

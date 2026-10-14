@@ -63,7 +63,7 @@ Prioridad: **N4→N7→N5→N6** (pedido más concreto del usuario), en paralelo
 - Recetas, plan semanal, lista de compras. Tamaño M.
 
 ### H1+ · Homeschooling (Ecosistema Completo — 6 Lanes H1..H6)
-- Plan maestro completo en [`LANES_HOMESCHOOLING.md`](LANES_HOMESCHOOLING.md) y arquitectura en [`../homeschooling/ARQUITECTURA_DETALLADA.md`](../homeschooling/ARQUITECTURA_DETALLADA.md).
+- ⚠️ Auditado: [`../homeschooling/AUDITORIA.md`](../homeschooling/AUDITORIA.md). Plan maestro completo en [`LANES_HOMESCHOOLING.md`](LANES_HOMESCHOOLING.md) y arquitectura en [`../homeschooling/ARQUITECTURA_DETALLADA.md`](../homeschooling/ARQUITECTURA_DETALLADA.md).
 - Lanes definidas: `H1` (Pacing y Snow Day), `H2` (LMS y Hoy Aprendo), `H3` (Evidencia y Portafolio), `H4` (Checkpoints y Quizzes), `H5` (Compliance y Transcripts), `H6` (Neurodivergencia y Kiosk). Mapeo de Roost en [`../homeschooling/MAPEO_COMPONENTES_ROOST.md`](../homeschooling/MAPEO_COMPONENTES_ROOST.md).
 
 ## Reglas comunes de implementación

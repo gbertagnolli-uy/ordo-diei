@@ -1,6 +1,6 @@
 # Arquitectura Detallada del Sistema de Homeschooling para Ordo Diei
 
-> **Estado:** Documentación técnica y especificación de producto aprobada (2026-10-13).  
+> **Estado:** BORRADOR de documentación (2026-10-13), auditado — ver [`AUDITORIA.md`](AUDITORIA.md). No está aprobado ni implementado.  
 > **Estrategia técnica:** Adaptación de componentes del repositorio de referencia **Roost (MIT)** (`msrbuilds/roost`), integrándolos de forma nativa en **Next.js 16 (App Router)**, **React 19.2.4**, **Tailwind CSS 4** y **Supabase PostgreSQL** vía **Prisma 7**.
 
 ---
@@ -21,8 +21,8 @@ El sistema de Homeschooling de Ordo Diei no es un simple calendario ni una lista
 | - Repaso espaciado (Algoritmo SM-2)| - Rescheduling "Snow Day" líquido  | - Marketplace clases en vivo  |
 | - Doble interfaz (Niño vs. Padre)  | - Activity Journal (Horas offline) | - Aprobación swipe por padres |
 +------------------------------------+------------------------------------+-------------------------------+
-| WHITE SPACE: Interoperabilidad xAPI / LTI · Co-piloto IA de Lecciones · UX Neurodivergencia             |
-| COMMAND CENTER: Kiosk Mode · Marco de Fotos Idle · Battery Health Curfew · Timer Visual                 |
+| FUERA DE ALCANCE (no pedido, no planificado): xAPI/LTI · Co-piloto IA · Marketplace de clases en vivo   |
+| RELACIONADO, EN OTRAS LANES: Kiosk (APP nativa, D6) · Marco de fotos (N7) · Temporizador visual (N13)   |
 +---------------------------------------------------------------------------------------------------------+
 ```
 
@@ -30,7 +30,7 @@ El sistema de Homeschooling de Ordo Diei no es un simple calendario ni una lista
 
 ## 2. Esquema de Datos Integrado (Prisma 7 / Supabase PostgreSQL)
 
-El esquema es **100% aditivo**, compatible con las reglas de migración de Ordo Diei (`AGENTS.md`: nunca `db push`, solo migraciones SQL aditivas validadas con `migrate diff`). Reutiliza los modelos existentes `Usuario`, `Archivo`, `ProductoTienda` y `Carta`.
+El esquema es **100% aditivo**, compatible con las reglas de migración de Ordo Diei (`AGENTS.md`: nunca `db push`, solo migraciones SQL aditivas validadas con `migrate diff`). Referencia `Usuario`, `Libro` y `Archivo` (por clave). **Aún no se vincula con la Tienda ni con las Cartas** (AUDITORIA B7). Faltan las back-relations en `Usuario`/`Libro` (B5) y los modelos de quiz/intentos (B6).
 
 ```prisma
 // =============================================================================
@@ -117,7 +117,7 @@ model PlanCurso {
   fechaInicio        DateTime     @map("Fecha_Inicio") @db.Date
   fechaFin           DateTime     @map("Fecha_Fin") @db.Date
   diasSemana         Int[]        @map("Dias_Semana") // [1, 2, 3, 4, 5] (1=Lunes, 7=Domingo)
-  unidadesPorDia     Float        @default(1.0) @map("Unidades_Por_Dia")
+  // unidadesPorDia eliminado: se deriva del reparto (AUDITORIA B8)
   estado             String       @default("activo") @map("Estado") // "activo", "pausado", "finalizado"
   createdAt          DateTime     @default(now()) @map("Created_At")
   updatedAt          DateTime     @updatedAt @map("Updated_At")
@@ -144,7 +144,7 @@ model DiaLectivo {
   plan               PlanCurso         @relation(fields: [planId], references: [id], onDelete: Cascade)
   evidencias         EvidenciaAprendizaje[]
 
-  @@unique([planId, fecha, unidadDesde])
+  @@unique([planId, fecha]) // un día, una fila (AUDITORIA B8)
   @@index([fecha, estado])
   @@map("Homeschool_Dias_Lectivos")
 }
@@ -158,6 +158,8 @@ model DiaNoLectivo {
 
   alumno             Usuario?  @relation("DiasNoLectivosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
 
+  // OJO (AUDITORIA B2): con alumnoId NULL Postgres permite duplicados. Agregar a mano en el SQL:
+  //   CREATE UNIQUE INDEX "Homeschool_Dias_No_Lectivos_familia_key" ON "Homeschool_Dias_No_Lectivos"("Fecha") WHERE "Alumno_ID" IS NULL;
   @@unique([fecha, alumnoId])
   @@map("Homeschool_Dias_No_Lectivos")
 }
@@ -205,10 +207,10 @@ model ProgresoLeccion {
   id                 Int       @id @default(autoincrement())
   usuarioId          Int       @map("Usuario_ID")
   leccionId          Int       @map("Leccion_ID")
-  calificacion       Float     @default(100.0) @map("Calificacion") // 0 a 100
-  intentosQuiz       Int       @default(1) @map("Intentos_Quiz")
+  calificacion       Float?    @map("Calificacion") // 0 a 100; null = sin quiz (AUDITORIA B4)
+  intentosQuiz       Int       @default(0) @map("Intentos_Quiz")
   segundosVistos     Int       @default(0) @map("Segundos_Vistos")
-  completada         Boolean   @default(true) @map("Completada")
+  completada         Boolean   @default(false) @map("Completada")
   fechaCompletado    DateTime  @default(now()) @map("Fecha_Completado")
 
   usuario            Usuario   @relation("ProgresoLeccionesUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -323,9 +325,9 @@ export interface ResultadoPacing {
 ### Reglas Matemáticas:
 1. **Días hábiles disponibles ($D$):** Se filtran todos los días entre `fechaInicio` y `fechaFin` que pertenezcan a `diasSemanaLectivos` y que no estén en el conjunto `diasNoLectivos`.
 2. **Unidades pendientes ($U$):** $U = \text{totalUnidades} - \text{unidadesHechas}$.
-3. **Distribución equitativa con resto:** Se calcula la cuota base $Q = \lfloor U / D \rfloor$ y el resto $R = U \pmod D$. Los primeros $R$ días reciben $Q + 1$ unidades y los restantes $D - R$ días reciben $Q$ unidades.
+3. **Distribución uniforme (AUDITORIA D3):** el día $i$ ($0 \le i < D$) recibe $\lfloor (i+1)U/D \rfloor - \lfloor iU/D \rfloor$ unidades (el resto queda repartido parejo, no concentrado al inicio). Si $U < D$ no se crean días vacíos. Días de semana en ISO (1=lunes…7=domingo): usar `getISODay`, nunca `getDay()` (D1). Fechas como `YYYY-MM-DD` en `APP_TZ` (D2).
 4. **Snow Day (Día de Nieve / Enfermedad):** Cuando un día es marcado como no lectivo, el recálculo se ejecuta desde `hoy` hasta `fechaFin`. Las unidades asignadas al día anulado se redistribuyen de forma transparente en los días futuros.
-5. **Aviso de Sobrecarga:** Si el promedio diario supera un umbral ergonómico (ej. $> 4$ lecciones/día o $> 30$ páginas/día), el sistema emite sugerencias proactivas al padre:
+5. **Aviso de Sobrecarga:** Si el promedio diario supera un umbral configurable por `unidadTipo` (valores iniciales: 4 lecciones/día, 30 páginas/día; AUDITORIA C8), el sistema emite sugerencias proactivas al padre:
    - *"Opción A: Extender fecha fin al [Fecha sugerida]"*
    - *"Opción B: Sumar los sábados como día lectivo"*
    - *"Opción C: Aceptar acelerar el ritmo"*
@@ -336,14 +338,14 @@ export interface ResultadoPacing {
 
 Para evitar la sobrecarga cognitiva en los niños y mantener la profundidad administrativa en los padres, la interfaz de Homeschooling se bifurca según el rol del usuario activo (`Usuario.rolFamiliar`):
 
-### A. Vista del Alumno: "Hoy Aprendo" (`/dashboard/homeschooling/alumno`)
+### A. Vista del Alumno: "Hoy Aprendo" (`/dashboard/homeschooling`, rol Hijo/Hija; E9)
 - **Diseño táctil gigante:** Tarjetas de colores vivos por materia con pictogramas de Lucide.
 - **Progreso visual:** Barras circulares tipo "SloshGauge" o indicadores de avance horizontales.
 - **Botón "Empezar":** Abre directamente el reproductor interactivo o las instrucciones de lectura ("Lee las páginas 14 a 18").
-- **Botón "Terminé":** Dispara sonido de campanadas, lluvia de confeti (`canvas-confetti`), acreditación de XP y fragmentos de Cartas coleccionables.
+- **Botón "Terminé":** Sonido (cuando exista N2), confeti (`canvas-confetti`) y recompensa **por el pipeline existente de hábitos/tareas, una sola vez y con tope/aprobación** (AUDITORIA C1–C3). Las cartas, solo si el usuario lo decide (B7).
 - **Botón de Cámara Flotante:** Acceso inmediato para capturar maquetas o trabajos físicos.
 
-### B. Vista del Padre: "Cockpit Curricular" (`/dashboard/homeschooling/admin`)
+### B. Vista del Padre: "Cockpit Curricular" (`/dashboard/homeschooling` con rol Padre/Madre, subrutas `/plan`, `/revision`, `/portafolio`; E9)
 - **Calendario Líquido:** Basado en `CalendarView.tsx` de Roost con `react-big-calendar`. Arrastrar y soltar lecciones para reprogramar.
 - **Botón de Emergencia:** *"Hoy no hay clase"* (por hijo o familia completa) con recálculo en 1 clic.
 - **Bandeja de Aprobación:** Lista de evidencias pendientes de revisión con interfaz táctil de deslizamiento (`SwipeRow.tsx`).
@@ -353,7 +355,7 @@ Para evitar la sobrecarga cognitiva en los niños y mantener la profundidad admi
 
 ## 5. Extracción y Adaptación de Componentes de Roost (MIT)
 
-Los componentes de Roost se adaptan directamente a la estructura de Ordo Diei:
+Roost sirve de **referencia visual**; no se copia tal cual (AUDITORIA A1–A5: sin LICENSE, Vite/Tailwind 3/Supabase, y ya hay `MissionCalendar`):
 
 ```
 Repositorio Roost (MIT)                            Ordo Diei (Next.js 16 + Tailwind 4)
@@ -361,7 +363,7 @@ Repositorio Roost (MIT)                            Ordo Diei (Next.js 16 + Tailw
 src/components/groups/learn/LessonPlayer.tsx    -> src/components/homeschooling/lms/LessonPlayer.tsx
 src/components/groups/learn/LearnSidebar.tsx    -> src/components/homeschooling/lms/LearnSidebar.tsx
 src/components/groups/learn/ProgressBar.tsx     -> src/components/homeschooling/lms/CourseProgressBar.tsx
-src/components/calendar/CalendarView.tsx        -> src/components/homeschooling/calendar/LiquidCalendar.tsx
+src/components/tasks/MissionCalendar.tsx (Ordo)  -> extender; NO copiar CalendarView de Roost
 src/pages/ShowcaseSubmit.tsx                    -> src/components/homeschooling/portfolio/EvidenceModal.tsx
 src/components/showcase/ShowcaseCard.tsx        -> src/components/homeschooling/portfolio/PortfolioCard.tsx
 src/services/module.ts (queries Supabase)       -> src/lib/homeschooling/server/queries.ts (Server Actions)

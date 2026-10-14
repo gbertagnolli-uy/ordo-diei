@@ -1,5 +1,7 @@
 # Plan Maestro de Lanes — Módulo de Homeschooling
 
+> ⚠️ **Auditado el 2026-10-13** (ver [`../homeschooling/AUDITORIA.md`](../homeschooling/AUDITORIA.md)). Esta versión ya incluye el orden y las dependencias corregidos.
+
 > **Contexto:** Especificación detallada de las 6 lanes de trabajo para implementar el ecosistema completo de Homeschooling en Ordo Diei, siguiendo las directrices de `AGENTS.md` (un worktree por lane, commits aislados, integración exclusiva vía `scripts/integrar.sh` y cero `db push`).
 
 ---
@@ -38,6 +40,22 @@
 ```
 
 ---
+
+## 1.b Plan integrado con el resto de las features (auditoría §G)
+
+| Orden | Lane | Depende de | Notas |
+|---|---|---|---|
+| 1 | **H1a** modelo + `repartir()` + tests | nada | Puede ir ya; sin UI. |
+| 2 | **H1b** asistente de alta + plan del padre | H1a, `MissionCalendar` | Extiende el calendario existente. |
+| 3 | N2 audio · N4/N5/N6 inactividad y borradores | — | Antes de H2 (sonido de victoria, lección sin cerrar sesión). |
+| 4 | **H2** «Hoy aprendo» + reproductor | H1b, **decisión C2/C3** (recompensa por pipeline con tope/aprobación) | Riesgo mayor. |
+| 5 | **H3** evidencia | H2, **E1–E3** (archivos privados, audio, espacio) | Requiere ampliar `Archivo`. |
+| 6 | **H4** checkpoints y quizzes | H2, B6 (modelos de quiz) | Corrección en servidor. Cartas solo si el usuario lo decide. |
+| 7 | N13 temporizadores visuales | N2, N4 | Antes de H5/H6. |
+| 8 | **H5** compliance/transcripts | H3, H4, N13, **jurisdicción definida por el usuario** | Sin cifras legales en código. |
+| 9 | **H6** neurodivergencia (sin kiosk/curfew) | H2, N2 | Kiosk/curfew → APP nativa. |
+
+**Preguntas que bloquean H2+:** ver `../homeschooling/AUDITORIA.md` §H.
 
 ## 2. Resumen de Lanes de Homeschooling
 

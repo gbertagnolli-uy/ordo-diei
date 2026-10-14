@@ -1,6 +1,6 @@
 # Homeschooling — casi una app nueva extra
 
-> Estado: **planificación** (2026-10-13). Sin lanes creadas todavía.
+> Estado: **planificación** (2026-10-13). Sin lanes creadas todavía. **Documentación de agy auditada: leer primero [`AUDITORIA.md`](AUDITORIA.md).**
 
 ## 1. Pedido del usuario (textual)
 

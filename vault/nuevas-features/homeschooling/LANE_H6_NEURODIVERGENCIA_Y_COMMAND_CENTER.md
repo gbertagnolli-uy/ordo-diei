@@ -1,5 +1,13 @@
 # Lane H6 — Neurodivergencia, Kiosk y Centro de Comando Familiar
 
+> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+
+> ### Correcciones de auditoría (obligatorias)
+> 1. **Se reduce a Neurodivergencia** (§2: Primero/Después, historias sociales, baja estimulación). **§3 (Kiosk y Curfew) sale de esta lane**: contradice la decisión D6 (kiosk → APP nativa) y duplica la pantalla de reposo (N7) y la inactividad (N6) (E4).
+> 2. Falsedades técnicas de §3 (E5): el navegador no bloquea bordes ni apaga el backlight; `#000` ahorra solo en OLED; Fullscreen exige gesto y no existe en iPhone; limitar la carga al 80 % es imposible desde web. El «curfew» web es un salvapantallas negro, no un apagado.
+> 3. Baja estimulación (E12): solo atenúa/silencia; los sonidos los entrega el usuario (D15). Depende de **N2/N3** para silenciar audio y música.
+> 4. Falta modelo de datos para First/Then y social stories (no está en ARQUITECTURA).
+
 > **Estado:** Lista para ejecución cuando las fases formativas estén operativas.  
 > **Dependencias:** Lane H2 (Hoy Aprendo) y configuraciones globales de usuario.  
 > **Tamaño:** M (Accesibilidad sensorial + UX cognitiva + Protección de hardware de pared).

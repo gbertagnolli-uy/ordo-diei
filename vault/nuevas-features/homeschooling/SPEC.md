@@ -6,6 +6,10 @@
 > - Plan maestro de lanes: [`../lanes/LANES_HOMESCHOOLING.md`](../lanes/LANES_HOMESCHOOLING.md)
 > - Especificaciones de cada lane: [`LANE_H1`](LANE_H1_MODELO_Y_PACING.md), [`LANE_H2`](LANE_H2_REPRODUCTOR_Y_LECCION.md), [`LANE_H3`](LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md), [`LANE_H4`](LANE_H4_CHECKPOINTS_Y_QUIZZES.md), [`LANE_H5`](LANE_H5_COMPLIANCE_Y_TRANSCRIPTS.md), [`LANE_H6`](LANE_H6_NEURODIVERGENCIA_Y_COMMAND_CENTER.md)
 
+> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+
+> ⚠️ **Las secciones §3 (modelo, pacing, UX), §5 y §7 quedaron REEMPLAZADAS** por `ARQUITECTURA_DETALLADA.md` y las `LANE_H*`. Se conservan solo por historial; no implementar desde aquí.
+
 ## 1. Conceptos
 - **Materia** (Matemática, Historia, Catecismo…) por alumno.
 - **Recurso**: libro, curso, lista de videos, PDF o texto libre dividido en **unidades** (páginas, capítulos o lecciones).
@@ -26,7 +30,7 @@
 
 Cada fase es una o más lanes entregables por separado (ver `../lanes/LANES.md`).
 
-## 3. H1 en detalle (lo que se implementa primero)
+## 3. H1 en detalle (HISTÓRICO — reemplazado; el modelo de abajo tiene errores, ver AUDITORIA B1)
 
 ### 3.1 Modelo
 ```prisma
@@ -58,7 +62,7 @@ Vista semanal/mensual por alumno (grilla de materias × días con la lección as
 - Inactividad: lecciones con enlace/video llaman `useMantenerActivo`; el trabajo a medio escribir se guarda como borrador.
 - Marketplace: requisito `tareas`/`habito` puede incluir «completó N lecciones».
 
-## 5. H2–H5 (resumen de contrato)
+## 5. H2–H5 (HISTÓRICO — la numeración cambió: ahora H2=LMS, H3=evidencia, H4=quiz, H5=compliance, H6=neurodivergencia)
 - **H2:** botón de cámara (`<input capture>` + subida existente) → evidencia ligada a `DiaLectivo`; el padre aprueba con swipe (patrón de lane 75).
 - **H3:** `Pregunta` (opción múltiple/verdadero‑falso/texto corto) por lección; `Intento`; umbral configurable (70 %); la lección siguiente queda con candado (mismo lenguaje visual que marketplace/cartas).
 - **H4:** PDF con `@react-pdf/renderer` o impresión CSS: portada, horas por materia, listado de lecciones, fotos, calificaciones. Plantilla por jurisdicción (primero genérica; Uruguay según lo que el usuario indique).

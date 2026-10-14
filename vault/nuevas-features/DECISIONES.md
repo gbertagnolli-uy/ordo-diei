@@ -70,3 +70,8 @@ Conclusión de la evaluación de bases open source, pegada por el usuario (textu
 | D16 | **OpenCircle descartado** (AGPL v3, sin UI de cursos, Python/Hono). **Roost (MIT) es cantera de componentes**, no base: se copia/adapta lo necesario a Ordo Diei (Next + Prisma 7). Detalle en `homeschooling/MAPEO_COMPONENTES_ROOST.md`. |
 | D17 | Homeschooling se divide en **6 lanes H1..H6** (ver `lanes/LANES_HOMESCHOOLING.md`) y **no se implementa todavía**: solo documentación. Se arranca cuando el usuario lo ordene. |
 | D18 | Homeschooling **reutiliza la Tienda** (lane 103) para sus recompensas y el motor de cartas para premios de repaso; no crea otra economía. |
+
+| D19 | La documentación de Homeschooling escrita por agy fue **auditada** (`homeschooling/AUDITORIA.md`). Donde la auditoría contradiga a un `LANE_H*`, manda la auditoría. |
+| D20 | **Kiosk/Curfew sale de H6** (sigue D6: APP nativa). H6 queda en neurodivergencia. |
+| D21 | **Ninguna cifra legal en el código**: la jurisdicción la completa el padre. |
+| D22 | Las recompensas de Homeschooling pasan por el **pipeline existente** de hábitos/tareas, una sola vez por lección, con tope y (por defecto) aprobación del padre. |

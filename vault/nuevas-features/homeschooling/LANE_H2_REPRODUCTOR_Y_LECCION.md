@@ -1,5 +1,15 @@
 # Lane H2 — LMS: Reproductor de Lecciones y "Hoy Aprendo"
 
+> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+
+> ### Correcciones de auditoría (obligatorias)
+> 1. **El bloque `prisma.usuario.update(... puntosAcumulados +20 ... streakDays +1)` de §4 está PROHIBIDO** (C1, C2): `puntosAcumulados` no es XP (el XP es `experienciaHabitos`) y `streakDays` subiría por lección y no por día. La recompensa pasa por el **pipeline existente** de hábitos/tareas (`lib/habitos`, `lib/comportamiento`).
+> 2. **Una sola vez por lección** (clave única) y tope diario; desmarcar no devuelve ni repite el premio (C3, A6). Por defecto, premio sujeto a **aprobación del padre** (pregunta H.1 de la auditoría).
+> 3. Progreso: actualiza `DiaLectivo` (fuente de verdad, B3); `ProgresoLeccion` solo para recursos con lecciones discretas.
+> 4. Calendario del padre: extender `MissionCalendar` (A5). Roost es referencia visual (A2); sin `react-dropzone`.
+> 5. Sonido de victoria: depende de **N2**; si no está, omitir. Mantener sesión activa durante la lección (`useMantenerActivo`, N4).
+> 6. Ruta única `/dashboard/homeschooling` que bifurca por rol (E9).
+
 > **Estado:** Lista para ejecución cuando H1 esté integrada en `dev`.  
 > **Dependencias:** Lane H1 (Modelo y Pacing).  
 > **Componentes Fuente:** `src/components/groups/learn/LessonPlayer.tsx`, `LearnSidebar.tsx`, `ProgressBar.tsx` de **Roost (MIT)**.  
@@ -49,8 +59,8 @@ Construir la experiencia formativa diaria del estudiante (**"Hoy Aprendo"**) y e
   - Botón de acción principal: **«Empezar»** (abre el visor de lección).
 - **Celebración al terminar:**
   - Al presionar **«Terminé»**:
-    1. Se actualiza el estado en base de datos (`completada: true`, `fechaCompletado: new Date()`).
-    2. Se incrementa `puntosAcumulados` (+20 XP) y `incienso` (+1 moneda) en el `Usuario`.
+    1. Se actualiza el estado en base de datos (`DiaLectivo.estado = completada`).
+    2. Se otorga la recompensa **vía el pipeline existente** (ver correcciones 1–2), no con `update` directo.
     3. Se dispara ráfaga de confeti con `canvas-confetti`.
     4. Se reproduce el sonido de victoria (vía audio manager de Ordo Diei).
 
