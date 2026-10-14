@@ -41,10 +41,13 @@ Dar retroalimentación sonora breve a acciones y recompensas para reforzar el bu
 - Valores por defecto: efectos ON al 60 %, música OFF hasta que el usuario la active (evita sorpresas).
 - Cambios sin recarga; guardados en `PreferenciaAudio` (por usuario) y `localStorage` como respaldo.
 
-## 5. Assets
-- Formato: **OGG + MP3** (fallback), mono, ≤ 30 KB c/u, normalizados a −16 LUFS. Ubicación `public/sonidos/` (son pocos y livianos ⇒ sí van en el repo).
-- Origen: banco **CC0** (p. ej. Kenney, freesound CC0) o encargo; registrar créditos en `public/sonidos/CREDITOS.md`.
-- Estilo propuesto: cálido y solemne-lúdico (campanas, cuerdas suaves, coro para lo celestial); evitar sonidos de videojuego agresivos. *A confirmar con el usuario.*
+## 5. Assets (D15: los entrega el usuario en una carpeta)
+- **Entrada:** carpeta del usuario con los archivos (`.mp3`, `.wav`, `.ogg`, `.m4a`). Sin nombres obligatorios.
+- **Importador** `scripts/importar-sonidos.mjs <carpeta>`: lista los archivos, los **normaliza** (ffmpeg: mono, OGG + MP3, −16 LUFS, recorte de silencios, tope ≈ 30 KB para efectos cortos y ≈ 150 KB para fanfarrias) y los copia a `public/sonidos/`. Pocos y livianos ⇒ sí van en el repo.
+- **Asignación a eventos:** `public/sonidos/mapa.json` (`evento → archivo`). Si el nombre del archivo coincide con un evento del catálogo (§3, p. ej. `nivel.sube.mp3`) se asigna solo; el resto queda **sin asignar** y el script imprime una tabla «evento sin sonido / archivo sin evento» para que el usuario o el agente decidan.
+- **Eventos sin sonido** simplemente no suenan (el motor ignora el evento; no es error).
+- **Paso previo a implementar (lane N2):** recibir la carpeta, escucharla/listarla y proponer la asignación a los eventos del catálogo; el usuario valida.
+- Créditos y licencias en `public/sonidos/CREDITOS.md` (el usuario indica el origen).
 
 ## 6. Modelo de datos
 `PreferenciaAudio { usuarioId @id, efectos Boolean=true, volEfectos Int=60, musica Boolean=false, volMusica Int=40, haptica Boolean=true }`.

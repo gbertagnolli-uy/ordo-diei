@@ -23,11 +23,11 @@ Prioridad: **N4→N7→N5→N6** (pedido más concreto del usuario), en paralelo
 - **Salida:** `idle-marco-fotos/SPIKE.md` con la estrategia A/B/C elegida. Tamaño S.
 
 ### N2 · Motor de audio + sonidos de efectos
-- `src/lib/audio/*`, `PreferenciaAudio`, menú «Sonido», assets CC0, enganchar eventos del catálogo (`sonidos-ui/SPEC.md` §3).
+- `src/lib/audio/*`, `PreferenciaAudio`, menú «Sonido», importador de la **carpeta de sonidos del usuario** (pendiente de recibir) y `mapa.json`, enganchar eventos del catálogo (`sonidos-ui/SPEC.md` §3, §5).
 - Tests: mapa evento→archivo, reglas de silencio. Tamaño M.
 
 ### N3 · Música de fondo
-- Importador de carpeta, `PistaMusical`, bucket de almacenamiento, mini reproductor persistente, `ConfigAudio`, Media Session. Depende de N2. **Necesita la carpeta de canciones del usuario.** Tamaño M.
+- Importador de carpeta, `PistaMusical`, bucket de almacenamiento, mini reproductor persistente, `ConfigAudio`, Media Session. Depende de N2. **Necesita la carpeta de canciones del usuario.** (La de sonidos de N2 también está pendiente.) Tamaño M.
 
 ### N4 · Detector de inactividad (solo hook y pruebas)
 - `useInactividad`, `lib/actividad.ts`, `useMantenerActivo`, canal entre pestañas. Reloj inyectable para tests. Sin cambios visibles. Tamaño S.
