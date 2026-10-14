@@ -39,3 +39,10 @@
 - **Sin verificar**: la **GitHub Action** (`.github/workflows/liturgia.yml`) nunca corrió. Está inactiva hasta que crees la variable de repositorio `LITURGIA_ACTION_ACTIVA=true` y los secretos `DATABASE_URL`/`DIRECT_URL`. Como `dev` solo se integra en local, tampoco corre hasta que el archivo llegue a la rama por defecto de GitHub.
 - **Sin verificar**: `descargar.sh` e `instalar-perl.sh` desde cero (se probó el mismo procedimiento a mano; el script se probó ejecutándolo sobre el clon existente).
 - **Incidente (para que lo sepas)**: al crear el worktree de esta lane otro agente creó a la vez `lane-132` (Homeschooling horas/reportes) y por un descuido mío copié `vendor/` y `.cache/` en su directorio y corrí `npm install` ahí (falló en `prisma generate`). Los moví de vuelta a mi worktree; su directorio quedó con el mismo contenido que tenía (solo su cambio en `prisma/schema.prisma`). Mi lane quedó como **133**. Lección anotada en las reglas de trabajo: tras `git worktree add`, abortar si falla antes de copiar nada.
+
+## L3 · API y componentes base (lane 136)
+- **Sin verificar**: las rutas `/api/liturgia/*` contra la base real: no hay datos hasta la primera carga de L2. Sin datos responden 404 `{"estado":"no-generado"}` (probado con repositorio en memoria, no contra Supabase).
+- **Revisar**: se agregó `GET /api/liturgia/kalendarium` (no estaba en la tabla de la SPEC §6) porque L7 necesita el índice por mes del Proprium Sanctorum.
+- **Revisar**: `LiturgiaTexto` usa una fila con `no-scrollbar` para los chips de sección porque `ui/drag-scroll` vive en la lane 109 (sin integrar). Cambiarlo cuando 109 llegue a `dev`.
+- **Revisar**: el Rosario no está en la base (DO no lo trae): L9 lo lee de `src/data/liturgia/rosarium.json`; el prefijo de clave `Rosarium/` quedó reservado en `parametros.ts` por si se prefiere guardarlo en `Documentos_Liturgicos`.
+- **Aviso para L4–L9**: las pantallas que usen `useParametrosLiturgia` (`useSearchParams`) necesitan `<Suspense>` en la página.
