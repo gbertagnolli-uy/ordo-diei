@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
 import { hoyEnFamilia } from "@/lib/habitos/server";
 import { alumnosConPlanActivo, asegurarTareasDeHoy } from "@/lib/homeschooling/servidor/tareas";
+import { repoReposo } from "@/lib/reposo/repositorio";
+import { refrescarPoolUnsplash } from "@/lib/reposo/unsplash";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +112,14 @@ export async function GET(req: Request) {
       }
     }
 
+    // E) REPOSO: refrescar el pool de fotos de Unsplash (un fallo no frena el cron)
+    const reposo = await refrescarPoolUnsplash(repoReposo, {
+      fetch,
+      accessKey: process.env.UNSPLASH_ACCESS_KEY,
+      log: (m) => console.error(m),
+    }).catch((e) => ({ ok: false as const, motivo: e instanceof Error ? e.message : "error" }));
+    console.log(`[Cron Daily] Reposo: ${JSON.stringify(reposo)}`);
+
     const elapsed = Date.now() - startTime;
     return NextResponse.json({
       success: true,
@@ -117,6 +127,7 @@ export async function GET(req: Request) {
       generadas: generadasCount,
       usuarios: usuarios.length,
       premios: premiosEntregados,
+      reposo,
       elapsedMs: elapsed
     });
 

@@ -9,6 +9,7 @@ import {
   FilePen,
   Gift,
   HeartHandshake,
+  Image as ImageIcon,
   KeyRound,
   Layers,
   ListPlus,
@@ -83,6 +84,7 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
         { href: "/dashboard/users/new", titulo: "Nuevo miembro", descripcion: "Sumá a alguien de la familia con su PIN.", icon: UserPlus },
         { href: "/dashboard/users/pines", titulo: "Restablecer PIN", descripcion: "Cambiá el PIN de un miembro que lo olvidó.", icon: KeyRound },
         { href: "/dashboard/rules", titulo: "Reglas del hogar", descripcion: "Editá las reglas que ve toda la familia.", icon: FilePen },
+        { href: "/dashboard/admin/reposo", titulo: "Reposo", descripcion: "Tiempos de la pantalla de reposo, fotos de fondo y referencias.", icon: ImageIcon },
       ],
     },
   ];

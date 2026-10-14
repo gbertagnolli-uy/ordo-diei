@@ -62,3 +62,10 @@
 ## N4 · Detector de inactividad (lane 138; prerrequisito de R3)
 - **Sin verificar en navegador**: los eventos reales, el canal entre pestañas (`BroadcastChannel` + `storage`) y `visibilitychange`/`pageshow`. Las pruebas usan un reloj y un bus simulados.
 - **Pendiente (N6)**: nada cierra sesión todavía; `useInactividad` solo avisa. La sesión deslizante de 5 min (S3) tampoco está.
+
+## R2 · Pool de Unsplash y panel (lane 137)
+- **Sin verificar**: el refresco real contra Unsplash y el cron (no se corrió; sin llamadas a la API). Probar con «Cargar fotos ahora» una vez cargada la clave.
+- **Para el usuario**: `UNSPLASH_ACCESS_KEY` en Vercel.
+- **Hecho sin OK (aditivo)**: `CREATE TABLE` de `Config_Reposo` y `Fotos_Unsplash` aplicado con `db execute` (AGENTS §6).
+- **Revisar**: el aviso de descarga usa `/photos/{id}/download` (equivale a `links.download_location`, que no se guarda).
+- **Revisar**: el panel reutiliza `conSesion` de `lib/tienda/http` para las rutas de admin.
