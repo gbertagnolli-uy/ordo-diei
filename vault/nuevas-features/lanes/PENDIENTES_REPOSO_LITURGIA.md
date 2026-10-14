@@ -77,3 +77,10 @@
 - **Sin verificar en navegador real**: animación de fundido cruzado y Ken Burns, la transición visual al tocar «Entrar», y el desplazamiento anti burn-in tras 60 s (probado en tests unitarios y build de producción).
 - **Arreglado en scripts**: `scripts/integrar.sh` tenía la variable `dueño=` (con `ñ`), renombrada a `duenio=` para evitar fallos en bash.
 
+## L4 · Calendarium — `/dashboard/liturgia` (lane 140)
+- **Hecho**: Dashboard principal del Calendario Litúrgico (`CalendariumVista.tsx`) con `CabeceraLiturgica`, Card Hoy (oficio completo, rango, color, tiempo, conmemoraciones), Card Mes (`CalendariumMes.tsx` con grilla interactiva, puntos de color litúrgico y rangos abreviados), Breviarium del día (con Hora actual en `APP_TZ`, franja, foto y accesos a las 8 Horas), Missale del día (incipit del Introito, Colecta/Oratio, Epístola/Evangelio), Mysteria Rosarii (los 5 misterios del día según el día de la semana y la regla dominical tradicional) y Martyrologium tradicional bilingüe con nota de adaptación (D52).
+- **Hecho**: `src/lib/liturgia/horas.ts` con franjas S8 exactas en los bordes (04:59/05:00, 23:59/00:00) y metadatos con fotos de Unsplash (S10).
+- **Hecho**: `src/lib/liturgia/rosario.ts` con regla semanal y dominical confirmada con fuentes impresas preconciliares (*The Raccolta* 1910, n.º 219; *Manuale Precum* 1898) y citada en el código (§10.8, §12).
+- **Sin verificar en navegador real**: la experiencia visual de arrastre de fecha y navegación mensual en dispositivos táctiles.
+
+
