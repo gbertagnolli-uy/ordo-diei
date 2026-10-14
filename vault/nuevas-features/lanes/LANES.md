@@ -77,7 +77,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 |---|---|---|---|
 | R1 Frases | ✅ integrada (lane 135) — selección y textos a revisar por el usuario | — | 135 |
 | R2 Unsplash + panel | ✅ integrada (lane 137) — falta probar con la clave real | — | 137 |
-| R3 Reposo v2 UI | ⏳ lista | N4, R1, R2 | — |
+| R3 Reposo v2 UI | ✅ integrada (lane 139) | N4, R1, R2 | 139 |
 | L1 Spike DO | ✅ integrada (lane 131) | — | 131 |
 | L2 Generador + modelo | ✅ integrada (lane 133) — falta la primera carga: espera el OK del usuario | L1 | 133 |
 | L3 API + componentes | ✅ integrada (lane 136) | L2 | 136 |
