@@ -107,3 +107,12 @@ Conclusión de la evaluación de bases open source, pegada por el usuario (textu
 | D29 | **Una lección paga puntos completos si se termina antes de las 18:00** (`HORA_LIMITE_LECCION`). Entre las 18:00 y las 22:00, 50 %; después, 0 (regla existente de Tareas). |
 | D30 | Se aceptan las demás recomendaciones: **cursos compartidos entre hermanos con un plan por hijo** (P1), **cada hijo ve solo sus evidencias** (P2), **feriados a mano** (P4) y **lane HS-SEG** para que solo el asignado o un padre complete una tarea, antes de H2 (P5). |
 | D31 | Contradicciones X1–X18 resueltas (`homeschooling/PLAN_INTEGRACION_ROOST.md` §9). Sobre AUDITORÍA E1: **la URL pública de las fotos queda aceptada** por uso doméstico (excepción a D19). Las lanes de Homeschooling se nombran por código (HS0, H1a, HS-SEG, H1b, H2–H6) y el número se toma al crearlas. |
+
+## 9. Ronda 8 (2026-10-14) — Verificación de la implementación (lane 119)
+
+> «Ahora, documenta el proceso de testing y verificación, para asegurarnos que todo se implementó segun lo planificado. No quiero smoke test ni testing en navegador, eso lo hago yo, quiero verificación de código, features, verificación del cumplimiento del plan.»
+
+| # | Decisión |
+|---|---|
+| D32 | **Proceso de verificación en tres momentos** (`homeschooling/PLAN_VERIFICACION.md`): autoverificación de cada lane antes de integrar, verificación independiente en `dev` por otra sesión y auditoría final. Es solo de código: script de invariantes de solo lectura (`homeschooling/verificacion/verificar_invariantes.sh`), vectores de referencia calculados aparte, mutaciones y matrices de cumplimiento del plan. Sin smoke tests ni navegador (los hace el usuario; lista en §10). Los tests con base real siguen apagados salvo pedido del usuario. |
+| D33 | Contradicciones X20 y X21 resueltas (`PLAN_INTEGRACION_ROOST.md` §9): el modo relajado condiciona `celebrate` entero (no solo `TASK_SUCCESS`), y un checkpoint de video adelantado muestra el **primero** sin responder. |

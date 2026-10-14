@@ -14,6 +14,8 @@ HS-SEG completar asignado┘   (H2 exige HS-SEG)            ├─► H4 quizzes
 ```
 HS0, H1a y HS-SEG pueden ir en paralelo. H3–H6 son independientes entre sí; las que tocan `schema.prisma` se integran de a una.
 
+**Verificación:** cada lane se autoverifica antes de integrar y otra sesión la verifica después en `dev`; al final hay una auditoría completa. Proceso, vectores de referencia y script: [`../homeschooling/PLAN_VERIFICACION.md`](../homeschooling/PLAN_VERIFICACION.md).
+
 | Código | Tamaño | Spec | Nota clave |
 |---|---|---|---|
 | HS0 | M | [`LANE_HS0_BASE_ROOST.md`](../homeschooling/LANE_HS0_BASE_ROOST.md) | Shims, tipos, video, `CalendarView`, test de guarda. Sin base ni pantallas |
