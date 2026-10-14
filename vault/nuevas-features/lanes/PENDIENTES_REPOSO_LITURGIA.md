@@ -69,3 +69,11 @@
 - **Hecho sin OK (aditivo)**: `CREATE TABLE` de `Config_Reposo` y `Fotos_Unsplash` aplicado con `db execute` (AGENTS §6).
 - **Revisar**: el aviso de descarga usa `/photos/{id}/download` (equivale a `links.download_location`, que no se guarda).
 - **Revisar**: el panel reutiliza `conSesion` de `lib/tienda/http` para las rutas de admin.
+
+## R3 · Reposo v2 UI (lane 139)
+- **Hecho**: `ReposoPantalla.tsx` con fotos de Unsplash, fundido cruzado (1.5 s), Ken Burns y velos de legibilidad (≥ 4.5:1), frases bíblicas y del Catecismo alternadas estrictamente (`BolsaBarajada`), esquina con título litúrgico del día (`/api/reposo/dia`), anti burn-in (desplazamiento ±24 px cada 60 s y atenuación a 0.6 tras 5 min sin actividad), botón «Entrar» y atribución Unsplash.
+- **Hecho**: máquina de estados `REPOSO <-> SELECTOR <-> PIN` en `AuthPageClient` con 15 s de inactividad para volver a `REPOSO` (usando `useInactividad` de N4 y respetando `segundosLogin`).
+- **Hecho**: `/api/reposo/dia` lee el oficio Tridentine 1906 para la fecha local en `APP_TZ`; devuelve `null` seguro si la base aún no tiene datos de liturgia generados.
+- **Sin verificar en navegador real**: animación de fundido cruzado y Ken Burns, la transición visual al tocar «Entrar», y el desplazamiento anti burn-in tras 60 s (probado en tests unitarios y build de producción).
+- **Arreglado en scripts**: `scripts/integrar.sh` tenía la variable `dueño=` (con `ñ`), renombrada a `duenio=` para evitar fallos en bash.
+
