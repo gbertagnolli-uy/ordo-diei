@@ -32,8 +32,9 @@ export type DiaDelPlan = {
   unidadTipo: string;
 };
 export type NoLectivoVista = { id: number; fecha: string; motivo: string };
+export type ActividadVista = { id: number; titulo: string; inicio: string; fin: string };
 
-type Recurso = { tipo: "dia"; dia: DiaDelPlan } | { tipo: "sin_clase"; motivo: string };
+type Recurso = { tipo: "dia"; dia: DiaDelPlan } | { tipo: "sin_clase"; motivo: string } | { tipo: "actividad"; titulo: string };
 
 const aFechaLocal = (clave: string) => {
   const [y, m, d] = clave.split("-").map(Number);
@@ -48,11 +49,13 @@ const editable = (d: DiaDelPlan) => d.estado === "pendiente" && (!d.tareaEstado 
 export default function PlanCalendario({
   dias,
   noLectivos,
+  actividades = [],
   alumnos,
   alumnoId,
 }: {
   dias: DiaDelPlan[];
   noLectivos: NoLectivoVista[];
+  actividades?: ActividadVista[];
   alumnos: AlumnoLite[];
   alumnoId: number;
 }) {
@@ -72,6 +75,14 @@ export default function PlanCalendario({
         allDay: true,
         resource: { tipo: "dia" as const, dia: d },
       })),
+      ...actividades.map((a) => ({
+        id: `a${a.id}`,
+        title: `Actividad: ${a.titulo}`,
+        start: new Date(a.inicio),
+        end: new Date(a.fin),
+        allDay: false,
+        resource: { tipo: "actividad" as const, titulo: a.titulo },
+      })),
       ...noLectivos.map((n) => ({
         id: `n${n.id}`,
         title: `Sin clase: ${n.motivo}`,
@@ -81,7 +92,7 @@ export default function PlanCalendario({
         resource: { tipo: "sin_clase" as const, motivo: n.motivo },
       })),
     ],
-    [dias, noLectivos]
+    [dias, noLectivos, actividades]
   );
 
   const cambiar = async (diaId: number, cuerpo: { accion: "mover"; fecha: string } | { accion: "omitir" }) => {
@@ -118,6 +129,7 @@ export default function PlanCalendario({
         events={eventos}
         draggableAccessor={(e) => e.resource.tipo === "dia" && editable(e.resource.dia)}
         eventPropGetter={(e) => {
+          if (e.resource.tipo === "actividad") return { style: { backgroundColor: "var(--warning)" } };
           if (e.resource.tipo === "sin_clase") {
             return {
               style: {

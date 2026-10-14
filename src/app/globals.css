@@ -488,3 +488,31 @@ body {
     @apply border-border outline-ring/50;
   }
 }
+
+/* Impresión (reportes de Homeschooling): A4 con márgenes de 2 cm, sin la barra lateral, el dock ni los avisos */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-slot="sidebar-rail"],
+  [data-slot="sidebar-trigger"],
+  #notice-bar,
+  #premio-banner,
+  #reconocimiento-banner {
+    display: none !important;
+  }
+  [data-slot="sidebar-inset"] {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .salto-de-pagina {
+    break-before: page;
+  }
+  .sin-corte {
+    break-inside: avoid;
+  }
+}
