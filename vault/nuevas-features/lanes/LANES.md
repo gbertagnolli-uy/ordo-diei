@@ -75,7 +75,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 
 | Lane | Estado | Depende de | Lane real (al crearla) |
 |---|---|---|---|
-| R1 Frases | ⏳ lista | — | — |
+| R1 Frases | ✅ integrada (lane 135) — selección y textos a revisar por el usuario | — | 135 |
 | R2 Unsplash + panel | ⏳ lista | — | — |
 | R3 Reposo v2 UI | ⏳ lista | N4, R1, R2 | — |
 | L1 Spike DO | ✅ integrada (lane 131) | — | 131 |
