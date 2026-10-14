@@ -51,7 +51,7 @@ export async function unidadesVistas(db: Db, alumnoId: number, recursoId: number
  * libre) y no está bloqueada por la anterior. No da puntos: los premios salen de la Tarea del día.
  * Devuelve `ultimaDelDia` y la `tareaId` que hay que completar con `POST /api/tasks/[id]/complete`.
  */
-export async function completarLeccion(alumnoId: number, leccionId: number, hoy = hoyEnFamilia()) {
+export async function completarLeccion(alumnoId: number, leccionId: number, hoy = hoyEnFamilia(), opciones: { quizAprobado?: boolean } = {}) {
   return prisma.$transaction(async (tx) => {
     const leccion = await tx.leccionCurso.findUnique({ where: { id: leccionId }, include: { recurso: true } });
     if (!leccion) throw new NoEncontradoError("Lección no encontrada");
@@ -74,7 +74,13 @@ export async function completarLeccion(alumnoId: number, leccionId: number, hoy 
       const motivo = motivoLeccionBloqueada(leccion.orden, previa?.titulo, vistas.satisfecha);
       if (motivo) throw new ConflictoError(motivo);
     }
-    // H4: si la lección tiene preguntas, acá se exige el quiz aprobado antes de crear el progreso.
+    // Con quiz final, la lección solo se completa con un intento aprobado (`calificarFinal` ya lo comprobó y avisa con `quizAprobado`)
+    if (!opciones.quizAprobado) {
+      const finales = await tx.preguntaLeccion.count({ where: { leccionId, segundoVideo: null } });
+      if (finales > 0 && !(await tx.intentoQuiz.findFirst({ where: { alumnoId, leccionId, aprobado: true }, select: { id: true } }))) {
+        throw new ConflictoError("Aprobá el quiz de esta lección primero");
+      }
+    }
 
     await tx.progresoLeccion.upsert({
       where: { alumnoId_leccionId: { alumnoId, leccionId } },

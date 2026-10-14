@@ -79,3 +79,19 @@ export const accionEvidencia = z.discriminatedUnion("accion", [
   z.object({ accion: z.literal("quitar_destacada") }),
   z.object({ accion: z.literal("reenviar"), titulo: z.string().trim().max(150).nullable().optional(), nota: z.string().trim().max(1000).nullable().optional() }),
 ]);
+
+export const respuestaElegida = z.number().int().min(0).max(3);
+
+export const preguntasEditables = z.object({
+  preguntas: z
+    .array(
+      z.object({
+        enunciado: z.string().trim().min(1, "Falta el enunciado").max(300),
+        opciones: z.array(z.string().trim().min(1).max(200)).min(2).max(4),
+        correcta: z.number().int().min(0).max(3),
+        explicacion: z.string().trim().max(500).nullable().optional(),
+        segundoVideo: z.number().int().min(0).max(86400).nullable().optional(),
+      })
+    )
+    .max(20),
+});

@@ -30,6 +30,10 @@
 | P-21 | 128 (H3) | Las fotos se sirven por `/api/archivos/<uuid>`, que es público a propósito (UUID imposible de adivinar, ver HD8). Quien tenga el enlace de una evidencia puede verla sin sesión. | Aceptado para uso doméstico. | Exigir sesión en `/api/archivos` para estas fotos. |
 | P-22 | 128 (H3) | Las listas de evidencias devuelven como máximo 300; no hay paginación. El sistema de borradores N5 no existe, se usa `localStorage` como Roost. | — | Paginar si crece. |
 | P-23 | 128 (H3) | Sin prueba visual ni de gestos: el deslizar para aprobar/ajustar (SwipeRow) y los diálogos solo están verificados con `tsc`/`eslint`/`next build` (ver P-8). Al cancelar un deslizamiento se vuelve a montar la fila cambiando su `key`. | — | Probarlo en el navegador. |
+| P-24 | 129 (H4a) | La tarjeta de repaso guarda la Card de ts-fsrs más una clave extra `_aciertos` (aciertos seguidos) dentro del mismo JSON: la spec decía "serializada tal cual" y el modelo no tiene columna para esa cuenta. La lógica de "resuelta" (3 aciertos seguidos con intervalo ≥ 30 días) depende de ella. | Implementado así. | Agregar una columna `aciertosSeguidos`. |
+| P-25 | 129 (H4a) | `calificarFinal` responde acierto/fallo y explicación por pregunta, **no** el índice correcto (para que no se memorice la respuesta); la spec decía solo "explicaciones". | Implementado así. | Mostrar también la respuesta correcta tras aprobar. |
+| P-26 | 129 (H4a) | Una lección con quiz exige un intento aprobado; si el padre desmarca la lección, el intento aprobado sigue valiendo (no hace falta repetir el quiz). El umbral sale de `RecursoCurso.umbralAprobacion` (70 por defecto); no hay pantalla para cambiarlo. | — | Campo en `CursoForm`. |
+| P-27 | 129 (H4a) | Tests con base real de H4 (quiz, repaso) saltados sin `PERMITIR_TESTS_DB=1` (ver P-4). El comportamiento de ts-fsrs sí está probado sin base (acierto aleja, fallo acerca, resolución). | — | Correrlos con la base autorizada. |
 
 ## Resueltos
 _(ninguno todavía)_
