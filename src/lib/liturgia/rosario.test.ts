@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { misteriosDelDia, GRUPOS_INFO } from "./rosario.ts";
+import { misteriosDelDia, GRUPOS_INFO, DEVOCIONARIO_ROSARIO } from "./rosario.ts";
 
 test("misteriosDelDia: asignación por días de semana fijos (§10.8)", () => {
   // 2026-10-12 = Lunes -> Gaudiosa
@@ -63,5 +63,44 @@ test("cada grupo contiene exactamente 5 misterios con número romano, fruto y ci
       assert.ok(m.fruto.length > 3);
       assert.ok(m.cita.length > 2);
     }
+  }
+});
+
+test("DEVOCIONARIO_ROSARIO: contiene oraciones tradicionales con fuentes (§10.8)", () => {
+  const { oraciones, litaniaeLauretanae } = DEVOCIONARIO_ROSARIO;
+
+  const clavesEsperadas = [
+    "signumCrucis",
+    "credo",
+    "paterNoster",
+    "aveMaria",
+    "gloriaPatri",
+    "fatima",
+    "salveRegina",
+    "oremusFinal",
+  ];
+
+  for (const c of clavesEsperadas) {
+    const o = oraciones[c];
+    assert.ok(o, `Falta la oración ${c}`);
+    assert.ok(o.tituloLa.length > 0);
+    assert.ok(o.tituloEs.length > 0);
+    assert.ok(o.textoLa.length > 10);
+    assert.ok(o.textoEs.length > 10);
+    assert.ok(o.fuente.length > 5, `Falta la fuente de ${c}`);
+  }
+
+  // Fátima con etiqueta «desde 1917»
+  assert.equal(oraciones.fatima.etiqueta, "desde 1917");
+
+  // Salve Regina con versículo y respuesta
+  assert.ok(oraciones.salveRegina.versiculoLa?.includes("Ora pro nobis"));
+  assert.ok(oraciones.salveRegina.versiculoEs?.includes("Ruega por nosotros"));
+
+  // Letanías Lauretanas con invocaciones bilingües
+  assert.ok(litaniaeLauretanae.invocaciones.length >= 50);
+  for (const inv of litaniaeLauretanae.invocaciones) {
+    assert.ok(inv.la.length > 0);
+    assert.ok(inv.es.length > 0);
   }
 });

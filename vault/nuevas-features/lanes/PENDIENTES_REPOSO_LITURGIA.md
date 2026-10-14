@@ -108,6 +108,13 @@
 - **Hecho**: Módulo puro `src/lib/liturgia/salterio.ts` con tests unitarios (`salterio.test.ts`), y extensión de `PREFIJO_CLAVE_LIBRO.ordinarium` para incluir `Psalterium/Common/`.
 - **Sin verificar en navegador real**: navegación entre los 150 salmos con botones Anterior/Siguiente en pantallas de teléfonos móviles.
 
+## L9 · Rosarium — `/dashboard/liturgia/rosarium` (lane 145)
+- **Hecho**: Pantalla Rosarium (`RosariumVista.tsx`, `/dashboard/liturgia/rosarium`) con `CabeceraLiturgica` (selector de versión y fecha), Misterios del día destacados según la regla dominical tradicional preconciliar (*The Raccolta* 1910, n.º 219 y *Manuale Precum* 1898) y días fijos semanales, con 5 tarjetas con número romano (`I`–`V`), título en latín/español, fruto espiritual y cita bíblica.
+- **Hecho**: Explorador por pestañas de los 15 misterios tradicionales preconciliares (Gozosos, Dolorosos, Gloriosos; sin misterios luminosos de 2002) con indicación visual de la corona correspondiente al día actual.
+- **Hecho**: Devocionario tradicional bilingüe (latín/español) en `src/data/liturgia/rosarium.json` y `src/lib/liturgia/rosario.ts` con selector de idioma (`ToggleGroup`: Ambos, Latín, Español), textos completos y fuentes impresas: Signum Crucis, Credo, Pater Noster, Ave Maria, Gloria Patri, Oración de Fátima («O mi Iesu») con badge «desde 1917», Salve Regina con versículo y respuesta, Oremus final (Oratio Conclusiva), y Litaniæ Lauretanæ completas (más de 50 invocaciones, Agnus Dei 3x y Sub tuum præsídium).
+- **Hecho**: Tests unitarios en `rosario.test.ts` (324 tests pasando en la suite completa, 0 fallas).
+- **Sin verificar en navegador real**: visualización del devocionario y de las tarjetas de misterios en teléfonos móviles y tablets.
+
 
 
 

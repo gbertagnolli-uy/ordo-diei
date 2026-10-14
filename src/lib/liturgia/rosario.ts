@@ -6,6 +6,37 @@
 //  a Pascha usque ad Adventum: Gloriosa.»
 
 import type { TiempoLiturgico } from "./tipos.ts";
+import rosariumJson from "../../data/liturgia/rosarium.json" with { type: "json" };
+
+export type OracionRosario = {
+  tituloLa: string;
+  tituloEs: string;
+  textoLa: string;
+  textoEs: string;
+  fuente: string;
+  etiqueta?: string;
+  versiculoLa?: string;
+  versiculoEs?: string;
+};
+
+export type InvocacionLetania = {
+  la: string;
+  es: string;
+};
+
+export type LitaniaeRosario = {
+  tituloLa: string;
+  tituloEs: string;
+  fuente: string;
+  invocaciones: InvocacionLetania[];
+};
+
+export type DevocionarioRosario = {
+  oraciones: Record<string, OracionRosario>;
+  litaniaeLauretanae: LitaniaeRosario;
+};
+
+export const DEVOCIONARIO_ROSARIO: DevocionarioRosario = rosariumJson as DevocionarioRosario;
 
 export type GrupoMisterios = "gaudiosa" | "dolorosa" | "gloriosa";
 
