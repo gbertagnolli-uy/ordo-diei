@@ -61,7 +61,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   // Vales arrancados que el servidor todavía no confirmó (el ticket se ve usado de inmediato)
   const [arrancados, setArrancados] = useState<number[]>([]);
   // Premio sorpresa en apertura: el modal 3D se muestra de inmediato y el resultado llega del servidor
-  const [sorpresa, setSorpresa] = useState<{ titulo: string; tipo: TipoSorpresa; resultado: ResultadoSorpresa | null } | null>(null);
+  const [sorpresa, setSorpresa] = useState<{ titulo: string; tipo: TipoSorpresa; resultado: ResultadoSorpresa | null; evaluacion: string | null } | null>(null);
 
   // El refresco automático del dashboard trae premios nuevos; no se pisa lo que se está abriendo
   useEffect(() => {
@@ -101,9 +101,9 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
 
   const abrirSorpresa = async (r: RecompensaVista) => {
     const tipo: TipoSorpresa = r.tipo === "cofre" ? "cofre" : r.tipo === "reconocimiento" ? "reconocimiento" : "regalo";
-    setSorpresa({ titulo: r.titulo, tipo, resultado: null });
+    setSorpresa({ titulo: r.titulo, tipo, resultado: null, evaluacion: r.evaluacion });
     const res = await accion(r.id, { accion: "abrir" });
-    if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, tipo, resultado: res as ResultadoSorpresa });
+    if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, tipo, resultado: res as ResultadoSorpresa, evaluacion: r.evaluacion });
     else setSorpresa(null); // falló: el toast ya avisó
   };
 
@@ -314,7 +314,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         </section>
       )}
 
-      <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} onCerrar={() => {
+      <ModalSorpresa titulo={sorpresa?.titulo ?? null} tipo={sorpresa?.tipo} resultado={sorpresa?.resultado ?? null} evaluacion={sorpresa?.evaluacion ?? null} onCerrar={() => {
           const cartas = sorpresa?.resultado?.cartasAfectadas ?? [];
           if (cartas.length > 0) {
             setSobre({

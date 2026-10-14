@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import Image from "next/image";
 import { URL_COFRE, URL_REGALO } from "./modelos";
+import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
 const Regalo3D = dynamic(() => import("./Regalo3D"), { ssr: false });
@@ -57,13 +58,40 @@ function lluviaDeConfites(reducida: boolean) {
   }
 }
 
+/** Hoja medieval (public/premios/hoja-medieval.webp) con la evaluación a mano, en marrón oscuro */
+function PergaminoEvaluacion({ texto, motivo, reducida, onContinuar }: { texto: string; motivo: string | null; reducida: boolean; onContinuar: () => void }) {
+  const tamano = texto.length < 160 ? "text-3xl" : texto.length < 400 ? "text-2xl" : "text-xl";
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <motion.div
+        initial={reducida ? false : { opacity: 0, scale: 0.85, rotate: -2 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 180, damping: 18 }}
+        className="relative w-full bg-[url('/premios/hoja-medieval.webp')] bg-contain bg-center bg-no-repeat drop-shadow-xl"
+        style={{ aspectRatio: "900 / 1037" }}
+      >
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto px-[15%] py-[14%] text-center font-[family-name:var(--font-parisienne)] text-[#4a2c12]">
+          {motivo && <p className="text-lg leading-tight opacity-80">{motivo}</p>}
+          <p className={cn("leading-snug text-balance whitespace-pre-line", tamano)}>{texto}</p>
+        </div>
+      </motion.div>
+      <Button onClick={onContinuar} className="w-full">
+        Continuar
+      </Button>
+    </div>
+  );
+}
+
 export function ModalSorpresa({
   titulo,
   tipo = "regalo",
   resultado,
+  evaluacion,
   onCerrar,
 }: {
   tipo?: TipoSorpresa;
+  /** Evaluación de los padres: si hay, se lee en un pergamino antes de la animación 3D */
+  evaluacion?: string | null;
   /** Comportamiento que originó el premio; null = modal cerrado */
   titulo: string | null;
   resultado: ResultadoSorpresa | null;
@@ -72,6 +100,10 @@ export function ModalSorpresa({
   const reducida = !!useReducedMotion();
   const [revelado, setRevelado] = useState(false);
   const abierto = titulo !== null;
+  const textoEvaluacion = evaluacion?.trim() || null;
+  // Con evaluación, primero se lee; sin ella se pasa directo a la animación
+  const [leida, setLeida] = useState(false);
+  const leyendo = abierto && !!textoEvaluacion && !leida;
   const confitesHechos = useRef(false);
   // Los premios se muestran de a uno, como las cartas de un sobre
   const [paso, setPaso] = useState(0);
@@ -80,6 +112,7 @@ export function ModalSorpresa({
   useEffect(() => {
     if (abierto) {
       setRevelado(false);
+      setLeida(false);
       setPaso(0);
       confitesHechos.current = false;
     }
@@ -95,12 +128,12 @@ export function ModalSorpresa({
   // El reconocimiento no tiene objeto 3D: al llegar el resultado se abre ya con los confites
   const sinObjeto3D = tipo === "reconocimiento";
   useEffect(() => {
-    if (sinObjeto3D && abierto && resultado && !confitesHechos.current) {
+    if (sinObjeto3D && abierto && !leyendo && resultado && !confitesHechos.current) {
       confitesHechos.current = true;
       setRevelado(true);
       lluviaDeConfites(reducida);
     }
-  }, [sinObjeto3D, abierto, resultado, reducida]);
+  }, [sinObjeto3D, abierto, leyendo, resultado, reducida]);
 
   const lineas = resultado?.lineas.length ? resultado.lineas : ["Un abrazo de tus papás"];
   const ultimo = paso >= lineas.length - 1;
@@ -117,12 +150,14 @@ export function ModalSorpresa({
         showCloseButton={revelado}
         onInteractOutside={(e) => !revelado && e.preventDefault()}
         onEscapeKeyDown={(e) => !revelado && e.preventDefault()}
-        className="overflow-hidden sm:max-w-md"
+        className={cn("overflow-hidden sm:max-w-md", leyendo && "gap-3 bg-transparent shadow-none ring-0")}
       >
         <DialogTitle className="sr-only">Premio sorpresa</DialogTitle>
         <DialogDescription className="sr-only">Abriendo tu premio sorpresa: {titulo}</DialogDescription>
 
-        {!revelado ? (
+        {leyendo ? (
+          <PergaminoEvaluacion texto={textoEvaluacion!} motivo={tipo === "regalo" ? titulo : null} reducida={reducida} onContinuar={() => setLeida(true)} />
+        ) : !revelado ? (
           <div className="flex flex-col items-center gap-2 py-2">
             <div className="h-72 w-full">{abierto && !sinObjeto3D && <Regalo3D url={tipo === "cofre" ? URL_COFRE : URL_REGALO} listo={!!resultado} reducida={reducida} onExplotar={explotar} />}</div>
             <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">

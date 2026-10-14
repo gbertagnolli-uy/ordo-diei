@@ -115,13 +115,13 @@ export async function registrarComportamiento(
             ...(resto.length > 0
               ? {
                   recompensa: {
-                    create: { usuarioId, tipo: "comportamiento", titulo, origen: "Comportamiento", contenido: resto },
+                    create: { usuarioId, tipo: "comportamiento", titulo, origen: "Comportamiento", contenido: resto, evaluacion: evaluacion || null },
                   },
                 }
               : {}),
           },
         });
-        for (const texto of vales) await crearVale(tx, usuarioId, texto, `Comportamiento: ${titulo}`);
+        for (const texto of vales) await crearVale(tx, usuarioId, texto, `Comportamiento: ${titulo}`, evaluacion || null);
         // Cada reconocimiento se reclama como un premio sorpresa y suma XP al abrirlo
         for (const texto of reconocimientos) {
           await tx.recompensa.create({
@@ -130,6 +130,7 @@ export async function registrarComportamiento(
               tipo: "reconocimiento",
               titulo: texto,
               origen: `Por: ${titulo}`,
+              evaluacion: evaluacion || null,
               contenido: [
                 { tipo: "reconocimiento", texto },
                 { tipo: "xp", cantidad: XP_RECONOCIMIENTO },

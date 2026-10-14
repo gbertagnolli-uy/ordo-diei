@@ -23,12 +23,15 @@ export type RecompensaVista = {
   sorpresa: boolean;
   /** Qué incluye el premio sorpresa; null mientras no se abrió */
   contenido: string[] | null;
+  /** Evaluación de los padres, para leerla antes de abrir el premio sorpresa; null si no hay */
+  evaluacion: string | null;
   usuario: { id: number; nombre: string; fotoUrl: string | null };
   entregadaPor: { id: number; nombre: string } | null;
 };
 
 const INCLUDE = {
   usuario: { select: { id: true, nombre: true, fotoUrl: true } },
+  comportamiento: { select: { evaluacion: true } },
   entregadaPor: { select: { id: true, nombre: true } },
 } as const;
 
@@ -55,6 +58,7 @@ const aVista = (r: Fila): RecompensaVista => ({
       ? // En el reconocimiento la virtud ya es el título: acá solo lo que suma
         leerItems(r.contenido).filter((i) => i.tipo !== "reconocimiento").map(textoItem)
       : null,
+  evaluacion: esSorpresa(r.tipo) && r.estado === "disponible" ? (r.evaluacion ?? r.comportamiento?.evaluacion ?? null) : null,
   usuario: r.usuario,
   entregadaPor: r.entregadaPor,
 });
