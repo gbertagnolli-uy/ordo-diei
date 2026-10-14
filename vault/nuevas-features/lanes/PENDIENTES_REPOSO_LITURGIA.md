@@ -90,5 +90,12 @@
 - **Hecho**: Navegación integrada con Next.js App Router preservando parámetros `fecha` y `version`.
 - **Sin verificar en navegador real**: renderizado interactivo del efecto Ken Burns en distintas resoluciones de pantalla y gestos táctiles.
 
+## L6 · Missale — `/dashboard/liturgia/missale` (lane 142)
+- **Hecho**: Pantalla Missale (`MissaleVista.tsx`, `/dashboard/liturgia/missale`) con `CabeceraLiturgica`, nota D53 visible para 1888/1906 («DO usa el Misal de 1910 para esta versión»), `ToggleGroup` interactivo «Solo el propio» / «Misa completa» y lector bilingüe con `LiturgiaTexto`.
+- **Hecho**: Filtrado puro de secciones (`src/lib/liturgia/missa.ts` + `missa.test.ts`) según la propiedad `propio` derivada por el parser de DO (Introitus, Oratio, Lectio/Epistola, Graduale, Evangelium, Offertorium, Secreta, Praefatio, Communio, Postcommunio, Commemoratio vs Ordinario).
+- **Hecho**: Contador dinámico de secciones visibles («X secciones del propio» o «X secciones totales») y estado de carga / aviso cuando no hay datos generados en la base.
+- **Sin verificar en navegador real**: verificación visual del desplazamiento suave por anclas entre secciones del Ordinario y del Propio.
+
+
 
 
