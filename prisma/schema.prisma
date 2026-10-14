@@ -96,11 +96,12 @@ model Usuario {
   metaTienda        MetaTienda?
 
   // Homeschooling (vault/nuevas-features/homeschooling/ARQUITECTURA_DETALLADA.md §3)
-  materiasCreadas  Materia[]      @relation("MateriasCreadas")
-  recursosCreados  RecursoCurso[] @relation("RecursosCreados")
-  leccionesCreadas LeccionCurso[] @relation("LeccionesCreadas")
-  planesAlumno     PlanCurso[]    @relation("PlanesAlumno")
-  diasNoLectivos   DiaNoLectivo[] @relation("DiasNoLectivosAlumno")
+  materiasCreadas   Materia[]         @relation("MateriasCreadas")
+  recursosCreados   RecursoCurso[]    @relation("RecursosCreados")
+  leccionesCreadas  LeccionCurso[]    @relation("LeccionesCreadas")
+  planesAlumno      PlanCurso[]       @relation("PlanesAlumno")
+  diasNoLectivos    DiaNoLectivo[]    @relation("DiasNoLectivosAlumno")
+  progresoLecciones ProgresoLeccion[] @relation("ProgresoAlumno")
 
   @@map("Usuarios")
 }
@@ -750,11 +751,12 @@ model RecursoCurso {
   createdAt        DateTime        @default(now()) @map("Created_At")
   updatedAt        DateTime        @updatedAt @map("Updated_At")
 
-  materia   Materia        @relation(fields: [materiaId], references: [id], onDelete: Cascade)
-  creador   Usuario        @relation("RecursosCreados", fields: [creadorId], references: [id])
-  libro     Libro?         @relation("RecursoLibro", fields: [libroId], references: [id], onDelete: SetNull)
+  materia   Materia           @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador   Usuario           @relation("RecursosCreados", fields: [creadorId], references: [id])
+  libro     Libro?            @relation("RecursoLibro", fields: [libroId], references: [id], onDelete: SetNull)
   planes    PlanCurso[]
   lecciones LeccionCurso[]
+  progresos ProgresoLeccion[]
 
   @@index([materiaId, orden])
   @@map("Homeschool_Recursos")
@@ -774,8 +776,9 @@ model LeccionCurso {
   creadorId       Int              @map("Creador_ID")
   createdAt       DateTime         @default(now()) @map("Created_At")
 
-  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
-  creador Usuario      @relation("LeccionesCreadas", fields: [creadorId], references: [id])
+  recurso   RecursoCurso      @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  creador   Usuario           @relation("LeccionesCreadas", fields: [creadorId], references: [id])
+  progresos ProgresoLeccion[]
 
   @@unique([recursoId, orden])
   @@map("Homeschool_Lecciones")
@@ -829,4 +832,21 @@ model DiaNoLectivo {
 
   @@unique([alumnoId, fecha])
   @@map("Homeschool_Dias_No_Lectivos")
+}
+
+// ← lesson_completions de Roost: la fila existe = lección completada por ese alumno
+model ProgresoLeccion {
+  id           Int      @id @default(autoincrement())
+  alumnoId     Int      @map("Alumno_ID")
+  leccionId    Int      @map("Leccion_ID")
+  recursoId    Int      @map("Recurso_ID")
+  completadaEn DateTime @default(now()) @map("Completada_En")
+
+  alumno  Usuario      @relation("ProgresoAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, leccionId])
+  @@index([alumnoId, recursoId])
+  @@map("Homeschool_Progreso")
 }

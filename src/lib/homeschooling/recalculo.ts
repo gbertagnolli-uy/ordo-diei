@@ -4,8 +4,7 @@ import { repartir, type SalidaPacing, type UnidadTipo } from "./pacing.ts";
 
 export type EstadoDia = "pendiente" | "hecha" | "movida" | "omitida";
 
-/** Tarea completada por el alumno (aunque el día aún no se haya sincronizado) */
-export const ESTADOS_TAREA_HECHA = ["Completada", "Esperando_Aprobacion", "Aprobada"];
+import { ESTADOS_TAREA_HECHA } from "./dia.ts";
 
 export type DiaPlan = {
   id: number;
