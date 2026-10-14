@@ -219,7 +219,7 @@ Fecha con navegación (‹ hoy ›, `Calendar` del proyecto en un `Popover`), `S
 │ │  Ad Primam                                                                       │ │
 │ │  Prima · S. Callisti Papæ et Martyris                                            │ │
 │ │  [ Rezar ]                                                                       │ │
-│ │▓▓▓▓▓▓▓▓▓▓▓▓▓▓ degradado negro → transparente, ~5 % ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│ │
+│ │▓▓▓▓▓▓▓▓▓▓▓ degradado negro → transparente (70 % abajo → 0 %) ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│ │
 │ └──────────────────────────────────────────────────────────────────────────────────┘ │
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────┐ │
 │ │ [img]    │ │ [img]    │ │ [img]    │ │ [img]    │ │ [img]    │ │ [img]    │ │[img] │ │
@@ -230,9 +230,9 @@ Fecha con navegación (‹ hoy ›, `Calendar` del proyecto en un `Popover`), `S
 - **Hora destacada** = la que corresponde a la hora actual (`APP_TZ`, franjas S8). **No obliga** (D45): las otras 7 son cards elegibles, ordenadas cronológicamente a partir de la siguiente.
 - **Card destacada** (`Card` del proyecto, `p-0 overflow-hidden relative`, `min-h-[22rem] md:min-h-[26rem]`, `rounded-2xl`):
   - Imagen a sangre: `<img class="absolute inset-0 size-full object-cover">` (hotlink de Unsplash, S10) con Ken Burns muy lento (respeta `prefers-reduced-motion`).
-  - Overlay **exacto del pedido**: `absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/5 to-transparent` (negro → transparente, **~5 %**).
+  - Overlay (D54, reemplaza el 5 % de D45): `absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/70 via-black/30 to-transparent` (negro → transparente). La parte superior de la foto queda limpia; la opacidad se concentra donde está el texto.
   - Texto encima, blanco, abajo a la izquierda: chip «AHORA · franja», nombre latino grande (Newsreader, `text-4xl md:text-5xl`), nombre castellano + título del día (`text-sm`, opacidad 0,85), botón **Rezar** (`Button`).
-  - **Legibilidad con un velo tan suave**: `text-shadow: 0 1px 2px rgb(0 0 0/.55), 0 0 24px rgb(0 0 0/.35)` y fotos curadas con la **zona inferior oscura o lisa**. Si una foto no da contraste AA con 5 %, se cambia la foto (no el overlay). Subir la opacidad requiere OK del usuario.
+  - **Legibilidad por opacidad, no por elección de fotos** (pedido del usuario, ronda 10): las fotos de las Horas se eligen solo por la luz del momento, sin buscar zonas oscuras. El texto blanco debe dar contraste **≥ 4,5:1** sobre el overlay en las 8 fotos; si alguna no llega, **se sube la opacidad** del overlay (hasta `from-black/85 via-black/40`), nunca se cambia la foto por eso. Sombra de texto sutil opcional: `0 1px 2px rgb(0 0 0/.4)`.
   - Toda la card es el objetivo táctil (abre la Hora); el botón es el foco de teclado.
 - **Cards secundarias**: `Card` con imagen en franja superior (aspecto 16:9), nombre latino, castellano y franja. Grilla `grid-cols-2 sm:grid-cols-3 lg:grid-cols-7`.
 - **Imágenes de las Horas** (S10): 8 fotos fijas de Unsplash por la luz del momento (Matutinum noche estrellada, Laudes alba, Prima mañana temprana, Tertia media mañana, Sexta mediodía, Nona tarde, Vesperæ atardecer, Completorium crepúsculo). IDs en `src/lib/liturgia/horas.ts` con autor y enlace; atribución en el pie de cada card (`text-[10px]`) o en un `Tooltip` «Foto: …».
@@ -292,7 +292,7 @@ Pestañas: **Ordo Missæ** (`missa/<idioma>/Ordo/Ordo.txt` resuelto por versión
 ## 13. Criterios de aceptación
 1. Con la base generada, Calendarium del 14-10-2026 (1906) muestra el título del ejemplo del pedido, color rojo, la Hora actual, el Introito «Statuit ei Dóminus…», los misterios gloriosos y el Martirologio del día.
 2. Cambiar a 1888 el 14-10-2026 muestra S. Teresa con conmemoración de S. Calixto en Vísperas; a 1570, S. Calixto semidoble.
-3. Breviarium destaca la Hora según la hora local; cualquier otra card abre su Hora; la card destacada tiene imagen a sangre y el degradado de ~5 %.
+3. Breviarium destaca la Hora según la hora local; cualquier otra card abre su Hora; la card destacada tiene imagen a sangre y el degradado negro → transparente de D54, con texto legible (≥ 4,5:1) en las 8 fotos.
 4. Cada pantalla tiene su selector de versión, arranca en 1906 y recuerda la elección por pantalla.
 5. Ningún texto en inglés aparece como español; lo no traducido dice «sin traducción».
 6. Un día fuera de la ventana generada muestra el aviso, sin errores.
@@ -305,5 +305,5 @@ Pestañas: **Ordo Missæ** (`missa/<idioma>/Ordo/Ordo.txt` resuelto por versión
 | El HTML de DO cambia al actualizar el commit | Commit fijo + dorados; actualizar es un cambio explícito. |
 | Espacio en la base | Deduplicación; medir en L1; acortar ventana de textos. |
 | Español incompleto o de otra fuente | D52: marca «sin traducción»; nota en Psalterium y Martyrologium. |
-| Contraste con overlay de 5 % | Fotos curadas + sombra de texto; cambiar foto antes que overlay. |
+| Contraste del texto sobre la foto | Overlay más opaco (D54); se sube la opacidad, no se cambia la foto. |
 | Unsplash cambia reglas o cae | Las cards de Horas tienen color de respaldo y título igual de legible. |

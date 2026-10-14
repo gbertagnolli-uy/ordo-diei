@@ -71,6 +71,25 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 
 ## Ronda 9 (2026-10-14) — Reposo v2 y Liturgia (lane 122)
 
+**Estado (2026-10-14, D56): todas «⏳ lista para implementar», ninguna empezada.** Prompt de entrega para el agente: [`PROMPT_REPOSO_LITURGIA.md`](PROMPT_REPOSO_LITURGIA.md).
+
+| Lane | Estado | Depende de | Lane real (al crearla) |
+|---|---|---|---|
+| R1 Frases | ⏳ lista | — | — |
+| R2 Unsplash + panel | ⏳ lista | — | — |
+| R3 Reposo v2 UI | ⏳ lista | N4, R1, R2 | — |
+| L1 Spike DO | ⏳ lista | — | — |
+| L2 Generador + modelo | ⏳ lista | L1 | — |
+| L3 API + componentes | ⏳ lista | L2 | — |
+| L4 Calendarium | ⏳ lista | L3 | — |
+| L5 Breviarium | ⏳ lista | L3 | — |
+| L6 Missale | ⏳ lista | L3 | — |
+| L7 Proprium | ⏳ lista | L3 | — |
+| L8 Ordinarium + Psalterium | ⏳ lista | L3 | — |
+| L9 Rosarium | ⏳ lista | L3 | — |
+
+Quien tome una lane cambia su fila a «🔨 en curso (lane NN)» en el mismo commit en que la crea, y a «✅ integrada (lane NN)» al integrar.
+
 Especificaciones: [`../idle-marco-fotos/SPEC.md`](../idle-marco-fotos/SPEC.md) (R*) y [`../liturgia/SPEC.md`](../liturgia/SPEC.md) (L*). Decisiones D34–D53, supuestos S7–S11 en [`../DECISIONES.md`](../DECISIONES.md) §10. El número de lane se toma al crearla (ver arriba).
 
 ### R1 · Frases del reposo: fuentes y datos
@@ -79,7 +98,7 @@ Especificaciones: [`../idle-marco-fotos/SPEC.md`](../idle-marco-fotos/SPEC.md) (
 - `scripts/reposo/generar-frases.ts` → `src/data/reposo/citas-biblicas.json` y `catecismo-pio-x.json`; tests de §6.3. Sin UI. Tamaño M.
 
 ### R2 · Pool de Unsplash + panel «Reposo»
-- `ConfigReposo`, `FotoUnsplash` (SQL aditivo), `src/lib/reposo/unsplash.ts` (refresco en el cron diario, aviso de descarga una vez por foto, ocultas), `/api/reposo/fotos|config`, `/api/admin/reposo/*`, tarjeta en Administración. Necesita `UNSPLASH_ACCESS_KEY` (el usuario crea la app en unsplash.com/developers). Tests con `fetch` inyectado. Tamaño M.
+- `ConfigReposo`, `FotoUnsplash` (SQL aditivo), `src/lib/reposo/unsplash.ts` (refresco en el cron diario, aviso de descarga una vez por foto, ocultas), `/api/reposo/fotos|config`, `/api/admin/reposo/*`, tarjeta en Administración. Credenciales ya en el `.env` del directorio principal (D55; copiarlo al worktree). Falta que el usuario cargue `UNSPLASH_ACCESS_KEY` en Vercel. Tests con `fetch` inyectado. Tamaño M.
 
 ### R3 · Pantalla de reposo v2 (UI)
 - `ReposoPantalla`, `FraseReposo`, `FondoUnsplash`, `TituloDia`, `src/lib/reposo/frases.ts` (mazos, alternancia, duración); estados `REPOSO → SELECTOR` en `AuthPageClient`; `/api/reposo/dia`. Depende de N4, R1, R2; el título aparece cuando L2 cargó datos. Tamaño M.
@@ -95,7 +114,7 @@ Especificaciones: [`../idle-marco-fotos/SPEC.md`](../idle-marco-fotos/SPEC.md) (
 - `src/lib/liturgia/*`, `/api/liturgia/*` (SPEC §6), `SelectorVersion`, `CabeceraLiturgica`, `LiturgiaTexto`, token `--rubrica`, colores litúrgicos, grupo «Liturgia» en `AppSidebar` con rutas vacías (`Empty`) para las pantallas que aún no existen. Tamaño M.
 
 ### L4 · Calendarium (dashboard) — SPEC §10.1. Tamaño M.
-### L5 · Breviarium (Hora destacada + cards + lector) — SPEC §10.2; elegir las 8 fotos (S10) y verificar contraste con el overlay de 5 %. Tamaño M.
+### L5 · Breviarium (Hora destacada + cards + lector) — SPEC §10.2; elegir las 8 fotos (S10) por la luz del momento y verificar contraste ≥ 4,5:1 con el overlay de D54 (si falla, más opacidad). Tamaño M.
 ### L6 · Missale — SPEC §10.3. Tamaño S.
 ### L7 · Proprium de Tempore + Proprium Sanctorum — SPEC §10.4–10.5 (documentos «libro» de L2). Tamaño M.
 ### L8 · Ordinarium + Psalterium — SPEC §10.6–10.7. Tamaño M.

@@ -164,7 +164,7 @@ Especificaciones: [`idle-marco-fotos/SPEC.md`](idle-marco-fotos/SPEC.md) (reposo
 | D42 | Versiones: solo **Tridentine - 1570**, **Tridentine - 1888** y **Tridentine - 1906**, **Calendarium Generale**. Son las únicas que se descargan y generan. **Predeterminada: Tridentine - 1906**, con **traducción al español**. | — |
 | D43 | **Selector de versión en cada pantalla** de contenido. | — |
 | D44 | Pantallas: **Calendarium** (dashboard: misterios del día, santoral, propio de la Misa del día, Breviario del día), **Breviarium**, **Missale**, **Proprium Sanctorum**, **Proprium de Tempore**, **Ordinarium**, **Psalterium** y **Rosarium**. | — |
-| D45 | **Breviarium destaca la Hora que corresponde a la hora del día**, sin obligar: las demás Horas son cards elegibles. La destacada es una **card con imagen a sangre**, texto encima y **degradado negro → transparente de ~5 % de opacidad** detrás del texto. | — |
+| D45 | **Breviarium destaca la Hora que corresponde a la hora del día**, sin obligar: las demás Horas son cards elegibles. La destacada es una **card con imagen a sangre**, texto encima y **degradado negro → transparente de ~5 % de opacidad** detrás del texto. **Opacidad modificada por D54.** | — |
 
 ### Decisiones del arquitecto (resuelven detalles; el usuario puede cambiarlas)
 
@@ -188,3 +188,23 @@ Especificaciones: [`idle-marco-fotos/SPEC.md`](idle-marco-fotos/SPEC.md) (reposo
 | S9 | Ventana de textos generados: **del 1-ene del año en curso al 31-dic del siguiente**, 3 versiones. El calendario (títulos) se genera 2026–2035. Se regenera con una **GitHub Action** mensual (o a mano con `npm run liturgia:generar`). | Solo a mano desde la PC. |
 | S10 | Las imágenes de las 8 Horas son **8 fotos fijas de Unsplash** elegidas por la luz del momento (madrugada, alba, mañana, media mañana, mediodía, tarde, atardecer, noche), con atribución. | Arte sacro de dominio público guardado en el repo. |
 | S11 | El reposo usa siempre **1906** para el título del día (no hay usuario con sesión que elija). | — |
+
+## 11. Ronda 10 (2026-10-14) — Opacidad, credenciales de Unsplash y entrega (lane 125)
+
+Pedido textual (las claves se **omiten a propósito**: están solo en el `.env`, que no va a git):
+
+> Usa mas opacidad en vez de elegir las fotos con parte de abajo oscura. Estos son las credenciales de unsplash:
+>
+> ID de la app: 1102152
+> Access Key: [omitida — guardada en `.env` como `UNSPLASH_ACCESS_KEY`]
+> Secret Key: [omitida — guardada en `.env` como `UNSPLASH_SECRET_KEY`]
+>
+> Guardalas en el .env.
+>
+> No implementes, solo documenta y deja marcado el trabajo para que lo implemente otro agente.
+
+| # | Decisión | Reemplaza |
+|---|---|---|
+| D54 | **La legibilidad del texto sobre fotos se resuelve con más opacidad, no eligiendo fotos con la parte de abajo oscura.** Card destacada del Breviarium: `bg-gradient-to-t from-black/70 via-black/30 to-transparent` sobre los 3/4 inferiores; si una foto no da 4,5:1, se sube la opacidad (hasta `from-black/85 via-black/40`), nunca se cambia la foto por eso. Igual criterio para el reposo. | El ~5 % de D45 y la «foto curada con zona oscura» de `liturgia/SPEC.md` §10.2 |
+| D55 | **Credenciales de Unsplash en el `.env` del directorio principal** (`UNSPLASH_APP_ID`, `UNSPLASH_ACCESS_KEY`, `UNSPLASH_SECRET_KEY`; `.env*` está en `.gitignore`). La app solo usa la Access Key, del lado del servidor. Clave verificada: `GET /topics/nature` → 200, modo demo (50 pedidos/hora). Falta cargarla en Vercel (lo hace el usuario). | «el usuario crea la app» de LANES R2 |
+| D56 | **No se implementa en esta ronda.** Las lanes R1–R3 y L1–L9 quedan marcadas **«lista para implementar»** en `lanes/LANES.md`, con el prompt de entrega `lanes/PROMPT_REPOSO_LITURGIA.md` para el agente que las tome. | — |
