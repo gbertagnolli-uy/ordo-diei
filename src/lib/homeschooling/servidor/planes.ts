@@ -117,7 +117,7 @@ export async function crearPlan(datos: DatosPlan & { actorId: number }) {
 }
 
 /** Aplica `planearRecalculo` a un plan dentro de una transacción. `fin` nunca cambia. */
-async function recalcularEn(tx: Tx, planId: number, hoy: string) {
+export async function recalcularEn(tx: Tx, planId: number, hoy: string) {
   const plan = await tx.planCurso.findUnique({
     where: { id: planId },
     include: { recurso: true, dias: { include: { tarea: { select: { estado: true } } } } },
