@@ -32,6 +32,8 @@ export type DiaHoy = {
   materia: { nombre: string; icono: string | null; color: string | null };
   recurso: { id: number; titulo: string; tipo: string; unidadTipo: string; url: string | null; portadaUrl: string | null };
   rango: string;
+  /** Tiempo estimado del día, en minutos (para la barra de Primero/Después) */
+  minutosEstimados: number;
   unidadDesde: number;
   unidadHasta: number;
   progreso: number;
@@ -104,6 +106,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
         materia: { nombre: recurso.materia.nombre, icono: recurso.materia.icono, color: recurso.materia.color },
         recurso: { id: recurso.id, titulo: recurso.titulo, tipo: recurso.tipo, unidadTipo: recurso.unidadTipo, url: recurso.url, portadaUrl: recurso.portadaUrl },
         rango: rangoTexto(recurso.unidadTipo, dia.unidadDesde, dia.unidadHasta),
+        minutosEstimados: (dia.unidadHasta - dia.unidadDesde + 1) * recurso.minutosPorUnidad,
         unidadDesde: dia.unidadDesde,
         unidadHasta: dia.unidadHasta,
         progreso: recurso.totalUnidades > 0 ? Math.min(100, Math.round((totalHecho / recurso.totalUnidades) * 100)) : 0,

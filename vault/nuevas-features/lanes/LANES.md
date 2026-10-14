@@ -71,22 +71,24 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 
 ## Ronda 9 (2026-10-14) — Reposo v2 y Liturgia (lane 122)
 
-**Estado (2026-10-14, D56): todas «⏳ lista para implementar», ninguna empezada.** Prompt de entrega para el agente: [`PROMPT_REPOSO_LITURGIA.md`](PROMPT_REPOSO_LITURGIA.md).
+**Estado (2026-10-14): las 12 lanes «✅ integrada» (más N4). R1: selección de citas aprobada por el usuario (2026-10-14). L9: regla dominical ajustada a la fuente aportada por el usuario (página web, no impresa); ver [`PENDIENTES_REPOSO_LITURGIA.md`](PENDIENTES_REPOSO_LITURGIA.md).** Prompt de entrega para el agente: [`PROMPT_REPOSO_LITURGIA.md`](PROMPT_REPOSO_LITURGIA.md).
 
 | Lane | Estado | Depende de | Lane real (al crearla) |
 |---|---|---|---|
-| R1 Frases | ⏳ lista | — | — |
-| R2 Unsplash + panel | ⏳ lista | — | — |
-| R3 Reposo v2 UI | ⏳ lista | N4, R1, R2 | — |
+| R1 Frases | ✅ integrada (lane 135) — selección y textos a revisar por el usuario | — | 135 |
+| R2 Unsplash + panel | ✅ integrada (lane 137) — falta probar con la clave real | — | 137 |
+| R3 Reposo v2 UI | ✅ integrada (lane 139) | N4, R1, R2 | 139 |
 | L1 Spike DO | ✅ integrada (lane 131) | — | 131 |
-| L2 Generador + modelo | ✅ integrada (lane 133) — falta la primera carga: espera el OK del usuario | L1 | 133 |
-| L3 API + componentes | ⏳ lista | L2 | — |
-| L4 Calendarium | ⏳ lista | L3 | — |
-| L5 Breviarium | ⏳ lista | L3 | — |
-| L6 Missale | ⏳ lista | L3 | — |
-| L7 Proprium | ⏳ lista | L3 | — |
-| L8 Ordinarium + Psalterium | ⏳ lista | L3 | — |
-| L9 Rosarium | ⏳ lista | L3 | — |
+| L2 Generador + modelo | ✅ integrada (lane 133); primera carga hecha el 2026-10-14 (lane 146) | L1 | 133 |
+| L3 API + componentes | ✅ integrada (lane 136) | L2 | 136 |
+| L4 Calendarium | ✅ integrada (lane 140) | L3 | 140 |
+| L5 Breviarium | ✅ integrada (lane 141) | L3 | 141 |
+| L6 Missale | ✅ integrada (lane 142) | L3 | 142 |
+| L7 Proprium | ✅ integrada (lane 143) | L3 | 143 |
+| L8 Ordinarium + Psalterium | ✅ integrada (lane 144) | L3 | 144 |
+| L9 Rosarium | ✅ integrada (lane 145) — regla dominical según fuente aportada por el usuario (lane 149) | L3 | 145 |
+
+**N4 (detector de inactividad, hook y pruebas):** ✅ integrada (lane 138), hecha como prerrequisito de R3 (`PROMPT_REPOSO_LITURGIA.md` §3). N5 y N6 siguen pendientes.
 
 Quien tome una lane cambia su fila a «🔨 en curso (lane NN)» en el mismo commit en que la crea, y a «✅ integrada (lane NN)» al integrar.
 
