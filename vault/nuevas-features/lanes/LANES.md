@@ -78,7 +78,7 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 | R1 Frases | ⏳ lista | — | — |
 | R2 Unsplash + panel | ⏳ lista | — | — |
 | R3 Reposo v2 UI | ⏳ lista | N4, R1, R2 | — |
-| L1 Spike DO | ⏳ lista | — | — |
+| L1 Spike DO | 🔨 en curso (lane 131) | — | 131 |
 | L2 Generador + modelo | ⏳ lista | L1 | — |
 | L3 API + componentes | ⏳ lista | L2 | — |
 | L4 Calendarium | ⏳ lista | L3 | — |
