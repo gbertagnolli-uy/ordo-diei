@@ -55,3 +55,18 @@
 | D13 | Los **cofres/sorpresas no son una moneda**. Las monedas son **puntos, estrellas e incienso** (registro extensible). `Usuario.surprises` sigue siendo solo un contador. |
 | D14 | **Lo que dé un cofre (o cualquier premio) debe poder usarse en el Marketplace.** Verificado en el código (`abrirPremioSorpresa`, `lib/comportamiento/server.ts`): los **puntos** suman a `availablePoints` (gastable) y a `puntosAcumulados`; el **incienso** suma a `incienso` (gastable); el **XP** suma a `experienciaHabitos` (cuenta para nivel y para requisitos, **no se gasta**). Los premios "de cartas" y "vales" llegan como cartas/fragmentos y `Recompensa`. Ver regla en `marketplace/SPEC.md` §2. |
 | D15 | Los **sonidos los entrega el usuario en una carpeta** (como la música). Se importan con un script y se asignan a eventos. |
+
+## 5. Ronda 4 (2026-10-13) — Homeschooling: base de código
+
+Conclusión de la evaluación de bases open source, pegada por el usuario (textual):
+
+> **6. Conclusión y Recomendación Final.** Para llevar a Ordo Diei a la vanguardia del software de Homeschooling y Centro de Comando Familiar, el camino técnico más fluido, robusto y profesional es:
+> 1. Descartar OpenCircle como base de código debido a su licencia AGPL v3, su falta de implementación en la UI de cursos y su arquitectura Python/Hono dividida.
+> 2. Utilizar Roost como cantera de componentes de referencia (MIT), extrayendo directamente su subsistema LMS (LessonPlayer, ModuleDetail, ProgressBar), su arquitectura de portafolio (Showcase) y su integración con react-big-calendar.
+> 3. Consolidar todo dentro de Ordo Diei, apalancando su motor de gamificación existente (Cartas coleccionables, tienda de recompensas, roles familiares Padre/Hijo y base de datos Supabase en Prisma 7).
+
+| # | Decisión |
+|---|---|
+| D16 | **OpenCircle descartado** (AGPL v3, sin UI de cursos, Python/Hono). **Roost (MIT) es cantera de componentes**, no base: se copia/adapta lo necesario a Ordo Diei (Next + Prisma 7). Detalle en `homeschooling/MAPEO_COMPONENTES_ROOST.md`. |
+| D17 | Homeschooling se divide en **6 lanes H1..H6** (ver `lanes/LANES_HOMESCHOOLING.md`) y **no se implementa todavía**: solo documentación. Se arranca cuando el usuario lo ordene. |
+| D18 | Homeschooling **reutiliza la Tienda** (lane 103) para sus recompensas y el motor de cartas para premios de repaso; no crea otra economía. |

@@ -16,7 +16,7 @@ Investigación de mercado pegada por el usuario, guardada sin cambios en [`ref/`
 | [`marketplace/`](marketplace/SPEC.md) | Should-Have | M | economía y flujo de `Recompensa` existentes |
 | [`meal-planner/`](meal-planner/SPEC.md) | Could-Have (e-commerce) | M | — |
 | [`musica-fondo/`](musica-fondo/SPEC.md) | Won't-Have como reproductor propio | S–M | motor de audio de sonidos |
-| [`homeschooling/`](homeschooling/SPEC.md) | Could-Have («océano azul») | XL (varias lanes) | hábitos/libros, evidencia |
+| [`homeschooling/`](homeschooling/SPEC.md) (lanes H1..H6: [`LANES_HOMESCHOOLING.md`](lanes/LANES_HOMESCHOOLING.md)) | Could-Have («océano azul») | XL (varias lanes) | hábitos/libros, evidencia |
 
 Orden sugerido (a confirmar): 1) sonidos + base de audio → 2) kiosk/PWA → 3) idle con marco de fotos → 4) temporizadores → 5) marketplace → 6) música → 7) meal planner → 8) homeschooling por fases.
 
