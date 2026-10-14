@@ -116,3 +116,75 @@ Conclusión de la evaluación de bases open source, pegada por el usuario (textu
 |---|---|
 | D32 | **Proceso de verificación en tres momentos** (`homeschooling/PLAN_VERIFICACION.md`): autoverificación de cada lane antes de integrar, verificación independiente en `dev` por otra sesión y auditoría final. Es solo de código: script de invariantes de solo lectura (`homeschooling/verificacion/verificar_invariantes.sh`), vectores de referencia calculados aparte, mutaciones y matrices de cumplimiento del plan. Sin smoke tests ni navegador (los hace el usuario; lista en §10). Los tests con base real siguen apagados salvo pedido del usuario. |
 | D33 | Contradicciones X20 y X21 resueltas (`PLAN_INTEGRACION_ROOST.md` §9): el modo relajado condiciona `celebrate` entero (no solo `TASK_SUCCESS`), y un checkpoint de video adelantado muestra el **primero** sin responder. |
+
+## 10. Ronda 9 (2026-10-14) — Reposo con Unsplash y frases · motor Divinum Officium (lane 122)
+
+Pedido textual (nada omitido, con la ortografía original):
+
+> 1) planifica y especifica el idle state.
+> En vez de screensaver con google fotos, será con imagenes de naturaleza de Unsplash.
+>
+> Pero además de eso, habrán frases que se mostrarán sobre las imagenes. Por eso el logo y el nombre de la APP debe aparecer en una esquina más pequeño y la jerarquía debe estar enfocada en la frase.
+>
+> Las frases serán en latín, de la vulgata clementina, debajo con menor jerarquía la traducción al español de la versión en castellano de Torres Amat, preconciliar.
+> En menor jerarquía que la versión en castellano, el libro, capitulo y versículo.
+>
+> Además de esas frases en latín, también aparecerán frases del catecismo de San Pio X, con la pregunta en jerarqía mayor y la respuesta en jerarqía menor.
+>
+> Deben mostrarse un tipo a la vez, una cita biblica, luego una pregunta del catecismo, luego una cita biblica, y así sucesivamente.
+>
+> Las imagenes deben ser aleatorias, para que las citas no aparezcan siempre con la misma imagen.
+>
+> 2) A su vez, debemos clonar el motor de Divinum Officium: https://www.divinumofficium.com/www/horas/Help/technical.html
+>
+> https://github.com/divinumofficium/divinum-officium
+>
+> Ese motor de divinum officium, alimentará varias cosas:
+>
+> - Mostrar el titulo del propio del día (el día que se celebra hoy, el santo, la festividad por ejemplo "S. Callisti Papæ et Martyris ~ Duplex
+> Tempora: Feria Quarta infra Hebdomadam XX post Octavam Pentecostes II. Octobris") en el screensaver.
+> - Alimentar una pantalla de Calendario Liturgico, que debe tener un dashboard para mostrar los misterios del día, el santoral del dia, propio de día del misal, breviarum del día, todo de la liturgia de "Tridentine - 1906" con traducción al español, Calendarium Generale, esa y las versiones de 1888 y 1570 son las unicas versiones que deben descargarse y generarse. Sin embargo la que se usará de forma predeterminada para los usuarios es la de "Tridentine - 1906", habrá un selector en cada pantalla de cada tipo de contenido para modificar la versión.
+> - Cada tipo de contenido con su propia pantalla (Breviarium, Missale, Propium Sanctorum, Ordinarium, Psalterium, Propium de Tempore), Misterium Rosarium (o como se diga correctamente en latin).
+> - La pantalla de breviarium, debe seleccionar la oración correspondiente según la hora del día. Pero sin obligar, sino que mostrándola como principal, el usuario puede elegir otra card y rezar lo que le plazca. La oración destacada debe tener una imagen destacada, en forma de card con background completo y el texto encima, la imagen ocupando toda la card. En donde se muestra el texto, un pequeño overlay con degradado de negro a transparente, con baja opacidad, 5% mas o menos. La idea es una card muy visual para destacar la oración correspondiente (Laudes, Nona, Sexta, etc.)
+
+Especificaciones: [`idle-marco-fotos/SPEC.md`](idle-marco-fotos/SPEC.md) (reposo v2) y [`liturgia/SPEC.md`](liturgia/SPEC.md) (motor y pantallas). Prueba real del motor: [`liturgia/SPIKE_MOTOR.md`](liturgia/SPIKE_MOTOR.md).
+
+### Decisiones firmes (del pedido)
+
+| # | Decisión | Reemplaza |
+|---|---|---|
+| D34 | El fondo del reposo son **fotos de naturaleza de Unsplash**. **Google Fotos queda fuera** (lanes N1 y N8 canceladas; sin OAuth, sin Picker, sin fotos subidas). | D1 (fondo), S1 |
+| D35 | Sobre las fotos se muestran **frases**; la frase es la **jerarquía principal**. Logo y nombre «Ordo Diei» van **en una esquina, más chicos**. | §3.1 del SPEC v1 |
+| D36 | **Cita bíblica** = 3 niveles: **latín de la Vulgata Clementina** (mayor) → **español de Torres Amat** (menor) → **libro, capítulo y versículo** (la menor). | — |
+| D37 | **Catecismo de San Pío X** = 2 niveles: **pregunta** (mayor) → **respuesta** (menor). | — |
+| D38 | **Alternancia estricta**: cita bíblica, pregunta del catecismo, cita bíblica… Un tipo por vez. | — |
+| D39 | **Imagen aleatoria e independiente de la frase**: la misma cita no queda atada a la misma foto. | — |
+| D40 | El reposo muestra el **título del oficio del día** que da Divinum Officium (ej. «S. Callisti Papæ et Martyris ~ Duplex» / «Tempora: Feria Quarta infra Hebdomadam XX post Octavam Pentecostes II. Octobris»). | §8 del SPEC v1 («santoral fuera de alcance») |
+| D41 | Se **clona el motor de Divinum Officium** (MIT) y alimenta: título del día en el reposo, **Calendario litúrgico** (dashboard) y una **pantalla por tipo de contenido**. | — |
+| D42 | Versiones: solo **Tridentine - 1570**, **Tridentine - 1888** y **Tridentine - 1906**, **Calendarium Generale**. Son las únicas que se descargan y generan. **Predeterminada: Tridentine - 1906**, con **traducción al español**. | — |
+| D43 | **Selector de versión en cada pantalla** de contenido. | — |
+| D44 | Pantallas: **Calendarium** (dashboard: misterios del día, santoral, propio de la Misa del día, Breviario del día), **Breviarium**, **Missale**, **Proprium Sanctorum**, **Proprium de Tempore**, **Ordinarium**, **Psalterium** y **Rosarium**. | — |
+| D45 | **Breviarium destaca la Hora que corresponde a la hora del día**, sin obligar: las demás Horas son cards elegibles. La destacada es una **card con imagen a sangre**, texto encima y **degradado negro → transparente de ~5 % de opacidad** detrás del texto. | — |
+
+### Decisiones del arquitecto (resuelven detalles; el usuario puede cambiarlas)
+
+| # | Decisión | Por qué |
+|---|---|---|
+| D46 | Ortografía latina correcta en la UI: **Proprium** (no «Propium»), **Breviarium**, **Rosarium** con subtítulo **«Mysteria Rosarii»** («los misterios del Rosario»). | Pedido: «o como se diga correctamente en latín». |
+| D47 | El motor **no se reescribe**: se usa el **Perl original** de Divinum Officium (16 000 líneas, verificado en esta máquina) como **generador fuera de línea**. Un script lo descarga (commit fijo), lo ejecuta y guarda el resultado estructurado en la base. La app en Vercel **solo lee** de la base. | Vercel no ejecuta Perl (lane 41: la app corre en Vercel); reescribir la precedencia litúrgica en TS es enorme y propenso a errores (memoria *reuse-open-source*). |
+| D48 | Para las pantallas «de libro» (Proprium, Psalterium, Ordinarium) **tampoco se porta código**: un script Perl propio y chico (`scripts/liturgia/do-libro.pl`) llama a la función original `setupstring()` de DO, que ya resuelve secciones `[...]`, `@referencias` y condicionales `(sed rubrica …)` para la versión pedida, y exporta JSON. La precedencia (qué se celebra cada día) sale de `officium.pl`/`missa.pl`. **Todo se pre-genera**; en runtime la app solo lee la base. | Verificado: `setupstring('Espanol', 'Sancti/10-14.txt')` con 1906 devuelve Officium «S. Calixto, Papa y Mártir», Oratio, Secreta, Postcommunio, Rank y Rule (`liturgia/SPIKE_MOTOR.md` §6). |
+| D49 | **Misterios del Rosario**: los **15 tradicionales** (sin los luminosos de 2002, coherente con «preconciliar»). Reparto: lunes y jueves gozosos; martes y viernes dolorosos; miércoles y sábado gloriosos; domingos según el tiempo (Adviento a Septuagésima gozosos, Septuagésima/Cuaresma a Pascua dolorosos, Pascua a Adviento gloriosos). **A confirmar con una fuente impresa preconciliar en la lane del Rosarium.** | — |
+| D50 | **Catecismo = Catecismo Mayor de San Pío X** (Compendio de 1905; versión castellana de 1906, dominio público, en Wikisource). | Es el único texto castellano de dominio público localizado; el de 1912 queda como alternativa. |
+| D51 | **Las citas bíblicas son una selección curada** (≥ 365), no versículos al azar de toda la Biblia (genealogías, leyes rituales y versículos sin sentido aislados). Numeración **de la Vulgata** (la de Torres Amat). | Calidad del reposo. |
+| D52 | **El español de la liturgia (DO) no es Torres Amat**: DO trae sus propias traducciones (salmos modernos, Martirologio con notas actuales) y, si falta el archivo español, **cae al inglés**. Regla: **nunca mostrar inglés como si fuera español**; si no hay español se muestra solo el latín con la marca «sin traducción». Torres Amat se usa **solo en las frases del reposo** (lo pedido). | Verificado en el repo de DO (ver `liturgia/SPIKE_MOTOR.md` §4). |
+| D53 | En **Missale**, DO **no tiene un Misal de 1888**: «Tridentine - 1888» y «Tridentine - 1906» usan el Misal de 1910. El selector lo indica («1888 → Misal de 1910») en vez de ocultarlo. | Verificado: mismo resultado para 1888, 1906 y 1910. |
+
+### Supuestos (no bloquean; confirmar cuando convenga)
+
+| # | Supuesto | Alternativa |
+|---|---|---|
+| S7 | El selector de versión **se recuerda por pantalla y por dispositivo** (`?version=` en la URL + preferencia local); cualquier pantalla nueva arranca en 1906. | Preferencia global por usuario en la base. |
+| S8 | Franjas de la Hora destacada: Matutinum 00:00–04:59, Laudes 05:00–06:59, Prima 07:00–08:29, Tertia 08:30–10:59, Sexta 11:00–13:29, Nona 13:30–15:59, Vesperæ 16:00–19:29, Completorium 19:30–23:59 (hora de `APP_TZ`). | Calcularlas con la salida/puesta del sol. |
+| S9 | Ventana de textos generados: **del 1-ene del año en curso al 31-dic del siguiente**, 3 versiones. El calendario (títulos) se genera 2026–2035. Se regenera con una **GitHub Action** mensual (o a mano con `npm run liturgia:generar`). | Solo a mano desde la PC. |
+| S10 | Las imágenes de las 8 Horas son **8 fotos fijas de Unsplash** elegidas por la luz del momento (madrugada, alba, mañana, media mañana, mediodía, tarde, atardecer, noche), con atribución. | Arte sacro de dominio público guardado en el repo. |
+| S11 | El reposo usa siempre **1906** para el título del día (no hay usuario con sesión que elija). | — |
