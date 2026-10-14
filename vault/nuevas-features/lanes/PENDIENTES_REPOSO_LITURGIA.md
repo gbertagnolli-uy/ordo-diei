@@ -19,7 +19,7 @@
 - **Sin verificar**: la proyección de espacio (< 150 MB) es una extrapolación de un mes (octubre 2026); se vuelve a medir tras la primera carga real.
 
 ## L2 · Generador y modelo de datos (lane 133)
-- [ ] **Para el usuario — OK para la primera carga en la base de producción.** El generador está listo y probado; **no se corrió ninguna carga**. Comandos (desde la raíz del repo, con el `.env`):
+- [x] **Primera carga HECHA (2026-10-14, con tu OK).** Cargados en las 4 tablas nuevas: 10 956 días (calendario 2026–2035 × 3 versiones), 28 131 documentos (textos y libros 2026–2027 × 3 versiones, Kalendarium y Martirologio) y 31 979 bloques únicos. Verificado en la base: 14-10-2026 da «S. Callisti Papæ et Martyris» / «S. Calixto, Papa y Mártir», Duplex, rojo, en las tres versiones (1570 Semiduplex); Laudes 1906 sin bloques faltantes; Misa, Martirologio 10-15 y Salmo 92 presentes. Se cargó con un script de una sola vez que lee los volcados de `--volcar` en streaming (porque `--importar` junta todo en memoria y el equipo tenía poca RAM libre). **Para repetirla o ampliarla**, los comandos son (antes del OK era una propuesta). Comandos (desde la raíz del repo, con el `.env`):
   ```bash
   npm run liturgia:descargar                    # Divinum Officium (commit fijo) + dependencias Perl, una sola vez
   # 1) ensayo: genera, mide y deja JSON en .cache/ (no toca la base) — ya se corrió, ver cifras abajo
@@ -120,3 +120,8 @@
 
 
 
+
+## Carga inicial de la liturgia (lane 146)
+- **Hecha** (ver L2). **Sin verificar**: las pantallas y `/api/liturgia/*` contra estos datos en el navegador (nadie las abrió con datos reales todavía); y `--importar` de `generar.ts` conviene pasarlo a lectura en streaming con deduplicación de bloques (hoy carga `bloques.jsonl`, 145 656 líneas, entero en memoria).
+- **Revisar el espacio**: el JSON sin comprimir es ~130 MB; el tamaño real en Postgres (TOAST) conviene mirarlo en el panel de Supabase.
+- Los volcados (`.cache/ensayo-full`, `.cache/ensayo-cal`, 383 MB) vivían en el worktree de la lane 133, que se borró: si hace falta recargar, hay que volver a generar (`npm run liturgia:generar`, ~1 h).
