@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Camera, Flame, GraduationCap } from "lucide-react";
+import { Camera, Compass, Flame, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -36,6 +36,11 @@ export default function HoyAprendo({ nombre, fotoUrl, racha, dias }: { nombre: s
         )}
       </header>
 
+      <Button asChild variant="outline" className="w-full">
+        <Link href="/dashboard/homeschooling/horas">
+          <Compass /> Mis actividades
+        </Link>
+      </Button>
       <Button asChild variant="outline" className="w-full">
         <Link href="/dashboard/homeschooling/portafolio">
           <Camera /> Mi portafolio

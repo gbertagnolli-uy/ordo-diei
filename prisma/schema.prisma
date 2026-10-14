@@ -96,16 +96,19 @@ model Usuario {
   metaTienda        MetaTienda?
 
   // Homeschooling (vault/nuevas-features/homeschooling/ARQUITECTURA_DETALLADA.md §3)
-  materiasCreadas     Materia[]              @relation("MateriasCreadas")
-  recursosCreados     RecursoCurso[]         @relation("RecursosCreados")
-  leccionesCreadas    LeccionCurso[]         @relation("LeccionesCreadas")
-  planesAlumno        PlanCurso[]            @relation("PlanesAlumno")
-  diasNoLectivos      DiaNoLectivo[]         @relation("DiasNoLectivosAlumno")
-  progresoLecciones   ProgresoLeccion[]      @relation("ProgresoAlumno")
-  evidenciasHs        EvidenciaAprendizaje[] @relation("EvidenciasAlumno")
-  evidenciasRevisadas EvidenciaAprendizaje[] @relation("EvidenciasRevisadas")
-  intentosQuiz        IntentoQuiz[]          @relation("IntentosQuizAlumno")
-  repasos             TarjetaRepaso[]        @relation("RepasosAlumno")
+  materiasCreadas     Materia[]               @relation("MateriasCreadas")
+  recursosCreados     RecursoCurso[]          @relation("RecursosCreados")
+  leccionesCreadas    LeccionCurso[]          @relation("LeccionesCreadas")
+  planesAlumno        PlanCurso[]             @relation("PlanesAlumno")
+  diasNoLectivos      DiaNoLectivo[]          @relation("DiasNoLectivosAlumno")
+  progresoLecciones   ProgresoLeccion[]       @relation("ProgresoAlumno")
+  evidenciasHs        EvidenciaAprendizaje[]  @relation("EvidenciasAlumno")
+  evidenciasRevisadas EvidenciaAprendizaje[]  @relation("EvidenciasRevisadas")
+  intentosQuiz        IntentoQuiz[]           @relation("IntentosQuizAlumno")
+  repasos             TarjetaRepaso[]         @relation("RepasosAlumno")
+  actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
+  actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
+  metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
 
   @@map("Usuarios")
 }
@@ -728,8 +731,10 @@ model Materia {
   creadorId   Int             @map("Creador_ID")
   createdAt   DateTime        @default(now()) @map("Created_At")
 
-  creador  Usuario        @relation("MateriasCreadas", fields: [creadorId], references: [id])
-  recursos RecursoCurso[]
+  creador     Usuario            @relation("MateriasCreadas", fields: [creadorId], references: [id])
+  recursos    RecursoCurso[]
+  actividades ActividadOffline[]
+  metas       MetaHoras[]
 
   @@index([activa, orden])
   @@map("Homeschool_Materias")
@@ -954,4 +959,53 @@ model TarjetaRepaso {
   @@unique([alumnoId, leccionId])
   @@index([alumnoId, proximo, resuelta])
   @@map("Homeschool_Repasos")
+}
+
+// ← events de Roost: una actividad fuera de pantalla (salida, museo, experimento); suma horas a cada participante
+model ActividadOffline {
+  id          Int      @id @default(autoincrement())
+  materiaId   Int      @map("Materia_ID")
+  titulo      String   @map("Titulo")
+  descripcion String?  @map("Descripcion")
+  inicio      DateTime @map("Inicio")
+  fin         DateTime @map("Fin")
+  lugar       String?  @map("Lugar")
+  creadorId   Int      @map("Creador_ID")
+  createdAt   DateTime @default(now()) @map("Created_At")
+  updatedAt   DateTime @updatedAt @map("Updated_At")
+
+  materia       Materia                 @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador       Usuario                 @relation("ActividadesCreadas", fields: [creadorId], references: [id])
+  participantes ParticipanteActividad[]
+
+  @@index([inicio])
+  @@map("Homeschool_Actividades")
+}
+
+// ← event_attendees de Roost, sin RSVP: quién participó
+model ParticipanteActividad {
+  id          Int      @id @default(autoincrement())
+  actividadId Int      @map("Actividad_ID")
+  alumnoId    Int      @map("Alumno_ID")
+  createdAt   DateTime @default(now()) @map("Created_At")
+
+  actividad ActividadOffline @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  alumno    Usuario          @relation("ActividadesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadId, alumnoId])
+  @@map("Homeschool_Participantes")
+}
+
+// Meta de horas que fija el padre por alumno y materia (sin cifras precargadas)
+model MetaHoras {
+  id        Int @id @default(autoincrement())
+  alumnoId  Int @map("Alumno_ID")
+  materiaId Int @map("Materia_ID")
+  horas     Int @map("Horas")
+
+  alumno  Usuario @relation("MetasHorasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, materiaId])
+  @@map("Homeschool_Metas_Horas")
 }
