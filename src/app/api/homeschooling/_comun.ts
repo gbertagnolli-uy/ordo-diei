@@ -95,3 +95,15 @@ export const preguntasEditables = z.object({
     )
     .max(20),
 });
+
+export const datosActividad = z
+  .object({
+    materiaId: idPositivo,
+    titulo: z.string().trim().min(1, "Falta el título de la actividad").max(150),
+    descripcion: z.string().trim().max(1000).nullable().optional(),
+    inicio: z.coerce.date(),
+    fin: z.coerce.date(),
+    lugar: z.string().trim().max(150).nullable().optional(),
+    alumnoIds: z.array(idPositivo).min(1, "Elegí al menos un alumno"),
+  })
+  .refine((d) => d.fin > d.inicio, { message: "El fin tiene que ser posterior al inicio", path: ["fin"] });

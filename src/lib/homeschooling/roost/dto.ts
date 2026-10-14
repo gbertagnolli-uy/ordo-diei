@@ -1,7 +1,7 @@
 // Portado de vendor/roost/src/db/adapters/mongodb/index.ts:472-515 (mapModule, mapRecording, mapLessonCompletion)
 // (msrbuilds/roost@492af47). Cambios: filas de Prisma (camelCase, ids numéricos) → DTO con los nombres de Roost.
-import type { DiaLectivo, EvidenciaAprendizaje, EvidenciaImagen, LeccionCurso, Materia, RecursoCurso } from "@prisma/client";
-import type { Group, Module, ModuleWithProgress, Recording, RecordingWithCompletion, ShowcaseWithDetails } from "./tipos.ts";
+import type { ActividadOffline, DiaLectivo, EvidenciaAprendizaje, EvidenciaImagen, LeccionCurso, Materia, RecursoCurso } from "@prisma/client";
+import type { EventWithDetails, Group, Module, ModuleWithProgress, Recording, RecordingWithCompletion, ShowcaseWithDetails } from "./tipos.ts";
 
 export function mapGroup(m: Materia): Group {
   return {
@@ -105,5 +105,24 @@ export function mapShowcase(
     images: [...e.imagenes]
       .sort((a, b) => a.orden - b.orden || a.id - b.id)
       .map((i) => ({ id: i.id, showcase_id: i.evidenciaId, image_url: i.archivoUrl, display_order: i.orden, caption: i.pie })),
+  };
+}
+
+/** Portado de `mapEvent` (vendor/roost/src/db/adapters/mongodb/index.ts:311): actividad → DTO con los nombres de Roost */
+export function mapEvent(
+  a: ActividadOffline & { materia: { nombre: string }; participantes: { alumno: { id: number; nombre: string; fotoUrl: string | null } }[] }
+): EventWithDetails {
+  return {
+    id: a.id,
+    title: a.titulo,
+    description: a.descripcion,
+    start_time: a.inicio.toISOString(),
+    end_time: a.fin.toISOString(),
+    location: a.lugar,
+    materia_id: a.materiaId,
+    created_by: a.creadorId,
+    materia_name: a.materia.nombre,
+    duracion_min: Math.max(0, Math.round((a.fin.getTime() - a.inicio.getTime()) / 60000)),
+    participantes: a.participantes.map((p) => p.alumno),
   };
 }

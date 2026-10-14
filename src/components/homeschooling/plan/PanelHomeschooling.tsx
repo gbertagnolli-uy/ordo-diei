@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, CalendarOff, Camera, ClipboardCheck, GraduationCap, Plus } from "lucide-react";
+import { AlertTriangle, CalendarDays, CalendarOff, Camera, ClipboardCheck, Compass, FileBarChart, GraduationCap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
@@ -42,6 +42,16 @@ export default function PanelHomeschooling({ materias, alumnos, progresos, pendi
           <Button asChild variant="outline">
             <Link href="/dashboard/homeschooling/portafolio">
               <Camera /> Portafolio
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/homeschooling/horas">
+              <Compass /> Actividades
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/homeschooling/reportes">
+              <FileBarChart /> Reportes
             </Link>
           </Button>
           <Button asChild variant="outline">

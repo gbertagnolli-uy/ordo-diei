@@ -90,6 +90,13 @@ export interface Event {
   created_by: number;
 }
 
+/** Actividad con lo que muestran las pantallas (materia y participantes) */
+export interface EventWithDetails extends Event {
+  materia_name: string;
+  duracion_min: number;
+  participantes: { id: number; nombre: string; fotoUrl: string | null }[];
+}
+
 /** Roost `EventAttendee` → `ParticipanteActividad` (sin estado de RSVP). */
 export interface EventAttendee {
   event_id: number;
