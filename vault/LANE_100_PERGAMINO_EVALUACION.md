@@ -13,5 +13,9 @@
 - `Recompensas.Evaluacion` (columna nueva, solo `ADD COLUMN`, aplicada con `db execute`): copia la evaluación del comportamiento en el premio, el vale y el reconocimiento. Los premios ya creados leen la de `Comportamiento` por la relación.
 - `RecompensaVista.evaluacion`: solo viaja mientras el premio está sin abrir.
 
-## Pendiente (UI)
-- Paso previo en `ModalSorpresa`: si hay evaluación, pergamino (Hoja medieval, Parisienne marrón oscuro) con botón para continuar; si no, directo al 3D. Falta el diseño de la carpeta `Pergamino`.
+## Hecho (UI)
+- Asset: `public/premios/hoja-medieval.webp`, sacado de `Pergamino/realistic-rolled-parchment-paper-isolated.zip` (`11468962.png`): se recortó la hoja central **sin los rodillos** y se rasgaron los bordes superior e inferior (los laterales ya eran irregulares) con ImageMagick. Los íconos `parchment*.png`, `letter*.png`, `map.png` de esa carpeta no se usaron (son íconos de juego, no hojas para texto).
+- Fuente: Parisienne vía `next/font/google` (`--font-parisienne`, en `layout.tsx`), color `#4a2c12`.
+- `ModalSorpresa`: prop `evaluacion`; si hay, primero se muestra `PergaminoEvaluacion` (con el título como motivo en los regalos) y el botón «Continuar» pasa a la animación 3D; si no hay, va directo. El reconocimiento espera a que se lea antes de lanzar los confites.
+- `MisPremios` pasa `r.evaluacion` al abrir.
+- Nota: el premio se acredita en el servidor al tocar «abrir», antes de leer el pergamino (no se cambió el comportamiento de la API).
