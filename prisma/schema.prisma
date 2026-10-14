@@ -439,7 +439,7 @@ model Comportamiento {
   @@map("Comportamientos")
 }
 
-// ===================================
+// ==========================================
 // Cartas católicas coleccionables (vault/CARTAS_CATOLICAS.md)
 // ==========================================
 
@@ -1009,7 +1009,8 @@ model GeneracionLiturgica {
   createdAt  DateTime @default(now()) @map("Created_At")
 
   @@map("Generaciones_Liturgicas")
-=======
+}
+
 // ← events de Roost: una actividad fuera de pantalla (salida, museo, experimento); suma horas a cada participante
 model ActividadOffline {
   id          Int      @id @default(autoincrement())
