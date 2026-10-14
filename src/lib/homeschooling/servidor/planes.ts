@@ -116,15 +116,13 @@ export async function crearPlan(datos: DatosPlan & { actorId: number }) {
   }
 }
 
-/** Aplica `planearRecalculo` a un plan dentro de una transacción. `fin` nunca cambia. */
-export async function recalcularEn(tx: Tx, planId: number, hoy: string) {
-  const plan = await tx.planCurso.findUnique({
+/** Carga un plan y arma la entrada de `planearRecalculo` (sin escribir nada) */
+async function entradaDePlan(db: Tx | typeof prisma, planId: number, hoy: string, noLectivosExtra: string[] = []) {
+  const plan = await db.planCurso.findUnique({
     where: { id: planId },
     include: { recurso: true, dias: { include: { tarea: { select: { estado: true } } } } },
   });
   if (!plan) throw new NoEncontradoError("Plan no encontrado");
-  if (plan.estado !== "activo") return null;
-
   const dias: DiaPlan[] = plan.dias.map((d) => ({
     id: d.id,
     fecha: aClave(d.fecha),
@@ -133,7 +131,7 @@ export async function recalcularEn(tx: Tx, planId: number, hoy: string) {
     estado: d.estado,
     tareaEstado: d.tarea?.estado ?? null,
   }));
-  const r = planearRecalculo({
+  const entrada = {
     dias,
     hoy,
     inicio: aClave(plan.inicio),
@@ -141,8 +139,16 @@ export async function recalcularEn(tx: Tx, planId: number, hoy: string) {
     diasSemana: plan.diasSemana,
     totalUnidades: plan.recurso.totalUnidades,
     unidadTipo: plan.recurso.unidadTipo as UnidadTipo,
-    noLectivosAlumno: await noLectivosDe(tx, plan.alumnoId),
-  });
+    noLectivosAlumno: [...(await noLectivosDe(db, plan.alumnoId)), ...noLectivosExtra],
+  };
+  return { plan, entrada };
+}
+
+/** Aplica `planearRecalculo` a un plan dentro de una transacción. `fin` nunca cambia. */
+export async function recalcularEn(tx: Tx, planId: number, hoy: string) {
+  const { plan, entrada } = await entradaDePlan(tx, planId, hoy);
+  if (plan.estado !== "activo") return null;
+  const r = planearRecalculo(entrada);
 
   if (r.marcarHechas.length) {
     await tx.diaLectivo.updateMany({ where: { id: { in: r.marcarHechas } }, data: { estado: "hecha" } });
@@ -236,5 +242,59 @@ export async function omitirDia(datos: { actorId: number; diaId: number }) {
     const dia = await cargarDiaEditable(tx, datos.diaId);
     if (dia.tarea) await tx.tarea.deleteMany({ where: { id: dia.tarea.id, estado: "Pendiente" } });
     return tx.diaLectivo.update({ where: { id: dia.id }, data: { estado: "omitida", tareaId: null } });
+  });
+}
+
+// ---------- Días sin clase: vista previa, listado y baja ----------
+
+/** «Antes/después» de marcar un día sin clase, por cada plan activo de los alumnos (no escribe) */
+export async function vistaNoLectivo(datos: { actorId: number; alumnoIds: number[]; fecha: string; hoy: string }) {
+  await exigirPadre(datos.actorId);
+  if (!fechaValida(datos.fecha)) throw new DatoInvalidoError("Fecha no válida");
+  const planes = await prisma.planCurso.findMany({
+    where: { alumnoId: { in: datos.alumnoIds }, estado: "activo" },
+    include: { recurso: { select: { titulo: true } }, alumno: { select: { nombre: true } } },
+  });
+  const resumen = (r: ReturnType<typeof planearRecalculo>) => ({
+    dias: r.pacing.dias.length,
+    promedio: r.pacing.promedio,
+    ultimoDia: r.pacing.dias.at(-1)?.fecha ?? null,
+    aviso: r.pacing.aviso?.tipo ?? null,
+  });
+  const salida = [];
+  for (const p of planes) {
+    const antes = planearRecalculo((await entradaDePlan(prisma, p.id, datos.hoy)).entrada);
+    const despues = planearRecalculo((await entradaDePlan(prisma, p.id, datos.hoy, [datos.fecha])).entrada);
+    salida.push({
+      planId: p.id,
+      alumno: p.alumno.nombre,
+      curso: p.recurso.titulo,
+      fin: aClave(p.fin),
+      antes: resumen(antes),
+      despues: resumen(despues),
+    });
+  }
+  return salida;
+}
+
+export async function listarNoLectivos(actorId: number) {
+  await exigirPadre(actorId);
+  const filas = await prisma.diaNoLectivo.findMany({
+    orderBy: [{ fecha: "desc" }, { alumnoId: "asc" }],
+    take: 300,
+    include: { alumno: { select: { nombre: true } } },
+  });
+  return filas.map((f) => ({ id: f.id, alumnoId: f.alumnoId, alumno: f.alumno.nombre, fecha: aClave(f.fecha), motivo: f.motivo }));
+}
+
+export async function quitarNoLectivo(datos: { actorId: number; id: number; hoy: string }) {
+  await exigirPadre(datos.actorId);
+  return prisma.$transaction(async (tx) => {
+    const fila = await tx.diaNoLectivo.findUnique({ where: { id: datos.id } });
+    if (!fila) throw new NoEncontradoError("Día sin clase no encontrado");
+    await tx.diaNoLectivo.delete({ where: { id: fila.id } });
+    const planes = await tx.planCurso.findMany({ where: { alumnoId: fila.alumnoId, estado: "activo" }, select: { id: true } });
+    for (const p of planes) await recalcularEn(tx, p.id, datos.hoy);
+    return { ok: true };
   });
 }

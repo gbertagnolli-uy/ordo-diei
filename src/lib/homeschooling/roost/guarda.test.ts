@@ -54,3 +54,27 @@ test("todo .tsx de components/homeschooling declara su origen", () => {
   }
   assert.deepEqual(fallos, []);
 });
+
+// Estos módulos los importan componentes del navegador: si arrastran Prisma o el servidor, `next build` falla (pg no corre en el cliente).
+const PUROS = [
+  "src/lib/homeschooling/video.ts",
+  "src/lib/homeschooling/pacing.ts",
+  "src/lib/homeschooling/config.ts",
+  "src/lib/homeschooling/roost/permisos.ts",
+  "src/lib/homeschooling/roost/tipos.ts",
+  "src/lib/homeschooling/roost/router.tsx",
+  "src/lib/homeschooling/roost/services/http.ts",
+  "src/lib/homeschooling/roost/services/module.ts",
+  "src/lib/homeschooling/roost/services/group.ts",
+];
+
+test("los módulos que usa el navegador no importan Prisma ni el servidor", () => {
+  const fallos: string[] = [];
+  for (const f of PUROS) {
+    const texto = readFileSync(join(RAIZ, f), "utf8");
+    for (const m of texto.matchAll(/^(?:import|export)\s(?!type\b)[^;]*?from\s+["']([^"']+)["']/gm)) {
+      if (/prisma|habitos\/|servidor\/|\/session/.test(m[1])) fallos.push(`${f}: ${m[1]}`);
+    }
+  }
+  assert.deepEqual(fallos, []);
+});
