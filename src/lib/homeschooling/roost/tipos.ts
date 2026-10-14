@@ -3,9 +3,28 @@
 // Cambios: ids `number`; solo los campos del esquema de ARQUITECTURA_DETALLADA §3 y PLAN_INTEGRACION_ROOST §4.1;
 // los nombres snake_case de Roost se conservan para no tocar los componentes portados; estados y textos en español.
 
+import type { DificultadTarea } from "@prisma/client";
+
 export type VideoPlatform = "youtube" | "vimeo";
 
-/** Roost `Module` → `RecursoCurso`. */
+export type TipoRecurso = "libro" | "curso_videos" | "pdf" | "enlaces" | "libre";
+export type UnidadContenido = "pagina" | "capitulo" | "leccion" | "unidad";
+
+/** Roost `Group` → `Materia`. */
+export interface Group {
+  id: number;
+  name: string;
+  description: string | null;
+  cover_url: string | null;
+  icon: string | null;
+  color: string | null;
+  dificultad: DificultadTarea;
+  display_order: number;
+  is_active: boolean;
+  created_by: number;
+}
+
+/** Roost `Module` → `RecursoCurso` (+ campos de pacing). */
 export interface Module {
   id: number;
   materia_id: number;
@@ -14,6 +33,14 @@ export interface Module {
   thumbnail_url: string | null;
   display_order: number;
   created_by: number;
+  tipo: TipoRecurso;
+  unidad_tipo: UnidadContenido;
+  total_unidades: number;
+  url: string | null;
+  libro_id: number | null;
+  minutos_por_unidad: number;
+  umbral_aprobacion: number;
+  navegacion_libre: boolean;
 }
 
 /** Roost `Recording` → `LeccionCurso`. `video_url` es opcional: hay lecciones de texto o PDF. */
@@ -47,6 +74,8 @@ export interface ModuleWithProgress extends Module {
   recording_count: number;
   completed_count: number;
   progress_percentage: number;
+  /** Solo cuando se pide `incluir=lecciones`: una consulta en vez de N (Roost pedía las grabaciones de a una). */
+  recordings?: RecordingWithCompletion[];
 }
 
 /** Roost `Event` → `ActividadOffline` (sin virtual/meeting_url/RSVP). */

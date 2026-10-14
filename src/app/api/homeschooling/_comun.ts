@@ -11,3 +11,53 @@ export const datosPlan = z.object({
   fin: claveFecha,
   diasSemana,
 });
+
+export const dificultad = z.enum(["Trivial", "MuyFacil", "Facil", "Media", "Exigente", "Dificil", "MuyDificil", "Ardua"]);
+const textoOpc = z.string().trim().max(500).nullable().optional();
+
+export const datosMateria = z.object({
+  nombre: z.string().trim().min(1, "Falta el nombre de la materia").max(100),
+  descripcion: textoOpc,
+  portadaUrl: textoOpc,
+  icono: z.string().trim().max(60).nullable().optional(),
+  color: z.string().trim().max(60).nullable().optional(),
+  dificultad: dificultad.optional(),
+});
+
+export const datosRecurso = z.object({
+  materiaId: idPositivo,
+  titulo: z.string().trim().min(1, "Falta el título del curso").max(150),
+  descripcion: textoOpc,
+  portadaUrl: textoOpc,
+  tipo: z.enum(["libro", "curso_videos", "pdf", "enlaces", "libre"]),
+  unidadTipo: z.enum(["pagina", "capitulo", "leccion", "unidad"]),
+  totalUnidades: z.number().int().min(0).max(5000).optional(),
+  url: textoOpc,
+  libroId: idPositivo.nullable().optional(),
+  minutosPorUnidad: z.number().int().min(1).max(600).optional(),
+  umbralAprobacion: z.number().int().min(0).max(100).optional(),
+  navegacionLibre: z.boolean().optional(),
+});
+
+export const datosLeccion = z.object({
+  recursoId: idPositivo,
+  titulo: z.string().trim().min(1, "Falta el título de la lección").max(150),
+  instrucciones: z.string().trim().max(5000).nullable().optional(),
+  url: z.string().trim().max(500).nullable().optional(),
+});
+
+export const listaIds = z.object({ ids: z.array(idPositivo).min(1) });
+
+/** `params` es una Promise en Next 16 */
+export async function idDe(params: Promise<{ id: string }>): Promise<number> {
+  const n = Number((await params).id);
+  if (!Number.isInteger(n) || n <= 0) throw new Error("Id no válido");
+  return n;
+}
+
+export const alumnoDe = (req: Request): number | null => {
+  const n = Number(new URL(req.url).searchParams.get("alumnoId"));
+  return Number.isInteger(n) && n > 0 ? n : null;
+};
+
+export const leerJson = (req: Request) => req.json().catch(() => ({}));
