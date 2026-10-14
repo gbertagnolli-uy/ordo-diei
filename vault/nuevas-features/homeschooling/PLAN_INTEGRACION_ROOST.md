@@ -1,7 +1,7 @@
 # Homeschooling sobre Roost — plan de integración (v3.1)
 
 > Lane 115 (v3) · lane 117 (v3.1, 2026-10-14: respuestas del usuario y contradicciones resueltas) · Roost en `vendor/roost/` (commit `492af47`, ver `vendor/roost/ORIGEN.md`).
-> **Este es el documento de entrada para implementar Homeschooling.** Reemplaza el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`». Todos los documentos de esta carpeta ya están alineados con él (§9).
+> **Este es el documento de entrada para implementar Homeschooling.** Cómo se comprueba que lo implementado cumple este plan: [`PLAN_VERIFICACION.md`](PLAN_VERIFICACION.md) (lane 119). Reemplaza el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`». Todos los documentos de esta carpeta ya están alineados con él (§9).
 >
 > **Convención de evidencia.** **[V]** = VERIFICADA: leí el código o ejecuté el comando citado. **[S]** = SUPUESTA: la lane que la use debe confirmarla antes de codear (cada una dice cómo y qué hacer si falla). Las rutas sin prefijo son de Ordo (`src/…`); las de Roost llevan `vendor/roost/`.
 
@@ -11,7 +11,8 @@
 2. Leer este plan §2–§4 y [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md) (esquema Prisma definitivo, pacing, puente con Tareas).
 3. Elegir la siguiente lane de §6 cuyas dependencias ya estén integradas en `dev` y seguir **su** `LANE_*.md` (entregables, origen → destino, tests, aceptación).
 4. **Número de lane = el siguiente libre al crearla** (`git worktree list`, `git branch -a`, `ls vault/LANE_*`): otros agentes trabajan en paralelo y los números se ocupan rápido.
-5. Al terminar: registro `vault/LANE_NN_*.md`, `scripts/integrar.sh`, limpiar worktree y rama.
+5. Antes de integrar: **autoverificación** según [`PLAN_VERIFICACION.md`](PLAN_VERIFICACION.md) (puertas §2, `verificacion/verificar_invariantes.sh <CODIGO>`, tu bloque de §5 y tus mutaciones de §7), con el resultado en tu registro.
+6. Al terminar: registro `vault/LANE_NN_*.md`, `scripts/integrar.sh`, limpiar worktree y rama. Después, otra sesión hace la verificación independiente (momento B de `PLAN_VERIFICACION.md`).
 
 ---
 
@@ -282,7 +283,7 @@ HS-SEG completar asignado┘                    (H2 exige HS-SEG integrada)     
 | **H5** | [`LANE_H5_HORAS_Y_REPORTES.md`](LANE_H5_HORAS_Y_REPORTES.md) | H2 (usa H3 si existe) | M | Sí | — |
 | **H6** | [`LANE_H6_NEURODIVERGENCIA.md`](LANE_H6_NEURODIVERGENCIA.md) | H2 | M | Sí | — |
 
-**Protocolo común:** `git worktree add -b task/lane-NN-<desc> ../ordo-diei-lanes/lane-NN dev` → `npm install` → `git merge dev` antes de tocar `schema.prisma` → `npx prisma validate` → SQL con `migrate diff`, revisado (sin `DROP`) → `npm test` + `npx tsc --noEmit` + `npx eslint <archivos nuevos>` → registro `vault/LANE_NN_*.md` con el pedido textual y el SQL aplicado → `scripts/integrar.sh` → `git worktree remove` + `git branch -d`. Las lanes que tocan `schema.prisma` se integran **de a una**. `vendor/roost/` no se edita. Tests con base real solo con `PERMITIR_TESTS_DB=1`.
+**Protocolo común:** `git worktree add -b task/lane-NN-<desc> ../ordo-diei-lanes/lane-NN dev` → `npm install` → `git merge dev` antes de tocar `schema.prisma` → `npx prisma validate` → SQL con `migrate diff`, revisado (sin `DROP`) → `npm test` + `npx tsc --noEmit` + `npx eslint <archivos nuevos>` → autoverificación (`PLAN_VERIFICACION.md`, momento A) → registro `vault/LANE_NN_*.md` con el pedido textual y el SQL aplicado → `scripts/integrar.sh` → `git worktree remove` + `git branch -d`. Las lanes que tocan `schema.prisma` se integran **de a una**. `vendor/roost/` no se edita. Tests con base real solo con `PERMITIR_TESTS_DB=1`.
 
 ## 7. Riesgos y conflictos
 
@@ -330,7 +331,7 @@ HS-SEG completar asignado┘                    (H2 exige HS-SEG integrada)     
 
 ## 9. Contradicciones encontradas y cómo quedaron resueltas
 
-Todas resueltas en la lane 117 (2026-10-14). «Dónde» = documento corregido.
+X1–X19 resueltas en la lane 117 y X20–X21 en la lane 119 (2026-10-14), al escribir el plan de verificación. «Dónde» = documento corregido.
 
 | # | Contradicción | Evidencia | Resolución aplicada |
 |---|---|---|---|
@@ -353,6 +354,8 @@ Todas resueltas en la lane 117 (2026-10-14). «Dónde» = documento corregido.
 | X17 | `@@unique([recursoId, orden])` vs `reorderModules` de Roost (actualiza de a una fila) | Chocaría al intercambiar | Reordenar en dos fases dentro de una transacción (H1b) |
 | X18 | Plan v3: lanes numeradas 116–123 | La 116 la tomó otro agente [V `git branch -a`] | Lanes por código; número al crearlas (§6) |
 | X19 | `ARQUITECTURA` §3 (v2): `enum X { a b c }` en una línea | Prisma no lo acepta: `prisma validate` daba 35 errores [V] | Enums en varias líneas. El esquema de ARQ §3 **completo** y el **subconjunto de H1a** validan contra el `schema.prisma` actual de `dev` (`prisma validate` 7.6.0 en una copia temporal, sin tocar la base) [V] |
+| X20 | `LANE_H6`: condicionar el confeti solo en `ModalManager.tsx:48` (`TASK_SUCCESS`) vs su aceptación «con modo relajado no hay confeti» | `celebrate` (L30-32) también lo disparan `LEVEL_UP` y `SURPRISE_AWARD` (L49-50) y `CelebrateContext` (L343) [V] | La condición va dentro de `celebrate`; L48-50 no se tocan (`LANE_H6`) |
+| X21 | `LANE_H4`: «aparece el [checkpoint] más cercano sin responder» | Ambiguo: si el niño salta de 0 a 95 s con checkpoints en 30 y 90, «más cercano» puede ser 90 y se saltea el de 30 | El **primero** sin responder con `segundoVideo ≤ t` (`LANE_H4`; vectores en `PLAN_VERIFICACION.md` §6.7) |
 
 ## 10. Registro de decisiones
 

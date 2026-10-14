@@ -1,6 +1,6 @@
 # Homeschooling — casi una app nueva extra
 
-> Estado: **lista para implementar** (2026-10-14, v3.1). **Empezar por [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md)** (Roost portado desde `vendor/roost/`); esquema y reglas en [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md); resumen en [`SPEC.md`](SPEC.md). Las secciones de abajo son el pedido original y la investigación (historial).
+> Estado: **lista para implementar** (2026-10-14, v3.1). **Empezar por [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md)** (Roost portado desde `vendor/roost/`); esquema y reglas en [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md); resumen en [`SPEC.md`](SPEC.md); cómo se verifica lo implementado en [`PLAN_VERIFICACION.md`](PLAN_VERIFICACION.md). Las secciones de abajo son el pedido original y la investigación (historial).
 
 ## 1. Pedido del usuario (textual)
 
