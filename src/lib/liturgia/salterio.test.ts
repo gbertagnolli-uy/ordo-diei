@@ -6,9 +6,9 @@ import {
   NOTA_SALTERIO_VULGATA,
 } from "./salterio.ts";
 
-test("generarIndiceSalterio: genera 150 salmos + canticos tradicionales", () => {
+test("generarIndiceSalterio: genera 150 salmos + 3 cánticos evangélicos", () => {
   const indice = generarIndiceSalterio();
-  assert.equal(indice.length, 156); // 150 salmos + 6 canticos
+  assert.equal(indice.length, 153); // 150 salmos + 3 cánticos
 
   const salmo1 = indice[0];
   assert.equal(salmo1.numero, "1");

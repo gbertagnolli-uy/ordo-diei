@@ -66,9 +66,12 @@ export function CalendariumVista() {
 
   // Martirologio del día
   const docMart = martyrologiumLectura.estado === "ok" ? martyrologiumLectura.datos : undefined;
-  const primerBloqueMart = docMart?.secciones?.[0]?.bloques?.[0];
-  const martLatino = primerBloqueMart?.la?.map((s) => ("v" in s ? s.v : "")).filter(Boolean).join(" ");
-  const martEspanol = (primerBloqueMart?.es ?? []).map((s) => ("v" in s ? s.v : "")).filter(Boolean).join(" ");
+  // El documento trae «titulus» (la fecha en latín) y «martyrologium» (un bloque por elogio)
+  const bloquesMart = docMart?.secciones?.find((s) => s.clave === "martyrologium")?.bloques ?? [];
+  const textoDe = (segs: readonly { t: string; v?: string }[] | null | undefined) =>
+    (segs ?? []).map((s) => s.v ?? "").filter(Boolean).join(" ");
+  const martLatino = bloquesMart.map((b) => textoDe(b.la as never)).filter(Boolean).join("\n\n");
+  const martEspanol = bloquesMart.map((b) => textoDe(b.es as never)).filter(Boolean).join("\n\n");
 
   return (
     <div className="space-y-6 pb-12">
@@ -164,7 +167,7 @@ export function CalendariumVista() {
               alt=""
               className="size-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-85"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
             <div className="absolute bottom-3 left-4 right-4 text-white">
               <Badge className="bg-primary/80 text-primary-foreground text-[10px] font-semibold mb-1">
                 AHORA · {infoHoraVigente.franja}
@@ -179,6 +182,16 @@ export function CalendariumVista() {
           </div>
 
           <CardContent className="pt-3 pb-2 space-y-3">
+            <p className="text-[10px] text-muted-foreground">
+              Foto de{" "}
+              <a href={infoHoraVigente.autorUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                {infoHoraVigente.autorNombre}
+              </a>{" "}
+              en{" "}
+              <a href={infoHoraVigente.paginaUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                Unsplash
+              </a>
+            </p>
             <p className="text-xs text-muted-foreground">
               8 Horas canónicas del Oficio Divino:
             </p>
@@ -347,7 +360,7 @@ export function CalendariumVista() {
                   <span className="font-semibold text-primary font-mono text-[11px] block">
                     Latín tradicional:
                   </span>
-                  <p className={cn("font-serif text-foreground/90 text-justify", !expandirMartirologio && "line-clamp-3")}>
+                  <p className={cn("font-serif text-foreground/90 text-justify whitespace-pre-line", !expandirMartirologio && "line-clamp-3")}>
                     {martLatino}
                   </p>
                 </div>
@@ -357,7 +370,7 @@ export function CalendariumVista() {
                   <span className="font-semibold text-primary font-mono text-[11px] block">
                     Español (Divinum Officium):
                   </span>
-                  <p className={cn("font-serif text-muted-foreground text-justify", !expandirMartirologio && "line-clamp-3")}>
+                  <p className={cn("font-serif text-muted-foreground text-justify whitespace-pre-line", !expandirMartirologio && "line-clamp-3")}>
                     {martEspanol || "Sin traducción al español en el martirologio."}
                   </p>
                   <p className="text-[10px] text-muted-foreground/60 italic pt-1">

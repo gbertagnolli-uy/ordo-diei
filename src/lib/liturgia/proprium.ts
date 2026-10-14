@@ -88,7 +88,8 @@ export const MESES_SANCTORUM = [
 ] as const;
 
 /**
- * Traduce el número de rango tradicional de DO a nombre latino legible.
+ * Traduce el número de rango de DO (escala de los archivos Sancti/Tempora) a su nombre latino.
+ * Es un respaldo: para el Kalendarium la carga guarda además `rangoTexto` ya calculado según la versión.
  */
 export function textoRango(r: number): string {
   switch (r) {
@@ -99,13 +100,13 @@ export function textoRango(r: number): string {
     case 3:
       return "Duplex";
     case 4:
-      return "Duplex II. classis";
+      return "Duplex majus";
     case 5:
-      return "Duplex I. classis";
+      return "Duplex II. classis";
     case 6:
-      return "Duplex I. classis cum octava";
+      return "Duplex I. classis";
     default:
-      return r > 0 ? `Rango ${r}` : "Memoria";
+      return r > 6 ? "Dies privilegiatus" : "Commemoratio";
   }
 }
 

@@ -89,7 +89,9 @@ export type EntradaKalendarium = {
   archivo: string; // "Sancti/10-14"
   nombre: string;
   rango: number;
-  conmemoracion?: { archivo: string; nombre: string; rango: number };
+  /** Rango en latín según la versión (lo calcula scripts/liturgia/derivados.ts); si falta, se usa textoRango(rango). */
+  rangoTexto?: string;
+  conmemoracion?: { archivo: string; nombre: string; rango: number; rangoTexto?: string };
 };
 
 export async function leerKalendarium(repo: RepoLiturgia, version: VersionLiturgica): Promise<Lectura<EntradaKalendarium[]>> {

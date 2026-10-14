@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(dia, {
-      headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=86400" },
+      headers: { "Cache-Control": "s-maxage=3600" },
     });
   } catch (err) {
     // Si la base no tiene las tablas o falla la conexión, devuelve null sin romper (SPEC §4.6)

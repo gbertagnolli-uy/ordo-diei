@@ -170,7 +170,7 @@ export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps
         /* 4. Modo Hub (Card destacada + 7 secundarias) */
         <div className="space-y-6">
           {/* Card destacada: AHORA (SPEC §10.2, D54) */}
-          <Link href={armarUrlHora(horaVigente)} className="block group">
+          <div className="group">
             <Card className="relative min-h-[22rem] md:min-h-[26rem] overflow-hidden rounded-2xl border-border/80 bg-black p-0 shadow-lg cursor-pointer select-none transition-all group-hover:ring-2 group-hover:ring-primary/80">
               {/* Imagen a sangre con Ken Burns */}
               <motion.div
@@ -188,8 +188,8 @@ export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps
                 />
               </motion.div>
 
-              {/* Overlay de contraste D54: negro a transparente concentrado en la base (≥ 4.5:1) */}
-              <div className="absolute inset-x-0 bottom-0 h-4/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
+              {/* Overlay de contraste D54: negro a transparente concentrado en la base. Medido (scripts/liturgia/medir-contraste.py): texto blanco ≥ 5,3:1 en las 8 fotos (percentil 95 de la luminancia de la zona de texto) */}
+              <div className="absolute inset-x-0 bottom-0 h-4/5 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none" />
 
               {/* Contenido en la base izquierda */}
               <div className="relative z-10 flex h-full min-h-[22rem] md:min-h-[26rem] flex-col justify-end p-6 sm:p-8 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]">
@@ -213,23 +213,39 @@ export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps
                 </p>
 
                 <div className="flex items-center justify-between pt-1">
-                  <Button
-                    size="lg"
-                    className="rounded-full px-8 font-semibold shadow-xl focus:ring-2 focus:ring-primary cursor-pointer pointer-events-none"
-                    tabIndex={-1}
-                  >
-                    <BookOpen className="size-4 mr-2" />
-                    Rezar {HORAS_INFO[horaVigente].castellano}
+                  {/* Enlace extendido: toda la tarjeta abre la Hora; el botón es el foco de teclado (SPEC §10.2) */}
+                  <Button asChild size="lg" className="rounded-full px-8 font-semibold shadow-xl focus:ring-2 focus:ring-primary">
+                    <Link href={armarUrlHora(horaVigente)} className="after:absolute after:inset-0 after:content-['']">
+                      <BookOpen className="size-4 mr-2" />
+                      Rezar {HORAS_INFO[horaVigente].castellano}
+                    </Link>
                   </Button>
 
-                  {/* Atribución Unsplash en la esquina */}
-                  <div className="text-[10px] text-white/60 font-sans hidden sm:block">
-                    Foto: {HORAS_INFO[horaVigente].autorNombre} en Unsplash
+                  {/* Atribución Unsplash (enlaces con UTM; el clic no abre la Hora) */}
+                  <div className="text-[10px] text-white/70 font-sans hidden sm:block">
+                    Foto de{" "}
+                    <a
+                      href={HORAS_INFO[horaVigente].autorUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative z-20 underline underline-offset-2 hover:text-white"
+                    >
+                      {HORAS_INFO[horaVigente].autorNombre}
+                    </a>{" "}
+                    en{" "}
+                    <a
+                      href={HORAS_INFO[horaVigente].paginaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative z-20 underline underline-offset-2 hover:text-white"
+                    >
+                      Unsplash
+                    </a>
                   </div>
                 </div>
               </div>
             </Card>
-          </Link>
+          </div>
 
           {/* Cards secundarias: Las otras 7 Horas en orden cronológico */}
           <div>
@@ -273,6 +289,25 @@ export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps
               ))}
             </div>
           </div>
+
+          {/* Atribución de las fotos de las Horas (Unsplash exige nombrar a cada autor con enlace) */}
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Fotos en{" "}
+            <a href="https://unsplash.com/?utm_source=ordo_diei&utm_medium=referral" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+              Unsplash
+            </a>
+            :{" "}
+            {LISTA_HORAS.map((h, i) => (
+              <React.Fragment key={h.hora}>
+                {i > 0 ? " · " : ""}
+                {h.castellano}{" "}
+                <a href={h.autorUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                  {h.autorNombre}
+                </a>
+              </React.Fragment>
+            ))}
+            .
+          </p>
         </div>
       )}
     </div>

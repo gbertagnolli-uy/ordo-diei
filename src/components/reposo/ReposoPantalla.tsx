@@ -13,6 +13,7 @@ import {
   elegirFotoSinRepetirUltimas,
   CITAS_APTAS,
   CATECISMO_APTO,
+  type EstadoSecuenciaReposo,
   type ItemFrase,
 } from "@/lib/reposo/frases";
 import type { FotoPublica } from "@/lib/reposo/unsplash";
@@ -28,23 +29,27 @@ interface ReposoPantallaProps {
  * Muestra fotos contemplativas de Unsplash con frases bíblicas y del Catecismo alternadas,
  * título litúrgico del día, logo y botón «Entrar», protección anti burn-in y ciclo continuo.
  */
+function fechaLocalISO(): string {
+  const d = new Date();
+  const dos = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+}
+
 export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
   // Configuración
   const [mostrarRefCatecismo, setMostrarRefCatecismo] = useState(true);
 
   // Datos
-  const [fotosPool, setFotosPool] = useState<FotoPublica[]>([]);
+  const [, setFotosPool] = useState<FotoPublica[]>([]);
   const [fotoActual, setFotoActual] = useState<FotoPublica | null>(null);
   const [diaLiturgico, setDiaLiturgico] = useState<DiaLiturgicoTitulo | null>(null);
 
-  // Secuencia de frases y fotos
-  const [, setSecuenciaEstado] = useState(() => cargarEstadoSecuencia());
-  const [itemActual, setItemActual] = useState<ItemFrase>(() => {
-    const inicial = cargarEstadoSecuencia();
-    const { item, siguienteEstado } = avanzarSecuencia(inicial, CITAS_APTAS, CATECISMO_APTO);
-    guardarEstadoSecuencia(siguienteEstado);
-    return item;
-  });
+  // Secuencia de frases y fotos. La frase se elige DESPUÉS de montar: en el servidor no hay localStorage y la elección
+  // es al azar, así que hacerla al renderizar daría un HTML distinto al del cliente (error de hidratación).
+  // El estado vive en un ref y se avanza fuera de los «updaters» de React (que StrictMode ejecuta dos veces).
+  const [itemActual, setItemActual] = useState<ItemFrase | null>(null);
+  const estadoRef = useRef<EstadoSecuenciaReposo | null>(null);
+  const fotosRef = useRef<FotoPublica[]>([]);
 
   // Anti burn-in (§4.6): desplazamiento ±24px cada 60s, atenuación a 0.6 tras 5 min de inactividad
   const [burnInOffset, setBurnInOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -67,7 +72,8 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
       .catch(() => {});
 
     // Título litúrgico
-    fetch("/api/reposo/dia")
+    // La fecha local va en la URL: así el caché del CDN no sirve el título de ayer (la clave de caché es la URL).
+    fetch(`/api/reposo/dia?fecha=${fechaLocalISO()}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!montado) return;
@@ -82,18 +88,15 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
       .then((r) => (r.ok ? r.json() : []))
       .then((fotos: FotoPublica[]) => {
         if (!montado || !Array.isArray(fotos) || fotos.length === 0) return;
+        fotosRef.current = fotos;
         setFotosPool(fotos);
-
-        // Elegir primera foto respetando exclusión de últimas
-        const estadoGuardado = cargarEstadoSecuencia();
-        const elegida = elegirFotoSinRepetirUltimas(fotos, estadoGuardado.ultimasFotosIds);
+        // Primera foto, respetando las últimas usadas
+        const estado = estadoRef.current ?? cargarEstadoSecuencia();
+        const elegida = elegirFotoSinRepetirUltimas(fotos, estado.ultimasFotosIds);
         if (elegida) {
           setFotoActual(elegida.foto);
-          setSecuenciaEstado((prev) => {
-            const actual = { ...prev, ultimasFotosIds: elegida.ultimasActualizadas };
-            guardarEstadoSecuencia(actual);
-            return actual;
-          });
+          estadoRef.current = { ...estado, ultimasFotosIds: elegida.ultimasActualizadas };
+          guardarEstadoSecuencia(estadoRef.current);
         }
       })
       .catch(() => {});
@@ -140,45 +143,39 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
     };
   }, []);
 
-  // 3. Avanzar a la siguiente frase y foto
+  // 3. Avanzar a la siguiente frase y foto (alternancia estricta, D38; foto al azar sin repetir las últimas 12, D39)
   const avanzar = useCallback(() => {
-    // Avanzar frase
-    setSecuenciaEstado((prevEstado) => {
-      const { item, siguienteEstado } = avanzarSecuencia(prevEstado, CITAS_APTAS, CATECISMO_APTO);
-      setItemActual(item);
-
-      // Si tenemos fotos en el pool, elegir siguiente foto
-      if (fotosPool.length > 0) {
-        const elegida = elegirFotoSinRepetirUltimas(fotosPool, siguienteEstado.ultimasFotosIds);
-        if (elegida) {
-          setFotoActual(elegida.foto);
-          siguienteEstado.ultimasFotosIds = elegida.ultimasActualizadas;
-
-          // Precargar siguiente foto en el navegador
-          const siguienteFoto = elegirFotoSinRepetirUltimas(fotosPool, elegida.ultimasActualizadas);
-          if (siguienteFoto && typeof window !== "undefined") {
-            const img = new Image();
-            img.src = siguienteFoto.foto.url;
-          }
-        }
+    const previo = estadoRef.current ?? cargarEstadoSecuencia();
+    const { item, siguienteEstado } = avanzarSecuencia(previo, CITAS_APTAS, CATECISMO_APTO);
+    const pool = fotosRef.current;
+    if (pool.length > 0) {
+      const elegida = elegirFotoSinRepetirUltimas(pool, siguienteEstado.ultimasFotosIds);
+      if (elegida) {
+        setFotoActual(elegida.foto);
+        siguienteEstado.ultimasFotosIds = elegida.ultimasActualizadas;
+        // Precarga de la siguiente
+        const siguiente = elegirFotoSinRepetirUltimas(pool, elegida.ultimasActualizadas);
+        if (siguiente && typeof window !== "undefined") new Image().src = siguiente.foto.url;
       }
+    }
+    estadoRef.current = siguienteEstado;
+    guardarEstadoSecuencia(siguienteEstado);
+    setItemActual(item);
+  }, []);
 
-      guardarEstadoSecuencia(siguienteEstado);
-      return siguienteEstado;
-    });
-  }, [fotosPool]);
+  // 3b. Primera frase al montar
+  useEffect(() => {
+    avanzar();
+  }, [avanzar]);
 
   // 4. Timer continuo de duración por frase
   useEffect(() => {
-    const duracionMs = calcularDuracionFraseMs(itemActual);
-    const timer = setTimeout(() => {
-      avanzar();
-    }, duracionMs);
-
+    if (!itemActual) return;
+    const timer = setTimeout(avanzar, calcularDuracionFraseMs(itemActual));
     return () => clearTimeout(timer);
   }, [itemActual, avanzar]);
 
-  const duracionActualMs = calcularDuracionFraseMs(itemActual);
+  const duracionActualMs = itemActual ? calcularDuracionFraseMs(itemActual) : 15000;
 
   return (
     <div
@@ -226,7 +223,7 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
 
         {/* Zona central: Frase (alineada a la izquierda en el 10-12% del ancho) */}
         <div className="my-auto w-full max-w-5xl pl-[2%] sm:pl-[10%]">
-          <FraseReposo item={itemActual} mostrarRefCatecismo={mostrarRefCatecismo} />
+          {itemActual ? <FraseReposo item={itemActual} mostrarRefCatecismo={mostrarRefCatecismo} /> : null}
         </div>
 
         {/* Zona inferior: Botón Entrar centrado */}
