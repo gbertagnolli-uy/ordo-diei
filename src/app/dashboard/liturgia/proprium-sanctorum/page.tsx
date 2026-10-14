@@ -1,9 +1,27 @@
-import { Sparkles } from "lucide-react";
-import { PantallaPendiente } from "@/components/liturgia/PantallaPendiente";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PropriumSanctorumVista } from "@/components/liturgia/PropriumSanctorumVista";
 
-export const metadata = { title: "Proprium Sanctorum | Ordo Diei" };
+export const metadata = {
+  title: "Proprium Sanctorum · Kalendarium | Ordo Diei",
+  description: "Propio de los Santos tradicional según Divinum Officium (Tridentine 1906, 1888, 1570).",
+};
 
-// Marcador de L3: la pantalla real llega con su lane (L7).
-export default function Page() {
-  return <PantallaPendiente titulo="Proprium Sanctorum" castellano="Propio de los Santos" icono={Sparkles} />;
+/**
+ * Pantalla Proprium Sanctorum (SPEC liturgia §10.5).
+ * Suspense obligatorio porque `PropriumSanctorumVista` usa `useParametrosLiturgia` (`useSearchParams`).
+ */
+export default function PropriumSanctorumPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-[24rem] w-full rounded-2xl" />
+        </div>
+      }
+    >
+      <PropriumSanctorumVista />
+    </Suspense>
+  );
 }

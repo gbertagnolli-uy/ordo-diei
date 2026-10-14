@@ -96,6 +96,13 @@
 - **Hecho**: Contador dinámico de secciones visibles («X secciones del propio» o «X secciones totales») y estado de carga / aviso cuando no hay datos generados en la base.
 - **Sin verificar en navegador real**: verificación visual del desplazamiento suave por anclas entre secciones del Ordinario y del Propio.
 
+## L7 · Proprium — Tempore y Sanctorum (lane 143)
+- **Hecho**: Pantalla Proprium de Tempore (`PropriumDeTemporeVista.tsx`, `/dashboard/liturgia/proprium-de-tempore`) con índice por los 8 tiempos litúrgicos tradicionales (Adventus, Nativitas, Epiphania, Septuagesima, Quadragesima, Passio, Pascha, Pentecostes), listado de domingos/ferias, enlace «¿Cuándo cae este año?» hacia Calendarium, y detalle con pestañas Missa y Officium con `LiturgiaTexto`.
+- **Hecho**: Pantalla Proprium Sanctorum (`PropriumSanctorumVista.tsx`, `/dashboard/liturgia/proprium-sanctorum`) con índice por los 12 meses del año usando el Kalendarium de la versión seleccionada (1906, 1888, 1570 reflejando sus diferencias), buscador en tiempo real por nombre de santo o fecha, tarjetas con punto de color litúrgico y rango, enlace «Ver en el Calendarium del año», y detalle con pestañas Missa y Officium.
+- **Hecho**: Módulo puro `src/lib/liturgia/proprium.ts` con tests unitarios (`proprium.test.ts`): clasificación de los 8 tiempos, traducción de rangos a latín tradicional (Simplex, Semiduplex, Duplex, Duplex I/II classis), deducción de color litúrgico y filtrado/búsqueda de fiestas.
+- **Sin verificar en navegador real**: navegación y respuesta del buscador de santos en dispositivos móviles y rendimiento con el volumen completo de Kalendarium cargado en producción.
+
+
 
 
 
