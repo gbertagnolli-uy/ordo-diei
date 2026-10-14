@@ -41,5 +41,17 @@
 | S2 | Las acciones **con efectos** (dar premios, comprar, completar tareas) **nunca se auto-ejecutan** al cerrar por inactividad; solo se conservan como borrador. | Auto-enviar todo lo completo (riesgo: premios o tareas no queridos). |
 | S3 | La sesión se renueva por **latido** y vence a los pocos minutos sin actividad, para que el cierre sea real también en el servidor. | Solo cierre del lado cliente. |
 | S4 | Los sobres y fragmentos de cartas aparecen en el Marketplace como **productos del sistema** (precio y reglas siguen en `economia.ts`); la Tienda de cartas actual **no cambia**. | Migrarlos y retirar la tienda de cartas (más adelante). |
-| S5 | Monedas habilitadas: **puntos, estrellas, incienso** (y opcionalmente **sorpresas**/cofres). | Agregar monedas futuras sin migración (el diseño es abierto). |
+| ~~S5~~ | ~~Sorpresas como moneda~~ → **resuelto en D13**. | — |
 | S6 | La música vive en `public/musica/` o en almacenamiento propio (no Spotify). | Spotify/radio. |
+
+## 4. Ronda 3 (2026-10-13) — respuestas del usuario
+
+> «4: Los cofres dan premios, no son una moneda en si. Pero si dan puntos, XP, o lo que sea, debería poder usarse.»
+>
+> «Los sonidos te los proporcionaré en una carpeta.»
+
+| # | Decisión |
+|---|---|
+| D13 | Los **cofres/sorpresas no son una moneda**. Las monedas son **puntos, estrellas e incienso** (registro extensible). `Usuario.surprises` sigue siendo solo un contador. |
+| D14 | **Lo que dé un cofre (o cualquier premio) debe poder usarse en el Marketplace.** Verificado en el código (`abrirPremioSorpresa`, `lib/comportamiento/server.ts`): los **puntos** suman a `availablePoints` (gastable) y a `puntosAcumulados`; el **incienso** suma a `incienso` (gastable); el **XP** suma a `experienciaHabitos` (cuenta para nivel y para requisitos, **no se gasta**). Los premios "de cartas" y "vales" llegan como cartas/fragmentos y `Recompensa`. Ver regla en `marketplace/SPEC.md` §2. |
+| D15 | Los **sonidos los entrega el usuario en una carpeta** (como la música). Se importan con un script y se asignan a eventos. |

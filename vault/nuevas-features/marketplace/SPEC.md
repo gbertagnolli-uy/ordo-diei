@@ -20,7 +20,10 @@ Registro único `src/lib/marketplace/monedas.ts` (extensible sin migración de p
 | `puntos` | `availablePoints` | Puntos | tareas aprobadas | `lockedPoints` (pendientes de aprobación) **no** se gastan. |
 | `estrellas` | `stars` | Estrellas | 1 por 7 días de racha | escasa → ideal para productos caros. |
 | `incienso` | `incienso` | Granos de incienso | fragmentos repetidos / premios | |
-| `sorpresas` *(opcional, S5)* | `surprises` | Sorpresas | tareas | decidir si es moneda o solo contador. |
+
+**Los cofres/sorpresas no son una moneda (D13):** son una fuente de premios. Lo que contienen sí se usa (D14): puntos → `availablePoints` y incienso → `incienso` (gastables en el Marketplace); XP → `experienciaHabitos` (sube de nivel y habilita requisitos, no se gasta); cartas/fragmentos → colección; vales/físicos → `Recompensa`.
+
+Regla de implementación: **todo premio que otorgue una moneda debe acreditarla en el campo gastable** del registro de monedas (nunca solo en un acumulado). Si se agrega una moneda nueva, el registro `monedas.ts` es el único lugar a tocar y los premios de cofre/comportamiento deben poder otorgarla. Criterio de aceptación adicional: *abrir un cofre con 50 puntos y comprar un producto de 50 puntos funciona sin recargar*.
 
 Cada moneda declara: icono, color de token, formato, `campo`. Un producto referencia solo la **clave**; agregar una moneda nueva = una fila en el registro + la columna.
 
