@@ -107,3 +107,15 @@ export const datosActividad = z
     alumnoIds: z.array(idPositivo).min(1, "Elegí al menos un alumno"),
   })
   .refine((d) => d.fin > d.inicio, { message: "El fin tiene que ser posterior al inicio", path: ["fin"] });
+
+export const datosPreferencia = z.object({
+  alumnoId: idPositivo.optional(),
+  modoRelajado: z.boolean().optional(),
+  primeroDespues: z.boolean().optional(),
+  recompensaDespues: z.string().trim().max(120).nullable().optional(),
+});
+
+export const datosHistoria = z.object({
+  titulo: z.string().trim().min(1, "Falta el título de la historia").max(100),
+  pasos: z.array(z.object({ texto: z.string().max(300), icono: z.string().max(30) })).max(8),
+});

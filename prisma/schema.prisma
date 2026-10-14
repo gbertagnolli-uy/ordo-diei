@@ -109,6 +109,7 @@ model Usuario {
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
+  preferenciaHs       PreferenciaAlumno?      @relation("PreferenciaAlumno")
 
   @@map("Usuarios")
 }
@@ -1058,4 +1059,31 @@ model MetaHoras {
 
   @@unique([alumnoId, materiaId])
   @@map("Homeschool_Metas_Horas")
+}
+
+// Preferencias de un alumno con TDAH/TEA/dislexia: modo relajado y vista Primero/Después
+model PreferenciaAlumno {
+  alumnoId          Int     @id @map("Alumno_ID")
+  modoRelajado      Boolean @default(false) @map("Modo_Relajado")
+  primeroDespues    Boolean @default(false) @map("Primero_Despues")
+  recompensaDespues String? @map("Recompensa_Despues")
+
+  alumno Usuario @relation("PreferenciaAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@map("Homeschool_Preferencias")
+}
+
+// Historia social: de 3 a 5 pasos cortos con ícono. `alumnoId` null = plantilla/biblioteca del padre; «Mostrar hoy» crea una
+// copia para el alumno con `mostrarEl` y se oculta cuando él la ve (`vistaEn`). (`mostrarEl` y `vistaEn` se agregaron a la spec.)
+model HistoriaSocial {
+  id        Int       @id @default(autoincrement())
+  alumnoId  Int?      @map("Alumno_ID")
+  titulo    String    @map("Titulo")
+  pasos     Json      @map("Pasos")
+  mostrarEl DateTime? @map("Mostrar_El") @db.Date
+  vistaEn   DateTime? @map("Vista_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  @@index([alumnoId, mostrarEl])
+  @@map("Homeschool_Historias")
 }
