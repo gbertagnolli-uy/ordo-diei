@@ -51,3 +51,7 @@ next-env.d.ts
 # Credenciales: nunca en git (el repo es público)
 SUPABASE_INFO.md
 .env.backup*
+
+# Divinum Officium (lanes L1–L9): motor descargado y dependencias Perl locales
+/vendor/divinum-officium/
+/.cache/
