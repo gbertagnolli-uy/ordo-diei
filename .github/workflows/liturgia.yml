@@ -1,0 +1,37 @@
+name: Liturgia (Divinum Officium)
+
+# Regenera la liturgia en la base: calendario 2026–2035 y textos del 1-ene del año en curso al 31-dic del siguiente.
+# La app en Vercel solo lee de la base; el Perl de Divinum Officium corre acá (ubuntu-latest trae Perl).
+# Seguridad: no corre hasta que el usuario cree la variable de repositorio LITURGIA_ACTION_ACTIVA=true y el secreto DATABASE_URL.
+on:
+  schedule:
+    - cron: "17 4 1 * *" # el día 1 de cada mes, 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generar:
+    if: ${{ vars.LITURGIA_ACTION_ACTIVA == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      LITURGIA_CONFIRMADO: "si"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: bash scripts/liturgia/descargar.sh
+      - run: bash scripts/liturgia/instalar-perl.sh
+      - name: Calendario 2026–2035 (tres versiones)
+        run: node scripts/liturgia/generar.ts --versiones 1906,1888,1570 --desde 2026-01-01 --hasta 2035-12-31 --solo-calendario --escribir
+      - name: Textos (año en curso y el siguiente) y libros
+        run: |
+          ANIO=$(date +%Y)
+          node scripts/liturgia/generar.ts --versiones 1906,1888,1570 --desde "$ANIO-01-01" --hasta "$((ANIO+1))-12-31" --libros --escribir
