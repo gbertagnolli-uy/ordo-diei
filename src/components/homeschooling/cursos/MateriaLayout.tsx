@@ -18,6 +18,7 @@ import { toast } from "@/lib/toast";
 import AsistenteCurso from "@/components/homeschooling/plan/AsistenteCurso";
 import CursoDetalle, { type PlanVista } from "./CursoDetalle";
 import CursoForm from "./CursoForm";
+import EditorPreguntas from "./EditorPreguntas";
 import CursoGrid from "./CursoGrid";
 import LeccionForm from "./LeccionForm";
 import MateriaHeader, { type AlumnoLite } from "./MateriaHeader";
@@ -53,6 +54,7 @@ export default function MateriaLayout({
   const [cursoForm, setCursoForm] = useState<{ open: boolean; editing: Module | null }>({ open: false, editing: null });
   const [leccionForm, setLeccionForm] = useState<{ open: boolean; editing: RecordingWithCompletion | null }>({ open: false, editing: null });
   const [asignar, setAsignar] = useState<Module | null>(null);
+  const [preguntas, setPreguntas] = useState(false);
   const [borrar, setBorrar] = useState<{ tipo: "curso" | "leccion"; id: number; nombre: string } | null>(null);
 
   const cargar = useCallback(async () => {
@@ -161,6 +163,7 @@ export default function MateriaLayout({
               prev={prev && { id: prev.id, title: prev.title }}
               next={next && { id: next.id, title: next.title }}
               onNavigate={(id) => irALeccion(activeModule.id, id)}
+              onPreguntas={rol === "admin" ? () => setPreguntas(true) : undefined}
               onEdit={rol === "admin" ? () => setLeccionForm({ open: true, editing: activeRecording }) : undefined}
               onDelete={rol === "admin" ? () => setBorrar({ tipo: "leccion", id: activeRecording.id, nombre: activeRecording.title }) : undefined}
             />
@@ -191,6 +194,10 @@ export default function MateriaLayout({
             refrescar();
           }}
         />
+      )}
+
+      {activeRecording && (
+        <EditorPreguntas open={preguntas} leccionId={activeRecording.id} titulo={activeRecording.title} onClose={() => setPreguntas(false)} />
       )}
 
       <AsistenteCurso

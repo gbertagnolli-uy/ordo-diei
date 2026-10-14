@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, Camera, ClipboardCheck, GraduationCap, Plus } from "lucide-react";
+import { AlertTriangle, CalendarDays, CalendarOff, Camera, ClipboardCheck, GraduationCap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +17,7 @@ import AsistenteCurso from "./AsistenteCurso";
 
 export type ProgresoAlumno = AlumnoLite & { cursos: number; porcentaje: number };
 
-export default function PanelHomeschooling({ materias, alumnos, progresos, pendientes }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[]; progresos: ProgresoAlumno[]; pendientes: number }) {
+export default function PanelHomeschooling({ materias, alumnos, progresos, pendientes, avisos }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[]; progresos: ProgresoAlumno[]; pendientes: number; avisos: { tarjetaId: number; texto: string }[] }) {
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
   const [asistente, setAsistente] = useState(false);
@@ -57,6 +57,16 @@ export default function PanelHomeschooling({ materias, alumnos, progresos, pendi
           </Button>
         </div>
       </div>
+
+      {avisos.length > 0 && (
+        <div className="space-y-1 rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm">
+          {avisos.map((a) => (
+            <p key={a.tarjetaId} className="flex items-center gap-2 text-foreground">
+              <AlertTriangle className="size-4 shrink-0 text-warning" /> {a.texto}
+            </p>
+          ))}
+        </div>
+      )}
 
       {progresos.some((p) => p.cursos > 0) && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

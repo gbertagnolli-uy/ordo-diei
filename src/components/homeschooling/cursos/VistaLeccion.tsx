@@ -4,7 +4,7 @@
 // Cambios: vista previa del padre — sin «marcar completada» (el reproductor del alumno es VisorLeccion, lane H2),
 // embed con urlEmbed (youtube-nocookie), lección sin video (texto o enlace), anterior/siguiente, textos en español.
 
-import { ArrowLeft, ArrowRight, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleHelp, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
 import { urlEmbed } from "@/lib/homeschooling/video";
@@ -18,6 +18,7 @@ export default function VistaLeccion({
   onNavigate,
   onEdit,
   onDelete,
+  onPreguntas,
 }: {
   recording: RecordingWithCompletion;
   prev: Vecina;
@@ -25,6 +26,7 @@ export default function VistaLeccion({
   onNavigate: (recordingId: number) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPreguntas?: () => void;
 }) {
   const embed = recording.video_platform && recording.video_id ? urlEmbed(recording.video_platform, recording.video_id) : null;
 
@@ -63,6 +65,11 @@ export default function VistaLeccion({
           {recording.description && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{recording.description}</p>}
         </div>
         <div className="flex shrink-0 gap-1">
+          {onPreguntas && (
+            <Button variant="ghost" size="icon" onClick={onPreguntas} aria-label="Preguntas de la lección">
+              <CircleHelp />
+            </Button>
+          )}
           {onEdit && (
             <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar lección">
               <Pencil />

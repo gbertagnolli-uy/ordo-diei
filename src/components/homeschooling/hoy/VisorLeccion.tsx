@@ -4,6 +4,8 @@
 // Cambios: visor a pantalla completa (Sheet); iframe con urlEmbed (youtube-nocookie); sin comentarios; un solo botón
 // «Terminé» (se borra la rama de markLessonIncomplete, L43); en la última lección del día completa la Tarea con
 // /api/tasks/[id]/complete y abre TASK_SUCCESS como useTaskActions.finishTask; libros/PDF muestran el rango y el enlace.
+// H4: el video se reproduce con react-player (checkpoints que pausan con una pregunta) y, si la lección tiene quiz final,
+// «Terminé» pasa por el quiz (la nota la calcula el servidor).
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,6 +18,8 @@ import { urlEmbed } from "@/lib/homeschooling/video";
 import type { DiaHoy, LeccionHoy } from "@/lib/homeschooling/servidor/hoy";
 import { useModalStore } from "@/store/modalStore";
 import { toast } from "@/lib/toast";
+import QuizFinal, { type ResultadoQuiz } from "./QuizFinal";
+import ReproductorLeccion from "./ReproductorLeccion";
 import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidencia";
 import LeccionesDelDia from "./LeccionesDelDia";
 
@@ -26,6 +30,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
   const [activaId, setActivaId] = useState<number | undefined>();
   const [cargando, setCargando] = useState(false);
   const [foto, setFoto] = useState(false);
+  const [haciendoQuiz, setHaciendoQuiz] = useState(false);
   const inicio = useRef(Date.now());
 
   // Al abrir un día: arranca en la primera lección pendiente y empieza a contar el tiempo
@@ -33,6 +38,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
     if (!dia) return;
     inicio.current = Date.now();
     setCompletadas(new Set());
+    setHaciendoQuiz(false);
     setActivaId((dia.lecciones.find((l) => !l.completada && !l.bloqueada) ?? dia.lecciones[0])?.id);
   }, [dia]);
 
@@ -42,6 +48,39 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
   const hechaActual = !!actual && (actual.completada || completadas.has(actual.id));
   const embed = actual?.videoPlataforma && actual.videoId ? urlEmbed(actual.videoPlataforma, actual.videoId) : null;
   const hechoElDia = dia?.estado === "hecha";
+
+  // Después de completar una lección (con o sin quiz): seguir con la próxima o, si era la última, completar la Tarea del día
+  const cerrarLeccion = async (ultimaDelDia: boolean, tareaIdNueva: number | null) => {
+    if (!dia) return;
+    const tareaId = tareaIdNueva ?? dia.tareaId;
+    if (!ultimaDelDia) {
+      const siguiente = lecciones[indice + 1];
+      if (siguiente) setActivaId(siguiente.id);
+      router.refresh();
+      return;
+    }
+    if (!tareaId) throw new Error("No se pudo preparar la tarea de hoy");
+
+    const res = await fetch(`/api/tasks/${tareaId}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ elapsedSeconds: Math.round((Date.now() - inicio.current) / 1000) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "No se pudo completar la tarea");
+    openModal("TASK_SUCCESS", {
+      mensaje: data.mensaje,
+      puntos: data.puntos,
+      basePoints: data.basePoints,
+      streakBonus: data.streakBonus,
+      isNewStreak: data.isNewStreak,
+      streakDays: data.streakDays,
+      isHappyHour: data.isHappyHour,
+    });
+    toast.success("¡Listo!", "Tu mamá o tu papá lo va a revisar");
+    onClose();
+    router.refresh();
+  };
 
   const terminar = async () => {
     if (!dia) return;
@@ -57,34 +96,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
       } else if (!tareaId) {
         tareaId = (await api<{ tareaId: number | null }>(`/api/homeschooling/dias/${dia.diaId}/tarea`, { method: "POST" })).tareaId;
       }
-
-      if (!ultimaDelDia) {
-        const siguiente = lecciones[indice + 1];
-        if (siguiente) setActivaId(siguiente.id);
-        router.refresh();
-        return;
-      }
-      if (!tareaId) throw new Error("No se pudo preparar la tarea de hoy");
-
-      const res = await fetch(`/api/tasks/${tareaId}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ elapsedSeconds: Math.round((Date.now() - inicio.current) / 1000) }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo completar la tarea");
-      openModal("TASK_SUCCESS", {
-        mensaje: data.mensaje,
-        puntos: data.puntos,
-        basePoints: data.basePoints,
-        streakBonus: data.streakBonus,
-        isNewStreak: data.isNewStreak,
-        streakDays: data.streakDays,
-        isHappyHour: data.isHappyHour,
-      });
-      toast.success("¡Listo!", "Tu mamá o tu papá lo va a revisar");
-      onClose();
-      router.refresh();
+      await cerrarLeccion(ultimaDelDia, tareaId);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo guardar");
     } finally {
@@ -92,7 +104,24 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
     }
   };
 
-  const cambiar = (l: LeccionHoy) => setActivaId(l.id);
+  const quizAprobado = async (r: ResultadoQuiz) => {
+    if (!actual) return;
+    setCargando(true);
+    try {
+      setCompletadas((c) => new Set(c).add(actual.id));
+      setHaciendoQuiz(false);
+      await cerrarLeccion(r.ultimaDelDia, r.tareaId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const cambiar = (l: LeccionHoy) => {
+    setHaciendoQuiz(false);
+    setActivaId(l.id);
+  };
 
   return (
     <Sheet open={!!dia} onOpenChange={(o) => !o && !cargando && onClose()}>
@@ -110,17 +139,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
               {actual ? (
                 <>
                   {embed ? (
-                    <div className="overflow-hidden rounded-xl bg-muted">
-                      <div className="relative aspect-video">
-                        <iframe
-                          src={embed}
-                          className="absolute inset-0 size-full"
-                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          title={actual.titulo}
-                        />
-                      </div>
-                    </div>
+                    <ReproductorLeccion key={actual.id} leccionId={actual.id} src={embed} titulo={actual.titulo} tieneCheckpoints={actual.checkpoints > 0} />
                   ) : (
                     actual.url && (
                       <Button asChild variant="outline" size="lg">
@@ -136,6 +155,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                     </h2>
                     {actual.instrucciones && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{actual.instrucciones}</p>}
                   </div>
+                  {haciendoQuiz && <QuizFinal leccionId={actual.id} onAprobado={quizAprobado} onRepasar={() => setHaciendoQuiz(false)} />}
                   {lecciones.length > 1 && <LeccionesDelDia lecciones={lecciones} completadas={completadas} activaId={activaId} onSelect={cambiar} />}
                 </>
               ) : (
@@ -171,8 +191,12 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                     </Button>
                   )
                 ) : (
-                  <Button size="lg" onClick={terminar} disabled={cargando || (!!actual && actual.bloqueada && !hechaActual)}>
-                    {cargando ? <Spinner /> : <CheckCircle2 />} Terminé
+                  <Button
+                    size="lg"
+                    onClick={actual?.quiz && !hechaActual ? () => setHaciendoQuiz(true) : terminar}
+                    disabled={cargando || haciendoQuiz || (!!actual && actual.bloqueada && !hechaActual)}
+                  >
+                    {cargando ? <Spinner /> : <CheckCircle2 />} {actual?.quiz && !hechaActual ? "Hacer el quiz" : "Terminé"}
                   </Button>
                 )}
               </div>
