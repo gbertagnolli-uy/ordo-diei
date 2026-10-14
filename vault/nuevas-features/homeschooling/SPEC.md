@@ -1,7 +1,10 @@
-# Homeschooling — Especificación (producto por fases)
+# Homeschooling — Especificación (Ecosistema Completo por Lanes H1..H6)
 
-> Amplía [`README.md`](README.md). Es "casi una app nueva": se especifica como **mini‑producto** con fases entregables. Investigación: pacing dinámico, desbloqueo secuencial, doble interfaz, evidencia, portafolio.
-> **Regla:** no hostear video propio (Won't‑Have de la investigación): se **enlaza** (YouTube/Vimeo/PDF/libro físico).
+> **Documentación ampliada:**
+> - Arquitectura técnica detallada y esquema Prisma 7: [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md)
+> - Mapeo de extracción de componentes desde Roost (MIT): [`MAPEO_COMPONENTES_ROOST.md`](MAPEO_COMPONENTES_ROOST.md)
+> - Plan maestro de lanes: [`../lanes/LANES_HOMESCHOOLING.md`](../lanes/LANES_HOMESCHOOLING.md)
+> - Especificaciones de cada lane: [`LANE_H1`](LANE_H1_MODELO_Y_PACING.md), [`LANE_H2`](LANE_H2_REPRODUCTOR_Y_LECCION.md), [`LANE_H3`](LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md), [`LANE_H4`](LANE_H4_CHECKPOINTS_Y_QUIZZES.md), [`LANE_H5`](LANE_H5_COMPLIANCE_Y_TRANSCRIPTS.md), [`LANE_H6`](LANE_H6_NEURODIVERGENCIA_Y_COMMAND_CENTER.md)
 
 ## 1. Conceptos
 - **Materia** (Matemática, Historia, Catecismo…) por alumno.
@@ -10,15 +13,16 @@
 - **Lección del día**: la unidad que toca hoy; es lo que ve el niño.
 - **Evidencia**: foto/nota del trabajo hecho. **Registro**: horas y resultado.
 
-## 2. Fases
+## 2. Fases / Lanes
 
-| Fase | Entrega | Dependencias |
-|---|---|---|
-| **H1 Pacing y lección del día** | Materias, recursos, calendario lectivo, motor de reparto, «Hoy aprendo» del niño | hábitos/XP |
-| **H2 Evidencia y registro** | Foto/nota por lección, aprobación del padre, horas | `Archivo`, cámara |
-| **H3 Quiz y desbloqueo secuencial** | Preguntas simples por lección, aprobar con ≥ 70 % para avanzar | H1 |
-| **H4 Portafolio / reportes** | PDF por período, registro de horas, calificaciones | H2, H3 |
-| **H5 Extras** | Pizarra, transcript/GPA, lecciones con video con checkpoints | H3 |
+| Lane | Entrega | Base / Dependencias | Archivo de Especificación |
+|---|---|---|---|
+| **H1 Pacing y Snow Day** | Materias, recursos, calendario lectivo, motor `repartir()` y recálculo determinista | Prisma 7 / node:test (el proyecto no usa Vitest) | [`LANE_H1_MODELO_Y_PACING.md`](LANE_H1_MODELO_Y_PACING.md) |
+| **H2 LMS y «Hoy aprendo»** | Doble interfaz (niño vs. padre), reproductor y navegación, candado secuencial | Roost (`LessonPlayer`, `LearnSidebar`) / H1 | [`LANE_H2_REPRODUCTOR_Y_LECCION.md`](LANE_H2_REPRODUCTOR_Y_LECCION.md) |
+| **H3 Evidencia y portafolio** | Botón de cámara en tablet, audio de 10s, subida a `Archivo`, swipe de aprobación de padres, portafolio | Roost (`Showcase`), Lane 75 (`SwipeRow`) / H2 | [`LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md`](LANE_H3_EVIDENCIA_Y_PORTAFOLIO.md) |
+| **H4 Active Recall y quizzes** | Checkpoints en video interactivo, quizzes con umbral 70%, algoritmo SM-2 de repaso, cartas holográficas | YouTube API, `HoloCard.tsx` / H2 | [`LANE_H4_CHECKPOINTS_Y_QUIZZES.md`](LANE_H4_CHECKPOINTS_Y_QUIZZES.md) |
+| **H5 Compliance y transcripts** | Mapeo legal por estado/país, Activity Journal de horas offline, créditos Carnegie y PDF oficial | Roost (`CalendarView`), Print CSS / H3, H4 | [`LANE_H5_COMPLIANCE_Y_TRANSCRIPTS.md`](LANE_H5_COMPLIANCE_Y_TRANSCRIPTS.md) |
+| **H6 Neurodivergencia y Kiosk** | Tableros Primero/Después, historias sociales, modo baja estimulación sensorial, Battery Health curfew | PWA API, Reduced Motion / H2 | [`LANE_H6_NEURODIVERGENCIA_Y_COMMAND_CENTER.md`](LANE_H6_NEURODIVERGENCIA_Y_COMMAND_CENTER.md) |
 
 Cada fase es una o más lanes entregables por separado (ver `../lanes/LANES.md`).
 
