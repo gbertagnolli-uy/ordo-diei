@@ -1,5 +1,14 @@
 # Lane H4 — Active Recall, Checkpoints de Video y Quizzes
 
+> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+
+> ### Correcciones de auditoría (obligatorias)
+> 1. **Corrección en el servidor (C4):** el cliente no recibe `respuestaCorrecta` antes de responder; el servidor califica y desbloquea.
+> 2. **No se puede garantizar «no saltar el video» en el navegador (C5):** comparar con `>=` (no `===`), marcar checkpoints pasados, `youtube-nocookie.com`. El desbloqueo real lo decide el servidor.
+> 3. **Faltan modelos (B6):** `PreguntaLeccion` e `IntentoLeccion` (respuestas, nota, fecha) para «reprobar 2 veces».
+> 4. **SM-2 (C7):** guardar la calidad de cada repaso o llamarlo «repaso espaciado simple» (1-3-7-14 días).
+> 5. **Cartas (B7):** `TipoMovFragmento` es un enum cerrado (no existe `recompensa_estudio`); entregar cartas implica ampliar ese enum (SQL aditivo) y es decisión del usuario. Por defecto: sin cartas en v1.
+
 > **Estado:** Lista para ejecución cuando H2 esté integrada en `dev`.  
 > **Dependencias:** Lane H2 (LMS y Reproductor de Lecciones).  
 > **Tamaño:** L (Integración de YouTube IFrame API + Motor de Quizzes + Repaso Espaciado + Economía de Cartas).

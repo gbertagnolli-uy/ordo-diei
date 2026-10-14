@@ -1,5 +1,15 @@
 # Lane H3 — Evidencia Rápida y Portafolio Digital
 
+> ⚠️ **Auditado el 2026-10-13**: ver [`AUDITORIA.md`](AUDITORIA.md). Donde este documento contradiga a la auditoría, **manda la auditoría**. Condiciones obligatorias de esta lane en el recuadro «Correcciones de auditoría».
+
+> ### Correcciones de auditoría (obligatorias)
+> 1. **Privacidad (E1):** `/api/archivos/<uuid>` es público. Las fotos/audios de los niños deben servirse **con sesión y permiso** (padres + el propio alumno): ruta nueva o flag privado en `Archivo`.
+> 2. **Audio (E2):** `Archivo` solo acepta imágenes. Hay que ampliarlo (MIME `audio/webm` y `audio/mp4`, iOS no graba webm; tope ~200 KB y 10 s) o dejar la nota de voz fuera de v1.
+> 3. **Espacio (E3):** fotos y audio van en Postgres (`Bytes`). Medir y poner tope por alumno/mes; plan B Supabase Storage.
+> 4. **Swipe invertido (C6):** en Ordo (lane 75) **izquierda = aprobar (verde), derecha = rechazar**. Respetarlo.
+> 5. Bonus de XP/estrellas con tope diario, por el pipeline existente (C2/C3). Limpiar `Archivo` huérfanos al borrar (B10).
+> 6. Sin `react-dropzone` (A3): `<input type=file capture>` alcanza. Borrador de la nota con el sistema de borradores (N5).
+
 > **Estado:** Lista para ejecución cuando H2 esté integrada en `dev`.  
 > **Dependencias:** Lane H2 (LMS y Lecciones).  
 > **Componentes Fuente:** `src/pages/ShowcaseSubmit.tsx`, `src/components/showcase/ShowcaseCard.tsx` de **Roost (MIT)** y `src/components/SwipeRow.tsx` de **Ordo Diei**.  
@@ -65,8 +75,8 @@ Permitir al estudiante capturar de forma inmediata evidencias visuales (fotos de
 - **Reutilización de Componente:** `src/components/SwipeRow.tsx` (creado en Lane 75 de Ordo Diei).
 - **Flujo de Interacción:**
   - El padre ve una tarjeta con la foto del trabajo, el audio de 10s reproducible y los datos de la materia.
-  - **Deslizar a la derecha (Verde):** Aprueba la evidencia, asigna 1 a 5 estrellas opcionales y acredita una bonificación de XP al alumno.
-  - **Deslizar a la izquierda (Ámbar):** Solicita ajustes o agrega una nota correctiva *"Por favor rehacer la página 14 corrigiendo los signos"*.
+  - **Deslizar a la izquierda (Verde):** Aprueba la evidencia, asigna 1 a 5 estrellas opcionales y acredita una bonificación de XP al alumno.
+  - **Deslizar a la derecha (Ámbar/rojo):** Solicita ajustes o agrega una nota correctiva *"Por favor rehacer la página 14 corrigiendo los signos"*.
 
 ---
 
