@@ -1,0 +1,240 @@
+// Planes de curso y días lectivos (Prisma). Solo Padre/Madre. `hoy` entra siempre como parámetro
+// ('YYYY-MM-DD'; las rutas pasan hoyEnFamilia()). Reglas: ARQUITECTURA_DETALLADA §4.
+import { getISODay, parseISO } from "date-fns";
+import prisma from "../../prisma.ts";
+import type { Prisma } from "@prisma/client";
+import { aClave, aFecha, NoAutorizadoError, NoEncontradoError } from "../../habitos/server.ts";
+import { esPadre } from "../../habitos/permisos.ts";
+import { repartir, type SalidaPacing, type UnidadTipo } from "../pacing.ts";
+import { planearRecalculo, type DiaPlan } from "../recalculo.ts";
+
+export class ConflictoError extends Error {
+  status = 409;
+  constructor(message: string) {
+    super(message);
+    this.name = "Conflicto";
+  }
+}
+
+export class DatoInvalidoError extends Error {
+  status = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "DatoInvalido";
+  }
+}
+
+type Tx = Prisma.TransactionClient;
+
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const fechaValida = (c: string) => FECHA.test(c) && aClave(aFecha(c)) === c;
+
+function validarRango(inicio: string, fin: string, diasSemana: number[]) {
+  if (!fechaValida(inicio) || !fechaValida(fin)) throw new DatoInvalidoError("Fechas no válidas");
+  if (inicio > fin) throw new DatoInvalidoError("La fecha de inicio es posterior a la de fin");
+  if (diasSemana.length === 0 || !diasSemana.every((d) => Number.isInteger(d) && d >= 1 && d <= 7)) {
+    throw new DatoInvalidoError("Días de la semana no válidos (1=lunes … 7=domingo)");
+  }
+}
+
+async function exigirPadre(actorId: number) {
+  const u = await prisma.usuario.findUnique({ where: { id: actorId }, select: { rolFamiliar: true } });
+  if (!esPadre(u?.rolFamiliar)) throw new NoAutorizadoError("Solo un padre o una madre pueden hacer esto");
+}
+
+const noLectivosDe = async (db: Tx | typeof prisma, alumnoId: number) =>
+  (await db.diaNoLectivo.findMany({ where: { alumnoId }, select: { fecha: true } })).map((n) => aClave(n.fecha));
+
+export type DatosPlan = { recursoId: number; alumnoId: number; inicio: string; fin: string; diasSemana: number[] };
+
+export async function vistaPrevia(
+  datos: DatosPlan & { noLectivosExtra?: string[] }
+): Promise<SalidaPacing> {
+  validarRango(datos.inicio, datos.fin, datos.diasSemana);
+  const recurso = await prisma.recursoCurso.findUnique({ where: { id: datos.recursoId } });
+  if (!recurso) throw new NoEncontradoError("Recurso no encontrado");
+  const noLectivos = [...(await noLectivosDe(prisma, datos.alumnoId)), ...(datos.noLectivosExtra ?? [])];
+  return repartir({
+    totalUnidades: recurso.totalUnidades,
+    unidadesBase: 0,
+    desde: datos.inicio,
+    hasta: datos.fin,
+    diasSemana: datos.diasSemana,
+    noLectivos,
+    unidadTipo: recurso.unidadTipo as UnidadTipo,
+  });
+}
+
+export async function crearPlan(datos: DatosPlan & { actorId: number }) {
+  await exigirPadre(datos.actorId);
+  validarRango(datos.inicio, datos.fin, datos.diasSemana);
+  const [recurso, alumno, existente] = await Promise.all([
+    prisma.recursoCurso.findUnique({ where: { id: datos.recursoId } }),
+    prisma.usuario.findUnique({ where: { id: datos.alumnoId }, select: { id: true } }),
+    prisma.planCurso.findUnique({ where: { recursoId_alumnoId: { recursoId: datos.recursoId, alumnoId: datos.alumnoId } } }),
+  ]);
+  if (!recurso) throw new NoEncontradoError("Recurso no encontrado");
+  if (!alumno) throw new NoEncontradoError("Alumno no encontrado");
+  if (existente) throw new ConflictoError("Ese alumno ya tiene un plan para este recurso");
+
+  const pacing = repartir({
+    totalUnidades: recurso.totalUnidades,
+    unidadesBase: 0,
+    desde: datos.inicio,
+    hasta: datos.fin,
+    diasSemana: datos.diasSemana,
+    noLectivos: await noLectivosDe(prisma, datos.alumnoId),
+    unidadTipo: recurso.unidadTipo as UnidadTipo,
+  });
+  if (pacing.aviso?.tipo === "sin_dias") throw new DatoInvalidoError("No hay días lectivos en ese rango");
+
+  try {
+    const plan = await prisma.$transaction(async (tx) => {
+      const p = await tx.planCurso.create({
+        data: {
+          recursoId: datos.recursoId,
+          alumnoId: datos.alumnoId,
+          inicio: aFecha(datos.inicio),
+          fin: aFecha(datos.fin),
+          diasSemana: [...new Set(datos.diasSemana)].sort(),
+        },
+      });
+      await tx.diaLectivo.createMany({
+        data: pacing.dias.map((d) => ({
+          planId: p.id,
+          fecha: aFecha(d.fecha),
+          unidadDesde: d.unidadDesde,
+          unidadHasta: d.unidadHasta,
+        })),
+      });
+      return p;
+    });
+    return { plan, dias: pacing.dias.length, aviso: pacing.aviso ?? null };
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") throw new ConflictoError("Ese alumno ya tiene un plan para este recurso");
+    throw err;
+  }
+}
+
+/** Aplica `planearRecalculo` a un plan dentro de una transacción. `fin` nunca cambia. */
+async function recalcularEn(tx: Tx, planId: number, hoy: string) {
+  const plan = await tx.planCurso.findUnique({
+    where: { id: planId },
+    include: { recurso: true, dias: { include: { tarea: { select: { estado: true } } } } },
+  });
+  if (!plan) throw new NoEncontradoError("Plan no encontrado");
+  if (plan.estado !== "activo") return null;
+
+  const dias: DiaPlan[] = plan.dias.map((d) => ({
+    id: d.id,
+    fecha: aClave(d.fecha),
+    unidadDesde: d.unidadDesde,
+    unidadHasta: d.unidadHasta,
+    estado: d.estado,
+    tareaEstado: d.tarea?.estado ?? null,
+  }));
+  const r = planearRecalculo({
+    dias,
+    hoy,
+    inicio: aClave(plan.inicio),
+    fin: aClave(plan.fin),
+    diasSemana: plan.diasSemana,
+    totalUnidades: plan.recurso.totalUnidades,
+    unidadTipo: plan.recurso.unidadTipo as UnidadTipo,
+    noLectivosAlumno: await noLectivosDe(tx, plan.alumnoId),
+  });
+
+  if (r.marcarHechas.length) {
+    await tx.diaLectivo.updateMany({ where: { id: { in: r.marcarHechas } }, data: { estado: "hecha" } });
+  }
+  if (r.mover.length) {
+    await tx.diaLectivo.updateMany({ where: { id: { in: r.mover } }, data: { estado: "movida" } });
+  }
+  if (r.borrar.length) {
+    const tareaIds = plan.dias.filter((d) => r.borrar.includes(d.id) && d.tareaId).map((d) => d.tareaId as number);
+    await tx.diaLectivo.deleteMany({ where: { id: { in: r.borrar } } });
+    if (tareaIds.length) await tx.tarea.deleteMany({ where: { id: { in: tareaIds }, estado: "Pendiente" } });
+  }
+  if (r.pacing.dias.length) {
+    await tx.diaLectivo.createMany({
+      data: r.pacing.dias.map((d) => ({
+        planId,
+        fecha: aFecha(d.fecha),
+        unidadDesde: d.unidadDesde,
+        unidadHasta: d.unidadHasta,
+      })),
+    });
+  }
+  return { base: r.base, huecos: r.huecos, creados: r.pacing.dias.length, aviso: r.pacing.aviso ?? null };
+}
+
+export const recalcular = (planId: number, hoy: string) => prisma.$transaction((tx) => recalcularEn(tx, planId, hoy));
+
+export async function marcarNoLectivo(datos: { actorId: number; alumnoIds: number[]; fecha: string; motivo: string; hoy: string }) {
+  await exigirPadre(datos.actorId);
+  if (!fechaValida(datos.fecha)) throw new DatoInvalidoError("Fecha no válida");
+  const alumnoIds = [...new Set(datos.alumnoIds)];
+  if (alumnoIds.length === 0) throw new DatoInvalidoError("Falta el alumno");
+  const motivo = datos.motivo.trim() || "Sin clase";
+  const existentes = await prisma.usuario.count({ where: { id: { in: alumnoIds } } });
+  if (existentes !== alumnoIds.length) throw new NoEncontradoError("Alumno no encontrado");
+
+  return prisma.$transaction(async (tx) => {
+    for (const alumnoId of alumnoIds) {
+      await tx.diaNoLectivo.upsert({
+        where: { alumnoId_fecha: { alumnoId, fecha: aFecha(datos.fecha) } },
+        create: { alumnoId, fecha: aFecha(datos.fecha), motivo },
+        update: { motivo },
+      });
+    }
+    const planes = await tx.planCurso.findMany({ where: { alumnoId: { in: alumnoIds }, estado: "activo" }, select: { id: true } });
+    const recalculados = [];
+    for (const p of planes) recalculados.push({ planId: p.id, ...(await recalcularEn(tx, p.id, datos.hoy)) });
+    return { alumnos: alumnoIds.length, recalculados };
+  });
+}
+
+/** Día pendiente sin empezar: sin Tarea o con la Tarea todavía `Pendiente` */
+async function cargarDiaEditable(tx: Tx, diaId: number) {
+  const dia = await tx.diaLectivo.findUnique({ where: { id: diaId }, include: { plan: true, tarea: { select: { id: true, estado: true } } } });
+  if (!dia) throw new NoEncontradoError("Día no encontrado");
+  if (dia.estado !== "pendiente") throw new ConflictoError("Solo se puede cambiar un día pendiente");
+  if (dia.tarea && dia.tarea.estado !== "Pendiente") throw new ConflictoError("Ese día ya empezó");
+  return dia;
+}
+
+export async function moverDia(datos: { actorId: number; diaId: number; fecha: string; hoy: string }) {
+  await exigirPadre(datos.actorId);
+  if (!fechaValida(datos.fecha)) throw new DatoInvalidoError("Fecha no válida");
+  return prisma.$transaction(async (tx) => {
+    const dia = await cargarDiaEditable(tx, datos.diaId);
+    const { plan } = dia;
+    const nueva = datos.fecha;
+    if (nueva < datos.hoy) throw new DatoInvalidoError("No se puede mover a una fecha pasada");
+    if (nueva < aClave(plan.inicio) || nueva > aClave(plan.fin)) throw new DatoInvalidoError("Fuera del rango del plan");
+    if (!plan.diasSemana.includes(getISODay(parseISO(nueva)))) throw new DatoInvalidoError("Ese día de la semana no es lectivo en el plan");
+    if ((await noLectivosDe(tx, plan.alumnoId)).includes(nueva)) throw new ConflictoError("Ese día está marcado sin clase");
+
+    const otros = await tx.diaLectivo.findMany({ where: { planId: plan.id, id: { not: dia.id }, estado: { not: "movida" } } });
+    if (otros.some((o) => aClave(o.fecha) === nueva)) throw new ConflictoError("Ya hay un día lectivo en esa fecha");
+    const anteriores = otros.filter((o) => o.unidadHasta < dia.unidadDesde).map((o) => aClave(o.fecha));
+    const siguientes = otros.filter((o) => o.unidadDesde > dia.unidadHasta).map((o) => aClave(o.fecha));
+    const previa = anteriores.length ? anteriores.reduce((a, b) => (a > b ? a : b)) : null;
+    const proxima = siguientes.length ? siguientes.reduce((a, b) => (a < b ? a : b)) : null;
+    if ((previa && nueva <= previa) || (proxima && nueva >= proxima)) {
+      throw new ConflictoError("Tiene que quedar entre el día anterior y el siguiente");
+    }
+
+    if (dia.tarea) await tx.tarea.deleteMany({ where: { id: dia.tarea.id, estado: "Pendiente" } });
+    return tx.diaLectivo.update({ where: { id: dia.id }, data: { fecha: aFecha(nueva), tareaId: null } });
+  });
+}
+
+export async function omitirDia(datos: { actorId: number; diaId: number }) {
+  await exigirPadre(datos.actorId);
+  return prisma.$transaction(async (tx) => {
+    const dia = await cargarDiaEditable(tx, datos.diaId);
+    if (dia.tarea) await tx.tarea.deleteMany({ where: { id: dia.tarea.id, estado: "Pendiente" } });
+    return tx.diaLectivo.update({ where: { id: dia.id }, data: { estado: "omitida", tareaId: null } });
+  });
+}

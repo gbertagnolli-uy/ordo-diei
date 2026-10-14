@@ -95,6 +95,13 @@ model Usuario {
   desbloqueosTienda DesbloqueoProducto[]
   metaTienda        MetaTienda?
 
+  // Homeschooling (vault/nuevas-features/homeschooling/ARQUITECTURA_DETALLADA.md §3)
+  materiasCreadas  Materia[]      @relation("MateriasCreadas")
+  recursosCreados  RecursoCurso[] @relation("RecursosCreados")
+  leccionesCreadas LeccionCurso[] @relation("LeccionesCreadas")
+  planesAlumno     PlanCurso[]    @relation("PlanesAlumno")
+  diasNoLectivos   DiaNoLectivo[] @relation("DiasNoLectivosAlumno")
+
   @@map("Usuarios")
 }
 
@@ -140,6 +147,9 @@ model Tarea {
 
   isChecklist    Boolean         @default(false) @map("Is_Checklist")
   checklistItems ChecklistItem[]
+
+  // Homeschooling: día lectivo que esta tarea materializa
+  diaLectivo DiaLectivo? @relation("DiaLectivoTarea")
 
   // Cronómetro persistente
   timerStartedAt       DateTime? @map("Timer_Started_At")
@@ -356,10 +366,11 @@ model Libro {
   iniciadoEn  DateTime  @default(now()) @map("Iniciado_En")
   terminadoEn DateTime? @map("Terminado_En")
 
-  usuario    Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  habito     Habito           @relation(fields: [habitoId], references: [id], onDelete: Cascade)
-  registros  RegistroHabito[]
-  recompensa Recompensa?
+  usuario       Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito        Habito           @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  registros     RegistroHabito[]
+  recompensa    Recompensa?
+  recursosCurso RecursoCurso[]   @relation("RecursoLibro")
 
   @@index([usuarioId, habitoId])
   @@map("Libros")
@@ -661,4 +672,161 @@ model MetaTienda {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("Metas_Tienda")
+}
+
+// ─── Homeschooling (lane H1a) ───────────────────────────────────────────────
+
+enum TipoRecurso {
+  libro
+  curso_videos
+  pdf
+  enlaces
+  libre
+}
+
+enum UnidadContenido {
+  pagina
+  capitulo
+  leccion
+  unidad
+}
+
+enum EstadoPlan {
+  activo
+  pausado
+  finalizado
+}
+
+enum EstadoDiaLectivo {
+  pendiente
+  hecha
+  movida
+  omitida
+}
+
+enum PlataformaVideo {
+  youtube
+  vimeo
+}
+
+// ← groups de Roost
+model Materia {
+  id          Int             @id @default(autoincrement())
+  nombre      String          @map("Nombre")
+  descripcion String?         @map("Descripcion")
+  portadaUrl  String?         @map("Portada_URL")
+  icono       String?         @map("Icono")
+  color       String?         @map("Color")
+  dificultad  DificultadTarea @default(Media) @map("Dificultad")
+  orden       Int             @default(0) @map("Orden")
+  activa      Boolean         @default(true) @map("Activa")
+  creadorId   Int             @map("Creador_ID")
+  createdAt   DateTime        @default(now()) @map("Created_At")
+
+  creador  Usuario        @relation("MateriasCreadas", fields: [creadorId], references: [id])
+  recursos RecursoCurso[]
+
+  @@index([activa, orden])
+  @@map("Homeschool_Materias")
+}
+
+// ← modules de Roost + campos de pacing
+model RecursoCurso {
+  id               Int             @id @default(autoincrement())
+  materiaId        Int             @map("Materia_ID")
+  titulo           String          @map("Titulo")
+  descripcion      String?         @map("Descripcion")
+  portadaUrl       String?         @map("Portada_URL")
+  orden            Int             @default(0) @map("Orden")
+  creadorId        Int             @map("Creador_ID")
+  tipo             TipoRecurso     @map("Tipo")
+  unidadTipo       UnidadContenido @map("Unidad_Tipo")
+  totalUnidades    Int             @map("Total_Unidades")
+  url              String?         @map("URL")
+  libroId          Int?            @map("Libro_ID")
+  minutosPorUnidad Int             @default(20) @map("Minutos_Por_Unidad")
+  umbralAprobacion Int             @default(70) @map("Umbral_Aprobacion")
+  navegacionLibre  Boolean         @default(false) @map("Navegacion_Libre")
+  createdAt        DateTime        @default(now()) @map("Created_At")
+  updatedAt        DateTime        @updatedAt @map("Updated_At")
+
+  materia   Materia        @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador   Usuario        @relation("RecursosCreados", fields: [creadorId], references: [id])
+  libro     Libro?         @relation("RecursoLibro", fields: [libroId], references: [id], onDelete: SetNull)
+  planes    PlanCurso[]
+  lecciones LeccionCurso[]
+
+  @@index([materiaId, orden])
+  @@map("Homeschool_Recursos")
+}
+
+// ← recordings de Roost
+model LeccionCurso {
+  id              Int              @id @default(autoincrement())
+  recursoId       Int              @map("Recurso_ID")
+  orden           Int              @map("Orden")
+  titulo          String           @map("Titulo")
+  instrucciones   String?          @map("Instrucciones")
+  url             String?          @map("URL")
+  videoPlataforma PlataformaVideo? @map("Video_Plataforma")
+  videoId         String?          @map("Video_ID")
+  miniaturaUrl    String?          @map("Miniatura_URL")
+  creadorId       Int              @map("Creador_ID")
+  createdAt       DateTime         @default(now()) @map("Created_At")
+
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  creador Usuario      @relation("LeccionesCreadas", fields: [creadorId], references: [id])
+
+  @@unique([recursoId, orden])
+  @@map("Homeschool_Lecciones")
+}
+
+model PlanCurso {
+  id         Int        @id @default(autoincrement())
+  recursoId  Int        @map("Recurso_ID")
+  alumnoId   Int        @map("Alumno_ID")
+  inicio     DateTime   @map("Inicio") @db.Date
+  fin        DateTime   @map("Fin") @db.Date
+  diasSemana Int[]      @map("Dias_Semana")
+  estado     EstadoPlan @default(activo) @map("Estado")
+  createdAt  DateTime   @default(now()) @map("Created_At")
+
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  alumno  Usuario      @relation("PlanesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  dias    DiaLectivo[]
+
+  @@unique([recursoId, alumnoId])
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Planes")
+}
+
+model DiaLectivo {
+  id          Int              @id @default(autoincrement())
+  planId      Int              @map("Plan_ID")
+  fecha       DateTime         @map("Fecha") @db.Date
+  unidadDesde Int              @map("Unidad_Desde")
+  unidadHasta Int              @map("Unidad_Hasta")
+  estado      EstadoDiaLectivo @default(pendiente) @map("Estado")
+  tareaId     Int?             @unique @map("Tarea_ID")
+  createdAt   DateTime         @default(now()) @map("Created_At")
+
+  plan  PlanCurso @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tarea Tarea?    @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+
+  @@unique([planId, fecha])
+  @@index([fecha, estado])
+  @@map("Homeschool_Dias_Lectivos")
+}
+
+model DiaNoLectivo {
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int      @map("Alumno_ID")
+  fecha     DateTime @map("Fecha") @db.Date
+  motivo    String   @map("Motivo")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  alumno Usuario @relation("DiasNoLectivosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, fecha])
+  @@map("Homeschool_Dias_No_Lectivos")
 }
