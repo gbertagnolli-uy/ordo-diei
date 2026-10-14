@@ -10,7 +10,8 @@ Investigación de mercado pegada por el usuario, guardada sin cambios en [`ref/`
 |---|---|---|---|
 | [`kiosk-mode/`](kiosk-mode/SPEC.md) | **Pospuesto a la APP** (D6) | — | — |
 | [`sonidos-ui/`](sonidos-ui/SPEC.md) | Must-Have (sonidos de recompensa) | S–M | — (base de audio) |
-| [`idle-marco-fotos/`](idle-marco-fotos/SPEC.md) | **Pedido firme**: reposo con Google Fotos + «Entrar» | M–L | spike Google Fotos, inactividad |
+| [`idle-marco-fotos/`](idle-marco-fotos/SPEC.md) | **Pedido firme**: reposo v2 con **Unsplash + frases** (Vulgata/Torres Amat, Catecismo de San Pío X) + título litúrgico del día (ronda 9; Google Fotos descartado) | M | inactividad (N4), liturgia (L2) para el título |
+| [`liturgia/`](liturgia/SPEC.md) | **Pedido firme**: motor Divinum Officium (1570/1888/1906) → Calendarium, Breviarium, Missale, Proprium, Ordinarium, Psalterium, Rosarium | XL (L1–L9) | Perl fuera de línea (generador) |
 | [`sesion-inactividad-borradores/`](sesion-inactividad-borradores/SPEC.md) | **Pedido firme**: 15 s login / 60 s sesión + borradores | M–L | — |
 | [`temporizadores-visuales/`](temporizadores-visuales/SPEC.md) | Should-Have | S–M | sonidos (aviso) |
 | [`marketplace/`](marketplace/SPEC.md) | Should-Have | M | economía y flujo de `Recompensa` existentes |
@@ -25,3 +26,5 @@ Hallazgos transversales de la investigación que no son una carpeta propia pero 
 **Ronda 2 (2026-10-13):** decisiones del usuario en [`DECISIONES.md`](DECISIONES.md); plan de lanes en [`lanes/LANES.md`](lanes/LANES.md); prompt común en [`lanes/PROMPT_GENERAL_AGY.md`](lanes/PROMPT_GENERAL_AGY.md). Cada carpeta tiene un `SPEC.md` listo para implementar (el `README.md` queda como contexto de la ronda 1).
 
 Cada carpeta tiene (ronda 1): pedido textual, lo que dice la investigación, lo que ya existe en el repo, propuesta y **preguntas abiertas** para decidir antes de crear lanes.
+
+**Ronda 9 (2026-10-14, lane 122):** reposo v2 con Unsplash y frases, y nueva carpeta [`liturgia/`](liturgia/README.md) (motor Divinum Officium). Pedido textual y decisiones D34–D53 en [`DECISIONES.md`](DECISIONES.md) §10; lanes R1–R3 y L1–L9 en [`lanes/LANES.md`](lanes/LANES.md).
