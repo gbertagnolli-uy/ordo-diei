@@ -19,6 +19,10 @@
 | P-10 | 124 (H1b-2) | Los hijos ven "Próximamente" en `/dashboard/homeschooling` hasta H2. `materias/[id]` ya les funciona si tienen un plan (modo hijo, sin marcar lecciones). | Implementado así. | — |
 | P-11 | 124 (H1b-2) | Faltan, sobre lo que pedía la spec: archivar una materia desde la UI (existe `editarMateria({activa:false})` pero ningún botón), reordenar cursos/lecciones arrastrando (existen las rutas `PUT`), y editar un plan ya creado (solo se mueve/omite día a día). | No se implementó. | Decidir si hacen falta. |
 | P-12 | 124 (H1b-2) | `next build` falló una vez por importar `esPadre` de `habitos/permisos.ts` desde un módulo del navegador (arrastra `pg`). Corregido y cubierto por un test de guarda; el mismo patrón puede repetirse en otras lanes. | Test de guarda en `roost/guarda.test.ts`. | — |
+| P-13 | 126 (H2a) | `hoy.test.ts` (3 tests con base real: carrera de `asegurarTareasDeHoy`, guardia, hermano 403) saltado sin `PERMITIR_TESTS_DB=1` (ver P-4). La parte pura (vencimiento 18:00, estado del día, candados, guardia) sí tiene tests y pasa. | — | Correrlos con la base real autorizada. |
+| P-14 | 126 (H2a) | `complete` calcula el corte de las 22:00 (50 %) con la hora del servidor (`setHours(22…)`) y la hora feliz con UTC; el «a tiempo» de las 18:00 es exacto porque sale de `horaEjecucion` en `APP_TZ`. Si el servidor no corre en Montevideo, el 50 % termina a las 22:00 de otra zona. | Sin cambios en `complete` (solo se agregó la guardia). | Fijar `TZ` del servidor o corregir `complete`. |
+| P-15 | 126 (H2a) | Solo el propio alumno marca sus lecciones (`completarLeccion` usa la sesión). Un padre no puede "terminar la lección" por un hijo; sí puede completar la Tarea (HS-SEG) pero la guardia lo frena si faltan lecciones, y puede desmarcar (`DELETE …/completar?alumnoId=`). | Implementado así. | Permitir que el padre marque por el hijo. |
+| P-16 | 126 (H2a) | El gancho del quiz (H4) en `completarLeccion` es un comentario: hasta que exista H4 no se exige nada. Las lecciones de recursos tipo libro/PDF no tienen lecciones (solo «Terminé» del día). | — | Se completa en H4. |
 
 ## Resueltos
 _(ninguno todavía)_
