@@ -58,3 +58,10 @@
 - **Revisar**: `LiturgiaTexto` usa una fila con `no-scrollbar` para los chips de sección porque `ui/drag-scroll` vive en la lane 109 (sin integrar). Cambiarlo cuando 109 llegue a `dev`.
 - **Revisar**: el Rosario no está en la base (DO no lo trae): L9 lo lee de `src/data/liturgia/rosarium.json`; el prefijo de clave `Rosarium/` quedó reservado en `parametros.ts` por si se prefiere guardarlo en `Documentos_Liturgicos`.
 - **Aviso para L4–L9**: las pantallas que usen `useParametrosLiturgia` (`useSearchParams`) necesitan `<Suspense>` en la página.
+
+## R2 · Pool de Unsplash y panel (lane 137)
+- **Sin verificar**: el refresco real contra Unsplash y el cron (no se corrió; sin llamadas a la API). Probar con «Cargar fotos ahora» una vez cargada la clave.
+- **Para el usuario**: `UNSPLASH_ACCESS_KEY` en Vercel.
+- **Hecho sin OK (aditivo)**: `CREATE TABLE` de `Config_Reposo` y `Fotos_Unsplash` aplicado con `db execute` (AGENTS §6).
+- **Revisar**: el aviso de descarga usa `/photos/{id}/download` (equivale a `links.download_location`, que no se guarda).
+- **Revisar**: el panel reutiliza `conSesion` de `lib/tienda/http` para las rutas de admin.

@@ -1087,3 +1087,37 @@ model HistoriaSocial {
   @@index([alumnoId, mostrarEl])
   @@map("Homeschool_Historias")
 }
+
+// ← Reposo v2 (R2): configuración única de la pantalla de reposo (fila id = 1)
+model ConfigReposo {
+  id                  Int       @id @default(1)
+  segundosLogin       Int       @default(15) @map("Segundos_Login")
+  segundosSesion      Int       @default(60) @map("Segundos_Sesion")
+  unsplashTema        String    @default("6sMVjTLSkeQ") @map("Unsplash_Tema") // tema oficial Nature
+  unsplashConsulta    String?   @map("Unsplash_Consulta") // si está, reemplaza al tema
+  tamPool             Int       @default(150) @map("Tam_Pool")
+  mostrarRefCatecismo Boolean   @default(true) @map("Mostrar_Ref_Catecismo")
+  ultimaSincronia     DateTime? @map("Ultima_Sincronia")
+
+  @@map("Config_Reposo")
+}
+
+// ← Reposo v2 (R2): pool de fotos de Unsplash (se refresca en el cron diario)
+model FotoUnsplash {
+  id              String   @id @map("Unsplash_ID")
+  urlRaw          String   @map("Url_Raw")
+  ancho           Int      @map("Ancho")
+  alto            Int      @map("Alto")
+  color           String?  @map("Color") // placeholder mientras carga
+  blurHash        String?  @map("Blur_Hash")
+  autorNombre     String   @map("Autor_Nombre")
+  autorUsuario    String   @map("Autor_Usuario")
+  urlFoto         String   @map("Url_Foto") // links.html
+  orientacion     String   @map("Orientacion") // "horizontal" | "vertical"
+  activa          Boolean  @default(true) @map("Activa")
+  oculta          Boolean  @default(false) @map("Oculta") // un padre la quitó; no vuelve a entrar
+  descargaAvisada Boolean  @default(false) @map("Descarga_Avisada")
+  createdAt       DateTime @default(now()) @map("Created_At")
+
+  @@map("Fotos_Unsplash")
+}
