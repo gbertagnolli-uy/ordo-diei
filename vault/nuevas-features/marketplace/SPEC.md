@@ -1,5 +1,7 @@
 # Marketplace — Especificación
 
+> **Implementado en la lane 103** con el nombre **«Tienda»** (`/dashboard/tienda`, administración en `/dashboard/admin/tienda`). Ver [`../../LANE_103_TIENDA.md`](../../LANE_103_TIENDA.md) para lo hecho y lo pendiente; la guía de UI usada está en [`ref/ui-tiendas-de-juegos.md`](ref/ui-tiendas-de-juegos.md).
+
 > Decisiones D8–D12 de [`../DECISIONES.md`](../DECISIONES.md). Amplía el borrador de [`README.md`](README.md) (que queda como contexto). Economía de cartas: [`../../ECONOMIA_CARTAS.md`](../../ECONOMIA_CARTAS.md). Flujo de premios: lanes 85, 86, 87, 91, 93.
 
 ## 1. Visión

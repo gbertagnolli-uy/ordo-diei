@@ -13,6 +13,7 @@ import {
   Layers,
   ListPlus,
   PackageCheck,
+  ShoppingCart,
   Sunset,
   UserPlus,
 } from "lucide-react";
@@ -22,7 +23,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";
 
-export type PendientesAdmin = { solicitudesHabitos: number; premiosPorEntregar: number };
+export type PendientesAdmin = { solicitudesHabitos: number; premiosPorEntregar: number; comprasPorAprobar?: number };
 
 type Accion = {
   href: string;
@@ -65,6 +66,13 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
           descripcion: "Premios que tus hijos reclamaron y esperan que se los entregues.",
           icon: PackageCheck,
           pendientes: pendientes.premiosPorEntregar,
+        },
+        {
+          href: "/dashboard/admin/tienda",
+          titulo: "Tienda",
+          descripcion: "Productos que se canjean con monedas: precios, stock, requisitos y compras por aprobar.",
+          icon: ShoppingCart,
+          pendientes: pendientes.comprasPorAprobar,
         },
         { href: "/dashboard/cartas/admin", titulo: "Administrar cartas", descripcion: "Creá, editá y archivá las cartas de la colección.", icon: Layers },
       ],

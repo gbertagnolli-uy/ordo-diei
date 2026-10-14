@@ -622,6 +622,7 @@ export type CompraAdminVista = {
   motivo: string | null;
   createdAt: string;
   entregada: boolean;
+  recompensaId: number | null;
   usuario: { id: number; nombre: string; fotoUrl: string | null };
 };
 
@@ -647,6 +648,7 @@ export async function listarComprasAdmin(rol?: string): Promise<CompraAdminVista
       motivo: c.motivo,
       createdAt: c.createdAt.toISOString(),
       entregada: c.recompensaId !== null && entregadas.has(c.recompensaId),
+      recompensaId: c.recompensaId,
       usuario: c.usuario,
     };
   });
