@@ -75,3 +75,13 @@ Conclusión de la evaluación de bases open source, pegada por el usuario (textu
 | D20 | **Kiosk/Curfew sale de H6** (sigue D6: APP nativa). H6 queda en neurodivergencia. |
 | D21 | **Ninguna cifra legal en el código**: la jurisdicción la completa el padre. |
 | D22 | Las recompensas de Homeschooling pasan por el **pipeline existente** de hábitos/tareas, una sola vez por lección, con tope y (por defecto) aprobación del padre. |
+
+## 6. Ronda 5 (2026-10-13) — Homeschooling cerrado para implementar
+
+> «No te preocupes por las licencias, tengo permiso para usar roost y además este proyecto solo se está usando en casa en local. Corrige todo en la documentación para que esté pronto para implementar»
+
+| # | Decisión |
+|---|---|
+| D23 | **Licencia de Roost: sin trámite** (permiso del usuario). Uso **solo doméstico**: no hay SaaS, premium ni cumplimiento legal. |
+| D24 | Las preguntas abiertas de la auditoría se resolvieron como **HD1–HD14** (`homeschooling/ARQUITECTURA_DETALLADA.md` §1). Lo principal: cada día lectivo es una `Tarea` existente (premios y aprobación sin código nuevo); solo fotos como evidencia; sin cartas, jurisdicciones ni Carnegie en v1; Kiosk fuera. |
+| D25 | Lanes definitivas: H1a, H1b, H2, H3, H4, H5 (horas y reportes), H6 (neurodivergencia). Ver `lanes/LANES_HOMESCHOOLING.md`. |
