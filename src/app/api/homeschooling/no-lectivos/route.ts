@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { conSesion } from "@/lib/tienda/http";
 import { hoyEnFamilia } from "@/lib/habitos/server";
-import { marcarNoLectivo } from "@/lib/homeschooling/servidor/planes";
+import { listarNoLectivos, marcarNoLectivo } from "@/lib/homeschooling/servidor/planes";
 import { claveFecha, idPositivo } from "../_comun";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +12,9 @@ const datos = z.object({
   fecha: claveFecha,
   motivo: z.string().max(200).default(""),
 });
+
+// GET: lista de días sin clase (padre)
+export const GET = () => conSesion((s) => listarNoLectivos(s.id), { soloPadres: true });
 
 // POST /api/homeschooling/no-lectivos: «hoy no hay clase» (una fila por alumno) y recalcula sus planes
 export async function POST(req: NextRequest) {

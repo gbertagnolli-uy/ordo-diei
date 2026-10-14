@@ -1,6 +1,7 @@
 // Portado de vendor/roost/src/services/group.ts:599 (hasPermission) (msrbuilds/roost@492af47).
 // Cambios: roles `admin` (Padre/Madre) y `member` (Hijo/Hija); acciones de la materia familiar.
-import { esPadre } from "../../habitos/permisos.ts";
+// Sin importar habitos/permisos: arrastra Prisma (pg) y este archivo corre en el navegador.
+const esPadre = (rol?: string) => rol === "Padre" || rol === "Madre";
 
 export type GroupRole = "admin" | "member";
 export type AccionMateria = "ver" | "crear_curso" | "editar_curso" | "borrar_curso" | "editar_materia" | "borrar_materia" | "desmarcar_leccion";
