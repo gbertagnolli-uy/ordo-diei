@@ -1,0 +1,132 @@
+{
+  "oraciones": {
+    "signumCrucis": {
+      "tituloLa": "Signum Crucis",
+      "tituloEs": "La Señal de la Cruz",
+      "textoLa": "Per signum Sanctæ Crucis, de inimícis nostris líbera nos, Deus noster. In nómine Patris, et Fílii, et Spíritus Sancti. Amen.",
+      "textoEs": "Por la señal de la Santa Cruz, de nuestros enemigos líbranos, Señor Dios nuestro. En el nombre del Padre, y del Hijo, y del Espíritu Santo. Amén.",
+      "fuente": "Manuale Precum (Ratisbona, 1898); devocionario tradicional"
+    },
+    "credo": {
+      "tituloLa": "Symbolum Apostolorum (Credo)",
+      "tituloEs": "El Símbolo de los Apóstoles",
+      "textoLa": "Credo in Deum Patrem omnipoténtem, Creatórem cæli et terræ. Et in Iesum Christum, Fílium eius únicum, Dóminum nostrum, qui concéptus est de Spíritu Sancto, natus ex María Vírgine, passus sub Póntio Piláto, crucifíxus, mórtuus, et sepúltus, descéndit ad ínferos, tértia die resurréxit a mórtuis, ascéndit ad cælos, sedet ad déxteram Dei Patris omnipoténtis, inde ventúrus est iudicáre vivos et mórtuos. Credo in Spíritum Sanctum, sanctam Ecclésiam cathólicam, sanctórum communiónem, remissiónem peccatórum, carnis resurrectiónem, vitam ætérnam. Amen.",
+      "textoEs": "Creo en Dios Padre todopoderoso, Creador del cielo y de la tierra. Creo en Jesucristo, su único Hijo, nuestro Señor, que fue concebido por obra y gracia del Espíritu Santo, nació de Santa María Virgen, padeció bajo el poder de Poncio Pilato, fue crucificado, muerto y sepultado, descendió a los infiernos, al tercer día resucitó de entre los muertos, subió a los cielos y está sentado a la derecha de Dios Padre todopoderoso. Desde allí ha de venir a juzgar a vivos y muertos. Creo en el Espíritu Santo, la santa Iglesia católica, la comunión de los santos, el perdón de los pecados, la resurrección de la carne y la vida eterna. Amén.",
+      "fuente": "Divinum Officium (Psalterium/Common/Prayers.txt: Credo)"
+    },
+    "paterNoster": {
+      "tituloLa": "Pater Noster",
+      "tituloEs": "Padre Nuestro",
+      "textoLa": "Pater noster, qui es in cælis, sanctificétur nomen tuum. Advéniat regnum tuum. Fiat volúntas tua, sicut in cælo et in terra. Panem nostrum cotidiánum da nobis hódie, et dimítte nobis débita nostra, sicut et nos dimíttimus debitóribus nostris. Et ne nos indúcas in tentatiónem: sed líbera nos a malo. Amen.",
+      "textoEs": "Padre nuestro, que estás en los cielos, santificado sea tu nombre. Venga a nosotros tu reino. Hágase tu voluntad, así en la tierra como en el cielo. El pan nuestro de cada día dánosle hoy, y perdónanos nuestras deudas, así como nosotros perdonamos a nuestros deudores. Y no nos dejes caer en la tentación, mas líbranos del mal. Amén.",
+      "fuente": "Divinum Officium (Psalterium/Common/Prayers.txt: Pater)"
+    },
+    "aveMaria": {
+      "tituloLa": "Ave Maria",
+      "tituloEs": "Ave María",
+      "textoLa": "Ave María, grátia plena, Dóminus tecum. Benedícta tu in muliéribus, et benedíctus fructus ventris tui, Iesus. Sancta María, Mater Dei, ora pro nobis peccatóribus, nunc et in hora mortis nostræ. Amen.",
+      "textoEs": "Dios te salve, María, llena eres de gracia, el Señor es contigo. Bendita tú eres entre todas las mujeres, y bendito es el fruto de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte. Amén.",
+      "fuente": "Divinum Officium (Psalterium/Common/Prayers.txt: Ave Maria)"
+    },
+    "gloriaPatri": {
+      "tituloLa": "Gloria Patri",
+      "tituloEs": "Gloria al Padre",
+      "textoLa": "Glória Patri, et Fílio, et Spirítui Sancto. Sicut erat in princípio, et nunc, et semper, et in sǽcula sæculórum. Amen.",
+      "textoEs": "Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos. Amén.",
+      "fuente": "Divinum Officium (Psalterium/Common/Prayers.txt: Gloria)"
+    },
+    "fatima": {
+      "tituloLa": "Oratio Fatimae",
+      "tituloEs": "Oración de Fátima",
+      "etiqueta": "desde 1917",
+      "textoLa": "O mi Iesu, dimítte nobis débita nostra, líbera nos ab ígnibus inférni, perduc in cælum omnes ánimas, præsértim eas quæ máxime índigent misericórdia tua.",
+      "textoEs": "Oh Jesús mío, perdona nuestros pecados, líbranos del fuego del infierno, lleva al cielo a todas las almas, especialmente a las más necesitadas de tu misericordia.",
+      "fuente": "Aparición de la Santísima Virgen en Fátima (13 de julio de 1917); devocionario tradicional preconciliar"
+    },
+    "salveRegina": {
+      "tituloLa": "Salve Regina",
+      "tituloEs": "La Salve",
+      "textoLa": "Salve, Regína, Mater misericórdiæ, vita, dulcédo, et spes nostra, salve. Ad te clamámus, éxsules fílii Hevæ. Ad te suspirámus, geméntes et flentes in hac lacrimárum valle. Eia ergo, advocáta nostra, illos tuos misericórdes óculos ad nos convérte. Et Iesum, benedíctum fructum ventris tui, nobis post hoc exsílium osténde. O clemens, o pia, o dulcis Virgo María.",
+      "textoEs": "Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra, Dios te salve. A ti clamamos los desterrados hijos de Eva. A ti suspiramos, gimiendo y llorando en este valle de lágrimas. Ea, pues, Señora, abogada nuestra, vuelve a nosotros esos tus ojos misericordiosos. Y después de este destierro muéstranos a Jesús, fruto bendito de tu vientre. ¡Oh clemente, oh piadosa, oh dulce Virgen María!",
+      "versiculoLa": "℣. Ora pro nobis, Sancta Dei Génetrix.\n℟. Ut digni efficiámur promissiónibus Christi.",
+      "versiculoEs": "℣. Ruega por nosotros, Santa Madre de Dios.\n℟. Para que seamos dignos de alcanzar las promesas de Jesucristo.",
+      "fuente": "Divinum Officium (Mariaant.txt: Postpentecost)"
+    },
+    "oremusFinal": {
+      "tituloLa": "Oratio Conclusiva",
+      "tituloEs": "Oración Final del Santo Rosario",
+      "textoLa": "Orémus. Deus, cuius Unigénitus per vitam, mortem et resurrectiónem suam nobis salútis ætérnæ præmia comparávit: concéde, quǽsumus; ut hæc mystéria sacratíssimo beátæ Maríæ Vírginis Rosário recoléntes, et imitémur quod cóntinent, et quod promíttunt assequámur. Per eúndem Christum Dóminum nostrum. Amen.",
+      "textoEs": "Oremos. Oh Dios, cuyo Hijo unigénito, por su vida, muerte y resurrección nos obtuvo los premios de la salvación eterna: te rogamos nos concedas que, meditando estos misterios en el sacratísimo Rosario de la bienaventurada Virgen María, imitemos lo que contienen y alcancemos lo que prometen. Por el mismo Jesucristo Nuestro Señor. Amén.",
+      "fuente": "Manuale Precum (1898, p. 344) y The Raccolta (1910, n.º 219)"
+    }
+  },
+  "litaniaeLauretanae": {
+    "tituloLa": "Litaniæ Lauretanæ",
+    "tituloEs": "Letanías Lauretanas de la Santísima Virgen María",
+    "fuente": "Rituale Romanum y The Raccolta (1910, n.º 218)",
+    "invocaciones": [
+      { "la": "Kýrie, eléison.", "es": "Señor, ten piedad." },
+      { "la": "Christe, eléison.", "es": "Cristo, ten piedad." },
+      { "la": "Kýrie, eléison.", "es": "Señor, ten piedad." },
+      { "la": "Christe, audi nos.", "es": "Cristo, óyenos." },
+      { "la": "Christe, exáudi nos.", "es": "Cristo, escúchanos." },
+      { "la": "Pater de cælis, Deus, miserére nobis.", "es": "Dios Padre celestial, ten piedad de nosotros." },
+      { "la": "Fili, Redémptor mundi, Deus, miserére nobis.", "es": "Dios Hijo, Redentor del mundo, ten piedad de nosotros." },
+      { "la": "Spíritus Sancte, Deus, miserére nobis.", "es": "Dios Espíritu Santo, ten piedad de nosotros." },
+      { "la": "Sancta Trínitas, unus Deus, miserére nobis.", "es": "Santísima Trinidad, un solo Dios, ten piedad de nosotros." },
+      { "la": "Sancta María, ora pro nobis.", "es": "Santa María, ruega por nosotros." },
+      { "la": "Sancta Dei Génetrix, ora pro nobis.", "es": "Santa Madre de Dios, ruega por nosotros." },
+      { "la": "Sancta Virgo vírginum, ora pro nobis.", "es": "Santa Virgen de las vírgenes, ruega por nosotros." },
+      { "la": "Mater Christi, ora pro nobis.", "es": "Madre de Cristo, ruega por nosotros." },
+      { "la": "Mater Ecclésiæ, ora pro nobis.", "es": "Madre de la Iglesia, ruega por nosotros." },
+      { "la": "Mater divínæ grátiæ, ora pro nobis.", "es": "Madre de la divina gracia, ruega por nosotros." },
+      { "la": "Mater puríssima, ora pro nobis.", "es": "Madre purísima, ruega por nosotros." },
+      { "la": "Mater castíssima, ora pro nobis.", "es": "Madre castísima, ruega por nosotros." },
+      { "la": "Mater invioláta, ora pro nobis.", "es": "Madre inviolada, ruega por nosotros." },
+      { "la": "Mater intemeráta, ora pro nobis.", "es": "Madre incorrupta, ruega por nosotros." },
+      { "la": "Mater amábilis, ora pro nobis.", "es": "Madre amable, ruega por nosotros." },
+      { "la": "Mater admirábilis, ora pro nobis.", "es": "Madre admirable, ruega por nosotros." },
+      { "la": "Mater boni consílii, ora pro nobis.", "es": "Madre del buen consejo, ruega por nosotros." },
+      { "la": "Mater Creatóris, ora pro nobis.", "es": "Madre del Creador, ruega por nosotros." },
+      { "la": "Mater Salvatóris, ora pro nobis.", "es": "Madre del Salvador, ruega por nosotros." },
+      { "la": "Virgo prudentíssima, ora pro nobis.", "es": "Virgen prudentísima, ruega por nosotros." },
+      { "la": "Virgo veneránda, ora pro nobis.", "es": "Virgen digna de veneración, ruega por nosotros." },
+      { "la": "Virgo prædicánda, ora pro nobis.", "es": "Virgen digna de alabanza, ruega por nosotros." },
+      { "la": "Virgo potens, ora pro nobis.", "es": "Virgen poderosa, ruega por nosotros." },
+      { "la": "Virgo clemens, ora pro nobis.", "es": "Virgen clemente, ruega por nosotros." },
+      { "la": "Virgo fidélis, ora pro nobis.", "es": "Virgen fiel, ruega por nosotros." },
+      { "la": "Spéculum iustítiæ, ora pro nobis.", "es": "Espejo de justicia, ruega por nosotros." },
+      { "la": "Sedes sapiéntiæ, ora pro nobis.", "es": "Trono de la sabiduría, ruega por nosotros." },
+      { "la": "Causa nostræ lætítiæ, ora pro nobis.", "es": "Causa de nuestra alegría, ruega por nosotros." },
+      { "la": "Vas spirituále, ora pro nobis.", "es": "Vaso espiritual, ruega por nosotros." },
+      { "la": "Vas honorábile, ora pro nobis.", "es": "Vaso digno de honor, ruega por nosotros." },
+      { "la": "Vas insígne devotiónis, ora pro nobis.", "es": "Vaso insigne de devoción, ruega por nosotros." },
+      { "la": "Rosa mýstica, ora pro nobis.", "es": "Rosa mística, ruega por nosotros." },
+      { "la": "Turris Davídica, ora pro nobis.", "es": "Torre de David, ruega por nosotros." },
+      { "la": "Turris ebúrnea, ora pro nobis.", "es": "Torre de marfil, ruega por nosotros." },
+      { "la": "Domus áurea, ora pro nobis.", "es": "Casa de oro, ruega por nosotros." },
+      { "la": "Fœ́deris arca, ora pro nobis.", "es": "Arca de la Alianza, ruega por nosotros." },
+      { "la": "Iánua cæli, ora pro nobis.", "es": "Puerta del cielo, ruega por nosotros." },
+      { "la": "Stella matutína, ora pro nobis.", "es": "Estrella de la mañana, ruega por nosotros." },
+      { "la": "Salus infirmórum, ora pro nobis.", "es": "Salud de los enfermos, ruega por nosotros." },
+      { "la": "Refúgium peccatórum, ora pro nobis.", "es": "Refugio de los pecadores, ruega por nosotros." },
+      { "la": "Consolátrix afflictórum, ora pro nobis.", "es": "Consuelo de los afligidos, ruega por nosotros." },
+      { "la": "Auxílium Christianórum, ora pro nobis.", "es": "Auxilio de los cristianos, ruega por nosotros." },
+      { "la": "Regína Angelórum, ora pro nobis.", "es": "Reina de los Ángeles, ruega por nosotros." },
+      { "la": "Regína Patriarchárum, ora pro nobis.", "es": "Reina de los Patriarcas, ruega por nosotros." },
+      { "la": "Regína Prophetárum, ora pro nobis.", "es": "Reina de los Profetas, ruega por nosotros." },
+      { "la": "Regína Apostolórum, ora pro nobis.", "es": "Reina de los Apóstoles, ruega por nosotros." },
+      { "la": "Regína Mártyrum, ora pro nobis.", "es": "Reina de los Mártires, ruega por nosotros." },
+      { "la": "Regína Confessórum, ora pro nobis.", "es": "Reina de los Confesores, ruega por nosotros." },
+      { "la": "Regína Vírginum, ora pro nobis.", "es": "Reina de las Vírgenes, ruega por nosotros." },
+      { "la": "Regína Sanctórum ómnium, ora pro nobis.", "es": "Reina de todos los Santos, ruega por nosotros." },
+      { "la": "Regína sine labe origináli concépta, ora pro nobis.", "es": "Reina concebida sin pecado original, ruega por nosotros." },
+      { "la": "Regína Sacratíssimi Rosárii, ora pro nobis.", "es": "Reina del Santísimo Rosario, ruega por nosotros." },
+      { "la": "Regína pacis, ora pro nobis.", "es": "Reina de la paz, ruega por nosotros." },
+      { "la": "Agnus Dei, qui tollis peccáta mundi, parce nobis, Dómine.", "es": "Cordero de Dios, que quitas los pecados del mundo, perdónanos, Señor." },
+      { "la": "Agnus Dei, qui tollis peccáta mundi, exáudi nos, Dómine.", "es": "Cordero de Dios, que quitas los pecados del mundo, escúchanos, Señor." },
+      { "la": "Agnus Dei, qui tollis peccáta mundi, miserére nobis.", "es": "Cordero de Dios, que quitas los pecados del mundo, ten piedad de nosotros." },
+      { "la": "Sub tuum præsídium confúgimus, Sancta Dei Génetrix: nostras deprecatiónes ne despícias in necessitátibus, sed a perículis cunctis líbera nos semper, Virgo gloriósa et benedícta.", "es": "Bajo tu amparo nos acogemos, Santa Madre de Dios: no deseches las súplicas que te dirigimos en nuestras necesidades, antes bien, líbranos de todo peligro, ¡oh Virgen gloriosa y bendita!" }
+    ]
+  }
+}
