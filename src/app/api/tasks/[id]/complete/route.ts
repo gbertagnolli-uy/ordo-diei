@@ -5,6 +5,7 @@ import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
 import { puntosBase } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
+import { puedeCompletarTarea } from "@/lib/tareas/permisos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -25,6 +26,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!task) {
       console.warn(`[API/Complete] Tarea ${taskId} no encontrada`);
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
+    }
+
+    if (!puedeCompletarTarea({ id: Number(session.user.id), rolFamiliar: session.user.rolFamiliar }, task)) {
+      return NextResponse.json({ error: "Solo quien tiene asignada la tarea (o un padre) puede completarla" }, { status: 403 });
     }
 
     if (task.estado === "Completada" || task.estado === "Aprobada" || task.estado === "Esperando_Aprobacion") {
