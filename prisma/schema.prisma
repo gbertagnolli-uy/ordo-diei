@@ -90,6 +90,11 @@ model Usuario {
   movimientosFragmento MovimientoFragmento[]
   reclamosCarta        ReclamoCarta[]
 
+  // Tienda (vault/nuevas-features/marketplace/SPEC.md)
+  comprasTienda     CompraTienda[]
+  desbloqueosTienda DesbloqueoProducto[]
+  metaTienda        MetaTienda?
+
   @@map("Usuarios")
 }
 
@@ -376,8 +381,8 @@ model Recompensa {
   usadoEn        DateTime?        @map("Usado_En") // vales: cuándo se arrancó el ticket; null = sin usar
 
   // Premio sorpresa de la bitácora de comportamiento (vault/LANE_80_PANEL_ADMIN_COMPORTAMIENTO.md)
-  comportamientoId Int?  @unique @map("Comportamiento_ID")
-  contenido        Json? @map("Contenido") // ItemPremio[]; oculto al niño hasta que lo abre
+  comportamientoId Int?    @unique @map("Comportamiento_ID")
+  contenido        Json?   @map("Contenido") // ItemPremio[]; oculto al niño hasta que lo abre
   evaluacion       String? @map("Evaluacion") // texto que los padres escribieron al registrar el comportamiento; se lee antes de abrir el premio
 
   usuario        Usuario         @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -552,4 +557,108 @@ model Archivo {
   createdAt    DateTime @default(now()) @map("Created_At")
 
   @@map("Archivos")
+}
+
+// ─── Tienda / Marketplace (vault/nuevas-features/marketplace/SPEC.md) ─────────────────────────────
+enum TipoProducto {
+  sobre
+  fragmentos
+  fisico
+  vale
+}
+
+enum PeriodoLimite {
+  siempre
+  dia
+  semana
+  mes
+}
+
+enum EstadoCompra {
+  completada
+  pendiente_aprobacion
+  rechazada
+  cancelada
+}
+
+model ProductoTienda {
+  id                 Int           @id @default(autoincrement())
+  tipo               TipoProducto  @map("Tipo")
+  origen             String        @default("manual") @map("Origen") // "sistema" | "manual"
+  sistemaClave       String?       @unique @map("Sistema_Clave") // p. ej. "sobre:gloria"
+  titulo             String        @map("Titulo")
+  descripcion        String?       @map("Descripcion")
+  imagenClave        String?       @map("Imagen_Clave") // Archivo.clave
+  categoria          String        @default("premios") @map("Categoria")
+  precios            Json          @map("Precios") // [{ costos: [{ moneda, monto }] }]
+  requisitos         Json          @default("[]") @map("Requisitos")
+  config             Json          @default("{}") @map("Config")
+  stockTotal         Int?          @map("Stock_Total")
+  stockRestante      Int?          @map("Stock_Restante")
+  limiteUsuario      Int?          @map("Limite_Usuario")
+  periodoLimite      PeriodoLimite @default(siempre) @map("Periodo_Limite")
+  disponibleDesde    DateTime?     @map("Disponible_Desde")
+  disponibleHasta    DateTime?     @map("Disponible_Hasta")
+  destinatarios      Json?         @map("Destinatarios") // [usuarioId]; null = todos
+  requiereAprobacion Boolean       @default(false) @map("Requiere_Aprobacion")
+  descuentoRacha     Boolean       @default(false) @map("Descuento_Racha")
+  destacado          Boolean       @default(false) @map("Destacado")
+  activo             Boolean       @default(true) @map("Activo")
+  orden              Int           @default(0) @map("Orden")
+  creadoPorId        Int?          @map("Creado_Por_ID")
+  createdAt          DateTime      @default(now()) @map("Created_At")
+  updatedAt          DateTime      @updatedAt @map("Updated_At")
+
+  compras     CompraTienda[]
+  desbloqueos DesbloqueoProducto[]
+
+  @@map("Productos_Tienda")
+}
+
+model CompraTienda {
+  id                Int          @id @default(autoincrement())
+  productoId        Int          @map("Producto_ID")
+  usuarioId         Int          @map("Usuario_ID")
+  estado            EstadoCompra @default(completada) @map("Estado")
+  opcionPago        Int          @map("Opcion_Pago")
+  costos            Json         @map("Costos") // lo realmente pagado: [{ moneda, monto }]
+  productoSnapshot  Json         @map("Producto_Snapshot")
+  recompensaId      Int?         @unique @map("Recompensa_ID")
+  claveIdempotencia String       @map("Clave_Idempotencia")
+  resueltaPorId     Int?         @map("Resuelta_Por_ID")
+  resueltaEn        DateTime?    @map("Resuelta_En")
+  motivo            String?      @map("Motivo")
+  createdAt         DateTime     @default(now()) @map("Created_At")
+
+  producto ProductoTienda @relation(fields: [productoId], references: [id])
+  usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, claveIdempotencia])
+  @@index([usuarioId, productoId, createdAt])
+  @@index([estado])
+  @@map("Compras_Tienda")
+}
+
+// Desbloqueo manual de un producto para una persona (requisito «lo habilita un padre»)
+model DesbloqueoProducto {
+  productoId Int      @map("Producto_ID")
+  usuarioId  Int      @map("Usuario_ID")
+  porId      Int      @map("Por_ID")
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  producto ProductoTienda @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([productoId, usuarioId])
+  @@map("Desbloqueos_Producto")
+}
+
+// Meta de ahorro: el producto que la persona quiere conseguir
+model MetaTienda {
+  usuarioId  Int @id @map("Usuario_ID")
+  productoId Int @map("Producto_ID")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("Metas_Tienda")
 }
