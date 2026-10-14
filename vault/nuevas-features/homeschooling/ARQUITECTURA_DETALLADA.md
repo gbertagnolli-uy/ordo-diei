@@ -1,5 +1,7 @@
 # Homeschooling — Arquitectura definitiva (v2, lista para implementar)
 
+> ⚠️ **2026-10-14 (lane 115): el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`» fue REVOCADO por el usuario.** Manda [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) (porte de código de `vendor/roost/`, modelo y lanes 116–123). Lo que sigue vale solo donde ese plan no lo cambie.
+
 > Estado: **lista para implementar** (2026-10-13). Reemplaza a la v1 de agy; los errores de esa versión están en [`AUDITORIA.md`](AUDITORIA.md) (todos resueltos aquí).
 > Stack real: Next 16.2.1 (App Router, `params` asíncronos — leer `node_modules/next/dist/docs/` antes de codear), React 19.2.4, Tailwind 4, Prisma 7 + Supabase, `node:test`.
 > Contexto de uso: **solo esta familia, en casa**. No hay SaaS, ni cumplimiento legal, ni premium. Roost se usa como referencia visual con permiso del usuario (sin trámites de licencia).

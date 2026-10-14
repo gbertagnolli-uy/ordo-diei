@@ -1,6 +1,7 @@
 # Homeschooling — casi una app nueva extra
 
 > Estado: **planificación** (2026-10-13). Sin lanes creadas todavía. **Listo para implementar: ver [`SPEC.md`](SPEC.md) y [`ARQUITECTURA_DETALLADA.md`](ARQUITECTURA_DETALLADA.md). Auditoría resuelta: [`AUDITORIA.md`](AUDITORIA.md).**
+> **2026-10-14:** plan vigente = [`PLAN_INTEGRACION_ROOST.md`](PLAN_INTEGRACION_ROOST.md) (Roost portado desde `vendor/roost/`).
 
 ## 1. Pedido del usuario (textual)
 

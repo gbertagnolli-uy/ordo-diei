@@ -1,5 +1,7 @@
 # Plan de lanes — Homeschooling (definitivo)
 
+> ⚠️ **2026-10-14 (lane 115): el supuesto «Roost = solo referencia visual» y «extender `MissionCalendar`» fue REVOCADO por el usuario.** Manda [`PLAN_INTEGRACION_ROOST.md`](../homeschooling/PLAN_INTEGRACION_ROOST.md) (porte de código de `vendor/roost/`, modelo y lanes 116–123). Lo que sigue vale solo donde ese plan no lo cambie.
+
 > 2026-10-13. Detalle y decisiones: [`../homeschooling/ARQUITECTURA_DETALLADA.md`](../homeschooling/ARQUITECTURA_DETALLADA.md). Hallazgos previos: [`../homeschooling/AUDITORIA.md`](../homeschooling/AUDITORIA.md) (resueltos).
 > Los números de lane se asignan al ejecutar: **revisar `git branch -a`, `git worktree list` y `vault/LANE_*` y tomar uno libre** (hubo choques de numeración entre agentes).
 
