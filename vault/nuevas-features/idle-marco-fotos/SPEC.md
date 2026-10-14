@@ -81,7 +81,7 @@ Catecismo, mismo lugar y misma grilla:
 | Inf. izq. | «Foto: {autor} · Unsplash» con enlaces | | Geist | `text-xs` | opacidad 0,7 |
 
 - Bloque de la frase: `max-w-[36ch]` en N1 y `max-w-[52ch]` en N2, alineado a la izquierda, con su borde izquierdo en el 10–12 % del ancho (no centrado: lectura más natural en textos largos). Separación N1→N2 `mt-6`, N2→N3 `mt-4`.
-- **Legibilidad**: velo `bg-gradient-to-t from-black/70 via-black/25 to-black/45` más un velo radial suave detrás del bloque de texto; `text-shadow` sutil. Debe dar contraste ≥ 4,5:1 en N2 y N3 sobre cualquier foto (texto blanco). *(El 5 % pedido en D45 es para las cards del Breviarium, no para el reposo.)*
+- **Legibilidad**: velo `bg-gradient-to-t from-black/70 via-black/25 to-black/45` más un velo radial suave detrás del bloque de texto; `text-shadow` sutil. Debe dar contraste ≥ 4,5:1 en N2 y N3 sobre cualquier foto (texto blanco). Mismo criterio que D54: la legibilidad se logra con **opacidad del velo**, no eligiendo fotos; si una foto no da 4,5:1, se sube la opacidad.
 - **Tema**: el reposo siempre es oscuro (foto + velo), independiente del tema claro/oscuro de la app.
 
 ### 4.3 Reglas de contenido
@@ -118,15 +118,15 @@ Misma jerarquía; esquinas arriba (logo izq., título del día der., el título 
 1. **Hotlinking**: mostrar la foto desde las URLs que devuelve la API (`urls.raw`/`urls.regular` en `images.unsplash.com`), con parámetros de tamaño (`&w=1920&q=80&auto=format&fit=crop`). **No** re-servirla ni pasarla por `next/image` con optimización (usar `<img>` simple o `unoptimized`).
 2. **Registrar la descarga**: llamar a `links.download_location` cuando la foto «se usa». Aquí: **una vez por foto al entrar al pool** (no en cada aparición), desde el servidor.
 3. **Atribución**: «Foto de {nombre} en Unsplash», con enlace al perfil del autor y a Unsplash, ambos con `?utm_source=ordo_diei&utm_medium=referral`.
-4. La **Access Key** queda en el servidor (`UNSPLASH_ACCESS_KEY`), nunca en el cliente.
+4. La **Access Key** queda en el servidor (`UNSPLASH_ACCESS_KEY`), nunca en el cliente ni en `NEXT_PUBLIC_*`. Credenciales (D55): ya están en el `.env` del directorio principal como `UNSPLASH_APP_ID`, `UNSPLASH_ACCESS_KEY` y `UNSPLASH_SECRET_KEY` (la Secret solo sirve para OAuth de usuarios: **no se usa**). Cada worktree copia el `.env` del directorio principal. **Nunca** escribir los valores en el repo ni en el vault. En Vercel, el usuario tiene que cargar `UNSPLASH_ACCESS_KEY` en las variables del proyecto.
 5. No usar «Unsplash» en el nombre ni su logo como ícono.
-6. Límite en modo demo: **50 pedidos/hora**. Con el pool (§5.2) se usan ~40 por día; alcanza sin pedir modo producción.
+6. Límite en modo demo: **50 pedidos/hora** (verificado el 2026-10-14 con la clave real: `x-ratelimit-limit: 50`). Con el pool (§5.2) se usan ~40 por día; alcanza sin pedir modo producción. Cabeceras: `Authorization: Client-ID <UNSPLASH_ACCESS_KEY>` y `Accept-Version: v1`.
 
 Fuentes: <https://help.unsplash.com/en/articles/2511245-unsplash-api-guidelines> · <https://help.unsplash.com/api-guidelines/guideline-hotlinking-images> · <https://unsplash.com/documentation>.
 
 ### 5.2 Pool de fotos (servidor)
 - El **cron diario** existente (`src/app/api/cron/daily/route.ts`, 03:00) llama a `refrescarPoolUnsplash()`:
-  - `GET /photos/random?query={consulta}&orientation=landscape&content_filter=high&count=30` (consulta por defecto `"nature landscape"`; configurable) y `count=10` con `orientation=portrait`.
+  - `GET /photos/random?topics=6sMVjTLSkeQ&orientation=landscape&content_filter=high&count=30` y `count=10` con `orientation=portrait`. `6sMVjTLSkeQ` es el tema oficial **Nature** de Unsplash (verificado: `GET /topics/nature`, 34 659 fotos). Si el padre escribe una consulta propia en el panel, se usa `query=` en lugar de `topics=`.
   - Descarta las ya presentes y las **ocultadas** por un padre; registra la descarga de cada nueva (§5.1.2).
   - Mantiene el pool en `tamPool` (por defecto 150): si se pasa, desactiva las más viejas.
 - Primera carga: si el pool está vacío, la misma función se dispara desde el panel («Cargar fotos ahora»).
@@ -139,7 +139,8 @@ model ConfigReposo {
   id                  Int      @id @default(1)
   segundosLogin       Int      @default(15)   @map("Segundos_Login")      // D3
   segundosSesion      Int      @default(60)   @map("Segundos_Sesion")     // D4
-  unsplashConsulta    String   @default("nature landscape") @map("Unsplash_Consulta")
+  unsplashTema        String   @default("6sMVjTLSkeQ") @map("Unsplash_Tema")   // tema Nature
+  unsplashConsulta    String?                 @map("Unsplash_Consulta")  // si está, reemplaza al tema
   tamPool             Int      @default(150)  @map("Tam_Pool")
   mostrarRefCatecismo Boolean  @default(true) @map("Mostrar_Ref_Catecismo")
   ultimaSincronia     DateTime?               @map("Ultima_Sincronia")
