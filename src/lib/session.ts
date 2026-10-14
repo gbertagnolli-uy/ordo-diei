@@ -35,5 +35,10 @@ export async function getSession() {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
   if (!session) return null;
-  return await decrypt(session);
+  try {
+    return await decrypt(session);
+  } catch {
+    // Token vencido, alterado o firmado con otro secreto: equivale a no tener sesión
+    return null;
+  }
 }
