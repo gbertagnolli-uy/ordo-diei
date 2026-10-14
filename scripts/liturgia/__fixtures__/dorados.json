@@ -1,0 +1,487 @@
+{
+ "laudes-1906-2026-10-14": {
+  "titulo": {
+   "titulo": "S. Callisti Papæ et Martyris",
+   "rango": "Duplex",
+   "lineas": [
+    "Tempora: Feria Quarta infra Hebdomadam XX post Octavam Pentecostes II. Octobris"
+   ],
+   "color": "rojo"
+  },
+  "secciones": [
+   {
+    "clave": "incipit",
+    "tituloLa": "Incipit",
+    "tituloEs": "Rito de entrada",
+    "bloques": [
+     "7d500be41274ee84b8ba3d733e138448f889f0acb1a58d52a672f7d4a7720c5e"
+    ]
+   },
+   {
+    "clave": "psalmi",
+    "tituloLa": "Psalmi",
+    "tituloEs": "Salmos",
+    "bloques": [
+     "b6e0fbc0bdd6e9d950d79e7027a051f7dff69d05623d26d97ba108420724afc1",
+     "a8ff877798b1e2399b59165aa1e47d4421c4f2ffa557fc6f31a60cd84bb8f2fe",
+     "ab38d7eabb65d1d62fbe946a536e4ad4cb85648cb4a2bc8f954a3f8a33facfff",
+     "c0140a83517582c9d8f9f1440a59f0a0b8363259e14cca4dd1b7e502e07eecd7",
+     "58980f2b14ec5c0655f878bd5e3548fcacd0027bed1a3d90bbfcec764d3e79a7",
+     "e3cd66ff2c9b2f3ad889254c49346839e3dce71aeb4b5ed15aa28e6364abd6b3",
+     "2ebac74f70b466e7eb087447fbb5b9cd81ede62680642a4e1587104c8c8198e0",
+     "a783a50bfca94e578201edd1941dd081c2912df3da966203e6a25d5f17107e13",
+     "a480f238feda02b833eed84a980bb51f51e9392591f9bc1a065646b00bcda322"
+    ]
+   },
+   {
+    "clave": "capitulum-hymnus-versus",
+    "tituloLa": "Capitulum Hymnus Versus",
+    "tituloEs": "Capítulo Himno Verso",
+    "bloques": [
+     "6f7d26e9c28f59e26c9330722b776d5683e89438b8222b67ecf59cd98a7a8968",
+     "7729b353d7ed7687e06257f394e076c9b68ed97b2be48cf660642663b6ec661b"
+    ]
+   },
+   {
+    "clave": "canticum-benedictus",
+    "tituloLa": "Canticum: Benedictus",
+    "tituloEs": "Cántico Benedictus",
+    "bloques": [
+     "7cc40d27fe17b877241bacce100ad12f1618f69efa410afbbc6b75a71d0e5e04",
+     "4e1a9eb38b22ba30e3854888751aea0c5e2e525d223bf4409c7433fcfeefd553",
+     "56f4da130dfbadede0409c69a5e40a12ef0117cc81fab6b8088aac37e42e3776"
+    ]
+   },
+   {
+    "clave": "oratio",
+    "tituloLa": "Oratio",
+    "tituloEs": "Oración",
+    "bloques": [
+     "7766300e28ca72c8b0a2ebd838d8d61c6132d643a2ec0e5068eab42333469e08",
+     "9b30bdbd943009805ea43fe8901609cb3f3729167487a68c747c97a509b843ab",
+     "bcc0796e1cf0841dbd8818ff27f813b39d3714aa68b25ec2b6f4acf391f50731"
+    ]
+   },
+   {
+    "clave": "conclusio",
+    "tituloLa": "Conclusio",
+    "tituloEs": "Conclusión",
+    "bloques": [
+     "ec227d766022005f5f4ca37c54205a95807ec5bbffec2177adf840667190ef5b",
+     "e3a0accc5c7238cb31f802a001cdba1e3bf5711959a9c86bc72e53a165aa65f4"
+    ]
+   },
+   {
+    "clave": "antiphona-finalis-b-m-v",
+    "tituloLa": "Antiphona finalis B.M.V.",
+    "tituloEs": "Antífona final de la Bienaventurada Virgen María",
+    "bloques": [
+     "24beb36a4187680c8e7ccf5b6cf133f81902fb129c925f9a4a4fe30d3332e29d"
+    ]
+   }
+  ]
+ },
+ "missa-1906-2026-10-14": {
+  "titulo": {
+   "titulo": "S. Callisti Papæ et Martyris",
+   "rango": "Duplex",
+   "lineas": [
+    "Scriptura: Feria Quarta infra Hebdomadam XX post Octavam Pentecostes II. Octobris"
+   ],
+   "color": "rojo"
+  },
+  "secciones": [
+   {
+    "clave": "incipit",
+    "tituloLa": "Incipit",
+    "tituloEs": "Incipit",
+    "bloques": [
+     "2fcbf8a4c53d112aa3f65e0082b71b9b565840b3ebf327dd29c1ed1c9bf7d5b0"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "ordo",
+    "tituloLa": "",
+    "tituloEs": null,
+    "bloques": [
+     "73c275670a6ea7acef87d95c3ad23b8129ae9717cfb86cd053c73a24278e97f3",
+     "a9cac8d8f9e1dae2e8c3dd1603262c3d22d60fabc95b4f841b97bbd6573f058d",
+     "db1bb2994b14d79913a9463d18ba1837f3c90591c00cf559b554aa463a7be14a"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "introitus",
+    "tituloLa": "Introitus",
+    "tituloEs": "Introito",
+    "bloques": [
+     "b6d21f475313c019986fca5e6a510b80b877afb7e7854477eec152a5dbb4db97"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "kyrie",
+    "tituloLa": "Kyrie",
+    "tituloEs": "Kyrie",
+    "bloques": [
+     "6d6bfbb08e39377d31c444aa9c6819e6afdfc398c8d5e14947f38979dd701a66"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "gloria",
+    "tituloLa": "Gloria",
+    "tituloEs": "Gloria",
+    "bloques": [
+     "c0227014a199da6b13627046867d3715b9edcb21a56099d233962ba261d7922c"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "oratio",
+    "tituloLa": "Oratio",
+    "tituloEs": "Colecta",
+    "bloques": [
+     "1327f920e20436cea7955f289e5bd5456a7e3cb0419fbaf35bf8dd1b2b6cea73"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "lectio",
+    "tituloLa": "Lectio",
+    "tituloEs": "Lectura",
+    "bloques": [
+     "d4d577f33f31cf5427607f354e99b5b9d550373f8c70f008bfb90ee27e9f2fa1"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "graduale",
+    "tituloLa": "Graduale",
+    "tituloEs": "Gradual",
+    "bloques": [
+     "21a9b5b26494597d92e03847485138691e64c7b7de6f98f60a71554cc476c4c5"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "evangelium",
+    "tituloLa": "Evangelium",
+    "tituloEs": "Evangelio",
+    "bloques": [
+     "a007d8ca5eaa1234c62bee136507d745b243d7025f1b785ed3f7e76cf4db99cf"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "credo",
+    "tituloLa": "Credo",
+    "tituloEs": "Credo",
+    "bloques": [
+     "3de456b405603f20e172c17bb53dd050d3e4d250a76db4f2d0027e9fb98b5bfa"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "offertorium",
+    "tituloLa": "Offertorium",
+    "tituloEs": "Ofertorio",
+    "bloques": [
+     "48ec8d204b69816c07048f8459d68cbe97e5767ad37c0347fe1e00a1957b2033"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "ordo-2",
+    "tituloLa": "",
+    "tituloEs": null,
+    "bloques": [
+     "d4528485b21033f3a8fff5d54fa07968d0348505742f8cdcbd0e0e9a864d9c04",
+     "e8719242a17fb2179e0d0861fcfb7a169f3965d6dfd69515831949c5be62b10d",
+     "23c654d5d380fbcfa3771816039f71e90446c101b31c49e586a0a6d6ab0768b7",
+     "5c2c760962366ec173809270e4b090b689192508cfb0a8c7af6765345562093b",
+     "f8aa8e00a827e4b3385f06f2da9de10d64676e0daf94ff4a707f108d27ab8dbe",
+     "2c0e5bfbbb4d649e0d920a15d03f44e75cccc0d4f4a87e9d599c093521a809fd"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "secreta",
+    "tituloLa": "Secreta",
+    "tituloEs": "Secreta",
+    "bloques": [
+     "ac9caf10c7a391d7290edde41d28d1980c8c47ae5c1b6330992b10265c60113c"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "praefatio",
+    "tituloLa": "Præfatio",
+    "tituloEs": "Prefacio",
+    "bloques": [
+     "ee6fd063efecfceb98bde620d585efb92ca3c7c6dc414d2f08629cdacb00dc52"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "canon",
+    "tituloLa": "Canon",
+    "tituloEs": "Canon",
+    "bloques": [
+     "29f55497f38839c9dda3e0a37c643e792f958d5aa8a6526fc7d0493d6102621c"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "ordo-3",
+    "tituloLa": "",
+    "tituloEs": null,
+    "bloques": [
+     "9269646c958b52b2617a6065b794bed5a78d08617602aa324c8c283ba79a4f48",
+     "deeb4cb70095c03900d0abe96ac18521cc1fa32b992d50145dafd29299b5921e",
+     "ee4e9cf8d24ef9a8c31b7ec12f405b272a20ac5c606e2da3c081e0216717ad99",
+     "18abcdf901440409f97f744f3c14c96f51f8d2d1b5df78114880151831a590e0",
+     "55d3f9b95c0dcf4f16bfa7941b1a8a078fa5d55618c678f894ec5d81edd832c3",
+     "2e444374cd948cc3d9cab12dabfc3bd99d25d407a220c15a3c5f19adf9d829b7",
+     "3ac8ebd01a629d0edcc396eb0e0f1c5e5f54ec6a19a3ea73364a57ab46992bbc",
+     "0946ab5561facf92b0781b90e626481df1a06730a7d8218e8d299a87758e708c",
+     "8433ef707f56c40491b9364bedcabdd9079e0f8ef5b405c96f9754dfffc435a6",
+     "9d2ea29cecd1c34cb2ae04ff55ecfa0ac66f94756c180e380d48f916770790fc",
+     "7dea2f9b28634871fe424a66a8f1807e5126a027de0719c4fc0cc178b2e74dd3",
+     "3dcba22c022f319178e55f5920e7e64b905b8a3288edd0bdae2a5b66e8b3d4ce",
+     "b57fde21c4980c91ce84c6d5722bb2114710b62d09831c98bc9a5d7f8fe0f386",
+     "c0c013dcb15e58a55005b9c05a8567803ebe56d4e63cc539d47a9e0a587a219b"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "preparatio-communionis",
+    "tituloLa": "Preparatio Communionis",
+    "tituloEs": "Preparación para la Comunión",
+    "bloques": [
+     "154f90c10548e4119eedc0b0fba0660089d3ccfddeea8d0fc4440d0d62c71bdc"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "ordo-4",
+    "tituloLa": "",
+    "tituloEs": null,
+    "bloques": [
+     "6571ce3bdd4b7cdf53a054e3ab8029ee4b3a873735abcc036998966c9388d8b3",
+     "3f6b7e2d45cfbe70bb443288cbdd3868fcf2fe7c4017996ec6eb2cf57ff18570",
+     "fce4477fc7f004be07c363860c9807808ebd1177b40c7879b4ff2aa72217629a",
+     "2e25e735fd3b96db1e5e3badb29715b3994aed9575639fbd9b9eae390a482eb8",
+     "45ab119acb65b120a8af2811afd50f61fd1cd212d7eed47307872d66c7d47750",
+     "2f880f8a65bcfcf9fded4198e2aa96526fcddf867d0efbe1b845d8d1dec14e89",
+     "eb7e713b23b0aea14a3e5ca5ae88c03b6dd51b1333709ff3c08441dff00f8bc4",
+     "3ce32b091dbddd0d45a2a6ef476d0366fb21fcead992ca3700139f2e5c2a3a5e",
+     "71e86a508bf342d1750bc7f77e6aa08e6296b074bbf2d1d55d561bef692a6e5c",
+     "9855849177841a3051c598fe3280530479c6f17c52bab9c3411d558c7956c1c7",
+     "6cdec63ea4e7ddc8fdd8c9d6c1435983af9094cdb07dd078fcaad85fdc36a49b"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "communio",
+    "tituloLa": "Communio",
+    "tituloEs": "Comunión",
+    "bloques": [
+     "6e34b11d5dcc013b00f04d41a5f3d167e965c6641de0807ae809efabeba9d88f"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "postcommunio",
+    "tituloLa": "Postcommunio",
+    "tituloEs": "Poscomunión",
+    "bloques": [
+     "7cc1b8a9215a057054cfc91e4dd620d20567fb9fd0741790af3d07c26b14b107"
+    ],
+    "propio": true
+   },
+   {
+    "clave": "conclusio",
+    "tituloLa": "Conclusio",
+    "tituloEs": "Conclusión",
+    "bloques": [
+     "b3f8743b1830917931250f833550d665d84c14bb3cee2c682e0b77b9c70ad99e"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "ordo-5",
+    "tituloLa": "",
+    "tituloEs": null,
+    "bloques": [
+     "b85bee2d5d360ee0da88b27c68d1f8df0069115337e35637ea2cea28af0edaa9",
+     "bc32cb99f8af641d450f07e8b7ec758922d42cd02fe3e6ba9ac5f6cfae454609",
+     "b023aaafa40aebf722ba7401583a02f7cff65b50fcbb5f6fc54dd0921053b6fa",
+     "1a91b71a462c7bfc4a3518060431503a93ba1464d65432a32fcd23711b799e03"
+    ],
+    "propio": false
+   },
+   {
+    "clave": "orationes-leonis-xiii",
+    "tituloLa": "Orationes Leonis XIII",
+    "tituloEs": "Oraciones leoninas",
+    "bloques": [
+     "edbaa02940281ef066a98677991692a2ef01acc6eb7bb3f95b2c96c85e00de8e"
+    ],
+    "propio": false
+   }
+  ]
+ },
+ "vespera-1570-2026-10-14": {
+  "titulo": {
+   "titulo": "S. Callisti Papæ et Martyris",
+   "rango": "Semiduplex",
+   "lineas": [
+    "Vespera de Officio occurente"
+   ],
+   "color": "rojo"
+  },
+  "secciones": [
+   {
+    "clave": "incipit",
+    "tituloLa": "Incipit",
+    "tituloEs": "Rito de entrada",
+    "bloques": [
+     "50b29555794f332829d45db989cc82738cdb947fd8257d7fab07fb109186579a"
+    ]
+   },
+   {
+    "clave": "psalmi",
+    "tituloLa": "Psalmi",
+    "tituloEs": "Salmos",
+    "bloques": [
+     "b6e0fbc0bdd6e9d950d79e7027a051f7dff69d05623d26d97ba108420724afc1",
+     "1ca48efcee0ff0440cc360431908a95e430be0ec05e8bd83f0625da158057a2c",
+     "bf26057294d440d73159f4a9f7b9525f070d41f1eb127e89574812986941b1c2",
+     "858443902a467f91f08bfd2ae732ec1a3ec6007d9636b5284a88336676c805a6",
+     "1d42b96ec1a5a797b209153ea7b09c4c5abe5334f24131fd591bfd5f7adbc0a3",
+     "5738fd7ff064698a3023b780c0fc695b90e5c0885036354a2a99469e92350dab"
+    ]
+   },
+   {
+    "clave": "capitulum-hymnus-versus",
+    "tituloLa": "Capitulum Hymnus Versus",
+    "tituloEs": "Capítulo Himno Verso",
+    "bloques": [
+     "6f7d26e9c28f59e26c9330722b776d5683e89438b8222b67ecf59cd98a7a8968",
+     "0947924588db9a0b93bcd5fff59bc9cd8129980daeff42da810f7b486a560116"
+    ]
+   },
+   {
+    "clave": "canticum-magnificat",
+    "tituloLa": "Canticum: Magnificat",
+    "tituloEs": "Cántico Magnificat",
+    "bloques": [
+     "7cc40d27fe17b877241bacce100ad12f1618f69efa410afbbc6b75a71d0e5e04",
+     "b52c4fd77242a27bd2b043100476fd5b9498d0c3a8139973afa211122ca7cde0",
+     "56f4da130dfbadede0409c69a5e40a12ef0117cc81fab6b8088aac37e42e3776"
+    ]
+   },
+   {
+    "clave": "oratio",
+    "tituloLa": "Oratio",
+    "tituloEs": "Oración",
+    "bloques": [
+     "7766300e28ca72c8b0a2ebd838d8d61c6132d643a2ec0e5068eab42333469e08",
+     "9b30bdbd943009805ea43fe8901609cb3f3729167487a68c747c97a509b843ab"
+    ]
+   },
+   {
+    "clave": "suffragium",
+    "tituloLa": "Suffragium",
+    "tituloEs": "Sufragio",
+    "bloques": [
+     "35ebe91a63c49f24d9434bacc52add21f3d722a73a18219b7b6a09ee028f8a2e",
+     "8be032665b6cf17a3e5e694fa25bb522e97b956d209ff5b89646378821fc5b15"
+    ]
+   },
+   {
+    "clave": "conclusio",
+    "tituloLa": "Conclusio",
+    "tituloEs": "Conclusión",
+    "bloques": [
+     "ec227d766022005f5f4ca37c54205a95807ec5bbffec2177adf840667190ef5b",
+     "8ec3e1bb31ee822c7db2fedbefe6d338b22854a61f1ac9275b19813985eed6e0"
+    ]
+   }
+  ]
+ },
+ "vespera-1888-2026-10-14": {
+  "titulo": {
+   "titulo": "S. Teresiæ Virginis",
+   "rango": "Duplex",
+   "lineas": [
+    "Commemoratio: S. Callisti Papæ et Martyris",
+    "A capitulo de sequenti; commemoratio de præcedenti"
+   ],
+   "color": "blanco"
+  },
+  "secciones": [
+   {
+    "clave": "incipit",
+    "tituloLa": "Incipit",
+    "tituloEs": "Rito de entrada",
+    "bloques": [
+     "50b29555794f332829d45db989cc82738cdb947fd8257d7fab07fb109186579a"
+    ]
+   },
+   {
+    "clave": "psalmi",
+    "tituloLa": "Psalmi",
+    "tituloEs": "Salmos",
+    "bloques": [
+     "ec1b158072d052a1a9574558929c676764f20a7b7db8b9b642b451f017414186",
+     "3a5e0b4ebde6cf128adc2e9d0f0b6d3cb9f4a46a31703babfd3d88660deee6ab",
+     "c7b0ab499b2a021846bf26212334a8a0d8959e5c26dfc2e198f9ad5db55b0666",
+     "afe9da3a00b6d5622a21209b288b47d92301f4b05db6f9ad7f1f381eb6fc37e7",
+     "19af534f0c80a911f840a53d935eba890d95f24041b7c0a873a739b806cd0401",
+     "2dabc90746c7fce5dfe406445e8b3cad223891c79065fdbcc197118eb8d4cb13"
+    ]
+   },
+   {
+    "clave": "capitulum-hymnus-versus",
+    "tituloLa": "Capitulum Hymnus Versus",
+    "tituloEs": "Capítulo Himno Verso",
+    "bloques": [
+     "7766300e28ca72c8b0a2ebd838d8d61c6132d643a2ec0e5068eab42333469e08",
+     "075a692ee104addc23bb23344034cbf7e8acbb3dd5c2951a7e1e966bf2247b62"
+    ]
+   },
+   {
+    "clave": "canticum-magnificat",
+    "tituloLa": "Canticum: Magnificat",
+    "tituloEs": "Cántico Magnificat",
+    "bloques": [
+     "7cc40d27fe17b877241bacce100ad12f1618f69efa410afbbc6b75a71d0e5e04",
+     "c127aea0477b36d103ffb462c0dc16653d23a66f0d3736b2910d18e46b148fc1",
+     "56f4da130dfbadede0409c69a5e40a12ef0117cc81fab6b8088aac37e42e3776"
+    ]
+   },
+   {
+    "clave": "oratio",
+    "tituloLa": "Oratio",
+    "tituloEs": "Oración",
+    "bloques": [
+     "7766300e28ca72c8b0a2ebd838d8d61c6132d643a2ec0e5068eab42333469e08",
+     "32d7f859f2191f6ca21e8d3e63800c5e3603c78f101bef5dfd852131542617f8",
+     "bcc0796e1cf0841dbd8818ff27f813b39d3714aa68b25ec2b6f4acf391f50731"
+    ]
+   },
+   {
+    "clave": "conclusio",
+    "tituloLa": "Conclusio",
+    "tituloEs": "Conclusión",
+    "bloques": [
+     "ec227d766022005f5f4ca37c54205a95807ec5bbffec2177adf840667190ef5b",
+     "8ec3e1bb31ee822c7db2fedbefe6d338b22854a61f1ac9275b19813985eed6e0"
+    ]
+   }
+  ]
+ }
+}
