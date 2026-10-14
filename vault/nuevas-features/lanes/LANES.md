@@ -88,6 +88,8 @@ Prioridad: **N4→R3→N5→N6** (R1 y R2 antes de R3; N7 quedó reemplazada por
 | L8 Ordinarium + Psalterium | ⏳ lista | L3 | — |
 | L9 Rosarium | ⏳ lista | L3 | — |
 
+**N4 (detector de inactividad, hook y pruebas):** ✅ integrada (lane 138), hecha como prerrequisito de R3 (`PROMPT_REPOSO_LITURGIA.md` §3). N5 y N6 siguen pendientes.
+
 Quien tome una lane cambia su fila a «🔨 en curso (lane NN)» en el mismo commit en que la crea, y a «✅ integrada (lane NN)» al integrar.
 
 Especificaciones: [`../idle-marco-fotos/SPEC.md`](../idle-marco-fotos/SPEC.md) (R*) y [`../liturgia/SPEC.md`](../liturgia/SPEC.md) (L*). Decisiones D34–D53, supuestos S7–S11 en [`../DECISIONES.md`](../DECISIONES.md) §10. El número de lane se toma al crearla (ver arriba).
