@@ -102,6 +102,13 @@
 - **Hecho**: Módulo puro `src/lib/liturgia/proprium.ts` con tests unitarios (`proprium.test.ts`): clasificación de los 8 tiempos, traducción de rangos a latín tradicional (Simplex, Semiduplex, Duplex, Duplex I/II classis), deducción de color litúrgico y filtrado/búsqueda de fiestas.
 - **Sin verificar en navegador real**: navegación y respuesta del buscador de santos en dispositivos móviles y rendimiento con el volumen completo de Kalendarium cargado en producción.
 
+## L8 · Ordinarium y Psalterium (lane 144)
+- **Hecho**: Pantalla Ordinarium (`OrdinariumVista.tsx`, `/dashboard/liturgia/ordinarium`) con pestañas para el Ordo Missæ tradicional (`Missa/Ordo/Ordo`) con enlace directo al Missale del día para partes propias, y Preces comunes del Oficio Divino (`Psalterium/Common/Prayers`).
+- **Hecho**: Pantalla Psalterium (`PsalteriumVista.tsx`, `/dashboard/liturgia/psalterium`) con índice completo de 150 salmos con numeración de la Vulgata + Cánticos tradicionales del Oficio (Benedictus, Magnificat, Nunc Dimittis, Te Deum, Benedicite, Quicumque), buscador rápido insensible a mayúsculas/diacríticos por número (ej. «22», «ps 50») o texto (ej. «miserere»), lector bilingüe con `LiturgiaTexto` y aviso permanente D52: «Numeración de la Vulgata. Traducción española de Divinum Officium (no Torres Amat)».
+- **Hecho**: Módulo puro `src/lib/liturgia/salterio.ts` con tests unitarios (`salterio.test.ts`), y extensión de `PREFIJO_CLAVE_LIBRO.ordinarium` para incluir `Psalterium/Common/`.
+- **Sin verificar en navegador real**: navegación entre los 150 salmos con botones Anterior/Siguiente en pantallas de teléfonos móviles.
+
+
 
 
 

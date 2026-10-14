@@ -61,7 +61,7 @@ export function parsearTipoLibro(s: string | null | undefined): Resultado<TipoLi
 export const PREFIJO_CLAVE_LIBRO: Record<TipoLibro, string[]> = {
   "proprium-de-tempore": ["Tempora/", "Commune/", "Missa/Tempora/", "Missa/Commune/"],
   "proprium-sanctorum": ["Sancti/", "Missa/Sancti/"],
-  ordinarium: ["Missa/Ordo/"],
+  ordinarium: ["Missa/Ordo/", "Psalterium/Common/"],
   psalterium: ["Psalterium/"],
   rosarium: ["Rosarium/"],
 };
