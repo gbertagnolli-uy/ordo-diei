@@ -962,6 +962,56 @@ model TarjetaRepaso {
   @@map("Homeschool_Repasos")
 }
 
+// ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
+
+model DiaLiturgico {
+  version   String   @map("Version") // "1906" | "1888" | "1570"
+  fecha     DateTime @db.Date @map("Fecha")
+  titulo    String   @map("Titulo") // "S. Callisti Papæ et Martyris"
+  tituloEs  String?  @map("Titulo_Es") // "S. Calixto, Papa y Mártir" (si DO lo trae)
+  rango     String   @map("Rango") // "Duplex"
+  lineas    Json     @map("Lineas") // ["Tempora: Feria Quarta infra …", "Commemoratio: …"]
+  color     String   @map("Color") // blanco | rojo | verde | morado | negro
+  tiempo    String   @map("Tiempo") // adviento | navidad | epifania | septuagesima | cuaresma | pasion | pascua | pentecostes
+  dominical Boolean  @map("Dominical")
+
+  @@id([version, fecha])
+  @@map("Dias_Liturgicos")
+}
+
+model BloqueLiturgico {
+  hash  String @id @map("Hash")
+  datos Json   @map("Datos") // Bloque (src/lib/liturgia/tipos.ts)
+
+  @@map("Bloques_Liturgicos")
+}
+
+model DocumentoLiturgico {
+  version   String    @map("Version")
+  tipo      String    @map("Tipo") // "hora" | "missa" | "martyrologium" | "libro"
+  clave     String    @map("Clave") // "2026-10-14/Laudes" · "2026-10-14" · "Sancti/10-14" · "Psalterium/92"
+  fecha     DateTime? @db.Date @map("Fecha")
+  titulo    Json      @map("Titulo")
+  secciones Json      @map("Secciones") // Seccion[]
+
+  @@id([version, tipo, clave])
+  @@index([version, tipo, fecha])
+  @@map("Documentos_Liturgicos")
+}
+
+model GeneracionLiturgica {
+  id         Int      @id @default(autoincrement())
+  doCommit   String   @map("DO_Commit")
+  versiones  String   @map("Versiones")
+  desde      DateTime @db.Date @map("Desde")
+  hasta      DateTime @db.Date @map("Hasta")
+  documentos Int      @map("Documentos")
+  bloques    Int      @map("Bloques_Nuevos")
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  @@map("Generaciones_Liturgicas")
+}
+
 // ← events de Roost: una actividad fuera de pantalla (salida, museo, experimento); suma horas a cada participante
 model ActividadOffline {
   id          Int      @id @default(autoincrement())
