@@ -26,13 +26,13 @@ LOCK="$COMMON/integrar.lock"
 
 # --- lock: un integrador a la vez -------------------------------------------
 if ! mkdir "$LOCK" 2>/dev/null; then
-  dueño=$(cat "$LOCK/info" 2>/dev/null || echo "desconocido")
-  pid=$(cut -d' ' -f1 <<<"$dueño")
+  duenio=$(cat "$LOCK/info" 2>/dev/null || echo "desconocido")
+  pid=$(cut -d' ' -f1 <<<"$duenio")
   if [[ "$pid" =~ ^[0-9]+$ ]] && ! kill -0 "$pid" 2>/dev/null; then
-    echo "Lock huérfano ($dueño): el proceso ya no existe, lo libero."
+    echo "Lock huérfano ($duenio): el proceso ya no existe, lo libero."
     rm -rf "$LOCK"; mkdir "$LOCK"
   else
-    die "Otro agente está integrando ($dueño). Esperá unos minutos y reintentá."
+    die "Otro agente está integrando ($duenio). Esperá unos minutos y reintentá."
   fi
 fi
 trap 'rm -rf "$LOCK"' EXIT
