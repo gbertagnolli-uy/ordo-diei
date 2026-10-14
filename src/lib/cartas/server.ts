@@ -59,7 +59,7 @@ import { TEXTOS_CARTAS } from "./textos.ts";
 import { listarVersiones, tieneVersionesDistintas } from "./versiones.ts";
 
 /** Lo que hace falta del usuario para cobrar, descontar y pedir requisitos (vault/ECONOMIA_CARTAS.md §8) */
-const SELECT_ECONOMIA = {
+export const SELECT_ECONOMIA = {
   availablePoints: true,
   incienso: true,
   stars: true,
@@ -70,7 +70,7 @@ const SELECT_ECONOMIA = {
 } as const;
 
 /** Descuento (%) en sobres según la racha efectiva del usuario */
-function descuentoDeUsuario(
+export function descuentoDeUsuario(
   u: { streakDays: number; lastTaskCompletedDate: Date | null } | null | undefined,
   ahora: Date = new Date()
 ): number {
