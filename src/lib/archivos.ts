@@ -87,10 +87,20 @@ export async function guardarImagen(
   return { url: urlArchivo(clave), bytes: datos!.length, ancho: info!.width, alto: info!.height };
 }
 
+const cacheMemoria = new Map<string, { datos: Buffer; tipo: string }>();
+
 /** Bytes y tipo de un archivo por su URL /api/archivos/<uuid> */
 export async function leerArchivo(url: string): Promise<{ datos: Buffer; tipo: string } | null> {
   const clave = claveDeUrl(url);
   if (!clave) return null;
+  const enCache = cacheMemoria.get(clave);
+  if (enCache) return enCache;
+
   const a = await prisma.archivo.findUnique({ where: { clave }, select: { datos: true, tipo: true } });
-  return a ? { datos: Buffer.from(a.datos), tipo: a.tipo } : null;
+  if (a) {
+    const res = { datos: Buffer.from(a.datos), tipo: a.tipo };
+    cacheMemoria.set(clave, res);
+    return res;
+  }
+  return null;
 }
