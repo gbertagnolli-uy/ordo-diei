@@ -24,3 +24,11 @@
 - `RelojFlip.tsx` (nuevo): hora real HH:MM con dígitos de solapa, tokens `--flip-*` en `globals.css` (claro/oscuro), fuente en `public/fonts/`.
 - `TemporizadorDisco.tsx`: disco con solo el tiempo; ícono, «Tiempo restante», título y horario debajo. En Enfoque: reloj Flip arriba (jerarquía principal), disco más chico debajo, botón sol/luna en la barra. Los controles y la lógica no cambian.
 - Verificado con capturas en Chromium (claro, oscuro, 1280 px y 390 px) con una página temporal ya borrada; `tsc` en verde. `eslint` solo marca un error que ya existía en `EditorEtapaModal.tsx`.
+
+## Corrección (lane 155)
+Pedido del usuario (textual): "El flip clock no funciona bien, tenias que clonarlo y adaptarlo, no programarlo de cero. además no consta solo de los numeros sobre fondo, tiene más elemenos como el rectángulo que simular el flip clock, la animación del flip, cosas que deberian estar si hubiera clonado como siempre te pido, pero sos porfiado y queres gastar tokens programando de cero las cosas, en vez de clonar."
+
+- La lane 154 reescribió el reloj a mano (`RelojFlip.tsx` con CSS): eso era justo lo que no había que hacer. Se reemplaza.
+- `vendor/open-fliqlo/` = clon literal (commit aparte) + cambios mínimos en Dart: paleta clara/oscura (`theme.dart`), fondo transparente, parámetros por URL (`?tema=claro|oscuro&fondo=transparente&modo=lockscreen&show-seconds=...`) en `main.dart`, y sin spinner negro al cargar.
+- `scripts/construir_fliqlo.sh` compila con Flutter (3.47.7) a `public/fliqlo/` (~19 MB, solo CanvasKit JS) y `RelojFlip.tsx` lo embebe en un iframe que recarga al cambiar el tema.
+- Se borraron los tokens/keyframes CSS y la fuente copiada de la lane 154.

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.open-fliqlo-lockscreen"
+          path="/org/gnome/shell/extensions/open-fliqlo-lockscreen/">
+    <!-- Passed to bundled fliqlo as CLI flags (override SharedPreferences). -->
+    <key name="use-24-hour" type="b">
+      <default>true</default>
+      <summary>24-hour clock</summary>
+      <description>Passed as --use-24-hour / --no-use-24-hour.</description>
+    </key>
+    <key name="show-seconds" type="b">
+      <default>false</default>
+      <summary>Show seconds</summary>
+      <description>Passed as --show-seconds / --no-show-seconds.</description>
+    </key>
+    <key name="show-separators" type="b">
+      <default>true</default>
+      <summary>Show colon separators</summary>
+      <description>Passed as --show-separators / --no-show-separators.</description>
+    </key>
+    <key name="show-flaps" type="b">
+      <default>true</default>
+      <summary>Show digit flaps</summary>
+      <description>Passed as --show-flaps / --no-show-flaps.</description>
+    </key>
+    <key name="dim" type="d">
+      <default>0.0</default>
+      <summary>Dim overlay</summary>
+      <description>Black overlay opacity 0.0–0.8, passed as --dim=VALUE.</description>
+    </key>
+    <key name="flip-sound" type="b">
+      <default>false</default>
+      <summary>Flip sound</summary>
+      <description>
+        Passed as --flip-sound / --no-flip-sound. Only audible in interactive
+        app modes; lockscreen ignores sound gestures.
+      </description>
+    </key>
+
+    <key name="monitor-mode" type="s">
+      <choices>
+        <choice value='current'/>
+        <choice value='all'/>
+      </choices>
+      <default>'all'</default>
+      <summary>Lock screen monitor mode</summary>
+      <description>
+        Where to show the flip clock: only on the current monitor, or a full
+        copy on every monitor. Never spans one clock across multiple screens.
+      </description>
+    </key>
+    <key name="fade-in-ms" type="i">
+      <default>400</default>
+      <summary>Fade-in duration (ms)</summary>
+      <description>Milliseconds to fade the Fliqlo background in after lock.</description>
+    </key>
+    <key name="window-timeout-ms" type="i">
+      <default>20000</default>
+      <summary>Window wait timeout (ms)</summary>
+      <description>
+        How long to wait for the Open Fliqlo window after spawning the process.
+      </description>
+    </key>
+  </schema>
+</schemalist>
