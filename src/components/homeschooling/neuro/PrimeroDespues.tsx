@@ -3,12 +3,12 @@
 // Propio de Ordo: variante de «Hoy aprendo» con dos tarjetas enormes — PRIMERO (la lección actual, con la barra del tiempo
 // estimado) y DESPUÉS (lo que eligieron los padres). Al terminar PRIMERO se atenúa y DESPUÉS pasa al frente.
 
-import { CheckCircle2, Clock, Gift } from "lucide-react";
+import { Camera, CheckCircle2, Clock, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
+import TemporizadorLeccion from "./TemporizadorLeccion";
 
-export default function PrimeroDespues({ dias, recompensa, onAbrir }: { dias: DiaHoy[]; recompensa: string | null; onAbrir: (d: DiaHoy) => void }) {
+export default function PrimeroDespues({ dias, recompensa, onAbrir, onFoto }: { dias: DiaHoy[]; recompensa: string | null; onAbrir: (d: DiaHoy) => void; onFoto?: (d: DiaHoy) => void }) {
   const actual = dias.find((d) => d.estado !== "hecha") ?? null;
   const terminado = !actual && dias.length > 0;
 
@@ -29,10 +29,17 @@ export default function PrimeroDespues({ dias, recompensa, onAbrir }: { dias: Di
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="size-4" /> {actual.minutosEstimados} min
             </p>
-            <Progress value={100} />
-            <Button size="lg" className="h-14 w-full text-lg" onClick={() => onAbrir(actual)}>
-              Empezar
-            </Button>
+            <TemporizadorLeccion key={actual.diaId} minutos={actual.minutosEstimados} />
+            <div className="flex gap-2">
+              <Button size="lg" className="h-14 flex-1 text-lg" onClick={() => onAbrir(actual)}>
+                Empezar
+              </Button>
+              {onFoto && (
+                <Button size="lg" variant="outline" className="h-14 w-14 shrink-0" aria-label="Sacar una foto de mi trabajo" onClick={() => onFoto(actual)}>
+                  <Camera />
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <p className="mt-2 text-xl text-muted-foreground">Hoy no hay nada para estudiar.</p>

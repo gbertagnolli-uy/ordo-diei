@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Camera, ImagePlus, X } from "lucide-react";
+import { useMantenerActivo } from "@/hooks/useInactividad";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ export default function EnviarEvidencia({
   titulo?: string;
   onEnviada?: () => void;
 }) {
+  useMantenerActivo("homeschooling-evidencia", open); // subir fotos puede tardar sin tocar la pantalla (N4)
   const [titulo, setTitulo] = useState("");
   const [nota, setNota] = useState("");
   const [imagenes, setImagenes] = useState<string[]>([]);

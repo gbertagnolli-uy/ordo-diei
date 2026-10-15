@@ -3,13 +3,15 @@
 // Portado de vendor/roost/src/components/groups/learn/ModuleGrid.tsx (msrbuilds/roost@492af47).
 // Cambios: Button/Empty/Spinner de ui/, rol admin/member (Padre/Madre), textos en español.
 
-import { BookOpen, Plus } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, BookOpen, ListOrdered, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
 import CursoCard from "./CursoCard";
+import { mover } from "./CursoDetalle";
 
 export default function CursoGrid({
   modules,
@@ -17,13 +19,16 @@ export default function CursoGrid({
   userRole,
   onModuleClick,
   onAddModule,
+  onReordenar,
 }: {
   modules: ModuleWithProgress[];
   isLoading: boolean;
   userRole: GroupRole | null;
   onModuleClick: (moduleId: number) => void;
   onAddModule: () => void;
+  onReordenar: (idsEnOrden: number[]) => void;
 }) {
+  const [ordenando, setOrdenando] = useState(false);
   const canManage = hasPermission(userRole, "crear_curso");
 
   if (isLoading) {
@@ -44,9 +49,16 @@ export default function CursoGrid({
           </p>
         </div>
         {canManage && (
-          <Button onClick={onAddModule}>
-            <Plus /> Nuevo curso
-          </Button>
+          <div className="flex gap-2">
+            {modules.length > 1 && (
+              <Button variant={ordenando ? "default" : "outline"} onClick={() => setOrdenando((o) => !o)} aria-pressed={ordenando}>
+                <ListOrdered /> {ordenando ? "Listo" : "Ordenar"}
+              </Button>
+            )}
+            <Button onClick={onAddModule}>
+              <Plus /> Nuevo curso
+            </Button>
+          </div>
         )}
       </div>
 
@@ -71,8 +83,20 @@ export default function CursoGrid({
         </Empty>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module) => (
-            <CursoCard key={module.id} module={module} onClick={onModuleClick} />
+          {modules.map((module, i) => (
+            <div key={module.id} className="relative">
+              <CursoCard module={module} onClick={ordenando ? () => {} : onModuleClick} />
+              {ordenando && (
+                <div className="absolute top-2 right-2 flex gap-1 rounded-lg border bg-card p-1">
+                  <Button variant="ghost" size="icon-sm" aria-label={`Mover «${module.title}» antes`} disabled={i === 0} onClick={() => onReordenar(mover(modules.map((m) => m.id), i, i - 1))}>
+                    <ArrowLeft />
+                  </Button>
+                  <Button variant="ghost" size="icon-sm" aria-label={`Mover «${module.title}» después`} disabled={i === modules.length - 1} onClick={() => onReordenar(mover(modules.map((m) => m.id), i, i + 1))}>
+                    <ArrowRight />
+                  </Button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

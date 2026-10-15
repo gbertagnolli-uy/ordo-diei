@@ -2,7 +2,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import prisma from "../../prisma.ts";
 import { aClave, aFecha } from "../../habitos/server.ts";
-import { crearPlan, marcarNoLectivo, moverDia, omitirDia, recalcular } from "./planes.ts";
+import { cambiarPlan, crearPlan, marcarNoLectivo, moverDia, omitirDia, quitarPlan, recalcular } from "./planes.ts";
 
 // Escribe en la base de DATABASE_URL, que hoy es la de producción: solo corre con PERMITIR_TESTS_DB=1
 const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base real)";
@@ -93,4 +93,35 @@ test("mover y omitir: reglas de orden, y no se toca un día empezado", { skip: s
   const o = await omitirDia({ actorId: ids.padre, diaId: d.id });
   assert.equal(o.estado, "omitida");
   await assert.rejects(omitirDia({ actorId: ids.padre, diaId: d.id }), { status: 409 }); // ya no está pendiente
+});
+
+test("un Hijo no cambia ni quita planes", async () => {
+  await assert.rejects(cambiarPlan({ id: 999999 }, 1, { estado: "pausado" }, "2030-03-12"), { status: 403 });
+  await assert.rejects(quitarPlan({ id: 999999 }, 1), { status: 403 });
+});
+
+test("pausar, reanudar y extender el fin de un plan; quitarlo con días cumplidos da 409", { skip: sinBase }, async () => {
+  const hoy = "2030-03-12";
+  const padre = { id: ids.padre };
+  const planB = await prisma.planCurso.findFirstOrThrow({ where: { alumnoId: ids.hijoB, recursoId: ids.recurso } });
+
+  assert.equal((await cambiarPlan(padre, planB.id, { estado: "pausado" }, hoy)).estado, "pausado");
+  const diasPausado = await prisma.diaLectivo.count({ where: { planId: planB.id } });
+
+  // Al reanudar se recalcula: lo pasado sin hacer queda `movida` y el resto se reparte desde hoy hasta el fin
+  await cambiarPlan(padre, planB.id, { estado: "activo" }, hoy);
+  const pendientes = await prisma.diaLectivo.findMany({ where: { planId: planB.id, estado: "pendiente" }, orderBy: { fecha: "asc" } });
+  assert.equal(aClave(pendientes[0].fecha) >= hoy, true);
+  assert.equal(pendientes.at(-1)!.unidadHasta, 20);
+  assert.ok(diasPausado > 0);
+
+  // Extender el fin: los días se reparten hasta la nueva fecha; una fecha anterior a hoy se rechaza
+  await cambiarPlan(padre, planB.id, { fin: "2030-04-12" }, hoy);
+  const ultimo = await prisma.diaLectivo.findFirstOrThrow({ where: { planId: planB.id, estado: "pendiente" }, orderBy: { fecha: "desc" } });
+  assert.ok(aClave(ultimo.fecha) <= "2030-04-12");
+  await assert.rejects(cambiarPlan(padre, planB.id, { fin: "2030-03-01" }, hoy), { status: 400 });
+
+  // Con un día cumplido ya no se puede quitar
+  await prisma.diaLectivo.update({ where: { id: pendientes[0].id }, data: { estado: "hecha" } });
+  await assert.rejects(quitarPlan(padre, planB.id), { status: 409 });
 });

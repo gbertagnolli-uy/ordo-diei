@@ -4,16 +4,28 @@
 // Cambios: sin pestaña de assets (los PDF van como enlace en la lección), lecciones que ya vienen del layout
 // (una sola consulta), fecha y miniaturas con las utilidades de HS0, plan de cada alumno y «Asignar a…», ui/ y tokens.
 
-import { ArrowLeft, CalendarDays, CheckCircle2, Circle, Edit2, FileText, Play, Plus, Trash2, Video } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, CheckCircle2, EllipsisVertical, Circle, Edit2, FileText, Play, Plus, Trash2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
 import { miniaturaVideo } from "@/lib/homeschooling/video";
 
-export type PlanVista = { alumnoId: number; nombre: string; inicio: string; fin: string };
+/** Mueve un elemento de una posición a otra (devuelve una copia) */
+export function mover<T>(lista: T[], de: number, a: number): T[] {
+  const copia = [...lista];
+  const [x] = copia.splice(de, 1);
+  copia.splice(a, 0, x);
+  return copia;
+}
+
+export type PlanVista = { id: number; alumnoId: number; nombre: string; inicio: string; fin: string; estado: string; diasSemana: number[] };
+export type AccionPlan = "pausar" | "reanudar" | "terminar" | "editar" | "quitar";
+
+const ESTADO_PLAN: Record<string, string> = { activo: "Activo", pausado: "Pausado", finalizado: "Terminado" };
 
 export default function CursoDetalle({
   module,
@@ -27,6 +39,8 @@ export default function CursoDetalle({
   onDeleteModule,
   onAsignar,
   onToggleLibre,
+  onReordenarLecciones,
+  onPlan,
 }: {
   module: ModuleWithProgress;
   userRole: GroupRole | null;
@@ -39,6 +53,8 @@ export default function CursoDetalle({
   onDeleteModule: () => void;
   onAsignar: () => void;
   onToggleLibre: (libre: boolean) => void;
+  onReordenarLecciones: (idsEnOrden: number[]) => void;
+  onPlan: (plan: PlanVista, accion: AccionPlan) => void;
 }) {
   const canManage = hasPermission(userRole, "editar_curso");
   const recordings = module.recordings ?? [];
@@ -94,11 +110,30 @@ export default function CursoDetalle({
           ) : (
             <ul className="divide-y text-sm">
               {planes.map((p) => (
-                <li key={p.alumnoId} className="flex items-center justify-between py-2">
-                  <span className="font-medium text-foreground">{p.nombre}</span>
-                  <span className="text-muted-foreground">
-                    {p.inicio} → {p.fin}
+                <li key={p.id} className="flex items-center gap-2 py-2">
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-foreground">{p.nombre}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {p.inicio} → {p.fin} · {ESTADO_PLAN[p.estado] ?? p.estado}
+                    </span>
                   </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon-sm" aria-label={`Opciones del plan de ${p.nombre}`}>
+                        <EllipsisVertical />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {p.estado === "activo" && <DropdownMenuItem onSelect={() => onPlan(p, "pausar")}>Pausar</DropdownMenuItem>}
+                      {p.estado !== "activo" && <DropdownMenuItem onSelect={() => onPlan(p, "reanudar")}>Reanudar</DropdownMenuItem>}
+                      {p.estado !== "finalizado" && <DropdownMenuItem onSelect={() => onPlan(p, "terminar")}>Dar por terminado</DropdownMenuItem>}
+                      <DropdownMenuItem onSelect={() => onPlan(p, "editar")}>Cambiar fecha de fin y días</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onSelect={() => onPlan(p, "quitar")}>
+                        Quitar el plan
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </li>
               ))}
             </ul>
@@ -131,15 +166,15 @@ export default function CursoDetalle({
             </Empty>
           ) : (
             <div className="divide-y rounded-xl border bg-card">
-              {recordings.map((recording) => {
+              {recordings.map((recording, indice) => {
                 const miniatura =
                   recording.thumbnail_url ??
                   (recording.video_platform && recording.video_id ? miniaturaVideo(recording.video_platform, recording.video_id) : null);
                 return (
+                  <div key={recording.id} className="flex items-center hover:bg-muted">
                   <button
-                    key={recording.id}
                     onClick={() => onLessonClick(recording.id)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors"
                   >
                     {recording.is_completed ? (
                       <CheckCircle2 className="size-5 shrink-0 text-success" />
@@ -171,6 +206,17 @@ export default function CursoDetalle({
                       {recording.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{recording.description}</p>}
                     </div>
                   </button>
+                  {canManage && recordings.length > 1 && (
+                    <div className="flex shrink-0 flex-col pr-2">
+                      <Button variant="ghost" size="icon-xs" aria-label={`Subir «${recording.title}»`} disabled={indice === 0} onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice - 1))}>
+                        <ArrowUp />
+                      </Button>
+                      <Button variant="ghost" size="icon-xs" aria-label={`Bajar «${recording.title}»`} disabled={indice === recordings.length - 1} onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice + 1))}>
+                        <ArrowDown />
+                      </Button>
+                    </div>
+                  )}
+                  </div>
                 );
               })}
             </div>

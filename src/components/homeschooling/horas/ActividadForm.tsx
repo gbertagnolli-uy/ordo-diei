@@ -28,6 +28,7 @@ export default function ActividadForm({
   materias,
   alumnos,
   editing,
+  inicial,
 }: {
   open: boolean;
   onClose: () => void;
@@ -35,6 +36,8 @@ export default function ActividadForm({
   materias: { id: number; name: string }[];
   alumnos: AlumnoLite[];
   editing?: EventWithDetails | null;
+  /** Inicio y fin ya medidos con el cronómetro (para una actividad nueva) */
+  inicial?: { inicio: Date; fin: Date } | null;
 }) {
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -52,11 +55,11 @@ export default function ActividadForm({
     setTitulo(editing?.title ?? "");
     setDescripcion(editing?.description ?? "");
     setMateriaId(String(editing?.materia_id ?? materias[0]?.id ?? ""));
-    setInicio(aLocal(editing ? new Date(editing.start_time) : ahora));
-    setFin(aLocal(editing ? new Date(editing.end_time) : new Date(ahora.getTime() + 3600000)));
+    setInicio(aLocal(editing ? new Date(editing.start_time) : (inicial?.inicio ?? ahora)));
+    setFin(aLocal(editing ? new Date(editing.end_time) : (inicial?.fin ?? new Date(ahora.getTime() + 3600000))));
     setLugar(editing?.location ?? "");
     setElegidos(editing ? editing.participantes.map((p) => p.id) : alumnos.map((a) => a.id));
-  }, [open, editing, materias, alumnos]);
+  }, [open, editing, inicial, materias, alumnos]);
 
   const guardar = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,19 +6,23 @@
 // sale de la lista ya cargada; plan de cada alumno y «Asignar a…».
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/homeschooling/roost/auth";
 import { useSearchParams } from "@/lib/homeschooling/roost/router";
-import { deleteModule, getModulesWithRecordings, updateModule } from "@/lib/homeschooling/roost/services/module";
-import { deleteRecording, rolDeGrupo } from "@/lib/homeschooling/roost/services/group";
+import { deleteModule, getModulesWithRecordings, reorderModules, updateModule } from "@/lib/homeschooling/roost/services/module";
+import { deleteRecording, reorderRecordings, rolDeGrupo, updateGroup } from "@/lib/homeschooling/roost/services/group";
 import type { Group, Module, ModuleWithProgress, RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
 import { toast } from "@/lib/toast";
 import AsistenteCurso from "@/components/homeschooling/plan/AsistenteCurso";
-import CursoDetalle, { type PlanVista } from "./CursoDetalle";
+import EditarPlan, { type PlanEditable } from "@/components/homeschooling/plan/EditarPlan";
+import { api } from "@/lib/homeschooling/roost/services/http";
+import CursoDetalle, { type AccionPlan, type PlanVista } from "./CursoDetalle";
 import CursoForm from "./CursoForm";
 import EditorPreguntas from "./EditorPreguntas";
+import MateriaForm from "./MateriaForm";
 import CursoGrid from "./CursoGrid";
 import LeccionForm from "./LeccionForm";
 import MateriaHeader, { type AlumnoLite } from "./MateriaHeader";
@@ -40,6 +44,7 @@ export default function MateriaLayout({
   /** Para que la página servidor se vuelva a leer (planes) después de un cambio */
   onCambio: () => void;
 }) {
+  const router = useRouter();
   const { user, profile } = useAuth();
   const rol = rolDeGrupo(profile.rolFamiliar);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,6 +61,10 @@ export default function MateriaLayout({
   const [leccionForm, setLeccionForm] = useState<{ open: boolean; editing: RecordingWithCompletion | null }>({ open: false, editing: null });
   const [asignar, setAsignar] = useState<Module | null>(null);
   const [preguntas, setPreguntas] = useState(false);
+  const [editarMateria, setEditarMateria] = useState(false);
+  const [archivar, setArchivar] = useState(false);
+  const [editarPlan, setEditarPlan] = useState<PlanEditable | null>(null);
+  const [quitarPlan, setQuitarPlan] = useState<PlanVista | null>(null);
   const [borrar, setBorrar] = useState<{ tipo: "curso" | "leccion"; id: number; nombre: string } | null>(null);
 
   const cargar = useCallback(async () => {
@@ -87,6 +96,40 @@ export default function MateriaLayout({
   const refrescar = () => {
     void cargar();
     onCambio();
+  };
+
+  const reordenar = async (fn: () => Promise<void>) => {
+    try {
+      await fn();
+      refrescar();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo cambiar el orden");
+      refrescar();
+    }
+  };
+
+  const accionPlan = async (plan: PlanVista, accion: AccionPlan) => {
+    if (accion === "editar") return setEditarPlan({ id: plan.id, nombre: plan.nombre, inicio: plan.inicio, fin: plan.fin, diasSemana: plan.diasSemana });
+    if (accion === "quitar") return setQuitarPlan(plan);
+    const estado = accion === "pausar" ? "pausado" : accion === "terminar" ? "finalizado" : "activo";
+    try {
+      await api(`/api/homeschooling/planes/${plan.id}`, { method: "PATCH", body: { estado } });
+      refrescar();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo cambiar el plan");
+    }
+  };
+
+  const confirmarQuitarPlan = async () => {
+    if (!quitarPlan) return;
+    try {
+      await api(`/api/homeschooling/planes/${quitarPlan.id}`, { method: "DELETE" });
+      setQuitarPlan(null);
+      refrescar();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo quitar el plan");
+      setQuitarPlan(null);
+    }
   };
 
   const confirmarBorrado = async () => {
@@ -137,11 +180,11 @@ export default function MateriaLayout({
             ...(view === "lesson" && activeRecording ? [{ etiqueta: `${activeRecording.display_order}. ${activeRecording.title}` }] : []),
           ]}
         />
-        <MateriaHeader group={group} alumnos={alumnos} alumnoId={alumnoId} onAlumno={rol === "admin" ? setAlumnoId : undefined} />
+        <MateriaHeader group={group} alumnos={alumnos} alumnoId={alumnoId} onAlumno={rol === "admin" ? setAlumnoId : undefined} onEditar={rol === "admin" ? () => setEditarMateria(true) : undefined} onArchivar={rol === "admin" ? () => setArchivar(true) : undefined} />
 
         <div className="p-4 sm:p-6">
           {view === "grid" && (
-            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} />
+            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onReordenar={(ids) => reordenar(() => reorderModules(group.id, ids))} />
           )}
 
           {view === "module" && activeModule && (
@@ -156,6 +199,8 @@ export default function MateriaLayout({
               onEditModule={() => setCursoForm({ open: true, editing: activeModule })}
               onDeleteModule={() => setBorrar({ tipo: "curso", id: activeModule.id, nombre: activeModule.title })}
               onAsignar={() => setAsignar(activeModule)}
+              onPlan={accionPlan}
+              onReordenarLecciones={(ids) => reordenar(() => reorderRecordings(activeModule.id, ids))}
               onToggleLibre={async (libre) => {
                 try {
                   await updateModule(activeModule.id, { navegacion_libre: libre });
@@ -211,6 +256,69 @@ export default function MateriaLayout({
       {activeRecording && (
         <EditorPreguntas open={preguntas} leccionId={activeRecording.id} titulo={activeRecording.title} onClose={() => setPreguntas(false)} />
       )}
+
+      <EditarPlan
+        plan={editarPlan}
+        onClose={() => setEditarPlan(null)}
+        onGuardado={() => {
+          setEditarPlan(null);
+          refrescar();
+        }}
+      />
+
+      <Dialog open={!!quitarPlan} onOpenChange={(o) => !o && setQuitarPlan(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Quitar el plan de {quitarPlan?.nombre}?</DialogTitle>
+            <DialogDescription>Se borran sus días pendientes. Si ya tiene días cumplidos no se puede quitar: pausalo o dalo por terminado.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuitarPlan(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmarQuitarPlan}>
+              Quitar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <MateriaForm
+        open={editarMateria}
+        editing={group}
+        onClose={() => setEditarMateria(false)}
+        onSuccess={() => {
+          setEditarMateria(false);
+          onCambio();
+        }}
+      />
+
+      <Dialog open={archivar} onOpenChange={setArchivar}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Archivar «{group.name}»?</DialogTitle>
+            <DialogDescription>Deja de aparecer en el panel y en «Hoy aprendo»; los cursos, planes y avances se conservan y se puede restaurar desde el panel.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArchivar(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  await updateGroup(group.id, { is_active: false });
+                  router.push("/dashboard/homeschooling");
+                  router.refresh();
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "No se pudo archivar");
+                }
+              }}
+            >
+              Archivar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AsistenteCurso
         open={!!asignar}

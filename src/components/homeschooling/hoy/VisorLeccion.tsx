@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, ExternalLink } from "lucide-react";
+import { useMantenerActivo } from "@/hooks/useInactividad";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
@@ -24,6 +25,7 @@ import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidenci
 import LeccionesDelDia from "./LeccionesDelDia";
 
 export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onClose: () => void }) {
+  useMantenerActivo("homeschooling-visor", !!dia); // un video largo o un quiz no cuentan como inactividad (N4)
   const router = useRouter();
   const openModal = useModalStore((s) => s.openModal);
   const [completadas, setCompletadas] = useState<Set<number>>(new Set());
