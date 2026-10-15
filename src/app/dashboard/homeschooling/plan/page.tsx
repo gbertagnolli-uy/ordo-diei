@@ -18,15 +18,24 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
 
   const alumnos = await alumnosDeFamilia();
   if (alumnos.length === 0) redirect("/dashboard/homeschooling");
-  const pedido = Number((await searchParams).alumno);
-  const alumnoId = alumnos.find((a) => a.id === pedido)?.id ?? alumnos[0].id;
+  const q = (await searchParams).alumno;
+  const todos = q === "todos" && alumnos.length > 1;
+  const alumnoId = todos ? 0 : (alumnos.find((a) => a.id === Number(q))?.id ?? alumnos[0].id);
 
   const actor = { id: Number(session.user.id), rol: String(session.user.rolFamiliar) };
-  const [dias, noLectivos, todas, festividades] = await Promise.all([diasDelAlumno(alumnoId), noLectivosDelAlumno(alumnoId), listarActividades(actor), festividadesAlrededor(hoyEnFamilia())]);
-  const actividades = todas.filter((a) => a.participantes.some((p) => p.id === alumnoId)).map((a) => ({ id: a.id, titulo: a.title, inicio: a.start_time, fin: a.end_time }));
+  const [diasPorHijo, noLectivosPorHijo, todas, festividades] = await Promise.all([
+    Promise.all((todos ? alumnos : alumnos.filter((a) => a.id === alumnoId)).map(async (a) => (await diasDelAlumno(a.id)).map((d) => ({ ...d, ...(todos ? { alumnoId: a.id, alumno: a.nombre } : {}) })))),
+    Promise.all((todos ? alumnos : alumnos.filter((a) => a.id === alumnoId)).map((a) => noLectivosDelAlumno(a.id))),
+    listarActividades(actor),
+    festividadesAlrededor(hoyEnFamilia()),
+  ]);
+  const dias = diasPorHijo.flat();
+  // En «Todos» un día sin clase de varios hijos se muestra una sola vez
+  const noLectivos = todos ? [...new Map(noLectivosPorHijo.flat().map((n) => [`${n.fecha}|${n.motivo}`, n])).values()] : noLectivosPorHijo[0];
+  const actividades = todas.filter((a) => todos || a.participantes.some((p) => p.id === alumnoId)).map((a) => ({ id: a.id, titulo: a.title, inicio: a.start_time, fin: a.end_time }));
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl p-4 sm:p-6">
-      <PlanCalendario dias={dias} noLectivos={noLectivos} actividades={actividades} alumnos={alumnos} alumnoId={alumnoId} festividades={festividades} rutaCalendario={`/api/homeschooling/calendario/${alumnoId}/${tokenDeCalendario(alumnoId)}.ics`} />
+      <PlanCalendario dias={dias} noLectivos={noLectivos} actividades={actividades} alumnos={alumnos} alumnoId={alumnoId} festividades={festividades} rutaCalendario={todos ? undefined : `/api/homeschooling/calendario/${alumnoId}/${tokenDeCalendario(alumnoId)}.ics`} />
     </div>
   );
 }
