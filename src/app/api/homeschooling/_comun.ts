@@ -231,3 +231,8 @@ export const datosSesionLectura = z.object({
 });
 
 export const datosCierreLibro = z.object({ estrellas: estrellasLibro.nullable().optional(), narracion: z.string().max(3000).nullable().optional(), fecha: claveFecha.optional() });
+
+// ── Memoria (lane 176, L2) ──
+export const datosCatalogoMemoria = z.object({ alumnoIds: z.array(idPositivo).min(1, "Elegí al menos un hijo").max(10), claves: z.array(z.string().max(60)).min(1, "Elegí al menos una oración").max(40) });
+export const datosMemoriaPropia = z.object({ alumnoId: idPositivo, titulo: z.string().trim().min(1, "Falta el título").max(150), texto: z.string().max(5000) });
+export const datosRecitado = z.object({ nivel: z.enum(["otra_vez", "dificil", "bien", "facil"]) });

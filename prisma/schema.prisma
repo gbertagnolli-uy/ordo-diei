@@ -115,6 +115,7 @@ model Usuario {
   reaccionesEstudio   ReaccionEstudio[]       @relation("ReaccionesEstudioUsuario")
   avisosEstudio       AvisoEstudio[]          @relation("AvisosEstudioUsuario")
   lecturas            LecturaLibro[]          @relation("LecturasAlumno")
+  memorizaciones      Memorizacion[]          @relation("MemorizacionesAlumno")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -1186,6 +1187,29 @@ model SesionLectura {
 
   @@index([alumnoId, fecha])
   @@map("Homeschool_Sesiones_Lectura")
+}
+
+// ─── Memoria (lane 176, L2) ─────────────────────────────────────────────────
+// Oraciones, listas y textos que un hijo aprende de memoria. Se recita en voz alta frente a un padre, que lo califica; la
+// repetición espaciada (ts-fsrs, en `tarjeta`) decide cuándo toca repasarlo. `clave` es la del catálogo católico de la casa.
+model Memorizacion {
+  id        Int       @id @default(autoincrement())
+  alumnoId  Int       @map("Alumno_ID")
+  clave     String?   @map("Clave")
+  titulo    String    @map("Titulo")
+  texto     String    @map("Texto")
+  tarjeta   Json      @map("Tarjeta")
+  proximo   DateTime  @map("Proximo")
+  repasos   Int       @default(0) @map("Repasos")
+  dominada  Boolean   @default(false) @map("Dominada")
+  ultimoEn  DateTime? @map("Ultimo_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  alumno Usuario @relation("MemorizacionesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, clave])
+  @@index([alumnoId, dominada, proximo])
+  @@map("Homeschool_Memoria")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
