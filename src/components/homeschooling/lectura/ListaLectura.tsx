@@ -9,7 +9,6 @@ import { BookMarked, BookOpen, CheckCircle2, Edit2, Flame, Library, Play, Plus, 
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
 import { StarRating } from "@/components/homeschooling/roost/StarRating";
 import { ETIQUETA_LECTURA, type EstadoLectura } from "@/lib/homeschooling/lectura";
@@ -81,21 +80,25 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
         </nav>
       )}
 
-      <section aria-label="Resumen" className="grid grid-cols-3 gap-3">
+      <section aria-label="Resumen" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatsCard title="Leídos este año" value={datos.resumen.librosLeidosAnio} icon={BookMarked} color="success" />
         <StatsCard title="Páginas esta semana" value={datos.resumen.paginasSemana} icon={BookOpen} color="primary" />
         <StatsCard title="Racha de lectura" value={datos.resumen.racha === 0 ? "—" : `${datos.resumen.racha} ${datos.resumen.racha === 1 ? "día" : "días"}`} icon={Flame} color={datos.resumen.racha > 0 ? "warning" : "primary"} />
       </section>
 
-      <Tabs value={pestana} onValueChange={(v) => setPestana(v as EstadoLectura)}>
-        <TabsList>
-          {(["leyendo", "por_leer", "leido"] as const).map((e) => (
-            <TabsTrigger key={e} value={e}>
-              {ETIQUETA_LECTURA[e]} <span className="ml-1 text-muted-foreground tabular-nums">{cuenta(e)}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Estado de lectura">
+        {(["leyendo", "por_leer", "leido"] as const).map((e) => (
+          <button
+            key={e}
+            type="button"
+            aria-pressed={pestana === e}
+            onClick={() => setPestana(e)}
+            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${pestana === e ? "border-primary bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}
+          >
+            {ETIQUETA_LECTURA[e]} <span className={pestana === e ? "text-primary-foreground/80 tabular-nums" : "text-muted-foreground tabular-nums"}>{cuenta(e)}</span>
+          </button>
+        ))}
+      </div>
 
       {datos.libros.length > 3 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar un libro…" cantidad={libros.length} />}
 
