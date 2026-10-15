@@ -21,6 +21,7 @@ export default function CursoDetalle({
   planes,
   onLessonClick,
   onBack,
+  materiaNombre,
   onAddRecording,
   onEditModule,
   onDeleteModule,
@@ -32,6 +33,7 @@ export default function CursoDetalle({
   planes: PlanVista[];
   onLessonClick: (recordingId: number) => void;
   onBack: () => void;
+  materiaNombre: string;
   onAddRecording: () => void;
   onEditModule: () => void;
   onDeleteModule: () => void;
@@ -45,8 +47,8 @@ export default function CursoDetalle({
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack} aria-label="Volver">
-          <ArrowLeft />
+        <Button variant="outline" size="sm" onClick={onBack} aria-label={`Volver a ${materiaNombre}`} className="shrink-0">
+          <ArrowLeft /> <span className="max-w-32 truncate">{materiaNombre}</span>
         </Button>
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-bold text-foreground">{module.title}</h2>

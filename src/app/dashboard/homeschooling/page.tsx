@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { esPadre } from "@/lib/habitos/permisos";
 import { listarMaterias } from "@/lib/homeschooling/servidor/cursos";
 import { alumnosDeFamilia, progresoPorAlumno } from "@/lib/homeschooling/servidor/vistas";
+import { resumenPanel } from "@/lib/homeschooling/servidor/panel";
 import { avisosParaPadre } from "@/lib/homeschooling/servidor/quiz";
 import { estadisticasEvidencias } from "@/lib/homeschooling/servidor/evidencia";
 import PanelHomeschooling from "@/components/homeschooling/plan/PanelHomeschooling";
@@ -34,6 +35,13 @@ export default async function HomeschoolingPage() {
     return <HoyAprendo nombre={yo?.nombre ?? ""} fotoUrl={yo?.fotoUrl ?? null} racha={yo?.streakDays ?? 0} dias={dias} preferencia={preferencia} historias={historias} />;
   }
 
-  const [materias, alumnos, progresos, evidencias, avisos] = await Promise.all([listarMaterias(actor), alumnosDeFamilia(), progresoPorAlumno(), estadisticasEvidencias(actor), avisosParaPadre(actor)]);
-  return <PanelHomeschooling materias={materias} alumnos={alumnos} progresos={progresos} pendientes={evidencias.pending} avisos={avisos} />;
+  const [materias, alumnos, progresos, evidencias, avisos, panel] = await Promise.all([
+    listarMaterias(actor),
+    alumnosDeFamilia(),
+    progresoPorAlumno(),
+    estadisticasEvidencias(actor),
+    avisosParaPadre(actor),
+    resumenPanel(),
+  ]);
+  return <PanelHomeschooling materias={materias} panel={panel.materias} hoy={panel.hoy} alumnos={alumnos} progresos={progresos} pendientes={evidencias.pending} avisos={avisos} />;
 }

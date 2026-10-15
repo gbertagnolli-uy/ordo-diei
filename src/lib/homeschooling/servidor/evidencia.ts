@@ -1,3 +1,5 @@
+// Portado de vendor/roost/src/services/showcase.ts y vendor/roost/src/db/adapters/mongodb/index.ts (msrbuilds/roost@492af47).
+// Cambios: Prisma en vez de Supabase, solo fotos, sin votos ni reseñas, permisos por rol familiar en vez de RLS.
 // Evidencias de aprendizaje con foto (el «showcase» de Roost sin votos ni reseñas). El Hijo crea y ve solo las suyas;
 // solo Padre/Madre revisan. Aprobar o destacar NO toca ningún saldo (no se porta el trigger de puntos de Roost):
 // las estrellas del padre son una valoración, no monedas.

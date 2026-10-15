@@ -23,6 +23,7 @@ import CursoGrid from "./CursoGrid";
 import LeccionForm from "./LeccionForm";
 import MateriaHeader, { type AlumnoLite } from "./MateriaHeader";
 import MateriaSidebar from "./MateriaSidebar";
+import Migas from "./Migas";
 import VistaLeccion from "./VistaLeccion";
 
 export default function MateriaLayout({
@@ -128,6 +129,14 @@ export default function MateriaLayout({
       />
 
       <main className="min-w-0 flex-1">
+        <Migas
+          items={[
+            { etiqueta: "Estudio", href: "/dashboard/homeschooling" },
+            { etiqueta: group.name, onClick: view !== "grid" ? irALaGrilla : undefined },
+            ...(activeModule ? [{ etiqueta: activeModule.title, onClick: view === "lesson" ? () => irAlCurso(activeModule.id) : undefined }] : []),
+            ...(view === "lesson" && activeRecording ? [{ etiqueta: `${activeRecording.display_order}. ${activeRecording.title}` }] : []),
+          ]}
+        />
         <MateriaHeader group={group} alumnos={alumnos} alumnoId={alumnoId} onAlumno={rol === "admin" ? setAlumnoId : undefined} />
 
         <div className="p-4 sm:p-6">
@@ -142,6 +151,7 @@ export default function MateriaLayout({
               planes={planesPorCurso[activeModule.id] ?? []}
               onLessonClick={(id) => irALeccion(activeModule.id, id)}
               onBack={irALaGrilla}
+              materiaNombre={group.name}
               onAddRecording={() => setLeccionForm({ open: true, editing: null })}
               onEditModule={() => setCursoForm({ open: true, editing: activeModule })}
               onDeleteModule={() => setBorrar({ tipo: "curso", id: activeModule.id, nombre: activeModule.title })}
@@ -163,6 +173,8 @@ export default function MateriaLayout({
               prev={prev && { id: prev.id, title: prev.title }}
               next={next && { id: next.id, title: next.title }}
               onNavigate={(id) => irALeccion(activeModule.id, id)}
+              cursoTitulo={activeModule.title}
+              onBack={() => irAlCurso(activeModule.id)}
               onPreguntas={rol === "admin" ? () => setPreguntas(true) : undefined}
               onEdit={rol === "admin" ? () => setLeccionForm({ open: true, editing: activeRecording }) : undefined}
               onDelete={rol === "admin" ? () => setBorrar({ tipo: "leccion", id: activeRecording.id, nombre: activeRecording.title }) : undefined}
