@@ -339,3 +339,71 @@ export async function quitarPlan(actor: { id: number }, planId: number) {
     if (tareaIds.length) await tx.tarea.deleteMany({ where: { id: { in: tareaIds }, estado: "Pendiente" } });
   });
 }
+
+// ---------- «Ponerse al día» (lane 171, R1) ----------
+// El reparto ya se recalcula solo cuando el alumno abre «Hoy». Esto le da al padre el control: ver cuánto se atrasó cada
+// plan, qué pasaría al repartirlo de nuevo y, si el reparto no entra antes del fin, con qué fecha de fin sí entraría.
+
+export type PlanAtrasado = {
+  planId: number;
+  curso: string;
+  materia: string;
+  atrasadas: number;
+  fin: string;
+  /** Cómo quedaría el reparto de lo que falta, hasta el fin actual */
+  despues: { dias: number; promedio: number; ultimoDia: string | null; aviso: "sin_dias" | "sobrecarga" | null };
+  /** Si el fin actual no alcanza para repartir bien: el primer fin (hasta 8 semanas más) con el que sí */
+  finSugerido: string | null;
+};
+
+const sumarDias = (clave: string, n: number) => aClave(new Date(aFecha(clave).getTime() + n * 86_400_000));
+
+export async function vistaPonerseAlDia(actorId: number, alumnoId: number, hoy: string): Promise<PlanAtrasado[]> {
+  await exigirPadre(actorId);
+  const planes = await prisma.planCurso.findMany({
+    where: { alumnoId, estado: "activo" },
+    include: { recurso: { select: { titulo: true, materia: { select: { nombre: true } } } } },
+    orderBy: { fin: "asc" },
+  });
+  const salida: PlanAtrasado[] = [];
+  for (const p of planes) {
+    const { entrada } = await entradaDePlan(prisma, p.id, hoy);
+    const r = planearRecalculo(entrada);
+    if (r.mover.length === 0) continue;
+    let finSugerido: string | null = null;
+    if (r.pacing.aviso) {
+      for (let semanas = 1; semanas <= 8 && !finSugerido; semanas++) {
+        const fin = sumarDias(entrada.fin, 7 * semanas);
+        if (!planearRecalculo({ ...entrada, fin }).pacing.aviso) finSugerido = fin;
+      }
+    }
+    salida.push({
+      planId: p.id,
+      curso: p.recurso.titulo,
+      materia: p.recurso.materia.nombre,
+      atrasadas: r.mover.length,
+      fin: aClave(p.fin),
+      despues: { dias: r.pacing.dias.length, promedio: r.pacing.promedio, ultimoDia: r.pacing.dias.at(-1)?.fecha ?? null, aviso: r.pacing.aviso?.tipo ?? null },
+      finSugerido,
+    });
+  }
+  return salida;
+}
+
+/** Reparte lo atrasado desde hoy en todos los planes activos del alumno. `extender` = { planId: nuevo fin } para los que se alargan */
+export async function ponerseAlDia(actorId: number, alumnoId: number, hoy: string, extender: Record<number, string> = {}) {
+  await exigirPadre(actorId);
+  const pendientes = await vistaPonerseAlDia(actorId, alumnoId, hoy);
+  if (pendientes.length === 0) return { planes: 0, dias: 0 };
+  let dias = 0;
+  for (const p of pendientes) {
+    const fin = extender[p.planId];
+    if (fin !== undefined && (!fechaValida(fin) || fin < p.fin)) throw new DatoInvalidoError("La nueva fecha de fin no es válida");
+    const r = await prisma.$transaction(async (tx) => {
+      if (fin !== undefined && fin !== p.fin) await tx.planCurso.update({ where: { id: p.planId }, data: { fin: aFecha(fin) } });
+      return recalcularEn(tx, p.planId, hoy);
+    });
+    dias += r?.creados ?? 0;
+  }
+  return { planes: pendientes.length, dias };
+}

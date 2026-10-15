@@ -20,6 +20,7 @@ import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader
 import { updateGroup } from "@/lib/homeschooling/roost/services/group";
 import { toast } from "@/lib/toast";
 import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
+import PonerseAlDia from "./PonerseAlDia";
 import AsistenteCurso from "./AsistenteCurso";
 
 export type ProgresoAlumno = AlumnoLite & { cursos: number; porcentaje: number };
@@ -46,6 +47,7 @@ export default function PanelHomeschooling({
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
   const [asistente, setAsistente] = useState(false);
+  const [alDia, setAlDia] = useState<{ id: number; nombre: string } | null>(null);
 
   const clasesHoy = hoy.flatMap((h) => h.clases);
   const hechasHoy = clasesHoy.filter((c) => c.estado === "hecha").length;
@@ -128,7 +130,16 @@ export default function PanelHomeschooling({
                       ))}
                     </ul>
                   )}
-                  {h.atrasadas > 0 && <p className="text-xs text-destructive">{h.atrasadas} {h.atrasadas === 1 ? "clase atrasada" : "clases atrasadas"} (se reparten solas desde hoy)</p>}
+                  {h.atrasadas > 0 && (
+                    <div className="flex items-center gap-2">
+                      <p className="min-w-0 flex-1 text-xs text-destructive">
+                        {h.atrasadas} {h.atrasadas === 1 ? "clase atrasada" : "clases atrasadas"}
+                      </p>
+                      <Button size="sm" variant="outline" onClick={() => setAlDia({ id: h.alumnoId, nombre: h.nombre })}>
+                        <History /> Ponerse al día
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -251,6 +262,7 @@ export default function PanelHomeschooling({
           router.refresh();
         }}
       />
+      <PonerseAlDia open={!!alDia} alumno={alDia} onClose={() => setAlDia(null)} />
     </div>
   );
 }

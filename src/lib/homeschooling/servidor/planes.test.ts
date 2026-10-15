@@ -2,7 +2,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import prisma from "../../prisma.ts";
 import { aClave, aFecha } from "../../habitos/server.ts";
-import { cambiarPlan, crearPlan, marcarNoLectivo, moverDia, omitirDia, quitarPlan, recalcular } from "./planes.ts";
+import { cambiarPlan, crearPlan, marcarNoLectivo, moverDia, omitirDia, ponerseAlDia, quitarPlan, recalcular, vistaPonerseAlDia } from "./planes.ts";
 
 // Escribe en la base de DATABASE_URL, que hoy es la de producción: solo corre con PERMITIR_TESTS_DB=1
 const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base real)";
@@ -125,4 +125,10 @@ test("pausar, reanudar y extender el fin de un plan; quitarlo con días cumplido
   const primero = await prisma.diaLectivo.findFirstOrThrow({ where: { planId: planB.id, estado: "pendiente" }, orderBy: { fecha: "asc" } });
   await prisma.diaLectivo.update({ where: { id: primero.id }, data: { estado: "hecha" } });
   await assert.rejects(quitarPlan(padre, planB.id), { status: 409 });
+});
+
+// Lectura solamente: un hijo cualquiera no puede ver el reparto de los atrasos, y la vista del padre no falla sobre la base real
+test("ponerse al día: solo padres", async () => {
+  await assert.rejects(vistaPonerseAlDia(999999, 1, "2031-01-01"), (e: { status?: number }) => e.status === 403 || e.status === 404);
+  await assert.rejects(ponerseAlDia(999999, 1, "2031-01-01"), (e: { status?: number }) => e.status === 403 || e.status === 404);
 });
