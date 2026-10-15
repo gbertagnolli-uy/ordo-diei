@@ -257,3 +257,73 @@ export async function materialSueltoDeHoy(alumnoId: number, hoy: string): Promis
   const filas = await prisma.materialEstudio.findMany({ where: { alumnoId, fecha: comoFecha(hoy), soloPadres: false }, orderBy: [{ orden: "asc" }, { id: "asc" }] });
   return aVistasDeAlumno(filas, alumnoId);
 }
+
+// ---------- Cargar la semana de una vez (lane 192) ----------
+
+export type DiaCarga = { fecha: string; lineas: string[] };
+
+const MAX_LINEAS_DIA = 20;
+const MAX_LINEAS_TOTAL = 60;
+
+/**
+ * Carga el material de varios días de un hijo en un solo gesto: por cada día, una línea por material (un enlace o una tarea corta).
+ * Queda como material suelto de ese hijo en esa fecha. Detecta el tipo, trae el título de los enlaces (5 consultas a la vez) y
+ * crea todo en una transacción. Devuelve cuántos materiales creó.
+ */
+export async function cargarSemana(a: Actor, alumnoId: number, dias: DiaCarga[]): Promise<{ creados: number; dias: number }> {
+  exigirPadre(a);
+  if (dias.length === 0 || dias.length > 7) throw new DatoInvalidoError("Cargá entre 1 y 7 días");
+  const limpios = dias
+    .map((d) => ({ fecha: d.fecha, lineas: d.lineas.map((l) => l.trim()).filter(Boolean) }))
+    .filter((d) => d.lineas.length > 0);
+  if (limpios.length === 0) throw new DatoInvalidoError("No hay nada para cargar: escribí al menos una línea");
+  for (const d of limpios) {
+    if (!FECHA.test(d.fecha)) throw new DatoInvalidoError("Fecha no válida");
+    if (d.lineas.length > MAX_LINEAS_DIA) throw new DatoInvalidoError(`Hasta ${MAX_LINEAS_DIA} materiales por día`);
+    if (d.lineas.some((l) => l.length > 2000)) throw new DatoInvalidoError("Una línea es demasiado larga: para textos largos usá «Agregar material»");
+  }
+  if (limpios.reduce((n, d) => n + d.lineas.length, 0) > MAX_LINEAS_TOTAL) throw new DatoInvalidoError(`Hasta ${MAX_LINEAS_TOTAL} materiales por carga`);
+  await exigirDestinoValido({ alumnoId, fecha: limpios[0].fecha });
+
+  const pendientes = limpios.flatMap((d) => d.lineas.map((entrada, i) => ({ fecha: d.fecha, entrada, i })));
+  let busquedas = 0;
+  const resueltos = new Array<MaterialDetectado>(pendientes.length);
+  let siguiente = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(5, pendientes.length) }, async () => {
+      while (siguiente < pendientes.length) {
+        const k = siguiente++;
+        resueltos[k] = await resolverEntrada(pendientes[k].entrada, busquedas++ < 30);
+      }
+    })
+  );
+
+  return prisma.$transaction(async (tx) => {
+    let creados = 0;
+    const base = new Map<string, number>();
+    for (const d of limpios) {
+      const max = await tx.materialEstudio.aggregate({ where: { alumnoId, fecha: comoFecha(d.fecha) }, _max: { orden: true } });
+      base.set(d.fecha, (max._max.orden ?? -1) + 1);
+    }
+    for (const [k, p] of pendientes.entries()) {
+      const det = resueltos[k];
+      await tx.materialEstudio.create({
+        data: {
+          titulo: (det.titulo || "Material").slice(0, 150),
+          tipo: det.tipo,
+          proveedor: det.proveedor,
+          externoId: det.externoId,
+          url: det.url,
+          contenido: det.contenido,
+          miniaturaUrl: det.miniaturaUrl,
+          orden: (base.get(p.fecha) ?? 0) + p.i,
+          alumnoId,
+          fecha: comoFecha(p.fecha),
+          creadorId: a.id,
+        },
+      });
+      creados += 1;
+    }
+    return { creados, dias: limpios.length };
+  });
+}

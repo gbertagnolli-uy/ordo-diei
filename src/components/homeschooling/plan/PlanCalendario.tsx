@@ -17,6 +17,7 @@ import CalendarView, { type EventoCalendario } from "@/components/homeschooling/
 import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import MateriaHeader from "@/components/homeschooling/cursos/MateriaHeader";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import CargarSemana from "@/components/homeschooling/plan/CargarSemana";
 import SuscribirCalendario from "@/components/homeschooling/plan/SuscribirCalendario";
 import { COLOR_LITURGICO, type Festividad } from "@/lib/homeschooling/festividades";
 import HojaDelDiaPadre from "@/components/homeschooling/plan/HojaDelDiaPadre";
@@ -142,6 +143,7 @@ export default function PlanCalendario({
       />
       <div className="flex flex-wrap justify-end gap-2 px-1">
         {rutaCalendario && <SuscribirCalendario ruta={rutaCalendario} nombre={quien?.nombre ?? "el alumno"} />}
+        <CargarSemana alumnos={alumnos} alumnoId={alumnoId} hoy={aClaveLocal(new Date())} />
         <Button variant="outline" onClick={() => setSueltoFecha(aClaveLocal(new Date()))}>
           <Paperclip /> Material para un día
         </Button>

@@ -1,7 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import prisma from "../../prisma.ts";
-import { actualizarMaterial, borrarMaterial, crearMaterial, listarMateriales, marcarMaterialHecho, materialSueltoDeHoy, obtenerMaterial } from "./materiales.ts";
+import { actualizarMaterial, borrarMaterial, crearMaterial, listarMateriales, marcarMaterialHecho, materialSueltoDeHoy, obtenerMaterial, cargarSemana } from "./materiales.ts";
 
 const hijo = { id: 999999, rol: "Hijo" };
 const rechazo = (e: { status?: number }) => e.status === 403;
@@ -11,6 +11,17 @@ test("un Hijo no crea, edita ni borra material", async () => {
   await assert.rejects(crearMaterial(hijo, { destino: { diaLectivoId: 1 }, entrada: "hola" }), rechazo);
   await assert.rejects(actualizarMaterial(hijo, 1, { titulo: "x" }), rechazo);
   await assert.rejects(borrarMaterial(hijo, 1), rechazo);
+});
+
+test("cargar la semana: solo padres y con datos razonables", async () => {
+  const padre = { id: 1, rol: "Padre" };
+  await assert.rejects(cargarSemana(hijo, 5, [{ fecha: "2031-03-03", lineas: ["x"] }]), rechazo);
+  await assert.rejects(cargarSemana(padre, 5, []), { status: 400 });
+  await assert.rejects(cargarSemana(padre, 5, [{ fecha: "2031-03-03", lineas: ["  ", ""] }]), { status: 400 });
+  await assert.rejects(cargarSemana(padre, 5, [{ fecha: "mañana", lineas: ["x"] }]), { status: 400 });
+  await assert.rejects(cargarSemana(padre, 5, [{ fecha: "2031-03-03", lineas: Array.from({ length: 21 }, (_, i) => `t${i}`) }]), { status: 400 });
+  await assert.rejects(cargarSemana(padre, 5, Array.from({ length: 4 }, (_, d) => ({ fecha: `2031-03-0${d + 3}`, lineas: Array.from({ length: 20 }, (_, i) => `t${i}`) }))), { status: 400 });
+  await assert.rejects(cargarSemana(padre, 5, [{ fecha: "2031-03-03", lineas: ["x".repeat(2001)] }]), { status: 400 });
 });
 
 test("un padre no puede dejar el límite de impresiones fuera de 0–10 ni un texto vacío", async () => {
@@ -86,4 +97,18 @@ test("la clave de respuestas (solo padres) no la ve ni la lista el hijo", { skip
   assert.equal((await obtenerMaterial(padre, clave.id)).titulo, "Clave");
   await borrarMaterial(padre, hoja.id);
   await borrarMaterial(padre, clave.id);
+});
+
+test("cargar la semana crea el material suelto de cada día en orden", { skip: sinBase }, async () => {
+  const padre = { id: ids.padre, rol: "Padre" };
+  const yo = { id: ids.hijo, rol: "Hijo" };
+  const r = await cargarSemana(padre, ids.hijo, [
+    { fecha: "2031-03-10", lineas: ["Hacer la hoja de multiplicar", "", "# Lectura\nLeé el capítulo 2"] },
+    { fecha: "2031-03-11", lineas: ["Repasar el Credo"] },
+  ]);
+  assert.deepEqual(r, { creados: 3, dias: 2 });
+  const lunes = await listarMateriales(yo, { alumnoId: ids.hijo, fecha: "2031-03-10" });
+  assert.deepEqual(lunes.map((m) => m.titulo), ["Hacer la hoja de multiplicar", "Lectura"]);
+  assert.equal((await listarMateriales(yo, { alumnoId: ids.hijo, fecha: "2031-03-11" })).length, 1);
+  for (const m of [...lunes, ...(await listarMateriales(yo, { alumnoId: ids.hijo, fecha: "2031-03-11" }))]) await borrarMaterial(padre, m.id);
 });
