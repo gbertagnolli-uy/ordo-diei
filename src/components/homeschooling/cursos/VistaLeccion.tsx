@@ -4,6 +4,7 @@
 // Cambios: vista previa del padre — sin «marcar completada» (el reproductor del alumno es VisorLeccion, lane H2),
 // embed con urlEmbed (youtube-nocookie), lección sin video (texto o enlace), anterior/siguiente, textos en español.
 
+import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
 import { ArrowLeft, ArrowRight, CircleHelp, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
@@ -92,6 +93,8 @@ export default function VistaLeccion({
           )}
         </div>
       </div>
+
+      <ComentariosEstudio key={recording.id} destino={{ leccionId: recording.id }} titulo="Comentarios de la familia" />
 
       <div className="flex items-center justify-between gap-2 border-t pt-4">
         <Button variant="outline" disabled={!prev} onClick={() => prev && onNavigate(prev.id)}>

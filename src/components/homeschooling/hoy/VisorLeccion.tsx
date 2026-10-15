@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import { esArchivoVideo, urlEmbed } from "@/lib/homeschooling/video";
+import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
 import MaterialesDelDia from "@/components/homeschooling/material/MaterialesDelDia";
 import type { DiaHoy, LeccionHoy } from "@/lib/homeschooling/servidor/hoy";
 import { useModalStore } from "@/store/modalStore";
@@ -160,6 +161,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                     {actual.instrucciones && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{actual.instrucciones}</p>}
                   </div>
                   <MaterialesDelDia materiales={actual.materiales} titulo="Material de esta lección" />
+                  <ComentariosEstudio key={actual.id} destino={{ leccionId: actual.id }} titulo="Preguntas y comentarios" placeholder="Escribile a mamá o a papá sobre esta lección…" />
                   {haciendoQuiz && <QuizFinal leccionId={actual.id} onAprobado={quizAprobado} onRepasar={() => setHaciendoQuiz(false)} />}
                   {lecciones.length > 1 && <LeccionesDelDia lecciones={lecciones} completadas={completadas} activaId={activaId} onSelect={cambiar} />}
                 </>

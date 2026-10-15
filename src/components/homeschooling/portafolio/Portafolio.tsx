@@ -4,6 +4,7 @@
 // Cambios: galería de evidencias con filtros por alumno/materia/mes; detalle en un Sheet; el padre destaca y quita;
 // el hijo reenvía una evidencia con ajustes pedidos o borra las que no están aprobadas. Datos desde la página servidor.
 
+import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Star } from "lucide-react";
@@ -100,6 +101,8 @@ export default function Portafolio({
                 {abierta.moderation_notes && (
                   <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-foreground">Para ajustar: {abierta.moderation_notes}</p>
                 )}
+
+                <ComentariosEstudio key={abierta.id} destino={{ evidenciaId: abierta.id }} titulo="Comentarios" placeholder="Felicitá, preguntá o comentá este trabajo…" />
 
                 {esPadre && abierta.status === "aprobada" && (
                   <Button variant="outline" disabled={ocupado} onClick={() => correr(() => (abierta.is_featured ? unfeatureShowcase(abierta.id) : featureShowcase(abierta.id)))}>

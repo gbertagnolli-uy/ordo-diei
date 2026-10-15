@@ -183,3 +183,19 @@ export const cambiosNota = z.object({
 });
 
 export const notaDeDia = z.object({ puntaje: puntajeNota, comentario: z.string().trim().max(1000).nullable().optional() });
+
+// ── Comentarios, reacciones y avisos de la familia (lane 174, Q1/Q3) ──
+export const destinoComentario = z.union([z.object({ leccionId: idPositivo }), z.object({ materialId: idPositivo }), z.object({ evidenciaId: idPositivo })]);
+
+export const destinoComentarioDe = (req: Request) => {
+  const q = new URL(req.url).searchParams;
+  for (const k of ["leccionId", "materialId", "evidenciaId"] as const) {
+    const v = Number(q.get(k));
+    if (Number.isInteger(v) && v > 0) return { [k]: v } as { leccionId: number } | { materialId: number } | { evidenciaId: number };
+  }
+  throw new Error("Falta la lección, el material o la evidencia");
+};
+
+export const datosComentario = z.object({ destino: destinoComentario, texto: z.string().max(5000) });
+export const datosReaccion = z.object({ objetivo: z.union([z.object({ comentarioId: idPositivo }), z.object({ evidenciaId: idPositivo })]), emoji: z.string().max(10) });
+export const datosLeidos = z.object({ ids: z.array(idPositivo).max(200).optional() });
