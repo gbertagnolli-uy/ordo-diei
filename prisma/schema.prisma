@@ -120,6 +120,8 @@ model Usuario {
   boletines           BoletinAlumno[]         @relation("BoletinesAlumno")
   publicacionesAutor  PublicacionFamilia[]    @relation("PublicacionesAutor")
   publicacionesSobre  PublicacionFamilia[]    @relation("PublicacionesSobre")
+  mensajesEnviados    MensajeFamilia[]        @relation("MensajesDe")
+  mensajesRecibidos   MensajeFamilia[]        @relation("MensajesPara")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -1294,6 +1296,24 @@ model PublicacionFamilia {
 
   @@index([fijada, createdAt])
   @@map("Homeschool_Muro")
+}
+
+// ─── Mensajes entre los integrantes de la familia (lane 191, G7) ────────────
+// Mensajes directos 1 a 1 dentro de la casa (el «DM» de Roost, sin adjuntos ni grupos). Solo los dos participantes los leen.
+model MensajeFamilia {
+  id        Int       @id @default(autoincrement())
+  deId      Int       @map("De_ID")
+  paraId    Int       @map("Para_ID")
+  texto     String    @map("Texto")
+  leidoEn   DateTime? @map("Leido_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  de   Usuario @relation("MensajesDe", fields: [deId], references: [id], onDelete: Cascade)
+  para Usuario @relation("MensajesPara", fields: [paraId], references: [id], onDelete: Cascade)
+
+  @@index([paraId, leidoEn])
+  @@index([deId, paraId, createdAt])
+  @@map("Homeschool_Mensajes")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──

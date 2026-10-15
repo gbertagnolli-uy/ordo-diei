@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import CampanaAvisos from "@/components/homeschooling/comunidad/CampanaAvisos";
+import BotonMensajes from "@/components/homeschooling/mensajes/BotonMensajes";
 import BuscadorEstudio from "./BuscadorEstudio";
 
 const RAIZ = "/dashboard/homeschooling";
@@ -75,6 +76,7 @@ export default function CabeceraEstudio({ esPadre, pendientes }: { esPadre: bool
           )}
         </nav>
         <BuscadorEstudio />
+        <BotonMensajes />
         <CampanaAvisos />
       </div>
       <nav aria-label="Secciones de Estudio" className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2">
