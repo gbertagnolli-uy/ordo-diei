@@ -17,6 +17,7 @@ import CalendarView, { type EventoCalendario } from "@/components/homeschooling/
 import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import MateriaHeader from "@/components/homeschooling/cursos/MateriaHeader";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import SuscribirCalendario from "@/components/homeschooling/plan/SuscribirCalendario";
 import HojaDelDiaPadre from "@/components/homeschooling/plan/HojaDelDiaPadre";
 import CalificarDia from "@/components/homeschooling/libreta/CalificarDia";
 import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
@@ -55,12 +56,14 @@ export default function PlanCalendario({
   actividades = [],
   alumnos,
   alumnoId,
+  rutaCalendario,
 }: {
   dias: DiaDelPlan[];
   noLectivos: NoLectivoVista[];
   actividades?: ActividadVista[];
   alumnos: AlumnoLite[];
   alumnoId: number;
+  rutaCalendario?: string;
 }) {
   const router = useRouter();
   const [sel, setSel] = useState<DiaDelPlan | null>(null);
@@ -126,6 +129,7 @@ export default function PlanCalendario({
         onAlumno={(id) => router.push(`/dashboard/homeschooling/plan?alumno=${id}`)}
       />
       <div className="flex flex-wrap justify-end gap-2 px-1">
+        {rutaCalendario && <SuscribirCalendario ruta={rutaCalendario} nombre={quien?.nombre ?? "el alumno"} />}
         <Button variant="outline" onClick={() => setSueltoFecha(aClaveLocal(new Date()))}>
           <Paperclip /> Material para un día
         </Button>
