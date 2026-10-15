@@ -136,7 +136,7 @@ export function PropriumDeTemporeVista({ className }: PropriumDeTemporeVistaProp
             </Button>
 
             <Button asChild variant="outline" size="sm" className="text-xs gap-1.5">
-              <Link href="/dashboard/liturgia">
+              <Link href="/dashboard/liturgia/calendarium">
                 <Calendar className="size-3.5" />
                 <span>¿Cuándo cae este año?</span>
               </Link>
