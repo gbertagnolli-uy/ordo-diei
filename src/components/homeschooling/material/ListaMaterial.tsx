@@ -55,7 +55,7 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
     };
   }, [leer, onCambio]);
 
-  const cambiar = async (m: MaterialVista, cambios: { titulo?: string; limiteImpresiones?: number }) => {
+  const cambiar = async (m: MaterialVista, cambios: { titulo?: string; limiteImpresiones?: number; soloPadres?: boolean }) => {
     try {
       await api(`/api/homeschooling/materiales/${m.id}`, { method: "PATCH", body: cambios });
       await cargar();
@@ -94,7 +94,11 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
                     className="h-8 border-transparent bg-transparent px-1 font-medium shadow-none hover:border-input focus-visible:border-ring"
                     onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== m.titulo && void cambiar(m, { titulo: e.target.value.trim() })}
                   />
-                  <p className="px-1 text-xs text-muted-foreground">{ETIQUETA_TIPO[m.tipo]}{m.contenido !== null ? ` · ${m.contenido.length} caracteres` : ""}</p>
+                  <p className="px-1 text-xs text-muted-foreground">
+                    {ETIQUETA_TIPO[m.tipo]}
+                    {m.contenido !== null ? ` · ${m.contenido.length} caracteres` : ""}
+                    {m.soloPadres && <span className="ml-1.5 rounded-full bg-warning/15 px-1.5 font-medium text-foreground">solo padres</span>}
+                  </p>
                 </div>
                 {m.url && (
                   <Button asChild variant="ghost" size="icon-sm" aria-label={`Abrir «${m.titulo}»`}>
@@ -119,6 +123,10 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
                 </NativeSelect>
                 {!m.imprimible && m.limiteImpresiones > 0 && <span>(este tipo no se imprime desde la app)</span>}
               </div>
+              <label className="flex items-center gap-2 pl-7 text-xs text-muted-foreground">
+                <input type="checkbox" checked={m.soloPadres} onChange={(e) => void cambiar(m, { soloPadres: e.target.checked, ...(e.target.checked ? { limiteImpresiones: 0 } : {}) })} className="size-3.5 accent-primary" />
+                Solo para padres (clave de respuestas)
+              </label>
               {m.imprimible && <ImpresionesDelMaterial materialId={m.id} />}
             </li>
           ))}

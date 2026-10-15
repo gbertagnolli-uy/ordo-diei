@@ -79,7 +79,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
     // Material del día y de sus lecciones, en una sola consulta (lane 166)
     const idsLeccion = recurso.lecciones.filter((l) => elegidos.some((e) => l.orden >= e.dia.unidadDesde && l.orden <= e.dia.unidadHasta)).map((l) => l.id);
     const materiales = await prisma.materialEstudio.findMany({
-      where: { OR: [{ diaLectivoId: { in: elegidos.map((e) => e.dia.id) } }, { leccionId: { in: idsLeccion } }] },
+      where: { soloPadres: false, OR: [{ diaLectivoId: { in: elegidos.map((e) => e.dia.id) } }, { leccionId: { in: idsLeccion } }] },
       orderBy: [{ orden: "asc" }, { id: "asc" }],
     });
     const uso = await usoDeImpresiones(alumnoId, materiales.map((m) => m.id));

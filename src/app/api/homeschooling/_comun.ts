@@ -134,6 +134,7 @@ export const datosMaterial = z.object({
   titulo: z.string().trim().max(150).nullable().optional(),
   tipo: tipoMaterial.nullable().optional(),
   limiteImpresiones: z.number().int().min(0).max(10).nullable().optional(),
+  soloPadres: z.boolean().optional(),
 });
 
 export const cambiosMaterial = z.object({
@@ -142,6 +143,7 @@ export const cambiosMaterial = z.object({
   limiteImpresiones: z.number().int().min(0).max(10).optional(),
   contenido: z.string().max(60000).nullable().optional(),
   orden: z.number().int().min(0).optional(),
+  soloPadres: z.boolean().optional(),
 });
 
 export const destinoDe = (req: Request) => {

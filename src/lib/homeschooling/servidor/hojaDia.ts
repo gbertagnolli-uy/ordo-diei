@@ -27,8 +27,8 @@ async function cargarDia(diaId: number) {
   const d = await prisma.diaLectivo.findUnique({
     where: { id: diaId },
     include: {
-      materiales: { orderBy: [{ orden: "asc" }, { id: "asc" }] },
-      plan: { select: { alumnoId: true, alumno: { select: { nombre: true } }, recurso: { select: { id: true, titulo: true, tipo: true, unidadTipo: true, minutosPorUnidad: true, materia: { select: { nombre: true } }, lecciones: { orderBy: { orden: "asc" }, include: { materiales: { orderBy: [{ orden: "asc" }, { id: "asc" }] } } } } } } },
+      materiales: { where: { soloPadres: false }, orderBy: [{ orden: "asc" }, { id: "asc" }] },
+      plan: { select: { alumnoId: true, alumno: { select: { nombre: true } }, recurso: { select: { id: true, titulo: true, tipo: true, unidadTipo: true, minutosPorUnidad: true, materia: { select: { nombre: true } }, lecciones: { orderBy: { orden: "asc" }, include: { materiales: { where: { soloPadres: false }, orderBy: [{ orden: "asc" }, { id: "asc" }] } } } } } } },
     },
   });
   if (!d) throw new NoEncontradoError("Día no encontrado");
