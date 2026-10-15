@@ -199,3 +199,35 @@ export const destinoComentarioDe = (req: Request) => {
 export const datosComentario = z.object({ destino: destinoComentario, texto: z.string().max(5000) });
 export const datosReaccion = z.object({ objetivo: z.union([z.object({ comentarioId: idPositivo }), z.object({ evidenciaId: idPositivo })]), emoji: z.string().max(10) });
 export const datosLeidos = z.object({ ids: z.array(idPositivo).max(200).optional() });
+
+// ── Lectura real (lane 175, L1) ──
+const estadoLectura = z.enum(["por_leer", "leyendo", "leido"]);
+const paginas = z.number().int().min(1, "Las páginas van de 1 a 5000").max(5000, "Las páginas van de 1 a 5000");
+const estrellasLibro = z.number().int().min(1, "La valoración va de 1 a 5").max(5, "La valoración va de 1 a 5");
+
+export const datosLibro = z.object({
+  alumnoId: idPositivo,
+  titulo: z.string().trim().min(1, "Falta el título del libro").max(150),
+  autor: z.string().trim().max(100).nullable().optional(),
+  paginasTotal: paginas.nullable().optional(),
+  portadaUrl: z.string().trim().max(500).nullable().optional(),
+  estado: estadoLectura.optional(),
+});
+
+export const cambiosLibro = z.object({
+  titulo: z.string().trim().min(1, "Falta el título del libro").max(150).optional(),
+  autor: z.string().trim().max(100).nullable().optional(),
+  paginasTotal: paginas.nullable().optional(),
+  portadaUrl: z.string().trim().max(500).nullable().optional(),
+  estado: estadoLectura.optional(),
+  narracion: z.string().max(3000).nullable().optional(),
+  estrellas: estrellasLibro.nullable().optional(),
+});
+
+export const datosSesionLectura = z.object({
+  hastaPagina: z.number().int().min(0).max(5000),
+  minutos: z.number().int().min(0).max(600).nullable().optional(),
+  fecha: claveFecha.optional(),
+});
+
+export const datosCierreLibro = z.object({ estrellas: estrellasLibro.nullable().optional(), narracion: z.string().max(3000).nullable().optional(), fecha: claveFecha.optional() });
