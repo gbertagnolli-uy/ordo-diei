@@ -33,7 +33,7 @@ Estados: **PORTADO** (código de Roost adaptado en `src/`) · **PARCIAL** · **E
 
 | # | Feature de Roost (§ del análisis) | Archivos clave en `vendor/roost` | Estado en Ordo | Dónde / nota |
 |---|---|---|---|---|
-| 1 | Feed: posts con rich text, categorías, pin (4.1) | `components/feed/`, `services/post.ts` | NO · DESCARTADO | §8 plan: "Ordo no es red social" |
+| 1 | Feed: posts con rich text, categorías, pin (4.1) | `components/feed/`, `services/post.ts` | PARCIAL (lane 184) | «Nuestra familia»: muro con avisos de los padres (fijables) y logros automáticos; sin rich text ni categorías |
 | 2 | Reacciones (6 emojis, picker long-press) | `PostCard`, `ReactorListModal`, `reaction.ts` | PARCIAL (lane 174) | 3 emojis sobre comentarios y evidencias; sin picker ni lista de reactores |
 | 3 | Comentarios anidados, votos, menciones | `CommentSection/Item/Form`, `MentionDropdown`, `commentVote.ts` | PARCIAL (lane 174) | Comentarios planos con reacciones 👍❤️🙏 entre integrantes de la familia, en lección, material y evidencia (`comunidad/ComentariosEstudio`); sin anidado, votos ni menciones |
 | 4 | Embeds YouTube/Vimeo | `feed/VideoEmbed.tsx`, `LessonPlayer.getEmbedUrl` | PORTADO (solo parseo) | `src/lib/homeschooling/video.ts` |
@@ -42,7 +42,7 @@ Estados: **PORTADO** (código de Roost adaptado en `src/`) · **PARCIAL** · **E
 | 7 | Assets del grupo (PDF, ZIP ≤100MB) | `GroupAssets`, `UploadAssetsModal` | NO · DESCARTADO | `Archivo` solo admite imágenes |
 | 8 | Learn mode: módulos, lecciones, progreso, sidebar, player (4.3) | `groups/learn/` (10) | PORTADO | `components/homeschooling/cursos/` + `hoy/` (VisorLeccion, LeccionesDelDia); sin desmarcar ni comentarios |
 | 9 | Quizzes, checkpoints, repaso | — (Roost no los tiene) | PROPIO de Ordo | ts-fsrs, `PreguntaLeccion`, `TarjetaRepaso` |
-| 10 | DM 1-a-1 realtime, adjuntos, leído, presencia (4.4) | `components/messages/`, `message.ts`, `usePresence` | NO · DESCARTADO | |
+| 10 | DM 1-a-1 realtime, adjuntos, leído, presencia (4.4) | `components/messages/`, `message.ts`, `usePresence` | PARCIAL (lane 191) | Mensajes 1 a 1 entre integrantes de la familia con leído (✓✓) y no leídos en la barra; consulta cada 8 s, sin adjuntos ni presencia |
 | 11 | Calendario month/week/day/agenda, drag (4.5) | `calendar/CalendarView.tsx` | PORTADO | `roost/CalendarView.tsx` → `plan/PlanCalendario.tsx` |
 | 12 | Eventos: form, card, detalle, asistentes | `events/` | PORTADO (sin RSVP ni enlace virtual; el plan y las actividades salen además por `.ics`, lane 179) | `horas/Actividad*`; `ParticipanteActividad` no tiene estado going/maybe/not_going |
 | 13 | RSVP going/maybe/not_going (+15 pts) | `RSVPButton.tsx` | NO · DESCARTADO | |
@@ -54,7 +54,7 @@ Estados: **PORTADO** (código de Roost adaptado en `src/`) · **PARCIAL** · **E
 | 19 | Activations (canje de productos) (4.10) | `activations`, tablas `activation_*` | NO · DESCARTADO | Además guarda `wp_password` en claro |
 | 20 | Notificaciones in-app + email + preferencias (4.11) | `notifications/`, `server/src/routes/notifications.ts` | PARCIAL (lane 174) | Campana de avisos en la barra de Estudio (`CampanaAvisos`, tabla `Homeschool_Avisos`): comentarios entre padres e hijos; sin correo, push ni preferencias |
 | 21 | Admin: dashboard, usuarios, contenido, categorías, anuncios, subs, backups (4.12) | `pages/admin/` (12) | EQUIVALENTE | `dashboard/admin` y `users` propios; sin moderación de contenido ni anuncios |
-| 22 | Anuncios globales/por grupo | `AnnouncementBanner`, `announcements` | NO | |
+| 22 | Anuncios globales/por grupo | `AnnouncementBanner`, `announcements` | PARCIAL (lane 184) | Avisos de los padres en el muro, que llegan a la campana de los hijos |
 | 23 | Site settings / white-label / feature flags (4.16) | `SiteSettingsContext`, `lib/…` | NO | Ordo tiene su propio tema |
 | 24 | Auth: registro, 2FA TOTP, bans, roles (4.13) | `pages/auth/`, `two-factor.ts` | DESCARTADO | Login por PIN + `RolFamiliar` |
 | 25 | Stripe / premium (4.14) | `stripe-*.ts` | DESCARTADO (D23) | Uso doméstico |
@@ -64,7 +64,7 @@ Estados: **PORTADO** (código de Roost adaptado en `src/`) · **PARCIAL** · **E
 | 29 | RTL, guía de onboarding, dark mode (4.18, 4.21, 6.3) | `lib/rtl.ts`, `pages/Guide.tsx`, `ThemeContext` | PARCIAL | Ordo usa variantes `dark:` en sus componentes (no se portó `ThemeContext`); sin RTL ni guía |
 | 30 | Sistema de diseño (6): tokens, modales, skeletons, ProgressBar, ProBadge, OnlineIndicator | `components/common/`, `tailwind.config.js` | EQUIVALENTE | Traducido a `components/ui/` (shadcn); según el plan HS0, un test de guarda detecta clases Roost sin traducir (no re-verificado en esta lane) |
 
-**Resumen (actualizado en la lane 180, 2026-10-16):** de 30 filas, **PORTADO/ADAPTADO 5**, **PARCIAL 7** (filas 2, 3, 5, 14, 20, 27, 29), **EQUIVALENTE 3**, **PROPIO 1**, **NO/DESCARTADO 13**, **mixto NO/PARCIAL 1** (fila 28). La capa social de Roost quedó reducida, a propósito, a lo que sirve a **una** familia: comentarios, reacciones y avisos (lane 174). Lo que se construyó **más allá de Roost** para Estudio (material, impresión con tope, libreta, lectura, memoria católica, biblioteca, hoja semanal, `.ics`) está en [`CATALOGO_FEATURES_ESTUDIO.md`](CATALOGO_FEATURES_ESTUDIO.md). La capa social (filas 1–3, 6, 10, 13, 17, 18, 22, 27) es **cero**.
+**Resumen (actualizado en la lane 194, 2026-10-16):** de 30 filas, **PORTADO/ADAPTADO 5**, **PARCIAL 10** (filas 1, 2, 3, 5, 10, 14, 20, 22, 27, 29), **EQUIVALENTE 3**, **PROPIO 1**, **NO/DESCARTADO 10**, **mixto NO/PARCIAL 1** (fila 28). La capa social de Roost quedó reducida, a propósito, a lo que sirve a **una** familia: comentarios, reacciones y avisos (lane 174). Lo que se construyó **más allá de Roost** para Estudio (material, impresión con tope, libreta, lectura, memoria católica, biblioteca, hoja semanal, `.ics`) está en [`CATALOGO_FEATURES_ESTUDIO.md`](CATALOGO_FEATURES_ESTUDIO.md). La capa social (filas 1–3, 6, 10, 13, 17, 18, 22, 27) es **cero**.
 
 ## 4. Cómo evaluar "¿ya está implementada la feature X de Roost?"
 
