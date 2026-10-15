@@ -64,7 +64,7 @@ export function aVista(m: MaterialEstudio, uso?: UsoImpresion): MaterialVista {
     limiteImpresiones: m.limiteImpresiones,
     soloPadres: m.soloPadres,
     imprimible: m.limiteImpresiones > 0 && esImprimible(base),
-    vista: vistaMaterial(base),
+    vista: vistaMaterial({ ...base, id: m.id }),
     hecho: m.hechoEn !== null,
     restantes: uso ? impresionesRestantes(m.limiteImpresiones, uso.usadas, uso.extras) : null,
     leccionId: m.leccionId,

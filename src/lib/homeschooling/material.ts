@@ -43,6 +43,8 @@ export interface VistaMaterial {
   abrirUrl: string | null;
   /** Dirección que ya es un PDF imprimible (null si no hay forma segura de imprimirla sin salir de la app) */
   imprimirUrl: string | null;
+  /** PDF o ePub que la app baja y muestra adentro (ruta del material); null si no corresponde */
+  archivoUrl: string | null;
   /** El navegador reproduce el archivo de video sin iframe */
   videoDirecto: boolean;
   plataformaVideo: PlataformaVideo | null;
@@ -146,14 +148,15 @@ export function detectarMaterial(entrada: string): MaterialDetectado {
 /** Datos mínimos de un material guardado para calcular su vista */
 export type MaterialBase = {
   tipo: TipoMaterial;
-  proveedor: ProveedorMaterial | null;
+  proveedor: ProveedorMaterial | string | null;
   externoId: string | null;
   url: string | null;
 };
 
 /** Cómo se muestra, se abre y se imprime un material ya guardado. */
-export function vistaMaterial(m: MaterialBase): VistaMaterial {
-  const vacia: VistaMaterial = { embedUrl: null, abrirUrl: m.url, imprimirUrl: null, videoDirecto: false, plataformaVideo: null };
+export function vistaMaterial(m: MaterialBase & { id?: number }): VistaMaterial {
+  const archivoUrl = m.id !== undefined && (m.tipo === "pdf" || m.tipo === "epub") && (m.url || m.externoId) ? `/api/homeschooling/materiales/${m.id}/archivo` : null;
+  const vacia: VistaMaterial = { embedUrl: null, abrirUrl: m.url, imprimirUrl: null, archivoUrl, videoDirecto: false, plataformaVideo: null };
 
   if (m.tipo === "video") {
     if ((m.proveedor === "youtube" || m.proveedor === "vimeo") && m.externoId) {
