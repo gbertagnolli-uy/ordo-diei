@@ -1,8 +1,8 @@
 // Lógica de los Misterios del Rosario tradicional (SPEC liturgia §10.8, D49).
 // Regla dominical (D49, SPEC §10.8). Fuente: texto aportado por el usuario el 2026-10-14, «Mysteries for Rosary Meditation /
-// Meditationes Rosarii» (página web de devoción tradicional; NO es una edición impresa preconciliar, y sigue pendiente
-// citar una): Lun y Jue Gozosos; Mar y Vie Dolorosos; Mié y Sáb Gloriosos; Domingo Gloriosos, salvo en el tiempo de
-// Adviento/Navidad (Gozosos) y en Cuaresma (Dolorosos). La Septuagésima NO cuenta como Cuaresma.
+// Meditationes Rosarii» (devoción tradicional): Lun y Jue Gozosos; Mar y Vie Dolorosos; Mié y Sáb Gloriosos; Domingo
+// Gloriosos, salvo en el tiempo de Adviento/Navidad (Gozosos) y en Cuaresma (Dolorosos). La Septuagésima NO cuenta como
+// Cuaresma. El usuario dio esta fuente por buena como criterio de L9 (no es una edición impresa preconciliar).
 
 import type { TiempoLiturgico } from "./tipos.ts";
 import rosariumJson from "../../data/liturgia/rosarium.json" with { type: "json" };

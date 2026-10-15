@@ -165,3 +165,9 @@ Al cerrar se comparó lo integrado con `PROMPT_REPOSO_LITURGIA.md` §3. Las 12 f
   - **Revisar**: la numeración (1–994) ya no es la de la edición de 1973 (1–708); el texto es el de esa edición castellana (con «asímismo», «Vuestro», etc. tal como está). Solo se corrigió la tilde de «¿Que/Quien/Como/Cuantas» al abrir la pregunta (el PDF las trae sin tilde). Falta que una persona lea una muestra: el PDF no declara su edición ni licencia.
   - Ya no hace falta la lectura completa que pedía la sección R1 para el OCR (el PDF no tiene ese problema), pero sí revisar el filtro de largo del reposo: ahora hay muchas más preguntas candidatas.
 - **Vulgata (epub de Wikisource, «Vulgata Clementina», 1598; CC BY-SA 3.0 / GFDL)**: sirvió de **segunda fuente para verificar** el latín de las 562 citas (`npm run reposo:vulgata-epub -- "<ruta al epub>"`). Resultado: **562 de 562 iguales** al normalizar (tildes, puntuación, u/v, i/j, æ/œ). No se cambió ningún dato; el latín de la app sigue saliendo de VulSearch/BibleGet. El epub no se guarda en el repo (licencia copyleft; no se redistribuye).
+
+### Cierre de criterios por decisión del usuario (lane 151, 2026-10-14)
+Textual: «Usa lo que te pasé del rosario, la selección usala así, eso de que se saltaron en curso no tengo idea que es».
+- **L9**: el usuario da por buena la fuente que aportó (página «Meditationes Rosarii»); queda citada en `rosario.ts` y **ya no es un pendiente**. No se exige edición impresa.
+- **R1**: la selección de citas se usa tal cual (aprobada).
+- **«🔨 en curso»**: era solo la etiqueta de la tabla de `LANES.md` (L2, L3, R1 y R2 pasaron de «lista» a «integrada» sin la etiqueta intermedia). No tiene efecto en el código ni en la base; no se corrige.
