@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import IconoMateria from "@/components/homeschooling/cursos/IconoMateria";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
+import BotonHoja from "./BotonHoja";
 
 export default function TarjetaHoy({ dia, onClick, onFoto }: { dia: DiaHoy; onClick: (dia: DiaHoy) => void; onFoto?: (dia: DiaHoy) => void }) {
   const hecho = dia.estado === "hecha";
@@ -57,6 +58,7 @@ export default function TarjetaHoy({ dia, onClick, onFoto }: { dia: DiaHoy; onCl
         )
       )}
     </button>
+    {!bloqueada && !hecho && <BotonHoja diaId={dia.diaId} restantes={dia.hojaRestantes} className="h-12 shrink-0 px-3" />}
     {onFoto && !bloqueada && (
       <Button type="button" variant="outline" size="icon-lg" className="size-12 shrink-0" aria-label={`Sacar una foto de mi trabajo de ${dia.recurso.titulo}`} onClick={() => onFoto(dia)}>
         <Camera />

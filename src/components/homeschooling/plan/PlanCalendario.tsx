@@ -17,6 +17,7 @@ import CalendarView, { type EventoCalendario } from "@/components/homeschooling/
 import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import MateriaHeader from "@/components/homeschooling/cursos/MateriaHeader";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import HojaDelDiaPadre from "@/components/homeschooling/plan/HojaDelDiaPadre";
 import CalificarDia from "@/components/homeschooling/libreta/CalificarDia";
 import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
 import HoyNoHayClase from "./HoyNoHayClase";
@@ -179,6 +180,7 @@ export default function PlanCalendario({
                   {sel.unidadDesde === sel.unidadHasta ? `${ETIQUETA_UNIDAD[sel.unidadTipo] ?? "unidades"} ${sel.unidadDesde}` : `${ETIQUETA_UNIDAD[sel.unidadTipo] ?? "unidades"} ${sel.unidadDesde} a ${sel.unidadHasta}`}
                 </p>
                 <p className="text-muted-foreground">Estado: {ESTADO[sel.estado]}</p>
+                <HojaDelDiaPadre key={sel.id} diaId={sel.id} />
                 {sel.estado === "hecha" && (
                   <Button variant="outline" onClick={() => setCalificando(sel)}>
                     <NotebookPen /> Calificar este día

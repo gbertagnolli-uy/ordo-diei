@@ -4,6 +4,7 @@ import prisma from "../../prisma.ts";
 import { aClave, hoyEnFamilia } from "../../habitos/server.ts";
 import { estaBloqueado, motivoLeccionBloqueada, rangoTexto } from "../dia.ts";
 import { sincronizarDias, TIPOS_CON_LECCIONES, unidadesVistas } from "./progreso.ts";
+import { hojasRestantes } from "./hojaDia.ts";
 import { aVista, materialSueltoDeHoy, usoDeImpresiones, type MaterialVista } from "./materiales.ts";
 
 export type LeccionHoy = {
@@ -43,6 +44,8 @@ export type DiaHoy = {
   lecciones: LeccionHoy[];
   /** Material que el padre dejó para este día (lane 166) */
   materiales: MaterialVista[];
+  /** Veces que el alumno todavía puede imprimir la hoja de este día (lane 178) */
+  hojaRestantes: number;
 };
 
 export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Promise<DiaHoy[]> {
@@ -81,6 +84,8 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
     });
     const uso = await usoDeImpresiones(alumnoId, materiales.map((m) => m.id));
     const vistaDe = (m: (typeof materiales)[number]) => aVista(m, uso.get(m.id) ?? { usadas: 0, extras: 0 });
+
+    const restantesHoja = await hojasRestantes(alumnoId, elegidos.map((e) => e.dia.id));
 
     const conLecciones = TIPOS_CON_LECCIONES.includes(recurso.tipo);
     const preguntas = conLecciones ? await prisma.preguntaLeccion.findMany({ where: { leccion: { recursoId: recurso.id } }, select: { leccionId: true, segundoVideo: true } }) : [];
@@ -127,6 +132,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
         progreso: recurso.totalUnidades > 0 ? Math.min(100, Math.round((totalHecho / recurso.totalUnidades) * 100)) : 0,
         lecciones,
         materiales: materiales.filter((m) => m.diaLectivoId === dia.id).map(vistaDe),
+        hojaRestantes: restantesHoja.get(dia.id) ?? 0,
       });
     }
   }

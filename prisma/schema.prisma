@@ -116,6 +116,7 @@ model Usuario {
   avisosEstudio       AvisoEstudio[]          @relation("AvisosEstudioUsuario")
   lecturas            LecturaLibro[]          @relation("LecturasAlumno")
   memorizaciones      Memorizacion[]          @relation("MemorizacionesAlumno")
+  impresionesHoja     ImpresionDia[]          @relation("ImpresionesDiaAlumno")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -839,11 +840,12 @@ model DiaLectivo {
   tareaId     Int?             @unique @map("Tarea_ID")
   createdAt   DateTime         @default(now()) @map("Created_At")
 
-  plan         PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
-  tarea        Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
-  evidencias   EvidenciaAprendizaje[]
-  materiales   MaterialEstudio[]
-  calificacion Calificacion?
+  plan          PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tarea         Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+  evidencias    EvidenciaAprendizaje[]
+  materiales    MaterialEstudio[]
+  calificacion  Calificacion?
+  impresionDias ImpresionDia[]
 
   @@unique([planId, fecha])
   @@index([fecha, estado])
@@ -1210,6 +1212,24 @@ model Memorizacion {
   @@unique([alumnoId, clave])
   @@index([alumnoId, dominada, proximo])
   @@map("Homeschool_Memoria")
+}
+
+// Cada vez que un alumno abre la hoja imprimible del día queda una fila 'uso'; un padre puede dar de más ('extra'). Permitidas = 2 +
+// extras (lane 178, P3). El `token` abre la hoja y vale 15 minutos.
+model ImpresionDia {
+  id            Int      @id @default(autoincrement())
+  diaLectivoId  Int      @map("Dia_Lectivo_ID")
+  alumnoId      Int      @map("Alumno_ID")
+  tipo          String   @default("uso") @map("Tipo")
+  token         String?  @unique @map("Token")
+  otorgadaPorId Int?     @map("Otorgada_Por_ID")
+  createdAt     DateTime @default(now()) @map("Created_At")
+
+  diaLectivo DiaLectivo @relation(fields: [diaLectivoId], references: [id], onDelete: Cascade)
+  alumno     Usuario    @relation("ImpresionesDiaAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@index([diaLectivoId, alumnoId])
+  @@map("Homeschool_Impresiones_Dia")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
