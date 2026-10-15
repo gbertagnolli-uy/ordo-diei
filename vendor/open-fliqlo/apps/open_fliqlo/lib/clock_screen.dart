@@ -1,0 +1,237 @@
+import 'dart:async';
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:fliqlo_core/fliqlo_core.dart';
+import 'package:fliqlo_ui/fliqlo_ui.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'launch_mode.dart';
+import 'platform_shell.dart';
+
+/// Fullscreen flip clock with platform-appropriate settings gestures.
+///
+/// Mobile: tap toggles seconds, long-press opens settings.
+/// Desktop / web: click toggles seconds, right-click opens settings.
+class ClockScreen extends StatefulWidget {
+  const ClockScreen({
+    super.key,
+    this.mode = LaunchMode.normal,
+    this.settingsOverrides = const FliqloSettingsOverrides(),
+  });
+
+  final LaunchMode mode;
+
+  /// CLI overrides; null fields use SharedPreferences after [SettingsStore.load].
+  final FliqloSettingsOverrides settingsOverrides;
+
+  @override
+  State<ClockScreen> createState() => _ClockScreenState();
+}
+
+class _ClockScreenState extends State<ClockScreen> {
+  late final SettingsStore _store = SettingsStore(
+    overrides: widget.settingsOverrides,
+  );
+  final AudioPlayer _flipPlayer = AudioPlayer();
+  ClockEngine? _engine;
+  bool _settingsOpen = false;
+  bool _ready = false;
+  bool _configureOpened = false;
+
+  LaunchMode get _mode => widget.mode;
+
+  bool get _flipSoundEnabled =>
+      _mode.allowInteractiveGestures && _store.settings.enableFlipSound;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_flipPlayer.setReleaseMode(ReleaseMode.stop));
+    unawaited(_flipPlayer.setPlayerMode(PlayerMode.lowLatency));
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await _store.load();
+    final settings = _store.settings;
+    _engine = ClockEngine(
+      use24Hour: settings.use24Hour,
+      showSeconds: settings.showSeconds,
+    )..start();
+    _store.addListener(_onSettingsChanged);
+    // Platform chrome / wakelock are best-effort and must not block first paint
+    // (plugin channels can hang forever under testWidgets fake-async).
+    unawaited(PlatformShell.unlockOrientations());
+    unawaited(PlatformShell.enableKeepAwake());
+    unawaited(PlatformShell.enterImmersive());
+    // Let right-click open settings instead of the browser menu.
+    if (kIsWeb && _mode.allowInteractiveGestures) {
+      unawaited(BrowserContextMenu.disableContextMenu());
+    }
+    if (mounted) {
+      setState(() => _ready = true);
+    }
+    if (_mode.openSettingsOnLaunch && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_configureOpened && mounted) {
+          _configureOpened = true;
+          _openSettings();
+        }
+      });
+    }
+  }
+
+  void _onSettingsChanged() {
+    final s = _store.settings;
+    _engine?.updateOptions(
+      use24Hour: s.use24Hour,
+      showSeconds: s.showSeconds,
+    );
+  }
+
+  Future<void> _playFlipSound() async {
+    if (!_flipSoundEnabled) return;
+    try {
+      await _flipPlayer.stop();
+      await _flipPlayer.play(AssetSource('sounds/flip.wav'));
+    } catch (_) {
+      // Audio is best-effort; ignore platform/plugin failures.
+    }
+  }
+
+  @override
+  void dispose() {
+    _store.removeListener(_onSettingsChanged);
+    final store = _store;
+    unawaited(store.flush().whenComplete(store.dispose));
+    _engine?.dispose();
+    unawaited(_flipPlayer.dispose());
+    PlatformShell.disableKeepAwake();
+    super.dispose();
+  }
+
+  Future<void> _toggleSeconds() async {
+    if (!_mode.allowInteractiveGestures) return;
+    final next = !_store.settings.showSeconds;
+    await _store.patch(showSeconds: next);
+  }
+
+  Future<void> _openSettings() async {
+    if (_mode == LaunchMode.screensaver ||
+        _mode == LaunchMode.lockscreen ||
+        _mode == LaunchMode.preview) {
+      return;
+    }
+    if (_settingsOpen) return;
+    _settingsOpen = true;
+    await SettingsSheet.show(
+      context,
+      builder: (context, chrome) {
+        return ListenableBuilder(
+          listenable: _store,
+          builder: (context, _) {
+            return SettingsSheet(
+              chrome: chrome,
+              settings: _store.settings,
+              onChanged: _store.update,
+              onCommit: (s) => unawaited(_store.commit(s)),
+            );
+          },
+        );
+      },
+    );
+    _settingsOpen = false;
+    await _store.flush();
+    await PlatformShell.enterImmersive();
+    // Configure mode: closing settings exits (Windows /c UX).
+    if (_mode == LaunchMode.configure && mounted) {
+      PlatformShell.requestExit();
+    }
+  }
+
+  void _exitIfScreensaver() {
+    if (_mode.exitOnInput) {
+      PlatformShell.requestExit();
+    }
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    if (_mode.exitOnInput) {
+      _exitIfScreensaver();
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      if (_settingsOpen) {
+        Navigator.of(context).maybePop();
+        return KeyEventResult.handled;
+      }
+      PlatformShell.exitFullscreen();
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.f11) {
+      PlatformShell.toggleFullscreen();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready || _engine == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+          ),
+        ),
+      );
+    }
+
+    final clock = Scaffold(
+      backgroundColor: FliqloTheme.background,
+      body: ListenableBuilder(
+        listenable: Listenable.merge([_engine!, _store]),
+        builder: (context, _) {
+          final snapshot = _engine!.snapshot;
+          if (snapshot == null) {
+            return const SizedBox.expand();
+          }
+          return ClockFace(
+            snapshot: snapshot,
+            settings: _store.settings,
+            onDigitFlip: _flipSoundEnabled
+                ? () => unawaited(_playFlipSound())
+                : null,
+          );
+        },
+      ),
+    );
+
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _onKey,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _mode.exitOnInput
+            ? _exitIfScreensaver
+            : (_mode.allowInteractiveGestures ? _toggleSeconds : null),
+        // Touch / mobile primary path.
+        onLongPress: _mode.allowInteractiveGestures ? _openSettings : null,
+        // Desktop / web primary path (also exits screensaver-like modes).
+        onSecondaryTap: _mode.exitOnInput
+            ? _exitIfScreensaver
+            : (_mode.allowInteractiveGestures ? _openSettings : null),
+        onPanStart: _mode.exitOnInput ? (_) => _exitIfScreensaver() : null,
+        child: clock,
+      ),
+    );
+  }
+}

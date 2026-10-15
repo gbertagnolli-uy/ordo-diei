@@ -1,0 +1,4 @@
+# Flutter Linux bundle is copied here by pack.sh / install.sh — never commit.
+app/
+dist/
+*.shell-extension.zip
