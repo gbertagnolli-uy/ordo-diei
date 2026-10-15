@@ -23,9 +23,9 @@ test("claves únicas, descripciones y lecciones con material para leer", () => {
   }
 });
 
-test("cantidades exactas: 11 oraciones, 10 mandamientos, 7 sacramentos, 4 misterios, 5 tiempos, 14 obras", () => {
+test("cantidades exactas: 11 oraciones, 10 mandamientos, 7 sacramentos, 4 misterios, 5 tiempos, 14 obras, 12 del examen", () => {
   const n = (c: string) => paqueteDeBiblioteca(c)!.paquete.lecciones.length;
-  assert.deepEqual(["oraciones-del-cristiano", "diez-mandamientos", "siete-sacramentos", "rosario-en-familia", "anio-liturgico", "obras-de-misericordia"].map(n), [11, 10, 7, 4, 5, 14]);
+  assert.deepEqual(["oraciones-del-cristiano", "diez-mandamientos", "siete-sacramentos", "rosario-en-familia", "anio-liturgico", "obras-de-misericordia", "examen-de-conciencia"].map(n), [11, 10, 7, 4, 5, 14, 12]);
   assert.equal(paqueteDeBiblioteca("nada"), null);
 });
 

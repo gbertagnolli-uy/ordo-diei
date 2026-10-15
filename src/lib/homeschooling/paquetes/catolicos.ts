@@ -145,6 +145,33 @@ const misericordia = curso(
   ]
 );
 
+
+// ── 7. Examen de conciencia para chicos ─────────────────────────────────────────────────────────
+const EXAMEN: [string, string[]][] = [
+  ["Amarás a Dios sobre todas las cosas", ["¿Rezo por la mañana y por la noche?", "¿Me acuerdo de Dios durante el día o solo cuando necesito algo?", "¿Me porté bien en Misa o me distraje a propósito?"]],
+  ["No tomarás el nombre de Dios en vano", ["¿Dije el nombre de Dios o de Jesús sin respeto o enojado?", "¿Me burlé de las cosas sagradas?"]],
+  ["Santificarás las fiestas", ["¿Fui a Misa los domingos y fiestas?", "¿Hice algo para que el domingo fuera distinto de los demás días?"]],
+  ["Honrarás a tu padre y a tu madre", ["¿Obedecí a mamá y a papá a la primera?", "¿Les contesté mal o con mala cara?", "¿Ayudé en casa sin que me lo pidieran?"]],
+  ["No matarás", ["¿Me peleé o le pegué a alguien?", "¿Dije cosas que lastiman?", "¿Cuidé a mis hermanos y a mis animales?"]],
+  ["No cometerás actos impuros", ["¿Cuidé mi cuerpo y mi mirada con modestia?", "¿Miré o escuché cosas que no debía?"]],
+  ["No robarás", ["¿Me quedé con algo que no era mío?", "¿Cuidé las cosas prestadas y las devolví?", "¿Desperdicié comida o cosas?"]],
+  ["No darás falso testimonio ni mentirás", ["¿Dije mentiras?", "¿Hablé mal de alguien a sus espaldas?", "¿Hice trampa en un juego o en la tarea?"]],
+  ["No consentirás pensamientos ni deseos impuros", ["¿Dejé que me entraran malos pensamientos o los alimenté?", "¿Le pedí ayuda a la Virgen y a mi ángel de la guarda?"]],
+  ["No codiciarás los bienes ajenos", ["¿Tuve envidia de lo que tienen otros?", "¿Fui ordenado y agradecido con lo que tengo?", "¿Compartí mis cosas?"]],
+];
+const examen = curso(
+  "Examen de conciencia para chicos",
+  "Preguntas sencillas, mandamiento por mandamiento, para prepararse a la confesión con un padre al lado.",
+  15,
+  [
+    leccion("Antes de empezar", "Leé esto con un padre. Rezá un Padre nuestro pidiendo luz para conocer tus pecados.", "# Antes de empezar\n\nEl examen de conciencia es mirar con sinceridad cómo me porté, para pedirle perdón a Dios y mejorar.\n\n1. Rezo al Espíritu Santo o a mi ángel de la guarda pidiendo ayuda.\n2. Repaso los mandamientos con las preguntas de las lecciones siguientes.\n3. Me arrepiento de verdad y me propongo cambiar.\n4. Me confieso con el sacerdote y cumplo la penitencia.\n\n**Importante:** esto es una ayuda; si tenés dudas, el sacerdote te va a guiar."),
+    ...EXAMEN.map(([titulo, preguntas], i) =>
+      leccion(`${i + 1}. ${titulo}`, "Leé las preguntas con un padre, en voz baja. No hace falta contestarlas por escrito; si querés, anotá en el cuaderno lo que quieras recordar para confesarte.", `# ${i + 1}. ${titulo}\n\n${preguntas.map((p) => `- ${p}`).join("\n")}\n\n**Para pedir perdón:** Señor, perdóname por lo que no hice bien en esto, y ayudame a cambiar.`)
+    ),
+    leccion("Acto de contrición y propósito", "Rezá el acto de contrición despacio y elegí un solo propósito concreto para esta semana.", `# Acto de contrición\n\n${texto("acto-de-contricion").split("\n").join("\n\n")}\n\n## Mi propósito\n\nEscribí en tu cuaderno una sola cosa concreta que vas a hacer distinto esta semana.`),
+  ]
+);
+
 export const BIBLIOTECA_CATOLICA: PaqueteDeBiblioteca[] = [
   { clave: "oraciones-del-cristiano", descripcion: "11 oraciones básicas para rezar, copiar y aprender de memoria.", edad: "4 a 10 años", paquete: oraciones },
   { clave: "diez-mandamientos", descripcion: "Cada mandamiento explicado para chicos, con una pregunta para conversar y una tarea para el cuaderno.", edad: "6 a 12 años", paquete: mandamientos },
@@ -152,6 +179,7 @@ export const BIBLIOTECA_CATOLICA: PaqueteDeBiblioteca[] = [
   { clave: "rosario-en-familia", descripcion: "Los misterios gozosos, luminosos, dolorosos y gloriosos, y cómo rezar una decena.", edad: "6 a 12 años", paquete: rosario },
   { clave: "anio-liturgico", descripcion: "Adviento, Navidad, Cuaresma, Pascua y tiempo ordinario.", edad: "6 a 12 años", paquete: liturgico },
   { clave: "obras-de-misericordia", descripcion: "Las 14 obras de misericordia, cada una con algo para hacer esta semana.", edad: "6 a 12 años", paquete: misericordia },
+  { clave: "examen-de-conciencia", descripcion: "Preguntas sencillas por mandamiento para prepararse a la confesión, con un padre al lado.", edad: "7 a 12 años", paquete: examen },
 ];
 
 export const paqueteDeBiblioteca = (clave: string) => BIBLIOTECA_CATOLICA.find((p) => p.clave === clave) ?? null;

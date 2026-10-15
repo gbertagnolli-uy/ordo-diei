@@ -39,7 +39,7 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | A5 | Duplicar curso/lección; reutilizar para otro hijo | Homeschooler.app 7, 40 | HECHO (lane 170) | M3 |
 | A6 | Exportar/importar un curso como paquete JSON (plantillas que se guardan, se comparten por archivo o vienen precargadas) | HSPlanet 45-49 | HECHO (lane 170) | M3 |
 | A7 | Adjuntar enlaces, notas y archivos a cada asignación | HSPlanet 6 | HECHO (lane 166) | M1 |
-| A8 | Autoguardado de borradores en formularios del padre | Homeschooler.app 49 | PARCIAL (lane 170: solo «Agregar varias») | M3 |
+| A8 | Autoguardado de borradores en formularios del padre | Homeschooler.app 49 | HECHO (lanes 170 y 190) | M3 |
 | A9 | Subida de archivos pequeños a la base (solo como último recurso) | — | DESCARTADO | Se prioriza externo (ver BLOQUEOS B-1) |
 
 ### B. Imprimir (pedido explícito)
@@ -51,7 +51,7 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | B3 | Registro de impresiones (quién, qué, cuándo) | — | HECHO (lane 168) | P1 |
 | B4 | Hoja imprimible con el detalle del día: título, lecciones, instrucciones, espacio para cuaderno, casilla «hecho» | Homeschooler.app 33 | HECHO (lane 178) | P1 |
 | B5 | Checklist semanal imprimible por hijo, en color por materia | HSPlanet 56, 58 | HECHO (lane 173) | P2 |
-| B6 | Clave de respuestas del padre (solo padres, no se imprime al hijo) | — | NUEVO | C2 |
+| B6 | Clave de respuestas del padre (solo padres, no se imprime al hijo) | — | HECHO (lane 183) | C2 |
 
 ### C. Programar (planificación)
 
@@ -64,7 +64,7 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | C5 | Calendario drag-and-drop de días | Homeschooler.app 3 | PARCIAL (`PlanCalendario`) | R2 |
 | C6 | Vista día / semana / mes con color por hijo y materia | HSPlanet 1, 36 | PARCIAL | R2 |
 | C7 | Tareas sueltas del día (ejercicio, lectura, cuaderno) sin curso, recurrentes | Homeschool Hall 2, HSPlanet 5 | HECHO (lane 166) | M1 (se crean como material del día) |
-| C8 | Plan para varios hijos a la vez / trabajo compartido por hermanos | Homeschool Hall 40, HSPlanet 35 | NUEVO | R3 |
+| C8 | Plan para varios hijos a la vez / trabajo compartido por hermanos | Homeschool Hall 40, HSPlanet 35 | HECHO (ya existía: «Asignar» elige varios hijos) | R3 |
 | C9 | Asistente de configuración del año (hijos, materias, vacaciones, períodos) | HSPlanet 2-4, Homeschooler.app 5 | NUEVO | R3 |
 | C10 | Feed `.ics` para Google/Apple Calendar | HSPlanet 40-41 | HECHO (lane 179) | R4 |
 | C11 | Horarios por franja y rutina (ya existe `horarios`/`rutina`) | HSPlanet 8 | HECHO (módulo propio) | — |
@@ -75,15 +75,15 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | ID | Feature | Apps | Estado | Lane |
 |---|---|---|---|---|
 | D1 | Cola de revisión con swipe de lo que el hijo terminó | Seesaw, Power 23 | HECHO (`revision/`) | — |
-| D2 | **Corrección con nota** (0–100 o letra) y comentario del padre sobre el trabajo del cuaderno (foto) | Homeschooler.app 11, Miacademy 16 | HECHO (lane 172) | K1 |
+| D2 | **Corrección con nota** (0–100 o letra) y comentario del padre sobre el trabajo del cuaderno (foto) | Homeschooler.app 11, Miacademy 16 | HECHO (lanes 172 y 183) | K1 |
 | D3 | Libreta de calificaciones por hijo y materia con promedio | Homeschooler.app 15, HSPlanet 27 | HECHO (lane 172) | K1 |
-| D4 | Boletín (report card) imprimible por período | HSPlanet 27, 54 | NUEVO | K2 |
-| D5 | Períodos de calificación (trimestres) configurables | HSPlanet 2 | NUEVO | K2 |
-| D6 | Asistencia y horas por materia, imprimibles | Miacademy 17, Homeschool Hall 7-11 | PARCIAL (`horas/`, `reportes/`) | K2 |
+| D4 | Boletín (report card) imprimible por período | HSPlanet 27, 54 | HECHO (lane 182) | K2 |
+| D5 | Períodos de calificación (trimestres) configurables | HSPlanet 2 | HECHO (lane 182) | K2 |
+| D6 | Asistencia y horas por materia, imprimibles | Miacademy 17, Homeschool Hall 7-11 | HECHO (lanes 173 y 182) | K2 |
 | D7 | Quiz automático con umbral, repaso espaciado | Time4Learning 12, Reading Eggs 17 | HECHO | — |
-| D8 | Revisión rápida en lote («aprobar todo lo de hoy») | Homeschooler.app 11 | NUEVO | K1 |
-| D9 | Portafolio de trabajos con foto y exportación imprimible | Seesaw 5-9, Homeschooler.app 27-29 | PARCIAL (`portafolio/`) | K3 |
-| D10 | Resumen semanal para los padres | HSPlanet 44 | NUEVO | K3 |
+| D8 | Revisión rápida en lote («aprobar todo lo de hoy») | Homeschooler.app 11 | HECHO (lane 193) | K1 |
+| D9 | Portafolio de trabajos con foto y exportación imprimible | Seesaw 5-9, Homeschooler.app 27-29 | HECHO (lane 193) | K3 |
+| D10 | Resumen semanal para los padres | HSPlanet 44 | HECHO (lane 185) | K3 |
 
 ### E. Lectura real y vida católica
 
@@ -95,8 +95,8 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | E4 | Liturgia del día, santo, oración (existe `liturgia`/`oracion`) | — | HECHO | — |
 | E5 | **Memorización** (oraciones, versículos, preguntas del catecismo) con repaso espaciado | Power 12 | HECHO (lane 176) | L2 |
 | E6 | Biblioteca de planes católicos precargados de dominio público (Catecismo de Baltimore, lectura de la Biblia, vida de santos) como paquetes importables | HSPlanet 45-50 | HECHO (lane 177) | L3 |
-| E7 | Año litúrgico en el calendario del plan (festividades; existe `festividades-tridentinas`) | — | PARCIAL | L3 |
-| E8 | Examen de conciencia / agradecimiento semanal del hijo (impreso o en pantalla) | — | NUEVO | L2 |
+| E7 | Año litúrgico en el calendario del plan (festividades; existe `festividades-tridentinas`) | — | HECHO (lane 188) | L3 |
+| E8 | Examen de conciencia / agradecimiento semanal del hijo (impreso o en pantalla) | — | HECHO (lane 194: curso «Examen de conciencia para chicos») | L2 |
 
 ### F. Experiencia de uso (world-class)
 
@@ -104,10 +104,10 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 |---|---|---|---|---|
 | F1 | **Barra superior unificada**: botón de sidebar, migas, atrás/adelante, buscador, acciones de la página | — | HECHO (lane 169) | S1 |
 | F2 | Buscador global de Estudio (materias, cursos, lecciones, materiales, evidencias) con ⌘K | HSPlanet 18 | HECHO (lane 169) | S1 |
-| F3 | Visor de lección en modo foco: teclado (←/→/espacio), progreso, transiciones, estado de carga, reanudar donde quedó | Power 26 | PARCIAL (`VisorLeccion`) | V1 |
-| F4 | Quiz y ejercicios con feedback inmediato y animación sobria | Time4Learning 27 | PARCIAL | V2 |
-| F5 | «Hoy» del hijo: pocas decisiones, grandes botones, siguiente paso claro, sin scroll innecesario | Khan Kids 19-20 | PARCIAL | V1 |
-| F6 | Estados vacíos, esqueletos de carga y errores útiles en todas las pantallas | — | PARCIAL | V3 |
+| F3 | Visor de lección en modo foco: teclado (←/→/espacio), progreso, transiciones, estado de carga, reanudar donde quedó | Power 26 | HECHO (lane 181) | V1 |
+| F4 | Quiz y ejercicios con feedback inmediato y animación sobria | Time4Learning 27 | HECHO (lane 186) | V2 |
+| F5 | «Hoy» del hijo: pocas decisiones, grandes botones, siguiente paso claro, sin scroll innecesario | Khan Kids 19-20 | HECHO (lane 181) | V1 |
+| F6 | Estados vacíos, esqueletos de carga y errores útiles en todas las pantallas | — | PARCIAL (lane 186: error y carga; falta revisar vacíos de cada pantalla) | V3 |
 | F7 | Accesible por teclado y legible en tablet (≥44 px de toque) | HSPlanet 62 | PARCIAL | V3 |
 | F8 | Colores por materia/hijo consistentes | HSPlanet 36 | PARCIAL | R2 |
 
@@ -117,11 +117,11 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 |---|---|---|---|---|
 | G1 | **Comentarios** por lección, material y evidencia entre padres e hijos | Seesaw 14, Roost `CommentSection` | HECHO (lane 174) | Q1 |
 | G2 | Reacciones simples (👍 ❤️ 🙏) a trabajos | Seesaw 13, Roost reacciones | HECHO (lane 174) | Q1 |
-| G3 | **Muro de logros familiar**: lecciones completadas, rachas, destacados, santo del día | Seesaw 7, Roost feed | NUEVO | Q2 |
-| G4 | Avisos de la familia (de los padres a los hijos) | Roost `AnnouncementBanner` | NUEVO | Q2 |
+| G3 | **Muro de logros familiar**: lecciones completadas, rachas, destacados, santo del día | Seesaw 7, Roost feed | HECHO (lane 184) | Q2 |
+| G4 | Avisos de la familia (de los padres a los hijos) | Roost `AnnouncementBanner` | HECHO (lane 184) | Q2 |
 | G5 | Notificaciones in-app («Leo terminó Matemática», «Hay nueva tarea») | Roost `notifications` | HECHO (lane 174) | Q3 |
 | G6 | Ranking y puntos | Roost leaderboard | HECHO (economía de Ordo) | — |
-| G7 | Mensajes directos | Roost DM | NUEVO (sobre Q1, baja prioridad) | Q4 |
+| G7 | Mensajes directos | Roost DM | HECHO (lane 191) | Q4 |
 
 ### H. Descartado a propósito (con motivo)
 
@@ -144,4 +144,4 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 
 Las 12 apps quedan cubiertas así: **planificación** (Homeschool Planet, Homeschooler.app, Time4Learning) → C; **registro y reportes** (Homeschool Hall, Miacademy) → D; **portafolios** (Seesaw, Homeschooler.app) → D9; **lectura** (Reading Eggs, ABCmouse, Khan Kids) → E; **contenido** (Power, Miacademy, Time4Learning) → A, F con el contenido del padre; **comunidad** (Miacademy, Seesaw, Outschool) → G acotada a la familia; **gamificación** (Miacademy, Prodigy, ABCmouse) → economía de Ordo ya existente. Lo que ninguna tiene y esta app sí: **imprimir con límite**, **material del día en cualquier formato**, **liturgia y vida católica**, **tareas que son tareas del hogar con puntos**.
 
-_Estados al 2026-10-16 (lane 180). Sin hacer todavía: C5, C6, C8, C9, C12 (búsqueda ya cubierta por F2), D4–D6, D8–D10, E7, E8, F3–F8, G3, G4, G7._
+_Estados al 2026-10-16 (lane 194). Sin hacer todavía: C5 (arrastrar y soltar más allá de mover un día), C6 (colores por hijo en una vista conjunta), C9 (asistente del año), C12 (cubierto por el buscador F2), F7 (auditoría de accesibilidad completa), F8 (colores consistentes revisados pantalla por pantalla)._
