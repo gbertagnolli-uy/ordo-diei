@@ -5,6 +5,8 @@ import { getSession } from "@/lib/session";
 import { esPadre } from "@/lib/habitos/permisos";
 import { alumnosDeFamilia, diasDelAlumno, noLectivosDelAlumno } from "@/lib/homeschooling/servidor/vistas";
 import { listarActividades } from "@/lib/homeschooling/servidor/actividades";
+import { festividadesAlrededor } from "@/lib/homeschooling/servidor/festividades";
+import { hoyEnFamilia } from "@/lib/habitos/server";
 import { tokenDeCalendario } from "@/lib/homeschooling/servidor/calendario";
 import PlanCalendario from "@/components/homeschooling/plan/PlanCalendario";
 
@@ -20,11 +22,11 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const alumnoId = alumnos.find((a) => a.id === pedido)?.id ?? alumnos[0].id;
 
   const actor = { id: Number(session.user.id), rol: String(session.user.rolFamiliar) };
-  const [dias, noLectivos, todas] = await Promise.all([diasDelAlumno(alumnoId), noLectivosDelAlumno(alumnoId), listarActividades(actor)]);
+  const [dias, noLectivos, todas, festividades] = await Promise.all([diasDelAlumno(alumnoId), noLectivosDelAlumno(alumnoId), listarActividades(actor), festividadesAlrededor(hoyEnFamilia())]);
   const actividades = todas.filter((a) => a.participantes.some((p) => p.id === alumnoId)).map((a) => ({ id: a.id, titulo: a.title, inicio: a.start_time, fin: a.end_time }));
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl p-4 sm:p-6">
-      <PlanCalendario dias={dias} noLectivos={noLectivos} actividades={actividades} alumnos={alumnos} alumnoId={alumnoId} rutaCalendario={`/api/homeschooling/calendario/${alumnoId}/${tokenDeCalendario(alumnoId)}.ics`} />
+      <PlanCalendario dias={dias} noLectivos={noLectivos} actividades={actividades} alumnos={alumnos} alumnoId={alumnoId} festividades={festividades} rutaCalendario={`/api/homeschooling/calendario/${alumnoId}/${tokenDeCalendario(alumnoId)}.ics`} />
     </div>
   );
 }
