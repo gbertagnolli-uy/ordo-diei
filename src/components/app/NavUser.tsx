@@ -79,7 +79,7 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
               </span>
               <span className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.nombre}</span>
-                <span className="truncate text-xs text-sidebar-foreground/60">
+                <span className="truncate text-xs text-sidebar-foreground/75">
                   Nivel {level.level} · {user.rolFamiliar ? (ROLE_LABEL[user.rolFamiliar] ?? "") : ""}
                 </span>
               </span>

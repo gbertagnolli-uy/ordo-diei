@@ -119,7 +119,7 @@ export default function PanelHomeschooling({
                       <Link href={`/dashboard/homeschooling/plan?alumno=${h.alumnoId}`}>Ver plan</Link>
                     </Button>
                   </div>
-                  {prog && prog.cursos > 0 && <Progress value={prog.porcentaje} />}
+                  {prog && prog.cursos > 0 && <Progress value={prog.porcentaje} aria-label={`Avance de ${h.nombre}`} />}
                   {h.clases.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Hoy no tiene clases.</p>
                   ) : (
@@ -206,7 +206,7 @@ export default function PanelHomeschooling({
                           <span className="min-w-0 flex-1 truncate text-foreground">{c.titulo}</span>
                           {c.alumnos > 0 ? (
                             <span className="flex w-28 shrink-0 items-center gap-2">
-                              <Progress value={c.porcentaje} />
+                              <Progress value={c.porcentaje} aria-label={`Avance de ${c.titulo}`} />
                               <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{c.porcentaje}%</span>
                             </span>
                           ) : (

@@ -61,14 +61,14 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | C2 | Días sin clase que se saltan y desplazan el resto | HSPlanet 8, Homeschooler.app 77 | HECHO | — |
 | C3 | Mover / omitir un día; recalcular | HSPlanet 9 | HECHO | — |
 | C4 | **Reprogramar en 1 clic**: arrastra lo pendiente atrasado a los próximos días (opción «solo esta materia», «no mover compromisos fijos») | HSPlanet 9-15, Homeschooler.app 4 | HECHO (lane 171) | R1 |
-| C5 | Calendario drag-and-drop de días | Homeschooler.app 3 | PARCIAL (`PlanCalendario`) | R2 |
-| C6 | Vista día / semana / mes con color por hijo y materia | HSPlanet 1, 36 | PARCIAL | R2 |
+| C5 | Calendario drag-and-drop de días | Homeschooler.app 3 | HECHO (arrastrar un día a otra fecha con las reglas del plan, `PlanCalendario`; reordenar lecciones con flechas) | R2 |
+| C6 | Vista día / semana / mes con color por hijo y materia | HSPlanet 1, 36 | HECHO (lane 196: vista «Todos» con un color por hijo) | R2 |
 | C7 | Tareas sueltas del día (ejercicio, lectura, cuaderno) sin curso, recurrentes | Homeschool Hall 2, HSPlanet 5 | HECHO (lane 166) | M1 (se crean como material del día) |
 | C8 | Plan para varios hijos a la vez / trabajo compartido por hermanos | Homeschool Hall 40, HSPlanet 35 | HECHO (ya existía: «Asignar» elige varios hijos) | R3 |
-| C9 | Asistente de configuración del año (hijos, materias, vacaciones, períodos) | HSPlanet 2-4, Homeschooler.app 5 | NUEVO | R3 |
+| C9 | Asistente de configuración del año (hijos, materias, vacaciones, períodos) | HSPlanet 2-4, Homeschooler.app 5 | HECHO (lane 197: «Configurar el año») | R3 |
 | C10 | Feed `.ics` para Google/Apple Calendar | HSPlanet 40-41 | HECHO (lane 179) | R4 |
 | C11 | Horarios por franja y rutina (ya existe `horarios`/`rutina`) | HSPlanet 8 | HECHO (módulo propio) | — |
-| C12 | Buscar en todo el planner | HSPlanet 18 | NUEVO | S1 |
+| C12 | Buscar en todo el planner | HSPlanet 18 | HECHO (buscador de Estudio ⌘K, lane 169, y búsqueda en cada lista, lane 187) | S1 |
 
 ### D. Corregir y llevar el registro (un padre presente)
 
@@ -107,9 +107,9 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | F3 | Visor de lección en modo foco: teclado (←/→/espacio), progreso, transiciones, estado de carga, reanudar donde quedó | Power 26 | HECHO (lane 181) | V1 |
 | F4 | Quiz y ejercicios con feedback inmediato y animación sobria | Time4Learning 27 | HECHO (lane 186) | V2 |
 | F5 | «Hoy» del hijo: pocas decisiones, grandes botones, siguiente paso claro, sin scroll innecesario | Khan Kids 19-20 | HECHO (lane 181) | V1 |
-| F6 | Estados vacíos, esqueletos de carga y errores útiles en todas las pantallas | — | PARCIAL (lane 186: error y carga; falta revisar vacíos de cada pantalla) | V3 |
-| F7 | Accesible por teclado y legible en tablet (≥44 px de toque) | HSPlanet 62 | PARCIAL | V3 |
-| F8 | Colores por materia/hijo consistentes | HSPlanet 36 | PARCIAL | R2 |
+| F6 | Estados vacíos, esqueletos de carga y errores útiles en todas las pantallas | — | HECHO (lanes 186 y 195: carga, error y vacíos revisados en navegador) | V3 |
+| F7 | Accesible por teclado y legible en tablet (≥44 px de toque) | HSPlanet 62 | HECHO (lanes 195 y 199: axe-core WCAG A/AA sin violaciones en padres e hijos, teléfono y tablet) | V3 |
+| F8 | Colores por materia/hijo consistentes | HSPlanet 36 | HECHO (colores por materia y por hijo, revisados en navegador) | R2 |
 
 ### G. Familia como comunidad
 
@@ -144,4 +144,4 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 
 Las 12 apps quedan cubiertas así: **planificación** (Homeschool Planet, Homeschooler.app, Time4Learning) → C; **registro y reportes** (Homeschool Hall, Miacademy) → D; **portafolios** (Seesaw, Homeschooler.app) → D9; **lectura** (Reading Eggs, ABCmouse, Khan Kids) → E; **contenido** (Power, Miacademy, Time4Learning) → A, F con el contenido del padre; **comunidad** (Miacademy, Seesaw, Outschool) → G acotada a la familia; **gamificación** (Miacademy, Prodigy, ABCmouse) → economía de Ordo ya existente. Lo que ninguna tiene y esta app sí: **imprimir con límite**, **material del día en cualquier formato**, **liturgia y vida católica**, **tareas que son tareas del hogar con puntos**.
 
-_Estados al 2026-10-16 (lane 194). Sin hacer todavía: C5 (arrastrar y soltar más allá de mover un día), C6 (colores por hijo en una vista conjunta), C9 (asistente del año), C12 (cubierto por el buscador F2), F7 (auditoría de accesibilidad completa), F8 (colores consistentes revisados pantalla por pantalla)._
+_Estados al 2026-10-16 (lane 199): de 60 funciones, **59 hechas** y 1 descartada a propósito (A9, subir archivos a la base). Comparación con las 12 apps: [`COMPARATIVA_APPS.md`](COMPARATIVA_APPS.md)._
