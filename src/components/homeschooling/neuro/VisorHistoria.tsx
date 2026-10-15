@@ -33,7 +33,7 @@ export default function VisorHistoria({ historia, onClose, marcarVista = true }:
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="bottom" className="h-svh max-h-svh gap-0 rounded-none p-0">
+      <SheetContent side="bottom" className="h-svh max-h-svh gap-0 rounded-none p-0 data-[side=bottom]:h-svh data-[side=bottom]:max-h-svh">
         <SheetHeader className="border-b p-4 pr-14">
           <SheetTitle>{historia.titulo}</SheetTitle>
           <SheetDescription>

@@ -56,7 +56,7 @@ export default function PanelNeuro({ alumnos, preferencias, historias }: { alumn
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-8 p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-foreground">Apoyos para cada alumno</h1>
 
       <section className="space-y-3">

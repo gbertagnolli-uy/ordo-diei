@@ -287,12 +287,14 @@ export async function editarLeccion(a: Actor, id: number, d: Partial<Omit<DatosL
   }
 }
 
-/** Reescribe `orden` 1..N sin chocar con @@unique([recursoId, orden]): primero negativos, después definitivos */
+/**
+ * Reescribe `orden` 1..N sin chocar con @@unique([recursoId, orden]): primero valores negativos distintos y después los
+ * definitivos. (Sin SQL crudo: las tablas viven en el esquema de la familia y las consultas crudas de Prisma no lo respetan.)
+ */
 async function renumerar(tx: Tx, recursoId: number, idsEnOrden: number[]) {
-  await tx.$executeRaw`UPDATE "Homeschool_Lecciones" SET "Orden" = -"Orden" WHERE "Recurso_ID" = ${recursoId}`;
-  for (let i = 0; i < idsEnOrden.length; i++) {
-    await tx.leccionCurso.update({ where: { id: idsEnOrden[i] }, data: { orden: i + 1 } });
-  }
+  const actuales = await tx.leccionCurso.findMany({ where: { recursoId }, select: { id: true } });
+  for (let i = 0; i < actuales.length; i++) await tx.leccionCurso.update({ where: { id: actuales[i].id }, data: { orden: -(i + 1) } });
+  for (let i = 0; i < idsEnOrden.length; i++) await tx.leccionCurso.update({ where: { id: idsEnOrden[i] }, data: { orden: i + 1 } });
 }
 
 export async function borrarLeccion(a: Actor, id: number, hoy: string) {

@@ -52,7 +52,7 @@ export default function PanelHomeschooling({
   const atrasadas = hoy.reduce((n, h) => n + h.atrasadas, 0);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
           <GraduationCap className="size-6" /> Estudio
@@ -90,7 +90,7 @@ export default function PanelHomeschooling({
         <section aria-label="Hoy" className="space-y-3">
           <h2 className="text-lg font-semibold text-foreground">Hoy</h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {hoy.map((h) => {
+            {hoy.filter((h) => h.clases.length > 0 || h.atrasadas > 0 || (progresos.find((p) => p.id === h.alumnoId)?.cursos ?? 0) > 0).map((h) => {
               const prog = progresos.find((p) => p.id === h.alumnoId);
               return (
                 <div key={h.alumnoId} className="space-y-3 rounded-xl border bg-card p-4">
@@ -134,6 +134,17 @@ export default function PanelHomeschooling({
             })}
           </div>
         </section>
+      )}
+
+      {hoy.some((h) => h.clases.length === 0 && h.atrasadas === 0 && (progresos.find((p) => p.id === h.alumnoId)?.cursos ?? 0) === 0) && (
+        <p className="text-sm text-muted-foreground">
+          Sin cursos asignados:{" "}
+          {hoy
+            .filter((h) => h.clases.length === 0 && h.atrasadas === 0 && (progresos.find((p) => p.id === h.alumnoId)?.cursos ?? 0) === 0)
+            .map((h) => h.nombre)
+            .join(", ")}
+          .
+        </p>
       )}
 
       <section aria-label="Materias" className="space-y-3">

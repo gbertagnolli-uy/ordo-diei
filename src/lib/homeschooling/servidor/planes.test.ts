@@ -121,7 +121,8 @@ test("pausar, reanudar y extender el fin de un plan; quitarlo con días cumplido
   assert.ok(aClave(ultimo.fecha) <= "2030-04-12");
   await assert.rejects(cambiarPlan(padre, planB.id, { fin: "2030-03-01" }, hoy), { status: 400 });
 
-  // Con un día cumplido ya no se puede quitar
-  await prisma.diaLectivo.update({ where: { id: pendientes[0].id }, data: { estado: "hecha" } });
+  // Con un día cumplido ya no se puede quitar (los días se recrearon al extender el fin: se vuelve a consultar)
+  const primero = await prisma.diaLectivo.findFirstOrThrow({ where: { planId: planB.id, estado: "pendiente" }, orderBy: { fecha: "asc" } });
+  await prisma.diaLectivo.update({ where: { id: primero.id }, data: { estado: "hecha" } });
   await assert.rejects(quitarPlan(padre, planB.id), { status: 409 });
 });

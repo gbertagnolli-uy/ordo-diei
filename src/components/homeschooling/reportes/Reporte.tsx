@@ -61,7 +61,7 @@ export default function Reporte({
   const periodo = `${new Date(`${resumen.desde}T12:00:00`).toLocaleDateString("es", { dateStyle: "long" })} al ${new Date(`${resumen.hasta}T12:00:00`).toLocaleDateString("es", { dateStyle: "long" })}`;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-end gap-3 print:hidden">
         {esPadre && (
           <NativeSelect aria-label="Alumno" value={resumen.alumno.id} onChange={(e) => poner("alumno", e.target.value)}>
@@ -106,7 +106,7 @@ export default function Reporte({
               <XAxis dataKey="materia" tickLine={false} axisLine={false} />
               <YAxis width={32} tickLine={false} axisLine={false} allowDecimals />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="horas" fill="var(--color-horas)" radius={4} />
+              <Bar dataKey="horas" fill="var(--color-horas)" radius={4} maxBarSize={72} />
             </BarChart>
           </ChartContainer>
         )}

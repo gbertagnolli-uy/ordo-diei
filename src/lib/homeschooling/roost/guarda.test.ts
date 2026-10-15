@@ -88,3 +88,30 @@ test("Homeschooling no usa APIs que piden permisos del sistema ni promete kiosco
   }
   assert.deepEqual(fallos, []);
 });
+
+// Defectos que encontró el recorrido con navegador y base real (lane 158): no deben volver.
+test("sin SQL crudo en Homeschooling: las tablas viven en el esquema de la familia y $executeRaw/$queryRaw no lo respeta", () => {
+  const fallos: string[] = [];
+  for (const dir of ["src/lib/homeschooling", "src/app/api/homeschooling", "src/app/dashboard/homeschooling"]) {
+    for (const f of archivos(dir)) if (/\$(executeRaw|queryRaw)(Unsafe)?\b/.test(readFileSync(join(RAIZ, f), "utf8"))) fallos.push(f);
+  }
+  assert.deepEqual(fallos, []);
+});
+
+test("los contenedores de página con mx-auto max-w-* llevan w-full min-w-0 (si no, la página se ensancha con su contenido)", () => {
+  const fallos: string[] = [];
+  for (const dir of ["src/components/homeschooling", "src/app/dashboard/homeschooling"]) {
+    for (const f of archivos(dir).filter((x) => x.endsWith(".tsx"))) {
+      for (const m of readFileSync(join(RAIZ, f), "utf8").matchAll(/className="([^"]*\bmx-auto\b[^"]*\bmax-w-[^"]*)"/g)) {
+        if (!/\bw-full\b/.test(m[1]) || !/\bmin-w-0\b/.test(m[1])) fallos.push(`${f}: ${m[1].slice(0, 60)}`);
+      }
+    }
+  }
+  assert.deepEqual(fallos, []);
+});
+
+test("el shim de router escribe ?module=&lesson= con history.pushState (instantáneo y con historial), no con router.replace", () => {
+  const texto = readFileSync(join(RAIZ, "src/lib/homeschooling/roost/router.tsx"), "utf8");
+  assert.match(texto, /window\.history\.pushState/);
+  assert.doesNotMatch(texto.slice(texto.indexOf("export function useSearchParams"), texto.indexOf("export function useNavigate")), /router\.replace/);
+});
