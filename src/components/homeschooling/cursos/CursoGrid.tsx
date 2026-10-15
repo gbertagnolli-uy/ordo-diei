@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
+import BibliotecaCatolica from "./BibliotecaCatolica";
 import ImportarCurso from "./ImportarCurso";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
 import CursoCard from "./CursoCard";
@@ -60,6 +61,7 @@ export default function CursoGrid({
                 <ListOrdered /> {ordenando ? "Listo" : "Ordenar"}
               </Button>
             )}
+            <BibliotecaCatolica materiaId={materiaId} onImportado={onImportado} />
             <ImportarCurso materiaId={materiaId} onImportado={onImportado} />
             <Button onClick={onAddModule}>
               <Plus /> Nuevo curso
@@ -85,6 +87,7 @@ export default function CursoGrid({
                 <Button variant="outline" onClick={onAddModule}>
                   <Plus /> Crear el primer curso
                 </Button>
+                <BibliotecaCatolica materiaId={materiaId} onImportado={onImportado} />
                 <ImportarCurso materiaId={materiaId} onImportado={onImportado} />
               </div>
             </EmptyContent>

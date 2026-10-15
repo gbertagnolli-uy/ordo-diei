@@ -4,6 +4,7 @@ import prisma from "../../prisma.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../../habitos/server.ts";
 import { esPadre } from "../../habitos/permisos.ts";
 import { detectarMaterial } from "../material.ts";
+import { BIBLIOTECA_CATOLICA, paqueteDeBiblioteca } from "../paquetes/catolicos.ts";
 import { FORMATO_PAQUETE, leerPaquete, VERSION_PAQUETE, type PaqueteCurso } from "../paquete.ts";
 import { datosDeVideo, TIPOS_CON_LECCIONES, type Actor } from "./cursos.ts";
 import { DatoInvalidoError } from "./planes.ts";
@@ -124,3 +125,15 @@ export async function duplicarCurso(a: Actor, recursoId: number, materiaDestinoI
   const paquete = await exportarCurso(a, recursoId);
   return importarPaquete(a, materiaDestinoId ?? origen.materiaId, paquete, { titulo: `Copia de ${origen.titulo}` });
 }
+
+// ---------- Biblioteca católica (lane 177, L3) ----------
+
+/** Agrega a una materia un curso de la biblioteca de la casa */
+export async function importarDeBiblioteca(a: Actor, materiaId: number, clave: string) {
+  exigirPadre(a);
+  const p = paqueteDeBiblioteca(clave);
+  if (!p) throw new NoEncontradoError("Ese curso no está en la biblioteca");
+  return importarPaquete(a, materiaId, p.paquete);
+}
+
+export const listarBiblioteca = () => BIBLIOTECA_CATOLICA.map((p) => ({ clave: p.clave, titulo: p.paquete.curso.titulo, descripcion: p.descripcion, edad: p.edad, lecciones: p.paquete.lecciones.length }));
