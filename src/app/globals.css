@@ -538,3 +538,47 @@ body {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* Reloj Flip del Modo Enfoque (diseño portado de Open Fliqlo, MIT; fuente Gluqlo, ISC) */
+@font-face {
+  font-family: "Gluqlo";
+  src: url("/fonts/gluqlo.ttf") format("truetype");
+  font-display: swap;
+}
+
+:root {
+  --flip-bg: #f4f2ec;
+  --flip-fg: #1c1b19;
+  --flip-bisagra: #cfccc2;
+  --flip-sombra: rgba(0, 0, 0, 0.18);
+}
+.dark {
+  --flip-bg: #1a1a1a;
+  --flip-fg: #f5f5f5;
+  --flip-bisagra: #0a0a0a;
+  --flip-sombra: rgba(0, 0, 0, 0.55);
+}
+
+@keyframes flip-solapa-superior {
+  from { transform: perspective(3em) rotateX(0deg); }
+  to { transform: perspective(3em) rotateX(-90deg); }
+}
+@keyframes flip-solapa-inferior {
+  from { transform: perspective(3em) rotateX(90deg); }
+  to { transform: perspective(3em) rotateX(0deg); }
+}
+.flip-solapa-superior {
+  transform-origin: bottom;
+  animation: flip-solapa-superior 250ms ease-in both;
+}
+.flip-solapa-inferior {
+  transform-origin: top;
+  animation: flip-solapa-inferior 250ms ease-out 250ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip-solapa-superior,
+  .flip-solapa-inferior {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

@@ -15,6 +15,8 @@ import {
   Maximize2,
   Minimize2,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,8 @@ import {
 import { EtapaRutina, CATEGORIAS_INFO } from "@/lib/rutina/tipos";
 import { formatearSegundos } from "@/lib/rutina/calculadorHorarios";
 import { IconoRutina } from "./IconoRutina";
+import { RelojFlip } from "./RelojFlip";
+import { useThemeStore } from "@/store/themeStore";
 import { TipoSonidoRutina } from "@/lib/rutina/audioRutina";
 
 interface TemporizadorDiscoProps {
@@ -86,6 +90,7 @@ export function TemporizadorDisco({
   onToggleNotificaciones,
 }: TemporizadorDiscoProps) {
   const [mostrarAjustesAudio, setMostrarAjustesAudio] = useState(false);
+  const { darkMode, toggleDarkMode } = useThemeStore();
   // El callback cambia en cada render del padre (reloj de 1 s); lo guardamos en un ref para que
   // el efecto de pantalla completa no se reinicie ni salga del modo cada segundo.
   const alSalirRef = useRef(onToggleFullscreen);
@@ -226,6 +231,20 @@ export function TemporizadorDisco({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Tema claro/oscuro del reloj: el dock de la app queda tapado en Modo Enfoque */}
+          {esFullscreen && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="size-9 rounded-full text-muted-foreground hover:text-foreground"
+              title={darkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              aria-label={darkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            >
+              {darkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </Button>
+          )}
+
           {/* Ajustes de audio */}
           <DropdownMenu open={mostrarAjustesAudio} onOpenChange={setMostrarAjustesAudio}>
             <DropdownMenuTrigger asChild>
@@ -344,10 +363,17 @@ export function TemporizadorDisco({
         </div>
       </div>
 
-      {/* Temporizador Circular Central */}
+      {/* Modo Enfoque: el reloj Flip manda; el temporizador queda debajo con menor jerarquía */}
+      {esFullscreen && <RelojFlip className="my-2" alto="min(26vh, 21vw)" />}
+
+      {/* Temporizador Circular Central: dentro del disco solo va el tiempo */}
       <div
         className="relative my-4 flex items-center justify-center"
-        style={{ width: esFullscreen ? "min(54vh, 90vw, 600px)" : 280, aspectRatio: "1 / 1" }}
+        style={{
+          width: esFullscreen ? "min(30vh, 52vw, 340px)" : 280,
+          aspectRatio: "1 / 1",
+          containerType: "size",
+        }}
       >
         <svg
           viewBox={`0 0 ${tamano} ${tamano}`}
@@ -383,26 +409,14 @@ export function TemporizadorDisco({
           />
         </svg>
 
-        {/* Contenido Central: Tiempo Digital y Detalles */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-          {etapaActual?.icono && (
-            <div
-              className={`mb-2 p-2.5 rounded-2xl ${
-                categoriaInfo?.colorBg || "bg-primary/10"
-              } transition-transform hover:scale-110`}
-            >
-              <IconoRutina
-                nombre={etapaActual.icono}
-                className={`${esFullscreen ? "size-8 sm:size-10" : "size-7"} ${
-                  categoriaInfo?.colorText || "text-primary"
-                }`}
-              />
-            </div>
-          )}
-
-          {/* Número Digital Grande */}
+        {/* Contenido Central: solo el tiempo restante */}
+        <div className="absolute inset-0 flex items-center justify-center text-center p-4">
           <div
-            style={esFullscreen ? { fontSize: "clamp(2.25rem, min(9vh, 11vw), 6rem)", lineHeight: 1 } : undefined}
+            style={
+              esFullscreen
+                ? { fontSize: restanteSeg >= 3600 ? "12cqw" : "17cqw", lineHeight: 1 }
+                : undefined
+            }
             className={`font-mono font-bold tracking-tight tabular-nums select-none ${
               esFullscreen ? "" : "text-4xl sm:text-5xl"
             } ${
@@ -415,34 +429,38 @@ export function TemporizadorDisco({
           >
             {formatearSegundos(restanteSeg)}
           </div>
+        </div>
+      </div>
 
-          {/* Etiqueta de estado */}
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-1">
-            {estaPausado ? "Temporizador en Pausa" : "Tiempo Restante"}
-          </span>
+      {/* Detalle de la etapa, debajo del disco */}
+      <div className="flex w-full max-w-md flex-col items-center gap-1 text-center">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+          {estaPausado ? "Temporizador en Pausa" : "Tiempo Restante"}
+        </span>
 
-          {/* Título de la etapa actual */}
+        <div className="flex max-w-full items-center justify-center gap-2.5">
+          {etapaActual?.icono && (
+            <span className={`shrink-0 rounded-xl p-1.5 ${categoriaInfo?.colorBg || "bg-primary/10"}`}>
+              <IconoRutina
+                nombre={etapaActual.icono}
+                className={`size-5 ${categoriaInfo?.colorText || "text-primary"}`}
+              />
+            </span>
+          )}
           <div
-            className={`mt-2 font-bold text-foreground truncate ${
-              esFullscreen
-                ? "max-w-[44vh] text-lg sm:text-2xl"
-                : "max-w-[240px] sm:max-w-[320px] text-sm sm:text-base"
+            className={`font-bold text-foreground truncate ${
+              esFullscreen ? "text-lg sm:text-2xl" : "text-base sm:text-lg"
             }`}
           >
             {etapaActual ? etapaActual.titulo : "Descanso general"}
           </div>
-
-          {/* Horario de la etapa */}
-          {etapaActual && (
-            <span
-              className={`font-mono text-muted-foreground mt-0.5 ${
-                esFullscreen ? "text-sm" : "text-xs"
-              }`}
-            >
-              {etapaActual.horaInicio} – {etapaActual.horaFin} ({etapaActual.duracionMin} min)
-            </span>
-          )}
         </div>
+
+        {etapaActual && (
+          <span className={`font-mono text-muted-foreground ${esFullscreen ? "text-sm" : "text-xs"}`}>
+            {etapaActual.horaInicio} – {etapaActual.horaFin} ({etapaActual.duracionMin} min)
+          </span>
+        )}
       </div>
 
       {/* Etapa anterior y siguiente */}
