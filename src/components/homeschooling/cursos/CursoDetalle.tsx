@@ -5,7 +5,7 @@
 // (una sola consulta), fecha y miniaturas con las utilidades de HS0, plan de cada alumno y «Asignar a…», ui/ y tokens.
 
 import { useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, CheckCircle2, EllipsisVertical, Circle, Edit2, FileText, Paperclip, Play, Plus, Trash2, Video } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, CheckCircle2, Copy, Download, EllipsisVertical, Circle, Edit2, FileText, ListPlus, Paperclip, Play, Plus, Trash2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
@@ -38,6 +38,8 @@ export default function CursoDetalle({
   onBack,
   materiaNombre,
   onAddRecording,
+  onAddVarias,
+  onDuplicar,
   onEditModule,
   onDeleteModule,
   onAsignar,
@@ -52,6 +54,8 @@ export default function CursoDetalle({
   onBack: () => void;
   materiaNombre: string;
   onAddRecording: () => void;
+  onAddVarias: () => void;
+  onDuplicar: () => void;
   onEditModule: () => void;
   onDeleteModule: () => void;
   onAsignar: () => void;
@@ -84,6 +88,23 @@ export default function CursoDetalle({
             <Button variant="ghost" size="icon" onClick={onEditModule} aria-label="Editar curso">
               <Edit2 />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Más opciones del curso">
+                  <EllipsisVertical />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={onDuplicar}>
+                  <Copy /> Duplicar curso
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href={`/api/homeschooling/cursos/${module.id}/exportar`} download>
+                    <Download /> Exportar como archivo
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="ghost" size="icon" onClick={onDeleteModule} aria-label="Borrar curso" className="text-destructive">
               <Trash2 />
             </Button>
@@ -153,9 +174,14 @@ export default function CursoDetalle({
               <Video className="size-4" /> Lecciones ({recordings.length})
             </span>
             {canManage && (
-              <Button size="sm" className="ml-auto" onClick={onAddRecording}>
-                <Plus /> Agregar lección
-              </Button>
+              <div className="ml-auto flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={onAddVarias}>
+                  <ListPlus /> Agregar varias
+                </Button>
+                <Button size="sm" onClick={onAddRecording}>
+                  <Plus /> Agregar lección
+                </Button>
+              </div>
             )}
           </div>
 
