@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { misteriosDelDia, GRUPOS_INFO, DEVOCIONARIO_ROSARIO } from "./rosario.ts";
+import { misteriosDelDia, GRUPOS_INFO, DEVOCIONARIO_ROSARIO, FUENTE_LECTURAS } from "./rosario.ts";
 
 test("misteriosDelDia: asignación por días de semana fijos (§10.8)", () => {
   // 2026-10-12 = Lunes -> Gaudiosa
@@ -64,6 +64,25 @@ test("cada grupo contiene exactamente 5 misterios con número romano, fruto y ci
       assert.ok(m.cita.length > 2);
     }
   }
+});
+
+test("cada misterio trae sus lecturas en latín de la Vulgata, sin restos del epub", () => {
+  assert.match(FUENTE_LECTURAS, /Vulgata Clementina/);
+  for (const grupo of ["gaudiosa", "dolorosa", "gloriosa"] as const) {
+    for (const m of GRUPOS_INFO[grupo].misterios) {
+      assert.ok(m.lecturas.length >= 1, `${grupo} ${m.numero}`);
+      assert.equal(m.cita, m.lecturas.map((l) => l.ref).join("; "));
+      for (const l of m.lecturas) {
+        assert.ok(l.la.length > 30, l.ref);
+        assert.ok(!/[<>&]|\s[;:?!,.]/.test(l.la), `${l.ref}: restos del epub`);
+      }
+    }
+  }
+  // pasajes conocidos de la Vulgata
+  const anunciacion = GRUPOS_INFO.gaudiosa.misterios[0].lecturas[0].la;
+  assert.match(anunciacion, /^In mense autem sexto, missus est angelus Gabriel/);
+  assert.match(anunciacion, /Ecce ancilla Domini: fiat mihi secundum verbum tuum\./);
+  assert.match(GRUPOS_INFO.gloriosa.misterios[3].lecturas.at(-1)!.la, /^Surge, Domine, in requiem tuam/);
 });
 
 test("DEVOCIONARIO_ROSARIO: contiene oraciones tradicionales con fuentes (§10.8)", () => {

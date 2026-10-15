@@ -9,6 +9,7 @@ import {
   misteriosDelDia,
   GRUPOS_INFO,
   DEVOCIONARIO_ROSARIO,
+  FUENTE_LECTURAS,
   type GrupoMisterios,
   type Misterio,
   type OracionRosario,
@@ -196,6 +197,9 @@ export function RosariumVista({ className }: RosariumVistaProps) {
             );
           })}
         </Tabs>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Lecturas de cada misterio: {FUENTE_LECTURAS}. Solo en latín (sin traducción).
+        </p>
       </section>
 
       {/* 4. Sección: Oraciones del Santo Rosario (Preces Sancti Rosarii) */}
@@ -348,6 +352,21 @@ function TarjetaMisterio({ misterio, destacado }: { misterio: Misterio; destacad
             {misterio.fruto}
           </p>
         </div>
+        <details className="border-t border-border/40 pt-2 mt-2 group">
+          <summary className="cursor-pointer text-[10px] font-semibold text-primary/90 uppercase tracking-wider select-none">
+            Lectio (Vulgata)
+          </summary>
+          <div className="mt-1.5 space-y-2">
+            {misterio.lecturas.map((l) => (
+              <div key={l.ref}>
+                <span className="block text-[11px] font-mono text-muted-foreground">{l.ref}</span>
+                <p lang="la" className="text-xs font-serif leading-snug text-foreground/90">
+                  {l.la}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
       </CardContent>
     </Card>
   );

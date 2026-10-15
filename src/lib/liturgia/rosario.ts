@@ -6,6 +6,7 @@
 
 import type { TiempoLiturgico } from "./tipos.ts";
 import rosariumJson from "../../data/liturgia/rosarium.json" with { type: "json" };
+import lecturasJson from "../../data/liturgia/rosarium-lecturas.json" with { type: "json" };
 
 export type OracionRosario = {
   tituloLa: string;
@@ -45,8 +46,13 @@ export type Misterio = {
   latino: string;
   castellano: string;
   fruto: string;
+  /** Referencias de las lecturas, para mostrar en la tarjeta (derivadas de `lecturas`). */
   cita: string;
+  /** Pasajes de la Vulgata Clementina, en latín (scripts/liturgia/rosarium-lecturas.ts). */
+  lecturas: LecturaMisterio[];
 };
+
+export type LecturaMisterio = { ref: string; libro: string; capitulo: number; desde: number; hasta: number; la: string };
 
 export type InformacionRosarioDia = {
   grupo: GrupoMisterios;
@@ -56,14 +62,13 @@ export type InformacionRosarioDia = {
   misterios: Misterio[];
 };
 
-export const MISTERIOS_GAUDIOSA: Misterio[] = [
+const BASE_GAUDIOSA: Omit<Misterio, "cita" | "lecturas">[] = [
   {
     numero: 1,
     numeroRomano: "I",
     latino: "Annuntiatio Beatæ Mariæ Virginis",
     castellano: "La Anunciación del Ángel a la Virgen María",
     fruto: "La humildad",
-    cita: "Lc 1, 26-38",
   },
   {
     numero: 2,
@@ -71,7 +76,6 @@ export const MISTERIOS_GAUDIOSA: Misterio[] = [
     latino: "Visitatio Beatæ Mariæ Virginis",
     castellano: "La Visitación de Nuestra Señora a su prima Santa Isabel",
     fruto: "La caridad con el prójimo",
-    cita: "Lc 1, 39-56",
   },
   {
     numero: 3,
@@ -79,7 +83,6 @@ export const MISTERIOS_GAUDIOSA: Misterio[] = [
     latino: "Nativitas Domini nostri Iesu Christi",
     castellano: "El Nacimiento del Hijo de Dios en Belén",
     fruto: "La pobreza de espíritu y desapego del mundo",
-    cita: "Lc 2, 1-20",
   },
   {
     numero: 4,
@@ -87,7 +90,6 @@ export const MISTERIOS_GAUDIOSA: Misterio[] = [
     latino: "Præsentatio Pueri Iesu in Templo",
     castellano: "La Presentación del Niño Jesús en el Templo",
     fruto: "La pureza y la santa obediencia",
-    cita: "Lc 2, 22-38",
   },
   {
     numero: 5,
@@ -95,18 +97,16 @@ export const MISTERIOS_GAUDIOSA: Misterio[] = [
     latino: "Inventio Pueri Iesu in Templo",
     castellano: "El Niño Jesús perdido y hallado en el Templo",
     fruto: "La piedad y buscar a Dios en todo",
-    cita: "Lc 2, 41-52",
   },
 ];
 
-export const MISTERIOS_DOLOROSA: Misterio[] = [
+const BASE_DOLOROSA: Omit<Misterio, "cita" | "lecturas">[] = [
   {
     numero: 1,
     numeroRomano: "I",
     latino: "Agonia Domini nostri Iesu Christi in Horto",
     castellano: "La Oración y Agonía de Jesús en el Huerto de los Olivos",
     fruto: "El dolor de los pecados y conformidad con la voluntad divina",
-    cita: "Mt 26, 36-46",
   },
   {
     numero: 2,
@@ -114,7 +114,6 @@ export const MISTERIOS_DOLOROSA: Misterio[] = [
     latino: "Flagellatio Domini nostri Iesu Christi",
     castellano: "La Flagelación de Nuestro Señor atado a la columna",
     fruto: "La mortificación de los sentidos",
-    cita: "Mt 27, 26",
   },
   {
     numero: 3,
@@ -122,7 +121,6 @@ export const MISTERIOS_DOLOROSA: Misterio[] = [
     latino: "Coronatio Spinis",
     castellano: "La Coronación de Espinas",
     fruto: "La mortificación del orgullo y la soberbia",
-    cita: "Mt 27, 27-31",
   },
   {
     numero: 4,
@@ -130,7 +128,6 @@ export const MISTERIOS_DOLOROSA: Misterio[] = [
     latino: "Baiulatio Crucis",
     castellano: "Jesús con la Cruz a cuestas camino al Calvario",
     fruto: "La paciencia en las cruces y tribulaciones",
-    cita: "Lc 23, 26-32",
   },
   {
     numero: 5,
@@ -138,18 +135,16 @@ export const MISTERIOS_DOLOROSA: Misterio[] = [
     latino: "Crucifixio et Mors Domini nostri Iesu Christi",
     castellano: "La Crucifixión y Muerte de Nuestro Señor Jesucristo",
     fruto: "El amor a los enemigos y la salvación de las almas",
-    cita: "Lc 23, 33-46",
   },
 ];
 
-export const MISTERIOS_GLORIOSA: Misterio[] = [
+const BASE_GLORIOSA: Omit<Misterio, "cita" | "lecturas">[] = [
   {
     numero: 1,
     numeroRomano: "I",
     latino: "Resurrectio Domini nostri Iesu Christi",
     castellano: "La Triunfante Resurrección de Nuestro Señor",
     fruto: "La fe y la conversión de vida",
-    cita: "Mt 28, 1-10",
   },
   {
     numero: 2,
@@ -157,7 +152,6 @@ export const MISTERIOS_GLORIOSA: Misterio[] = [
     latino: "Ascensio Domini nostri Iesu Christi",
     castellano: "La Admirable Ascensión del Señor a los Cielos",
     fruto: "La esperanza y el anhelo del Cielo",
-    cita: "Hch 1, 9-11",
   },
   {
     numero: 3,
@@ -165,7 +159,6 @@ export const MISTERIOS_GLORIOSA: Misterio[] = [
     latino: "Descensus Spiritus Sancti in Cenaculo",
     castellano: "La Venida del Espíritu Santo sobre los Apóstoles",
     fruto: "El celo apostólico y la caridad divina",
-    cita: "Hch 2, 1-4",
   },
   {
     numero: 4,
@@ -173,7 +166,6 @@ export const MISTERIOS_GLORIOSA: Misterio[] = [
     latino: "Assumptio Beatæ Mariæ Virginis",
     castellano: "La Asunción en cuerpo y alma de la Santísima Virgen",
     fruto: "La perseverancia final y devoción filial a María",
-    cita: "cf. Cant 2, 10-13",
   },
   {
     numero: 5,
@@ -181,9 +173,24 @@ export const MISTERIOS_GLORIOSA: Misterio[] = [
     latino: "Coronatio Beatæ Mariæ Virginis",
     castellano: "La Coronación de la Virgen María como Reina de cielo y tierra",
     fruto: "La confianza en la intercesión de la Virgen",
-    cita: "Apoc 12, 1",
   },
 ];
+
+/** Une cada misterio con sus lecturas de la Vulgata; sin lectura cargada para algún misterio, falla al importar. */
+function conLecturas(grupo: GrupoMisterios, base: Omit<Misterio, "cita" | "lecturas">[]): Misterio[] {
+  const filas = (lecturasJson as unknown as Record<GrupoMisterios, { numero: number; lecturas: LecturaMisterio[] }[]>)[grupo];
+  return base.map((m) => {
+    const lecturas = filas.find((f) => f.numero === m.numero)?.lecturas ?? [];
+    if (lecturas.length === 0) throw new Error(`Falta la lectura de la Vulgata del misterio ${grupo} ${m.numero}`);
+    return { ...m, lecturas, cita: lecturas.map((l) => l.ref).join("; ") };
+  });
+}
+
+export const MISTERIOS_GAUDIOSA: Misterio[] = conLecturas("gaudiosa", BASE_GAUDIOSA);
+export const MISTERIOS_DOLOROSA: Misterio[] = conLecturas("dolorosa", BASE_DOLOROSA);
+export const MISTERIOS_GLORIOSA: Misterio[] = conLecturas("gloriosa", BASE_GLORIOSA);
+
+export const FUENTE_LECTURAS: string = (lecturasJson as { fuente: string }).fuente;
 
 export const GRUPOS_INFO: Record<GrupoMisterios, { latino: string; castellano: string; misterios: Misterio[] }> = {
   gaudiosa: {
