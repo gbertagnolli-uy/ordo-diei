@@ -9,4 +9,4 @@ Pedido (hook `/goal`): la lane 158 dejó tres cosas sin comprobar —arrastre en
 - Documentado en `HALLAZGOS_PENDIENTES.md` (P-44) y el README del e2e; `verificar_invariantes.sh` reconoce `*hs-pendientes*` como FIX.
 
 ## Pendiente (honesto)
-El arrastre del calendario se comprobó con un script de depuración ya eliminado; no está como fase permanente.
+Resuelto en la lane 161: el arrastre quedó como prueba permanente en `fase_d.ts`.

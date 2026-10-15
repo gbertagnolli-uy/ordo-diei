@@ -764,7 +764,7 @@ Se corrió contra la **base real** y con un **Chromium real** (autorizado por el
 | Fase A, reglas por API (53 chequeos: permisos, guardia, quiz, 18:00, premios sin doble cobro, evidencia sin tocar saldos, horas, apoyos) | **53/53** |
 | Fase B, 15 páginas × móvil/tablet/escritorio (45) | **45/45** sin errores de consola, sin redirecciones al login y sin desborde horizontal (antes: 15 desbordes) |
 | Fase C, interacción (navegación, atrás del navegador, pestañas, reordenar, planes, archivar, Primero/Después con reloj, historia, cámara, visor, logro, cronómetro) | **50/50** |
-| Fase D, gestos e impresión (deslizar, calendario, impresión + PDF A4, checkpoint) | **19/19** (el arrastre del calendario y el video real: ver hallazgos) |
+| Fase D, gestos e impresión (deslizar, calendario, impresión + PDF A4, checkpoint) | **19/19** en la lane 158; **23/23** desde la lane 161 (suma el arrastre real del calendario) |
 
 Capturas representativas (sin los hijos reales): `verificacion/capturas/`.
 
@@ -776,5 +776,16 @@ Capturas representativas (sin los hijos reales): `verificacion/capturas/`.
 5. El visor de lecciones no ocupaba la pantalla (la clase base del `Sheet` pisaba `h-svh`).
 6. El orden se veía recién a los ~2 s: ahora el reordenado es optimista.
 7. Sin señal de carga al cambiar de sección: `loading.tsx` con esqueleto.
-8. El arrastre de días en el calendario nunca se activaba (`selectable` apagado): corregido (ver hallazgos: el gesto no se pudo comprobar).
+8. El arrastre de días en el calendario nunca se activaba (`selectable` apagado): corregido. El gesto se comprobó en la lane 161 (ver más abajo).
 9. Texto `destructive` sobre su tinte en el tema oscuro (AA): `text-foreground`.
+
+## Cierre de lo que la lane 158 no pudo comprobar (2026-10-15, lanes 160 y 161)
+
+| Qué | Cómo se comprobó | Resultado |
+|---|---|---|
+| Arrastre de un día en el calendario | `fase_d.ts`: mouse real (down, move en pasos, up) sobre `react-big-calendar`; el `PATCH /api/homeschooling/dias/[id]` responde 200 y la base tiene el día en la fecha nueva; mover a una fecha ocupada se rechaza con 409 | 4 chequeos nuevos (**fase D 23/23**) |
+| Video real | `fase_e.ts`: YouTube/Vimeo no reproducen en un Chromium automatizado, así que se añadió el soporte de archivo de video directo (`esArchivoVideo`) y se reproduce un `.webm` real: pausa en el checkpoint, «Volver 30 s», acierto, completar la Tarea | **14/14** |
+| Cámara de la tablet | `fase_f.ts`: Pixel 7 emulado; `capture="environment"`, selector de «Cámara», compresión, evidencia con 2 fotos | **12/12** |
+
+Límites que siguen sin automatizarse: la app de cámara nativa del sistema y el reproductor de YouTube/Vimeo (la lógica del checkpoint es la misma que la del archivo directo, que sí se reprodujo). Son los dos únicos puntos que dependen de un aparato o servicio externo.
+

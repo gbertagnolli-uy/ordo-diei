@@ -70,6 +70,40 @@ const abrir = async (quien: "padre" | "hijo", ancho = 1440, alto = 900) => {
   ck(cableados.length >= 3 && cableados.every(Boolean), `los ${cableados.length} días pendientes del mes tienen el manejador de arrastre (onMouseDown)`);
   ck((await p.locator(".rbc-addons-dnd").count()) === 1, "el calendario tiene activo el módulo de arrastre");
   await p.screenshot({ path: `${DIR}/shots/d-calendario.png` });
+
+  // arrastre real con el mouse: un día pendiente a una celda vacía del mismo plan (→ PATCH 200 y la fecha cambia en la base)
+  const antes = await prisma.diaLectivo.findMany({ where: { planId: e.plCal, estado: "pendiente" }, orderBy: { fecha: "asc" }, select: { id: true, fecha: true } });
+  const ocupadas = new Set(antes.map((d) => d.fecha.toISOString().slice(0, 10)));
+  const dest = Array.from({ length: 14 }, (_, i) => mas(i + 1)).find((f) => !ocupadas.has(f) && f.slice(0, 7) === e.hoy.slice(0, 7));
+  ck(!!dest, `hay un día vacío del mes para soltar (${dest})`);
+  const ev = p.locator(".rbc-event", { hasText: "Calendario" }).first();
+  await ev.scrollIntoViewIfNeeded();
+  // el dock inferior puede tapar la fila: se deja la fila a media altura
+  await p.evaluate(() => window.scrollBy(0, 200));
+  const origen = (await ev.boundingBox())!;
+  // la celda se localiza por posición en la grilla: se calcula con el primer día visible (la semana empieza el lunes)
+  const primero = new Date(dest!.slice(0, 8) + "01T12:00:00"); const offset = (primero.getDay() + 6) % 7;
+  const idx = offset + Number(dest!.slice(8, 10)) - 1;
+  const objetivo = (await p.locator(".rbc-day-bg").nth(idx).boundingBox())!;
+  const respuesta = p.waitForResponse((r) => r.url().includes("/api/homeschooling/dias/") && r.request().method() === "PATCH", { timeout: 15000 }).catch(() => null);
+  await p.mouse.move(origen.x + origen.width / 2, origen.y + origen.height / 2);
+  await p.mouse.down();
+  await p.mouse.move(origen.x + origen.width / 2 + 10, origen.y + origen.height / 2 + 10, { steps: 5 });
+  await p.mouse.move(objetivo.x + objetivo.width / 2, objetivo.y + 20, { steps: 25 });
+  await p.mouse.up();
+  const r = await respuesta;
+  ck(r?.status() === 200, `soltar el día en ${dest} manda el PATCH y responde ${r?.status()}`);
+  const despues = await prisma.diaLectivo.findMany({ where: { planId: e.plCal, estado: "pendiente" }, select: { fecha: true } });
+  ck(despues.some((d) => d.fecha.toISOString().slice(0, 10) === dest), `la base tiene un día pendiente en ${dest} (antes: ${antes.map((d) => d.fecha.toISOString().slice(5, 10)).join(", ")})`);
+  await p.screenshot({ path: `${DIR}/shots/d-calendario-arrastrado.png` });
+
+  // destino ocupado: la regla de orden lo rechaza con 4xx y la fecha no cambia
+  const ocupado = despues.map((d) => d.fecha.toISOString().slice(0, 10)).filter((f) => f !== dest && f.slice(0, 7) === e.hoy.slice(0, 7))[0];
+  if (ocupado) {
+    const otro = await prisma.diaLectivo.findFirst({ where: { planId: e.plCal, estado: "pendiente", fecha: { gt: new Date(dest + "T12:00:00Z") } }, orderBy: { fecha: "asc" }, select: { id: true, fecha: true } });
+    const rr = otro ? await api(cp, `/api/homeschooling/dias/${otro.id}`, { method: "PATCH", body: { accion: "mover", fecha: dest } }) : null;
+    ck(!!rr && rr.status >= 400 && rr.status < 500, `mover un día a una fecha ocupada se rechaza (${rr?.status})`);
+  }
   await ctx.close();
 }
 
