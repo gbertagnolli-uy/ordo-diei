@@ -7,6 +7,7 @@ import { aClave, aFecha, NoAutorizadoError, NoEncontradoError } from "../../habi
 import { esPadre } from "../../habitos/permisos.ts";
 import { repartir, type SalidaPacing, type UnidadTipo } from "../pacing.ts";
 import { planearRecalculo, type DiaPlan } from "../recalculo.ts";
+import { expandirDiasSinClase, MAX_DIAS_TOTAL, validarRango as validarRangoVacaciones, type FiestaElegida, type RangoVacaciones } from "../anioEscolar.ts";
 
 export class ConflictoError extends Error {
   status = 409;
@@ -406,4 +407,43 @@ export async function ponerseAlDia(actorId: number, alumnoId: number, hoy: strin
     dias += r?.creados ?? 0;
   }
   return { planes: pendientes.length, dias };
+}
+
+// ---------- «Configurar el año» (lane 197, C9) ----------
+
+export type ConfigAnio = {
+  actorId: number;
+  alumnoIds: number[];
+  vacaciones: RangoVacaciones[];
+  fiestas: FiestaElegida[];
+  hoy: string;
+};
+
+/** Marca de una vez las vacaciones y las fiestas como días sin clase de varios hijos y reparte de nuevo cada plan activo (una sola vez) */
+export async function configurarAnio(d: ConfigAnio) {
+  await exigirPadre(d.actorId);
+  const alumnoIds = [...new Set(d.alumnoIds)];
+  if (alumnoIds.length === 0) throw new DatoInvalidoError("Elegí al menos un hijo");
+  for (const r of d.vacaciones) {
+    const error = validarRangoVacaciones(r);
+    if (error) throw new DatoInvalidoError(error);
+  }
+  for (const f of d.fiestas) if (!fechaValida(f.fecha)) throw new DatoInvalidoError("Fecha de fiesta no válida");
+  const dias = expandirDiasSinClase(d.vacaciones, d.fiestas);
+  if (dias.length === 0) throw new DatoInvalidoError("No hay días sin clase para marcar");
+  if (dias.length > MAX_DIAS_TOTAL) throw new DatoInvalidoError(`Son demasiados días (máximo ${MAX_DIAS_TOTAL})`);
+  if ((await prisma.usuario.count({ where: { id: { in: alumnoIds }, rolFamiliar: { in: ["Hijo", "Hija"] } } })) !== alumnoIds.length) throw new NoEncontradoError("Alumno no encontrado");
+
+  return prisma.$transaction(
+    async (tx) => {
+      const r = await tx.diaNoLectivo.createMany({
+        data: alumnoIds.flatMap((alumnoId) => dias.map((x) => ({ alumnoId, fecha: aFecha(x.fecha), motivo: x.motivo }))),
+        skipDuplicates: true,
+      });
+      const planes = await tx.planCurso.findMany({ where: { alumnoId: { in: alumnoIds }, estado: "activo" }, select: { id: true } });
+      for (const p of planes) await recalcularEn(tx, p.id, d.hoy);
+      return { dias: dias.length, marcados: r.count, planesRepartidos: planes.length };
+    },
+    { timeout: 60_000 }
+  );
 }

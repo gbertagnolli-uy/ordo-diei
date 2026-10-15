@@ -256,3 +256,10 @@ export const datosCargaSemana = z.object({
   alumnoId: idPositivo,
   dias: z.array(z.object({ fecha: claveFecha, lineas: z.array(z.string().max(2000)).max(20) })).min(1).max(7),
 });
+
+// ── Configurar el año (lane 197) ──
+export const datosAnio = z.object({
+  alumnoIds: z.array(idPositivo).min(1, "Elegí al menos un hijo").max(10),
+  vacaciones: z.array(z.object({ motivo: z.string().trim().min(1, "Falta el nombre de las vacaciones").max(80), desde: claveFecha, hasta: claveFecha })).max(10),
+  fiestas: z.array(z.object({ fecha: claveFecha, motivo: z.string().trim().max(80) })).max(60),
+});
