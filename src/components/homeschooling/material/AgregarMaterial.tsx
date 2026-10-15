@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ETIQUETA_TIPO, TIPOS_MATERIAL, detectarMaterial, esEnlace, vistaMaterial, type MaterialDetectado, type TipoMaterial } from "@/lib/homeschooling/material";
 import { api } from "@/lib/homeschooling/roost/services/http";
+import { useBorrador } from "@/lib/homeschooling/useBorrador";
 import type { Destino, MaterialVista } from "@/lib/homeschooling/servidor/materiales";
 import { toast } from "@/lib/toast";
 import IconoMaterial from "./IconoMaterial";
@@ -34,7 +35,8 @@ export default function AgregarMaterial({
   onClose: () => void;
   onCreado: (m: MaterialVista) => void;
 }) {
-  const [entrada, setEntrada] = useState("");
+  // Lo escrito queda como borrador en el navegador: si se cierra el diálogo o se recarga, vuelve (lane 190)
+  const [entrada, setEntrada, borrarBorrador] = useBorrador(`material-${JSON.stringify(destino)}`);
   const [titulo, setTitulo] = useState("");
   const tituloEditado = useRef(false);
   const [tipo, setTipo] = useState<TipoMaterial>("texto");
@@ -47,7 +49,6 @@ export default function AgregarMaterial({
 
   useEffect(() => {
     if (!open) return;
-    setEntrada("");
     setTitulo("");
     tituloEditado.current = false;
     setTipo("texto");
@@ -58,6 +59,7 @@ export default function AgregarMaterial({
 
   // Detección inmediata en el cliente; el título de la página llega después (sin bloquear)
   useEffect(() => {
+    if (!open) return;
     const texto = entrada.trim();
     if (!texto) {
       setDet(null);
@@ -86,7 +88,7 @@ export default function AgregarMaterial({
       clearTimeout(t);
       setDetectando(false);
     };
-  }, [entrada]);
+  }, [entrada, open]);
 
   const vista = det ? vistaMaterial({ tipo, proveedor: det.proveedor, externoId: det.externoId, url: det.url }) : null;
   const esTexto = !!det && det.contenido !== null;
@@ -101,6 +103,7 @@ export default function AgregarMaterial({
         body: { destino, entrada: entrada.trim(), titulo: titulo.trim() || null, tipo, limiteImpresiones: soloPadres ? 0 : limite, soloPadres },
       });
       toast.success("Material agregado");
+      borrarBorrador();
       onCreado(creado);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo agregar el material");
