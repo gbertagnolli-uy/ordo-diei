@@ -16,6 +16,8 @@ import { deleteShowcase, featureShowcase, resubmitShowcase, unfeatureShowcase } 
 import { toast } from "@/lib/toast";
 import { StarRating } from "@/components/homeschooling/roost/StarRating";
 import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidencia";
+import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
+import { filtrar } from "@/lib/homeschooling/buscarTexto";
 import EvidenciaCard from "./EvidenciaCard";
 import FiltrosPortafolio from "./FiltrosPortafolio";
 
@@ -34,6 +36,8 @@ export default function Portafolio({
   const [abierta, setAbierta] = useState<ShowcaseWithDetails | null>(null);
   const [nueva, setNueva] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+  const [q, setQ] = useState("");
+  const visibles = filtrar(evidencias, q, (e) => [e.title, e.description, e.author_name, e.materia_name]);
 
   const correr = async (fn: () => Promise<unknown>, ok?: string) => {
     setOcupado(true);
@@ -61,6 +65,7 @@ export default function Portafolio({
       </div>
 
       <FiltrosPortafolio alumnos={esPadre ? alumnos : undefined} materias={materias} />
+      {evidencias.length > 0 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar un trabajo…" cantidad={visibles.length} />}
 
       {evidencias.length === 0 ? (
         <Empty className="border border-dashed">
@@ -74,7 +79,7 @@ export default function Portafolio({
         </Empty>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {evidencias.map((e) => (
+          {visibles.map((e) => (
             <EvidenciaCard key={e.id} evidencia={e} mostrarAlumno={esPadre} onClick={setAbierta} />
           ))}
         </div>

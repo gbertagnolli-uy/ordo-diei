@@ -15,6 +15,8 @@ import type { EventWithDetails } from "@/lib/homeschooling/roost/tipos";
 import { toast } from "@/lib/toast";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
 import ActividadCard from "./ActividadCard";
+import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
+import { filtrar } from "@/lib/homeschooling/buscarTexto";
 import ActividadDetalle from "./ActividadDetalle";
 import ActividadForm from "./ActividadForm";
 import Cronometro from "./Cronometro";
@@ -38,6 +40,8 @@ export default function Horas({
 }) {
   const router = useRouter();
   const [abierta, setAbierta] = useState<EventWithDetails | null>(null);
+  const [q, setQ] = useState("");
+  const visibles = filtrar(actividades, q, (a) => [a.title, a.description, a.location, a.materia_name, ...a.participantes.map((p) => p.nombre)]);
   const [form, setForm] = useState<{ open: boolean; editing: EventWithDetails | null }>({ open: false, editing: null });
   const [borrar, setBorrar] = useState<EventWithDetails | null>(null);
   const [medida, setMedida] = useState<{ inicio: Date; fin: Date } | null>(null);
@@ -99,6 +103,8 @@ export default function Horas({
         </Button>
       </div>
 
+      {actividades.length > 0 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar una actividad…" cantidad={visibles.length} />}
+
       {actividades.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
@@ -111,7 +117,7 @@ export default function Horas({
         </Empty>
       ) : (
         <div className="space-y-3">
-          {actividades.map((a) => (
+          {visibles.map((a) => (
             <ActividadCard key={a.id} actividad={a} onClick={setAbierta} />
           ))}
         </div>

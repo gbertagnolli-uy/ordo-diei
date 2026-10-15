@@ -12,6 +12,8 @@ import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import type { ListaMemoria as Datos } from "@/lib/homeschooling/servidor/memoria";
 import { toast } from "@/lib/toast";
+import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
+import { filtrar } from "@/lib/homeschooling/buscarTexto";
 import AgregarMemoria from "./AgregarMemoria";
 
 const FECHA = new Intl.DateTimeFormat("es", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -21,6 +23,8 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
   const router = useRouter();
   const [agregando, setAgregando] = useState(false);
   const [abierto, setAbierto] = useState<number | null>(null);
+  const [q, setQ] = useState("");
+  const visibles = filtrar(datos.items, q, (m) => [m.titulo, m.texto]);
   const base = "/dashboard/homeschooling";
 
   const quitar = async (id: number, titulo: string) => {
@@ -69,6 +73,8 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
         <StatsCard title="Ya las sabe" value={datos.dominadas} icon={CheckCircle2} color="success" />
       </section>
 
+      {datos.items.length > 5 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar una oración o una lista…" cantidad={visibles.length} />}
+
       {datos.items.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
@@ -81,7 +87,7 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
         </Empty>
       ) : (
         <ul className="space-y-2">
-          {datos.items.map((m) => (
+          {visibles.map((m) => (
             <li key={m.id} className="rounded-xl border bg-card">
               <div className="flex items-center gap-2 p-3">
                 <button type="button" onClick={() => setAbierto(abierto === m.id ? null : m.id)} aria-expanded={abierto === m.id} className="flex min-w-0 flex-1 items-center gap-3 text-left">

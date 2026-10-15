@@ -16,6 +16,8 @@ import { ETIQUETA_LECTURA, type EstadoLectura } from "@/lib/homeschooling/lectur
 import { api } from "@/lib/homeschooling/roost/services/http";
 import type { LibroVista, ListaLectura as Datos } from "@/lib/homeschooling/servidor/lectura";
 import { toast } from "@/lib/toast";
+import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
+import { filtrar } from "@/lib/homeschooling/buscarTexto";
 import { LibroForm, RegistrarLectura, TerminarLibro } from "./DialogosLectura";
 
 const FECHA = new Intl.DateTimeFormat("es", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -29,7 +31,8 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
   const [terminando, setTerminando] = useState<LibroVista | null>(null);
 
   const refrescar = () => router.refresh();
-  const libros = datos.libros.filter((l) => l.estado === pestana);
+  const [q, setQ] = useState("");
+  const libros = filtrar(datos.libros.filter((l) => l.estado === pestana), q, (l) => [l.titulo, l.autor, l.narracion]);
   const cuenta = (e: EstadoLectura) => datos.libros.filter((l) => l.estado === e).length;
 
   const empezar = async (l: LibroVista) => {
@@ -93,6 +96,8 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
           ))}
         </TabsList>
       </Tabs>
+
+      {datos.libros.length > 3 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar un libro…" cantidad={libros.length} />}
 
       {libros.length === 0 ? (
         <Empty className="border border-dashed">
