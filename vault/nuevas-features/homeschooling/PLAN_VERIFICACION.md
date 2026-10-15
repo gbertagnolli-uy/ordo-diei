@@ -738,3 +738,18 @@ CUMPLE | CUMPLE CON OBSERVACIONES | NO CUMPLE — <una línea>
 2. La auditoría C da `0 FALLA` con `VERIF_FINAL=1 VERIF_BASE=1`, `next build` en verde y G2b en verde.
 3. Las matrices §8.1–8.7 están completas: cada fila CUMPLE o DESVÍO REGISTRADO.
 4. Lo de §9 está verificado por lectura o con una corrida autorizada, y lo de §10 se le entregó al usuario como lista de pruebas.
+
+## Desvíos aceptados (2026-10-15, lane 157)
+
+Decisiones tomadas al revisar la primera corrida de `verificar_invariantes.sh` sobre `dev` (31 FALLA). El script **fija cada desvío con su forma exacta**: si cambia, vuelve a fallar. No son errores de comportamiento.
+
+| # | Desvío | Razón | Dónde lo fija el script |
+|---|---|---|---|
+| D-21 | Firmas de los services de cliente distintas a las de Roost (§3.2 del plan pedía «mismos parámetros»): el alumno o el moderador salen de la sesión (sin `userId`/`moderatorId`), parámetros opcionales, `getEventsInRange` sin `groupId`, nombres más cortos. `markLessonComplete`/`markLessonIncomplete` no están en `module.ts`: los reemplazan `completarLeccion`/`desmarcarLeccion` (`servidor/progreso.ts`) y `POST|DELETE …/lecciones/[id]/completar`. `hasPermission` se reexporta desde `roost/permisos.ts`. | Los componentes portados solo cambiaron imports y la autoridad la tiene el servidor, no el cliente. Igualar las firmas obligaría a mandar ids que el servidor ignora. | Tabla `ACEPTADA` en la sección H |
+| D-22 | Las Tareas se crean en `servidor/tareas.ts`, no en `servidor/hoy.ts` (ARQ §5.1). | `progreso.ts` también necesita crearlas (adelantar un día) y `hoy.ts` importa de `progreso.ts`: ponerlo en `hoy.ts` hacía un ciclo de importación. | Secciones D y E |
+| D-23 | H6 toca `src/app/dashboard/layout.tsx` (suma `<ModoRelajado />` y una consulta de la preferencia). | Es donde se conoce el usuario en sesión para poner `data-relajado` en `<html>`; no hay otro punto sin tocar `app/layout.tsx`. | `permitidos()` de H6 |
+| D-24 | Las lanes grandes se partieron en dos (H1b-1/H1b-2, H2a/H2b, H4a/H4b) y sus ramas llevan nombres como `hs-cursos-datos` o `hs-hoy-ui`; las de arreglo (`hs-ui-faltante`, `hs-navegacion-panel`, `hs-integracion-verificacion`) cuentan como FIX. | El script reconoce la lane por el nombre de la rama. | `codigo_de()` |
+| D-25 | `localStorage` también en `horas/Cronometro.tsx` (inicio del cronómetro). | Debe seguir contando si se cierra la pantalla. | Sección de componentes |
+| D-26 | El enlace «Estudio» del `AppSidebar` se cuenta por su `href`, no por el texto (aparece en el tooltip y en el span). | Falso positivo del conteo. | Sección de navegación |
+
+Con esto la corrida sobre `dev` queda sin FALLA (los MIRAR son borrados de Tareas filtrados por `Pendiente`, el `select` de `preguntasParaAlumno` y los índices extra de `EvidenciaImagen`/`HistoriaSocial`).

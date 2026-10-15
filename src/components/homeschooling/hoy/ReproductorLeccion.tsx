@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactPlayer from "react-player";
+import { useMantenerActivo } from "@/hooks/useInactividad";
 import { proximoCheckpoint } from "@/lib/homeschooling/quiz";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import CheckpointOverlay, { type PreguntaCheckpoint } from "./CheckpointOverlay";
@@ -17,6 +18,9 @@ export default function ReproductorLeccion({ leccionId, src, titulo, tieneCheckp
   const [respondidos, setRespondidos] = useState<Set<number>>(new Set());
   const [abierto, setAbierto] = useState<PreguntaCheckpoint | null>(null);
   const [reproduciendo, setReproduciendo] = useState(false);
+
+  // Mientras el video corre no hay "inactividad" (N6) y la música de fondo (N3) puede bajar: el motivo es "video"
+  useMantenerActivo("video", reproduciendo);
 
   useEffect(() => {
     // El visor remonta este componente por lección (key), así que el estado arranca limpio

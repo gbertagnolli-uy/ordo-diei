@@ -60,3 +60,7 @@ Dar retroalimentación sonora breve a acciones y recompensas para reforzar el bu
 5. Cada rareza de carta suena distinto.
 6. Los assets suman < 600 KB y se cargan solo cuando se necesitan.
 7. Pruebas unitarias del mapa evento→archivo y de las reglas de silencio.
+
+## Requisitos que vienen de Homeschooling (2026-10-15)
+- El motor **no debe sonar cuando `document.documentElement.dataset.relajado` esté activo** (modo relajado de un alumno con TDAH/TEA): es la misma señal que corta el confeti en `ModalManager.celebrate`.
+- Homeschooling lo usaría en tres lugares: acierto/fallo de un checkpoint de video, resultado del quiz final y victoria al completar la Tarea del día. Detalle en `vault/nuevas-features/homeschooling/INTEGRACION_CON_OTRAS_LANES.md`.

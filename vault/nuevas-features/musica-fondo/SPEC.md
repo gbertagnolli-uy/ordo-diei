@@ -62,3 +62,6 @@ Usar **Howler.js** (o `<audio>` + Media Session si basta) para crossfade/ducking
 5. Cerrar sesión (manual o por inactividad) detiene la música.
 6. Un efecto de premio baja la música y la restituye.
 7. Un padre puede desactivar la música para todos.
+
+## Requisitos que vienen de Homeschooling (2026-10-15)
+- Mientras el alumno ve un video de una lección, la música de fondo debería bajar o pausarse. `ReproductorLeccion` ya registra la exención `video` en `lib/actividad.ts` (`useMantenerActivo("video", reproduciendo)`); N3 puede consultarla.
