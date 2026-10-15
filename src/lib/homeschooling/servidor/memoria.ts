@@ -98,3 +98,8 @@ export async function quitarDeMemoria(a: Actor, id: number): Promise<void> {
 }
 
 export const catalogoCompleto = () => CATALOGO_MEMORIA;
+
+/** Cuántos textos le toca recitar hoy (para la pantalla «Hoy» del hijo) */
+export async function contarMemoriaHoy(alumnoId: number, hoy = hoyEnFamilia()): Promise<number> {
+  return prisma.memorizacion.count({ where: { alumnoId, dominada: false, proximo: { lte: new Date(`${hoy}T23:59:59.999Z`) } } });
+}
