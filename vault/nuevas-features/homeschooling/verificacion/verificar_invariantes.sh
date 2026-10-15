@@ -65,7 +65,7 @@ permitidos() {
     H3)     echo "prisma/schema.prisma package.json package-lock.json" ;;
     H4)     echo "prisma/schema.prisma package.json package-lock.json src/components/ui/radio-group.tsx" ;;
     H5)     echo "prisma/schema.prisma src/components/app/AppSidebar.tsx src/components/dashboard/MainDock.tsx src/app/dashboard/layout.tsx src/app/globals.css" ;;
-    H6)     echo "prisma/schema.prisma src/components/dashboard/ModalManager.tsx src/app/globals.css src/app/layout.tsx" ;;
+    H6)     echo "prisma/schema.prisma src/components/dashboard/ModalManager.tsx src/app/globals.css src/app/layout.tsx src/app/dashboard/layout.tsx" ;;
     *)      echo "" ;;
   esac
 }
@@ -75,12 +75,13 @@ codigo_de() { # nombre de rama (o asunto del merge) → código de lane
     *hs0*) echo HS0 ;;
     *completar-solo-asignado*|*hs-seg*) echo HS-SEG ;;
     *hs-modelo*|*h1a*) echo H1a ;;
-    *hs-plan-padre*|*h1b*) echo H1b ;;
+    *hs-plan-padre*|*hs-cursos*|*h1b*) echo H1b ;;
     *hs-hoy*|*-h2-*) echo H2 ;;
     *hs-evidencia*|*-h3-*) echo H3 ;;
     *hs-quizzes*|*-h4-*) echo H4 ;;
     *hs-horas*|*-h5-*) echo H5 ;;
     *hs-neuro*|*-h6-*) echo H6 ;;
+    *hs-ui-faltante*|*hs-navegacion*|*hs-integracion*) echo FIX ;;
     *-hs-*|*homeschool*) echo DOCS ;;
     *) echo "" ;;
   esac
@@ -176,8 +177,8 @@ buscar "className" | grep -E "[\"'\` ](btn(-[a-z]+)?|card|input|label)[\"'\` ]" 
   vacio "sin clases utilitarias de Roost (.btn, .card, .input, .label)"
 buscar "(^|[^.A-Za-z_])(confirm|alert)\(|window\.(confirm|alert)\(|createPortal" | sin_comentarios |
   vacio "sin confirm()/alert()/createPortal (van Dialog, Sheet y toast)"
-buscar 'localStorage' | grep -v 'evidencia/EnviarEvidencia.tsx' |
-  vacio "localStorage solo en el borrador de EnviarEvidencia (H3)"
+buscar 'localStorage' | grep -vE 'evidencia/EnviarEvidencia.tsx|horas/Cronometro.tsx' |
+  vacio "localStorage solo en el borrador de EnviarEvidencia (H3) y en el inicio del cronómetro (Cronometro.tsx)"
 
 # ---------------------------------------------------------------- C. Capa de datos y rutas
 seccion "C. Capa de datos y rutas"
@@ -210,7 +211,7 @@ find $L/servidor $A -type f ! -name '*.test.ts' 2>/dev/null | xargs -r grep -HnE
 find $L/servidor $A -type f ! -name '*.test.ts' 2>/dev/null | xargs -r grep -HnE '\b(streakDays|stars)\b' |
   vacio "streakDays/stars solo en lectura (H2 muestra la racha)" mirar
 buscar -i 'award_points|point_activities|leaderboard' | vacio "sin puntos de Roost (award_points, leaderboard)"
-buscar '\.tarea\.(create|createMany|upsert)\(' | grep -v "$L/servidor/hoy.ts" | vacio "solo servidor/hoy.ts crea Tareas"
+buscar '\.tarea\.(create|createMany|upsert)\(' | grep -v "$L/servidor/tareas.ts" | vacio "solo servidor/tareas.ts crea Tareas (el puente día → Tarea; D-22)"
 s=$(buscar '\.tarea\.(delete|deleteMany)\(')
 if [ -z "$s" ]; then na "nadie borra Tareas todavía"
 else
@@ -255,14 +256,14 @@ if existe $L/video.ts; then
   grep -q 'youtube-nocookie.com/embed' $L/video.ts && ok "video.ts embebe con youtube-nocookie.com" || falla "video.ts no usa youtube-nocookie.com"
 else na "video.ts (HS0)"; fi
 buscar 'youtube\.com/embed' | grep -v 'nocookie' | sin_comentarios | vacio "embeds con youtube.com solo si el registro de H4 lo justifica (react-player)" mirar
-existe $L/servidor/hoy.ts && { grep -q 'HORA_LIMITE_LECCION' $L/servidor/hoy.ts && grep -q 'updateMany' $L/servidor/hoy.ts && ok "hoy.ts usa HORA_LIMITE_LECCION y la asignación sin carreras (updateMany)" || falla "hoy.ts sin HORA_LIMITE_LECCION o sin updateMany (ARQ §5.1-5.2)"; }
+existe $L/servidor/tareas.ts && { grep -q 'HORA_LIMITE_LECCION' $L/servidor/tareas.ts && grep -q 'updateMany' $L/servidor/tareas.ts && ok "tareas.ts usa HORA_LIMITE_LECCION y la asignación sin carreras (updateMany)" || falla "tareas.ts sin HORA_LIMITE_LECCION o sin updateMany (ARQ §5.1-5.2)"; }
 existe $L/servidor/quiz.ts && { grep -nE -A12 'function preguntasParaAlumno' $L/servidor/quiz.ts | grep -E 'correcta|explicacion' | vacio "preguntasParaAlumno no menciona correcta/explicacion (si usa omit, confirmar a mano)" mirar; }
 if [ -n "$(tests_hs)" ]; then
   tests_hs | xargs -r grep -HnE '\.only\(|\.todo\(|only:[[:space:]]*true|todo:[[:space:]]*true' | vacio "tests sin .only ni .todo"
   tests_hs | xargs -r grep -HnE 'skip' | grep -vE 'PERMITIR_TESTS_DB|sinBase' | vacio "los únicos skip son los de PERMITIR_TESTS_DB"
   tests_hs | xargs -r grep -HnE "from ['\"]@/" | vacio "tests con imports relativos (node --test no resuelve @/)"
 else na "todavía no hay tests de Homeschooling"; fi
-n_sb=$(grep -c 'Estudio' src/components/app/AppSidebar.tsx); n_md=$(grep -c 'Estudio' src/components/dashboard/MainDock.tsx)
+n_sb=$(grep -c 'href="/dashboard/homeschooling"' src/components/app/AppSidebar.tsx); n_md=$(grep -c 'Estudio' src/components/dashboard/MainDock.tsx)
 [ "$n_md" -eq 0 ] && [ "$n_sb" -le 1 ] && ok "«Estudio» solo en AppSidebar (×$n_sb) y no en MainDock (HD16)" || falla "«Estudio»: AppSidebar ×$n_sb, MainDock ×$n_md"
 existe $P/page.tsx && [ "$n_sb" -eq 0 ] && falla "existe /dashboard/homeschooling pero falta el enlace «Estudio» en AppSidebar"
 node -e '
@@ -382,6 +383,27 @@ firmas() { # nombre(parámetros) de cada función exportada, con el parser de Ty
           if (d.initializer && (ts.isArrowFunction(d.initializer) || ts.isFunctionExpression(d.initializer)))
             console.log(`${d.name.getText(sf)}(${params(d.initializer)})`);
     }' "$1"; }
+# Desvíos aceptados (D-21): se fijan con su firma exacta; si cambian, vuelve a ser FALLA.
+declare -A ACEPTADA=(
+  ["module.ts:getModulesWithProgress"]="getModulesWithProgress(groupId, userId?)"
+  ["module.ts:getAdjacentRecordings"]="getAdjacentRecordings(recordingId, _moduleId?)"
+  ["group.ts:createRecording"]="createRecording(r)"
+  ["group.ts:updateRecording"]="updateRecording(id, u)"
+  ["showcase.ts:createShowcase"]="createShowcase(d)"
+  ["showcase.ts:getShowcaseById"]="getShowcaseById(id)"
+  ["showcase.ts:getUserShowcases"]="getUserShowcases(f?)"
+  ["showcase.ts:addShowcaseImage"]="addShowcaseImage(id, url, caption?)"
+  ["showcase.ts:removeShowcaseImage"]="removeShowcaseImage(id, imageId)"
+  ["showcase.ts:getShowcasesForModeration"]="getShowcasesForModeration(estado?, f?)"
+  ["showcase.ts:approveShowcase"]="approveShowcase(id, stars?)"
+  ["showcase.ts:rejectShowcase"]="rejectShowcase(id, comment)"
+  ["showcase.ts:featureShowcase"]="featureShowcase(id)"
+  ["showcase.ts:unfeatureShowcase"]="unfeatureShowcase(id)"
+  ["event.ts:getEventsInRange"]="getEventsInRange(desde, hasta)"
+  ["event.ts:createEvent"]="createEvent(e)"
+  ["event.ts:updateEvent"]="updateEvent(id, e)"
+  ["event.ts:getEventAttendees"]="getEventAttendees(id)"
+)
 while IFS='|' read -r servicio funciones; do
   dest=$L/roost/services/$servicio
   [ -f "$dest" ] || { na "services/$servicio todavía no existe"; continue; }
@@ -389,9 +411,20 @@ while IFS='|' read -r servicio funciones; do
     a=$(firmas "vendor/roost/src/services/$servicio" | grep -E "^$fn\(")
     b=$(firmas "$dest" | grep -E "^$fn\(")
     if [ -z "$b" ]; then
-      case "$fn" in markLessonComplete|markLessonIncomplete) existe $L/servidor/progreso.ts || { na "$fn (H2)"; continue; } ;; esac
+      case "$fn" in
+        markLessonComplete|markLessonIncomplete)
+          if existe $L/servidor/progreso.ts && grep -qE 'export async function (completarLeccion|desmarcarLeccion)' $L/servidor/progreso.ts; then
+            ok "services/$servicio: $fn reemplazado por completarLeccion/desmarcarLeccion y las rutas …/completar (desvío aceptado D-21)"
+          else na "$fn (H2)"; fi
+          continue ;;
+        hasPermission)
+          grep -qE 'export \{[^}]*hasPermission' "$dest" && { ok "services/$servicio: hasPermission reexportado de roost/permisos.ts (roles Padre/Madre = admin)"; continue; } ;;
+      esac
       falla "services/$servicio: falta $fn"
     elif [ "$a" = "$b" ]; then ok "services/$servicio: $b"
+    elif [ -n "${ACEPTADA[$servicio:$fn]:-}" ]; then
+      if [ "$b" = "${ACEPTADA[$servicio:$fn]}" ]; then ok "services/$servicio: $b (desvío aceptado D-21; Roost: $a)"
+      else falla "services/$servicio: $b ya no coincide con el desvío aceptado ${ACEPTADA[$servicio:$fn]} (Roost: $a)"; fi
     elif [[ "$b" == "${a%)}, "* ]] && ! grep -qE ', [A-Za-z_]+(,|\))' <<<"${b#"${a%)}"}"; then
       ok "services/$servicio: $b (agrega solo parámetros opcionales al final, p. ej. estrellas en H3)"
     else falla "services/$servicio: firma distinta — Roost $a / Ordo $b"; fi
