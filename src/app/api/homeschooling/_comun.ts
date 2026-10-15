@@ -236,3 +236,8 @@ export const datosCierreLibro = z.object({ estrellas: estrellasLibro.nullable().
 export const datosCatalogoMemoria = z.object({ alumnoIds: z.array(idPositivo).min(1, "Elegí al menos un hijo").max(10), claves: z.array(z.string().max(60)).min(1, "Elegí al menos una oración").max(40) });
 export const datosMemoriaPropia = z.object({ alumnoId: idPositivo, titulo: z.string().trim().min(1, "Falta el título").max(150), texto: z.string().max(5000) });
 export const datosRecitado = z.object({ nivel: z.enum(["otra_vez", "dificil", "bien", "facil"]) });
+
+// ── Boletín (lane 182, K2) ──
+export const datosPeriodo = z.object({ nombre: z.string().trim().min(1, "Falta el nombre del período").max(80), inicio: claveFecha, fin: claveFecha });
+export const datosTrimestres = z.object({ anio: z.number().int().min(2000).max(2100) });
+export const datosComentarioBoletin = z.object({ comentario: z.string().max(2000).nullable() });

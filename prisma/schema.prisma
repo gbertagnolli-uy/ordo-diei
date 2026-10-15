@@ -117,6 +117,7 @@ model Usuario {
   lecturas            LecturaLibro[]          @relation("LecturasAlumno")
   memorizaciones      Memorizacion[]          @relation("MemorizacionesAlumno")
   impresionesHoja     ImpresionDia[]          @relation("ImpresionesDiaAlumno")
+  boletines           BoletinAlumno[]         @relation("BoletinesAlumno")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -1230,6 +1231,36 @@ model ImpresionDia {
 
   @@index([diaLectivoId, alumnoId])
   @@map("Homeschool_Impresiones_Dia")
+}
+
+// ─── Boletín (lane 182, K2) ─────────────────────────────────────────────────
+// Los períodos de calificación de la casa (trimestres u otro corte) y el comentario del padre en el boletín de cada hijo.
+// Las notas, las horas, la asistencia y la lectura se calculan al armar el boletín; acá solo lo que se escribe a mano.
+model PeriodoCalificacion {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @map("Nombre")
+  inicio    DateTime @map("Inicio") @db.Date
+  fin       DateTime @map("Fin") @db.Date
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  boletines BoletinAlumno[]
+
+  @@index([inicio])
+  @@map("Homeschool_Periodos")
+}
+
+model BoletinAlumno {
+  id         Int      @id @default(autoincrement())
+  periodoId  Int      @map("Periodo_ID")
+  alumnoId   Int      @map("Alumno_ID")
+  comentario String?  @map("Comentario")
+  updatedAt  DateTime @updatedAt @map("Updated_At")
+
+  periodo PeriodoCalificacion @relation(fields: [periodoId], references: [id], onDelete: Cascade)
+  alumno  Usuario             @relation("BoletinesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([periodoId, alumnoId])
+  @@map("Homeschool_Boletines")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
