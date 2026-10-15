@@ -1,3 +1,5 @@
+// Portado de vendor/roost/src/services/module.ts, vendor/roost/src/services/group.ts y vendor/roost/src/db/adapters/mongodb/index.ts
+// (msrbuilds/roost@492af47). Cambios: Prisma en vez de Supabase, plan por alumno, permisos por rol familiar en vez de RLS.
 // Materias, cursos (recursos) y lecciones (Prisma). Cuerpos de los services de Roost (module.ts, group.ts)
 // con la misma forma de respuesta (DTO de roost/dto.ts). Escribir: solo Padre/Madre. Un Hijo/Hija lee
 // únicamente lo que tiene un plan suyo. `hoy` entra como parámetro ('YYYY-MM-DD').

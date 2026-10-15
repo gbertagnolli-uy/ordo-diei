@@ -1,3 +1,5 @@
+// Portado de vendor/roost/src/services/event.ts y vendor/roost/src/db/adapters/mongodb/index.ts (msrbuilds/roost@492af47).
+// Cambios: Prisma en vez de Supabase, participantes en lugar de RSVP, permisos por rol familiar en vez de RLS.
 // Actividades fuera de pantalla (el «event» de Roost sin RSVP, sin virtual y sin URL de reunión). Solo Padre/Madre
 // crean, editan y borran; un Hijo ve únicamente las suyas. `fin > inicio` (en Roost era un CHECK) se valida acá.
 import { addDays, format, parseISO } from "date-fns";

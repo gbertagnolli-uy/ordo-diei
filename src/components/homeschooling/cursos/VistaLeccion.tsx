@@ -19,6 +19,8 @@ export default function VistaLeccion({
   onEdit,
   onDelete,
   onPreguntas,
+  cursoTitulo,
+  onBack,
 }: {
   recording: RecordingWithCompletion;
   prev: Vecina;
@@ -27,11 +29,17 @@ export default function VistaLeccion({
   onEdit?: () => void;
   onDelete?: () => void;
   onPreguntas?: () => void;
+  cursoTitulo: string;
+  onBack: () => void;
 }) {
   const embed = recording.video_platform && recording.video_id ? urlEmbed(recording.video_platform, recording.video_id) : null;
 
   return (
     <div className="space-y-6">
+      <Button variant="outline" size="sm" onClick={onBack}>
+        <ArrowLeft /> <span className="max-w-48 truncate">{cursoTitulo}</span>
+      </Button>
+
       {embed ? (
         <div className="overflow-hidden rounded-lg bg-muted">
           <div className="relative aspect-video">

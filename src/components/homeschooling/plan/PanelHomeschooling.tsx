@@ -1,26 +1,51 @@
 "use client";
 
-// Propio de Ordo: inicio de Homeschooling para el padre — materias, «Nuevo curso», plan y días sin clase.
+// Propio de Ordo (usa StatsCard portado de Roost): inicio de Estudio para el padre — qué toca hoy a cada hijo, qué necesita
+// atención, el avance de cada hijo y las materias con sus cursos (cada curso lleva directo a su pantalla).
 
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, CalendarOff, Camera, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, Plus } from "lucide-react";
+import { AlertTriangle, CalendarCheck, CheckCircle2, Circle, ClipboardCheck, GraduationCap, History, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Group } from "@/lib/homeschooling/roost/tipos";
-import { colorCss, iconoDe } from "@/components/homeschooling/cursos/iconos";
+import type { HoyAlumno, MateriaPanel } from "@/lib/homeschooling/servidor/panel";
+import { colorCss } from "@/components/homeschooling/cursos/iconos";
+import IconoMateria from "@/components/homeschooling/cursos/IconoMateria";
 import MateriaForm from "@/components/homeschooling/cursos/MateriaForm";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
 import AsistenteCurso from "./AsistenteCurso";
 
 export type ProgresoAlumno = AlumnoLite & { cursos: number; porcentaje: number };
 
-export default function PanelHomeschooling({ materias, alumnos, progresos, pendientes, avisos }: { materias: (Group & { course_count: number })[]; alumnos: AlumnoLite[]; progresos: ProgresoAlumno[]; pendientes: number; avisos: { tarjetaId: number; texto: string }[] }) {
+export default function PanelHomeschooling({
+  materias,
+  panel,
+  hoy,
+  alumnos,
+  progresos,
+  pendientes,
+  avisos,
+}: {
+  materias: (Group & { course_count: number })[];
+  panel: MateriaPanel[];
+  hoy: HoyAlumno[];
+  alumnos: AlumnoLite[];
+  progresos: ProgresoAlumno[];
+  pendientes: number;
+  avisos: { tarjetaId: number; texto: string }[];
+}) {
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
   const [asistente, setAsistente] = useState(false);
+
+  const clasesHoy = hoy.flatMap((h) => h.clases);
+  const hechasHoy = clasesHoy.filter((c) => c.estado === "hecha").length;
+  const atrasadas = hoy.reduce((n, h) => n + h.atrasadas, 0);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
@@ -29,49 +54,23 @@ export default function PanelHomeschooling({ materias, alumnos, progresos, pendi
           <GraduationCap className="size-6" /> Estudio
         </h1>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/plan">
-              <CalendarDays /> Plan
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/revision">
-              <ClipboardCheck /> Revisión{pendientes > 0 ? ` (${pendientes})` : ""}
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/portafolio">
-              <Camera /> Portafolio
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/horas">
-              <Compass /> Actividades
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/reportes">
-              <FileBarChart /> Reportes
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/neurodivergencia">
-              <HeartHandshake /> Apoyos
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard/homeschooling/dias-sin-clase">
-              <CalendarOff /> Días sin clase
-            </Link>
-          </Button>
           <Button variant="outline" onClick={() => setMateriaForm(true)}>
             <Plus /> Nueva materia
           </Button>
-          <Button onClick={() => setAsistente(true)} disabled={alumnos.length === 0}>
+          <Button onClick={() => setAsistente(true)} disabled={alumnos.length === 0 || materias.length === 0}>
             <Plus /> Nuevo curso
           </Button>
         </div>
       </div>
+
+      <section aria-label="Resumen" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatsCard title="Clases de hoy" value={clasesHoy.length === 0 ? "—" : `${hechasHoy} de ${clasesHoy.length}`} icon={CalendarCheck} color="primary" />
+        <Link href="/dashboard/homeschooling/revision" className="block rounded-xl focus-visible:ring-2 focus-visible:ring-ring">
+          <StatsCard title="Para revisar" value={pendientes} icon={ClipboardCheck} color={pendientes > 0 ? "warning" : "success"} />
+        </Link>
+        <StatsCard title="Clases atrasadas" value={atrasadas} icon={History} color={atrasadas > 0 ? "error" : "success"} />
+        <StatsCard title="Avisos de repaso" value={avisos.length} icon={AlertTriangle} color={avisos.length > 0 ? "warning" : "success"} />
+      </section>
 
       {avisos.length > 0 && (
         <div className="space-y-1 rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm">
@@ -83,57 +82,114 @@ export default function PanelHomeschooling({ materias, alumnos, progresos, pendi
         </div>
       )}
 
-      {progresos.some((p) => p.cursos > 0) && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {progresos.filter((p) => p.cursos > 0).map((p) => (
-            <div key={p.id} className="space-y-2 rounded-xl border bg-card p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-foreground">{p.nombre}</span>
-                <span className="text-muted-foreground">
-                  {p.porcentaje}% · {p.cursos} {p.cursos === 1 ? "curso" : "cursos"}
-                </span>
-              </div>
-              <Progress value={p.porcentaje} />
-            </div>
-          ))}
-        </div>
+      {alumnos.length > 0 && (
+        <section aria-label="Hoy" className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Hoy</h2>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {hoy.map((h) => {
+              const prog = progresos.find((p) => p.id === h.alumnoId);
+              return (
+                <div key={h.alumnoId} className="space-y-3 rounded-xl border bg-card p-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      {h.fotoUrl && <AvatarImage src={h.fotoUrl} alt="" />}
+                      <AvatarFallback>{h.nombre.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-foreground">{h.nombre}</p>
+                      {prog && prog.cursos > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {prog.cursos} {prog.cursos === 1 ? "curso" : "cursos"} · {prog.porcentaje}% completado
+                        </p>
+                      )}
+                    </div>
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={`/dashboard/homeschooling/plan?alumno=${h.alumnoId}`}>Ver plan</Link>
+                    </Button>
+                  </div>
+                  {prog && prog.cursos > 0 && <Progress value={prog.porcentaje} />}
+                  {h.clases.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Hoy no tiene clases.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {h.clases.map((c, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm">
+                          {c.estado === "hecha" ? <CheckCircle2 className="size-4 shrink-0 text-success" /> : <Circle className="size-4 shrink-0 text-muted-foreground/60" />}
+                          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: colorCss(c.color) }} />
+                          <span className="min-w-0 truncate text-foreground">
+                            {c.curso} <span className="text-muted-foreground">· {c.materia}</span>
+                          </span>
+                          {c.estado === "omitida" && <span className="text-xs text-muted-foreground">omitida</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {h.atrasadas > 0 && <p className="text-xs text-destructive">{h.atrasadas} {h.atrasadas === 1 ? "clase atrasada" : "clases atrasadas"} (se reparten solas desde hoy)</p>}
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
-      {materias.length === 0 ? (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <GraduationCap />
-            </EmptyMedia>
-            <EmptyTitle>Todavía no hay materias</EmptyTitle>
-            <EmptyDescription>Empezá creando una materia y después sus cursos; el plan diario se arma solo.</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={() => setMateriaForm(true)}>
-              <Plus /> Crear la primera materia
-            </Button>
-          </EmptyContent>
-        </Empty>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {materias.map((m) => {
-            const Icono = iconoDe(m.icon);
-            return (
-              <Link key={m.id} href={`/dashboard/homeschooling/materias/${m.id}`} className="flex items-center gap-3 rounded-xl border bg-card p-4 transition-colors hover:border-primary/50">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg text-primary-foreground" style={{ backgroundColor: colorCss(m.color) }}>
-                  <Icono className="size-6" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold text-foreground">{m.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {m.course_count} {m.course_count === 1 ? "curso" : "cursos"}
+      <section aria-label="Materias" className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">Materias</h2>
+        {panel.length === 0 ? (
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <GraduationCap />
+              </EmptyMedia>
+              <EmptyTitle>Todavía no hay materias</EmptyTitle>
+              <EmptyDescription>Empezá creando una materia y después sus cursos; el plan diario se arma solo.</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button onClick={() => setMateriaForm(true)}>
+                <Plus /> Crear la primera materia
+              </Button>
+            </EmptyContent>
+          </Empty>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {panel.map((m) => (
+              <div key={m.id} className="overflow-hidden rounded-xl border bg-card">
+                <Link href={`/dashboard/homeschooling/materias/${m.id}`} className="flex items-center gap-3 border-b p-4 transition-colors hover:bg-muted">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-lg text-primary-foreground" style={{ backgroundColor: colorCss(m.color) }}>
+                    <IconoMateria nombre={m.icono} className="size-6" />
                   </span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-foreground">{m.nombre}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {m.cursos.length} {m.cursos.length === 1 ? "curso" : "cursos"}
+                    </span>
+                  </span>
+                </Link>
+                {m.cursos.length === 0 ? (
+                  <p className="p-4 text-sm text-muted-foreground">Sin cursos todavía.</p>
+                ) : (
+                  <ul className="divide-y">
+                    {m.cursos.map((c) => (
+                      <li key={c.id}>
+                        <Link href={`/dashboard/homeschooling/materias/${m.id}?module=${c.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-muted">
+                          <span className="min-w-0 flex-1 truncate text-foreground">{c.titulo}</span>
+                          {c.alumnos > 0 ? (
+                            <span className="flex w-28 shrink-0 items-center gap-2">
+                              <Progress value={c.porcentaje} />
+                              <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{c.porcentaje}%</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">sin asignar</span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <MateriaForm
         open={materiaForm}

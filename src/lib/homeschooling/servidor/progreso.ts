@@ -1,6 +1,6 @@
-// Progreso de lecciones y estado de los días (ARQUITECTURA_DETALLADA §5.3 y §5.4). Portado de `markLessonComplete`
-// de vendor/roost/src/services/module.ts con el upsert idempotente de `completelesson`
-// (vendor/roost/src/db/adapters/mongodb/index.ts:2528): el par (alumno, lección) es único.
+// Progreso de lecciones y estado de los días (ARQUITECTURA_DETALLADA §5.3 y §5.4).
+// Portado de vendor/roost/src/services/module.ts (`markLessonComplete`) con el upsert idempotente de `completelesson`
+// (vendor/roost/src/db/adapters/mongodb/index.ts:2528, msrbuilds/roost@492af47): el par (alumno, lección) es único.
 import prisma from "../../prisma.ts";
 import type { Prisma } from "@prisma/client";
 import { aClave, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "../../habitos/server.ts";
