@@ -71,6 +71,8 @@
   --border: #E6DFD3;
   --input: #E1D9CC;
   --ring: #A07850;
+  /* Rúbricas litúrgicas (℣ ℟ ✠, instrucciones): rojo con contraste AA sobre el fondo claro */
+  --rubrica: #9f1d20;
   --chart-1: #502300;
   --chart-2: #765B05;
   --chart-3: #2D6A2E;
@@ -150,6 +152,7 @@
   --border: rgba(232, 216, 200, 0.09);
   --input: rgba(232, 216, 200, 0.14);
   --ring: #A07850;
+  --rubrica: #f28b82;
   --chart-1: #C4956A;
   --chart-2: #C9A84C;
   --chart-3: #6AAF6A;
@@ -212,6 +215,7 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
+  --color-rubrica: var(--rubrica);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -487,4 +491,50 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+}
+
+/* Impresión (reportes de Homeschooling): A4 con márgenes de 2 cm, sin la barra lateral, el dock ni los avisos */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-slot="sidebar-rail"],
+  [data-slot="sidebar-trigger"],
+  #notice-bar,
+  #premio-banner,
+  #reconocimiento-banner {
+    display: none !important;
+  }
+  [data-slot="sidebar-inset"] {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .salto-de-pagina {
+    break-before: page;
+  }
+  .sin-corte {
+    break-inside: avoid;
+  }
+}
+
+/* Modo relajado (Homeschooling H6): menos saturación y más contraste en el contenido, sin movimiento decorativo.
+   Sin colores propios: todo sale de los tokens que ya usa la app. */
+[data-relajado] {
+  --relajado-saturacion: 0.6;
+  --relajado-contraste: 1.06;
+}
+[data-relajado] [data-slot="sidebar-inset"] {
+  filter: saturate(var(--relajado-saturacion)) contrast(var(--relajado-contraste));
+}
+[data-relajado] *,
+[data-relajado] *::before,
+[data-relajado] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

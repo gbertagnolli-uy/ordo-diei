@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 export default function ClientRulesPage({
   isAdmin,
@@ -30,13 +31,13 @@ export default function ClientRulesPage({
       });
 
       if (res.ok) {
-        alert("¡Reglas del Hogar actualizadas con éxito!");
+        toast.success("¡Reglas del Hogar actualizadas con éxito!");
         router.push("/dashboard");
       } else {
-        alert("Hubo un problema actualizando las reglas.");
+        toast.error("Hubo un problema actualizando las reglas.");
       }
     } catch {
-      alert("Error de red.");
+      toast.error("Error de red.");
     } finally {
       setLoading(false);
     }

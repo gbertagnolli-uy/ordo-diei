@@ -373,7 +373,7 @@ export default function HoloCard({
   onFlipChange,
   alt = '',
   preset = 'bursts',
-  intensity = 0.85,
+  intensity = 0.6,
   scale = 1,
   edgeSparkle = 0.8,
   frame = 4,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { crearEntregaPremio } from "@/lib/recompensas/vales";
 import { getSession } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
@@ -77,24 +78,8 @@ export async function POST(req: NextRequest) {
           if (allCompleted) gano = true;
         }
 
-        if (gano) {
-          await prisma.premioEntregado.create({
-            data: {
-              premioId: premio.id,
-              usuarioId: usuario.id,
-              estado: "Pendiente"
-            }
-          });
-          totalEntregados++;
-        } else {
-          await prisma.premioEntregado.create({
-            data: {
-              premioId: premio.id,
-              usuarioId: usuario.id,
-              estado: "No_ganado"
-            }
-          });
-        }
+        await crearEntregaPremio(premio, usuario.id, gano);
+        if (gano) totalEntregados++;
       }
     }
 

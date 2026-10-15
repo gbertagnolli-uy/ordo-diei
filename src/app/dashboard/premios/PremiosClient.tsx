@@ -12,6 +12,8 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/lib/toast";
+import { ValesAdmin } from "@/components/recompensas/ValesAdmin";
 
 interface Premio {
   id: number;
@@ -22,6 +24,7 @@ interface Premio {
   diaDelMes: number | null;
   tareasRequeridasIds: string;
   activo: boolean;
+  esVale: boolean;
   createdAt: string | null;
   updatedAt: string | null;
   entregas: Entrega[];
@@ -51,6 +54,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
     diaEntregaSemana: 1,
     diaDelMes: 1,
     tareasRequeridasIds: [] as number[],
+    esVale: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -71,7 +75,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || "Error al guardar");
+        toast.error(data.error || "Error al guardar");
       }
     } finally {
       setLoading(false);
@@ -87,10 +91,10 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || "Error al eliminar");
+        toast.error(data.error || "Error al eliminar");
       }
     } catch {
-      alert("Error de conexión");
+      toast.error("Error de conexión");
     }
   };
 
@@ -103,6 +107,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
       diaEntregaSemana: premio.diaEntregaSemana || 1,
       diaDelMes: premio.diaDelMes || 1,
       tareasRequeridasIds: JSON.parse(premio.tareasRequeridasIds || "[]"),
+      esVale: premio.esVale,
     });
     setShowModal(true);
   };
@@ -146,7 +151,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-4">
           <CardTitle className="text-base">{premios.length} {premios.length === 1 ? "premio" : "premios"}</CardTitle>
           <Button
-            onClick={() => { setEditingPremio(null); setFormData({ titulo: "", cantidad: 0, tipoFrecuencia: "Semanal", diaEntregaSemana: 1, diaDelMes: 1, tareasRequeridasIds: [] }); setShowModal(true); }}
+            onClick={() => { setEditingPremio(null); setFormData({ titulo: "", cantidad: 0, tipoFrecuencia: "Semanal", diaEntregaSemana: 1, diaDelMes: 1, tareasRequeridasIds: [], esVale: false }); setShowModal(true); }}
           >
             <Plus /> Nuevo Premio
           </Button>
@@ -171,8 +176,8 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                       <Gift className="size-4" />
                     </span>
                     <div>
-                      <div className="font-medium">{premio.titulo}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">x{premio.cantidad}</div>
+                      <div className="font-medium">{premio.esVale ? `Vale por ${premio.titulo}` : premio.titulo}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">{premio.esVale ? "Vale" : `x${premio.cantidad}`}</div>
                     </div>
                   </div>
                 </TableCell>
@@ -232,6 +237,8 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         )}
       </Card>
 
+      <ValesAdmin />
+
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingPremio ? "Editar Premio" : "Nuevo Premio"} width="md">
         <form onSubmit={handleSubmit}>
           <FieldGroup>
@@ -242,9 +249,18 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                 type="text"
                 value={formData.titulo}
                 onChange={e => setFormData({ ...formData, titulo: e.target.value })}
-                placeholder="ej. Monedas de Oro"
+                placeholder={formData.esVale ? "ej. un helado en la heladería" : "ej. Monedas de Oro"}
                 required
               />
+            </Field>
+
+            <Field orientation="horizontal">
+              <Checkbox
+                id="premio-es-vale"
+                checked={formData.esVale}
+                onCheckedChange={checked => setFormData({ ...formData, esVale: checked === true, cantidad: checked === true ? 1 : formData.cantidad })}
+              />
+              <FieldLabel htmlFor="premio-es-vale" className="font-normal">Es un vale (voucher canjeable: el título sigue a «Vale por…»)</FieldLabel>
             </Field>
 
             <Field>

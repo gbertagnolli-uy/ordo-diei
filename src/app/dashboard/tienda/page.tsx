@@ -1,0 +1,17 @@
+export const dynamic = "force-dynamic";
+
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import { esPadre } from "@/lib/habitos/permisos";
+import { obtenerTienda } from "@/lib/tienda/server";
+import { TiendaView } from "@/components/tienda/TiendaView";
+
+// Tienda: todo lo que se puede canjear con puntos, estrellas e incienso (vault/nuevas-features/marketplace/SPEC.md)
+export default async function TiendaPage({ searchParams }: { searchParams: Promise<{ producto?: string }> }) {
+  const session = await getSession();
+  if (!session?.user) redirect("/");
+  const { producto } = await searchParams;
+  const inicial = await obtenerTienda(Number(session.user.id));
+  const id = Number(producto);
+  return <TiendaView inicial={inicial} esPadre={esPadre(session.user.rolFamiliar)} productoInicial={Number.isInteger(id) && id > 0 ? id : null} />;
+}

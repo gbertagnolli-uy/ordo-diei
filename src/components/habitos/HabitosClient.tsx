@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HeartHandshake, Plus, Sprout, Sun, Sunset, Moon } from "lucide-react";
@@ -25,8 +26,9 @@ import { TrayectoriaHabitos } from "./TrayectoriaHabitos";
 import { HabitosCarrusel } from "./HabitosCarrusel";
 import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";
+import { toast } from "@/lib/toast";
 
-const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: React.ElementType }[] = [
+const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: LucideIcon }[] = [
   { franja: "manana", titulo: "Mañana", icono: Sun },
   { franja: "tarde", titulo: "Tarde", icono: Sunset },
   { franja: "noche", titulo: "Noche", icono: Moon },
@@ -114,7 +116,7 @@ export function HabitosClient({
       }
       return rec ? { puntos: rec.puntos, xp: rec.xp, pendiente: rec.pendiente } : undefined;
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al registrar");
+      toast.error(err instanceof Error ? err.message : "Error al registrar");
     } finally {
       setOcupadoId(null);
     }
@@ -139,7 +141,7 @@ export function HabitosClient({
       }
       return true;
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al guardar el libro");
+      toast.error(err instanceof Error ? err.message : "Error al guardar el libro");
       return false;
     } finally {
       setOcupadoId(null);
@@ -167,7 +169,7 @@ export function HabitosClient({
       if (!res.ok) throw new Error("Error al desactivar hábito");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al actualizar");
+      toast.error(err instanceof Error ? err.message : "Error al actualizar");
     }
   };
 
@@ -178,7 +180,7 @@ export function HabitosClient({
       if (!res.ok) throw new Error("Error al archivar hábito");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al archivar");
+      toast.error(err instanceof Error ? err.message : "Error al archivar");
     }
   };
 

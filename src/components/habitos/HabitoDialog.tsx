@@ -39,6 +39,7 @@ import {
 import type { EstadoHabito, HabitoVista } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
 import { subirImagen } from "@/lib/subirImagen";
+import { toast } from "@/lib/toast";
 
 const ANCLAS_SUGERIDAS: Record<Franja, string[]> = {
   manana: ["Al levantarme", "Antes del desayuno", "Después de desayunar", "Antes de salir"],
@@ -319,10 +320,10 @@ export function HabitoDialog({
       onClose();
       router.refresh();
       if (!esPadre && !habitoAEditar) {
-        alert("¡Listo! Un padre tiene que aprobar que empieces este hábito. Cuando lo haga, ya vas a poder marcarlo.");
+        toast.success("¡Listo! Un padre tiene que aprobar que empieces este hábito. Cuando lo haga, ya vas a poder marcarlo.");
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al procesar solicitud");
+      toast.error(err instanceof Error ? err.message : "Error al procesar solicitud");
     } finally {
       setGuardando(false);
     }
@@ -403,7 +404,7 @@ export function HabitoDialog({
                   try {
                     setNuevaImagen((await subirImagen(file)).url);
                   } catch (err) {
-                    alert(err instanceof Error ? err.message : "No se pudo subir la imagen");
+                    toast.error(err instanceof Error ? err.message : "No se pudo subir la imagen");
                   } finally {
                     setSubiendoImagen(false);
                   }

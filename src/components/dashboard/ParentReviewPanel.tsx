@@ -8,6 +8,8 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Clock, User, AlertCircle } from "lucide-react";
+import { toast } from "@/lib/toast";
+import { SwipeRow } from "@/components/SwipeRow";
 
 export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
   const router = useRouter();
@@ -42,11 +44,11 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
         router.refresh();
       } else {
         setHidden(false);
-        alert(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
+        toast.error(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
       }
     } catch {
       setHidden(false);
-      alert("Error de conexión");
+      toast.error("Error de conexión");
     }
   };
 
@@ -60,7 +62,11 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
       </CardHeader>
       <ItemGroup className="gap-0 divide-y">
         {waitingTasks.map((task) => (
-          <div key={task.id}>
+          <SwipeRow
+            key={task.id}
+            left={{ label: "Aprobar", icon: <Check className="size-5" />, color: "var(--success)", onColor: "var(--on-success)", onCommit: () => handleAction(task.id, "approve") }}
+            right={{ label: "Rechazar", icon: <X className="size-5" />, color: "var(--destructive)", onColor: "#fff", onCommit: () => handleAction(task.id, "reject") }}
+          >
             <Item className="flex-col items-start rounded-none px-6 py-3 sm:flex-row sm:items-center">
               <ItemMedia>
                 <Avatar className="size-10 rounded-lg">
@@ -90,7 +96,7 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
                 </Button>
               </ItemActions>
             </Item>
-          </div>
+          </SwipeRow>
         ))}
       </ItemGroup>
     </Card>

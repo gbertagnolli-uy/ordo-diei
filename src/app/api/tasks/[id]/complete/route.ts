@@ -3,7 +3,10 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { puntosBase } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
+import { puedeCompletarTarea } from "@/lib/tareas/permisos";
+import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,10 +29,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     }
 
+    if (!puedeCompletarTarea({ id: Number(session.user.id), rolFamiliar: session.user.rolFamiliar }, task)) {
+      return NextResponse.json({ error: "Solo quien tiene asignada la tarea (o un padre) puede completarla" }, { status: 403 });
+    }
+
     if (task.estado === "Completada" || task.estado === "Aprobada" || task.estado === "Esperando_Aprobacion") {
       console.warn(`[API/Complete] Tarea ${taskId} ya estaba en estado ${task.estado}`);
       return NextResponse.json({ error: "La tarea ya fue completada o está en revisión" }, { status: 400 });
     }
+
+    // Homeschooling: la Tarea de un día lectivo exige haber hecho sus lecciones
+    const motivoHs = await motivoBloqueoTarea(taskId);
+    if (motivoHs) return NextResponse.json({ error: motivoHs }, { status: 400 });
 
     // Business Rule: Checklist completion is COMPUTED (100% required)
     if (task.isChecklist && task.checklistItems.length > 0) {
@@ -124,7 +135,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let timeBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
-      actualBasePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+      actualBasePoints = puntosBase(task.dificultad, task.tiempoEjecucionEstimadoSeg);
 
       // Streak bonus: +2 points per streak day, max +20 points
       actualStreakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
@@ -199,6 +210,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }),
       registrarAccion(prisma, { tareaId: taskId, actorId: session.user.id, estadoAnterior: task.estado, estadoNuevo: "Esperando_Aprobacion", duracionSesionSeg: cleanElapsed })
     ]);
+
+    // Anclaje al completado: la regla de la serie cuenta desde esta acción del usuario
+    const reglaId = task.parentTaskId ?? task.id;
+    await prisma.tarea.updateMany({ where: { id: reglaId, anclaCompletado: true }, data: { anclaFecha: now } });
 
     // Recalcular porcentaje de éxito del usuario
     await updateUserCompletionPercentage(task.asignadoId);

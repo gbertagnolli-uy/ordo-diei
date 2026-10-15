@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import type { ItemSolicitud, Solicitudes, TipoSolicitud } from "@/lib/habitos/aprobaciones";
+import { SwipeRow } from "@/components/SwipeRow";
 import { HabitoIcon } from "./HabitoIcon";
 
 type Fila = ItemSolicitud & { nombre: string; icono: string; detalle: string };
@@ -108,7 +109,12 @@ export function SolicitudesHabitos({ inicial }: { inicial: Solicitudes }) {
             </div>
             <ItemGroup className="gap-0">
               {filas.map((f) => (
-                <Item key={clave(f)} className="rounded-none px-6 py-2">
+                <SwipeRow
+                  key={clave(f)}
+                  left={{ label: "Aprobar", icon: <Check className="size-5" />, color: "var(--success)", onColor: "var(--on-success)", onCommit: () => resolver("aprobar", [f]) }}
+                  right={{ label: "Rechazar", icon: <X className="size-5" />, color: "var(--destructive)", onColor: "#fff", onCommit: () => resolver("rechazar", [f]) }}
+                >
+                <Item className="rounded-none px-6 py-2">
                   <ItemMedia variant="icon">
                     <HabitoIcon name={f.icono} className="size-4" />
                   </ItemMedia>
@@ -136,6 +142,7 @@ export function SolicitudesHabitos({ inicial }: { inicial: Solicitudes }) {
                     </Button>
                   </ItemActions>
                 </Item>
+                </SwipeRow>
               ))}
             </ItemGroup>
           </section>

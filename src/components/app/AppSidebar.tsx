@@ -1,19 +1,32 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   AlarmClock,
+  BookMarked,
+  BookOpen,
   CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  CalendarRange,
+  CircleDot,
   CheckCircle2,
   Gift,
+  GraduationCap,
   History,
   Hourglass,
   Layers,
   ListTodo,
+  Music,
   Network,
+  ScrollText,
+  ShieldCheck,
+  ShoppingCart,
   Sprout,
+  Sparkles,
   Timer,
 } from "lucide-react";
 import {
@@ -32,9 +45,21 @@ import {
 import { NavUser } from "./NavUser";
 import { isDueToday, isLate, taskGroup } from "@/components/tasks/taskUtils";
 
+/** Pantallas de la liturgia (SPEC liturgia §8): nombre latino en el menú, castellano en el tooltip. */
+export const NAV_LITURGIA: { href: string; label: string; tooltip: string; icon: LucideIcon }[] = [
+  { href: "/dashboard/liturgia", label: "Calendarium", tooltip: "Calendario litúrgico", icon: CalendarDays },
+  { href: "/dashboard/liturgia/breviarium", label: "Breviarium", tooltip: "Breviario", icon: BookOpen },
+  { href: "/dashboard/liturgia/missale", label: "Missale", tooltip: "Misal", icon: BookMarked },
+  { href: "/dashboard/liturgia/proprium-de-tempore", label: "Proprium de Tempore", tooltip: "Propio del Tiempo", icon: CalendarRange },
+  { href: "/dashboard/liturgia/proprium-sanctorum", label: "Proprium Sanctorum", tooltip: "Propio de los Santos", icon: Sparkles },
+  { href: "/dashboard/liturgia/ordinarium", label: "Ordinarium", tooltip: "Ordinario", icon: ScrollText },
+  { href: "/dashboard/liturgia/psalterium", label: "Psalterium", tooltip: "Salterio", icon: Music },
+  { href: "/dashboard/liturgia/rosarium", label: "Rosarium", tooltip: "Rosario", icon: CircleDot },
+];
+
 export type SectionId = "todo" | "progress" | "review" | "done" | "today" | "late" | "history" | "family";
 
-export const NAV: { heading: string; items: { id: SectionId; label: string; icon: React.ElementType }[] }[] = [
+export const NAV: { heading: string; items: { id: SectionId; label: string; icon: LucideIcon }[] }[] = [
   {
     heading: "Mis tareas",
     items: [
@@ -88,6 +113,8 @@ export function AppSidebar({
   const pathname = usePathname();
   const params = useSearchParams();
   const active = pathname === "/dashboard" ? sectionFromParams(params) : null;
+  const esPadre = currentUser?.rolFamiliar === "Padre" || currentUser?.rolFamiliar === "Madre";
+  const enAdmin = !!pathname && ["/dashboard/admin", "/dashboard/tasks/new", "/dashboard/users", "/dashboard/premios", "/dashboard/cartas/admin", "/dashboard/admin/tienda"].some((r) => pathname.startsWith(r));
 
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = { todo: 0, progress: 0, review: 0, done: 0, today: 0, late: 0 };
@@ -126,6 +153,18 @@ export function AppSidebar({
           <SidebarGroupLabel>Rutina</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/dashboard/horarios" || pathname === "/dashboard/rutina"}
+                tooltip="Horarios y Rutina"
+              >
+                <Link href="/dashboard/horarios">
+                  <CalendarClock />
+                  <span>Horarios</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/habitos"} tooltip="Mis hábitos">
                 <Link href="/dashboard/habitos">
                   <Sprout />
@@ -133,6 +172,14 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/homeschooling")} tooltip="Estudio">
+                <Link href="/dashboard/homeschooling">
+                  <GraduationCap />
+                  <span>Estudio</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/mis-premios"} tooltip="Mis premios">
@@ -143,6 +190,26 @@ export function AppSidebar({
               </SidebarMenuButton>
               {!!premiosPendientes && <SidebarMenuBadge className="tabular-nums">{premiosPendientes}</SidebarMenuBadge>}
             </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Liturgia</SidebarGroupLabel>
+          <SidebarMenu>
+            {NAV_LITURGIA.map(({ href, label, tooltip, icon: Icon }) => (
+              <SidebarMenuItem key={href}>
+                <SidebarMenuButton
+                  asChild
+                  // El Calendarium es la raíz del grupo: solo activo en su ruta exacta.
+                  isActive={href === "/dashboard/liturgia" ? pathname === href : pathname?.startsWith(href)}
+                  tooltip={tooltip}
+                >
+                  <Link href={href}>
+                    <Icon />
+                    <span>{label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
@@ -159,8 +226,31 @@ export function AppSidebar({
                 <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Cartas para reclamar" />
               )}
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/tienda")} tooltip="Tienda">
+                <Link href="/dashboard/tienda">
+                  <ShoppingCart />
+                  <span>Tienda</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+        {esPadre && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administración</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={enAdmin} tooltip="Panel de administración">
+                  <Link href="/dashboard/admin">
+                    <ShieldCheck />
+                    <span>Panel de administración</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
         {NAV.map((group) => (
           <SidebarGroup key={group.heading}>
             <SidebarGroupLabel>{group.heading}</SidebarGroupLabel>

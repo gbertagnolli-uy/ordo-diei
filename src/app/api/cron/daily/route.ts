@@ -1,6 +1,12 @@
+import { generarTareasRecurrentes } from "@/lib/generarRecurrentes";
 import prisma from "@/lib/prisma";
+import { crearEntregaPremio } from "@/lib/recompensas/vales";
 import { NextResponse } from "next/server";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { hoyEnFamilia } from "@/lib/habitos/server";
+import { alumnosConPlanActivo, asegurarTareasDeHoy } from "@/lib/homeschooling/servidor/tareas";
+import { repoReposo } from "@/lib/reposo/repositorio";
+import { refrescarPoolUnsplash } from "@/lib/reposo/unsplash";
 
 export const dynamic = "force-dynamic";
 
@@ -49,73 +55,20 @@ export async function GET(req: Request) {
 
     console.log(`[Cron Daily] ${expiradasCount} expiradas`);
 
-    // =====================
-    // B) GENERAR TAREAS PARA HOY
-    // =====================
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const manana = new Date(hoy);
-    manana.setDate(hoy.getDate() + 1);
-
-    // Solo tareas recurrentes "cabeza" (no generadas por cron)
-    const plantillas = await prisma.tarea.findMany({
-      where: { tipoRecurrencia: { not: "Unica" }, generadaPorCron: false },
-      take: 20
-    });
-
-    let generadasCount = 0;
-    for (const plantilla of plantillas) {
-      // Solo crear si está completada/aprobada o vencida
-      if (!["Completada", "Aprobada", "Vencida", "Expirada", "No_Realizada"].includes(plantilla.estado)) {
-        continue;
-      }
-
-      // Verificar si ya existe tarea para HOY
-      const yaExiste = await prisma.tarea.findFirst({
-        where: { parentTaskId: plantilla.id, fechaVencimiento: { gte: hoy, lt: manana } }
-      });
-      if (yaExiste) continue;
-
-      // Crear la tarea para HOY
-      let nuevaFechaVenc = new Date(hoy);
-      let nuevaHoraEjec: Date | null = null;
-
-      if (plantilla.horaEjecucion) {
-        nuevaHoraEjec = new Date(hoy);
-        const horaOrig = new Date(plantilla.horaEjecucion);
-        nuevaHoraEjec.setHours(horaOrig.getHours(), horaOrig.getMinutes(), 0, 0);
-        nuevaFechaVenc = new Date(nuevaHoraEjec.getTime() + plantilla.tiempoEjecucionEstimadoSeg * 1000);
-      }
-
-      await prisma.tarea.create({
-        data: {
-          titulo: plantilla.titulo,
-          descripcion: plantilla.descripcion,
-          creadorId: plantilla.creadorId,
-          asignadoId: plantilla.asignadoId,
-          tiempoEjecucionEstimadoSeg: plantilla.tiempoEjecucionEstimadoSeg,
-          generaPuntosYRecompensa: plantilla.generaPuntosYRecompensa,
-          tipoRecurrencia: "Unica",
-          fechaVencimiento: nuevaFechaVenc,
-          horaEjecucion: nuevaHoraEjec,
-          estado: "Pendiente",
-          parentTaskId: plantilla.id,
-          diaDelMes: plantilla.diaDelMes,
-          isSurpriseEligible: plantilla.isSurpriseEligible,
-          isChecklist: plantilla.isChecklist,
-          generadaPorCron: true
-        }
-      });
-
-      await prisma.tarea.update({
-        where: { id: plantilla.id },
-        data: { tipoRecurrencia: "Unica" }
-      });
-
-      generadasCount++;
-    }
-
+    // B) GENERAR TAREAS PARA HOY (la regla recurrente se conserva)
+    const generadasCount = await generarTareasRecurrentes(prisma, new Date());
     console.log(`[Cron Daily] ${generadasCount} generadas`);
+
+    // B2) HOMESCHOOLING: Tarea de cada día lectivo de hoy (un alumno que falla no frena al resto)
+    let hsCreadas = 0;
+    for (const alumnoId of await alumnosConPlanActivo()) {
+      try {
+        hsCreadas += await asegurarTareasDeHoy(alumnoId, hoyEnFamilia());
+      } catch (err) {
+        console.error(`[Cron Daily] Homeschooling alumno ${alumnoId}:`, err);
+      }
+    }
+    console.log(`[Cron Daily] ${hsCreadas} tareas de estudio`);
 
     // =====================
     // C) RECALCULAR %
@@ -154,12 +107,18 @@ export async function GET(req: Request) {
           gano = completadas === tareasRequeridasIds.length;
         }
 
-        await prisma.premioEntregado.create({
-          data: { premioId: premio.id, usuarioId: usuario.id, estado: gano ? "Pendiente" : "No_ganado" }
-        });
+        await crearEntregaPremio(premio, usuario.id, gano);
         if (gano) premiosEntregados++;
       }
     }
+
+    // E) REPOSO: refrescar el pool de fotos de Unsplash (un fallo no frena el cron)
+    const reposo = await refrescarPoolUnsplash(repoReposo, {
+      fetch,
+      accessKey: process.env.UNSPLASH_ACCESS_KEY,
+      log: (m) => console.error(m),
+    }).catch((e) => ({ ok: false as const, motivo: e instanceof Error ? e.message : "error" }));
+    console.log(`[Cron Daily] Reposo: ${JSON.stringify(reposo)}`);
 
     const elapsed = Date.now() - startTime;
     return NextResponse.json({
@@ -168,6 +127,7 @@ export async function GET(req: Request) {
       generadas: generadasCount,
       usuarios: usuarios.length,
       premios: premiosEntregados,
+      reposo,
       elapsedMs: elapsed
     });
 

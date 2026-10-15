@@ -67,3 +67,44 @@ arrastrar para que los enlaces del dorso sigan funcionando. El destino del giro 
 
 Verificado con Chromium headless: click voltea y desvuelve, arrastre de 30 px vuelve, de 200 px voltea una sola vez, el
 enlace del dorso no voltea.
+
+## Seguimiento (lane 62): toggle Normal / Álbum 3D
+
+Pedido (textual): "Además en /dashboard/cartas no está el vinculo al Albul 3D como lo quiero llamar. Quiero que se
+mantenga la vista original del album y que haya un toggle para cambiar entre la vista 3D (DomeGallery) y la vista
+normal (actual)".
+
+- Se eliminó la ruta aparte `/dashboard/cartas/album` y el botón «Explorar en 3D».
+- En la pestaña Álbum de `ColeccionView` hay un `ToggleGroup` «Normal» / «Álbum 3D». Normal es la vista original sin
+  cambios; Álbum 3D muestra el domo en el mismo lugar (`AlbumDomo`, antes `AlbumDomoView` sin cabecera), con los filtros
+  y la búsqueda aplicados. `?tab=album&vista=3d` abre directo el domo.
+- Error de build «Can't resolve '@use-gesture/react'»: faltaba `npm install` en `ordo-diei/` tras mergear la lane 57.
+
+Verificado con Chromium headless sobre una página temporal (ya borrada): el toggle cambia entre grilla y domo.
+
+## Seguimiento (lane 63): pantalla completa en el Álbum 3D
+
+Pedido (textual): "Ademas quiero agregar un boton en la esquina superior derecha de la vista 3D, para pasar a pantalla
+completa. Cuando pase a pantalla completa que se cambie el icono para contraer la vista."
+
+- `AlbumDomo`: botón arriba a la derecha del domo (`Maximize2` / `Minimize2`) que usa la Fullscreen API sobre el marco
+  del domo; el estado se sincroniza con `fullscreenchange` (Esc también sale). Con `fullscreen:` el marco ocupa toda la
+  pantalla, sin borde.
+- El modal de la carta se monta dentro del marco mientras está en pantalla completa (si no, un portal en `body` queda
+  fuera y no se ve).
+- iPhone no permite pantalla completa en un elemento: ahí el botón no se muestra (`document.fullscreenEnabled`).
+
+Verificado con Chromium headless: entra y sale, cambia el icono y la etiqueta, y el modal de la carta abre en pantalla completa.
+
+## Seguimiento (lane 64): botón del sidebar en las cartas
+
+Pedido (textual): "recupera el boton del sidebar, que lo hace colapsible y expandible, porque lo borraste y ahora -por lo
+menos en movil- no aparece en la pagina de las cartas."
+
+Diagnóstico: el botón (`SidebarTrigger`) vive en `PageHeader`, y ni `ColeccionView` ni `DetalleCartaView` lo usaron nunca
+(`git log -S PageHeader` solo lo muestra en la página admin de cartas). No se borró en la lane 57; en móvil, sin la barra
+de cabecera, no había cómo abrir el menú. Se agregó `PageHeader` (grupo «Colección») arriba de ambas vistas, igual que el
+resto de las páginas del dashboard. En la colección el título es «Cartas»; en el detalle, el nombre de la carta.
+
+Además se mergeó la lane 58 (carrusel de profundidad): `git merge dev` en su rama no tuvo conflictos (el de
+`package.json` ya estaba resuelto), tests de versiones, arte y orden en verde.

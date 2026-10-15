@@ -11,15 +11,18 @@ import {
   Flame,
   Award,
   Filter,
-  ShoppingBag,
+  ShoppingCart,
   ShieldCheck,
   Star,
   Orbit,
+  LayoutGrid,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/app/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Progress } from "@/components/ui/progress";
 import {
   Empty,
@@ -30,14 +33,12 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { CartaVista } from "@/components/cartas/CartaVista";
-import { TiendaCartasView } from "@/components/cartas/TiendaCartasView";
+import { AlbumDomo } from "@/components/cartas/AlbumDomo";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
-import { ModalAperturaSobre, type ResultadoCompraSobre, type CartaAfectadaCompra } from "@/components/cartas/ModalAperturaSobre";
 import { BordeReclamable } from "@/components/cartas/BordeReclamable";
 import { useReclamoCarta, claveReclamo } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { CartaListada } from "@/lib/cartas/server";
-import type { GradoCarta } from "@/lib/cartas/economia";
 
 interface ColeccionViewProps {
   inicial: {
@@ -56,9 +57,10 @@ interface ColeccionViewProps {
 export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get("tab");
-  const tabInicial = tabParam === "tienda" || tabParam === "album" ? tabParam : "coleccion";
+  const tabInicial = tabParam === "album" ? tabParam : "coleccion";
 
   const [tab, setTab] = useState<string>(tabInicial);
+  const [vistaAlbum, setVistaAlbum] = useState<"normal" | "3d">(searchParams?.get("vista") === "3d" ? "3d" : "normal");
   const [busqueda, setBusqueda] = useState<string>("");
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("Todas");
   const [rarezaFiltro, setRarezaFiltro] = useState<string>("Todas");
@@ -66,34 +68,6 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
 
   const [cartas, setCartas] = useState<CartaListada[]>(inicial.cartas);
   const [usuario, setUsuario] = useState(inicial.usuario);
-  const [modalAperturaOpen, setModalAperturaOpen] = useState<boolean>(false);
-  const [resultadoApertura, setResultadoApertura] = useState<ResultadoCompraSobre | null>(null);
-
-  const handleCompraExitosa = (resultado: ResultadoCompraSobre) => {
-    setResultadoApertura(resultado);
-    setModalAperturaOpen(true);
-
-    if (resultado.cartasAfectadas && Array.isArray(resultado.cartasAfectadas)) {
-      setCartas((prev) =>
-        prev.map((c) => {
-          const afectada = resultado.cartasAfectadas.find(
-            (a: CartaAfectadaCompra) => a.cartaId === c.id || a.cartaClave === c.clave
-          );
-          if (afectada) {
-            return {
-              ...c,
-              fragmentos: afectada.fragmentosDespues,
-              desbloqueada: Boolean(afectada.desbloquea || c.desbloqueada),
-              grado: afectada.gradoDespues as GradoCarta,
-              reclamable: Boolean(afectada.reclamable),
-              porcentaje: Math.floor((afectada.fragmentosDespues / c.fragmentosRequeridos) * 100),
-            };
-          }
-          return c;
-        })
-      );
-    }
-  };
 
   const recargarCartas = () => {
     fetch("/api/cartas")
@@ -145,15 +119,6 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
       );
     }
     return null;
-  };
-
-  const handleActualizarSaldo = (nuevoPuntos: number, nuevoIncienso: number, nuevasEstrellas?: number) => {
-    setUsuario((previo) => ({
-      ...previo,
-      availablePoints: nuevoPuntos,
-      incienso: nuevoIncienso,
-      stars: nuevasEstrellas ?? previo.stars,
-    }));
   };
 
   // Estadísticas generales
@@ -220,6 +185,8 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   };
 
   return (
+    <div className="flex flex-col">
+      <PageHeader group="Colección" title="Cartas" />
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       {/* Encabezado Principal y Recursos */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
@@ -269,7 +236,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
       {/* Selector de Pestañas */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <TabsList className="grid w-full sm:w-auto grid-cols-3">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2">
             <TabsTrigger value="coleccion" className="flex items-center gap-2">
               <span>Mi colección</span>
               <Badge variant="secondary" className="px-1.5 py-0 text-xs tabular-nums">
@@ -282,13 +249,15 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                 {totalDesbloqueadas}/{totalCartas}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="tienda" className="flex items-center gap-2">
-              <ShoppingBag className="size-3.5" />
-              <span>Tienda</span>
-            </TabsTrigger>
           </TabsList>
 
           <div className="flex items-center gap-3">
+            <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs h-8">
+              <Link href="/dashboard/tienda">
+                <ShoppingCart className="size-3.5" />
+                <span>Ir a la Tienda</span>
+              </Link>
+            </Button>
             {(rolFamiliar === "Padre" || rolFamiliar === "Madre") && (
               <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs h-8">
                 <Link href="/dashboard/cartas/admin">
@@ -380,64 +349,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
         {/* PESTAÑA: MI COLECCIÓN                                        */}
         {/* ============================================================ */}
         <TabsContent value="coleccion" className="mt-6 flex flex-col gap-8">
-          {/* Sección 1: En Camino (cartas con progreso pero aún no consagradas) */}
-          {coleccionEnCamino.length > 0 && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-4 text-amber-500" />
-                  <h2 className="font-heading text-lg font-semibold tracking-tight">
-                    En camino ({coleccionEnCamino.length})
-                  </h2>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  Cartas reuniendo fragmentos de gracia
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {coleccionEnCamino.map((carta) => {
-                  const pct = Math.floor(
-                    (carta.fragmentos / carta.fragmentosRequeridos) * 100
-                  );
-                  return (
-                    <div key={carta.clave} className="flex flex-col gap-1.5">
-                      <Link
-                        href={`/dashboard/cartas/${carta.clave}`}
-                        className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
-                      >
-                        {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
-                          <CartaVista
-                            carta={carta}
-                            modo="bloqueada"
-                            grado={carta.grado}
-                            fragmentos={carta.fragmentos}
-                            ancho={240}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>)}
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
-                            {carta.nombre}
-                          </span>
-                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>
-                              {carta.fragmentos}/{carta.fragmentosRequeridos}
-                            </span>
-                            <span className="font-medium text-foreground">{pct}%</span>
-                          </div>
-                          <Progress value={pct} className="h-1.5" />
-                        </div>
-                      </Link>
-                      {accionReclamo(carta)}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Sección 2: Cartas Consagradas (Desbloqueadas) */}
+          {/* Sección 1: Cartas Consagradas (Desbloqueadas) */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="font-heading text-lg font-semibold tracking-tight">
@@ -516,6 +428,63 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
               </div>
             )}
           </div>
+
+          {/* Sección 2: En Camino (cartas con progreso pero aún no consagradas) */}
+          {coleccionEnCamino.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-amber-500" />
+                  <h2 className="font-heading text-lg font-semibold tracking-tight">
+                    En camino ({coleccionEnCamino.length})
+                  </h2>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Cartas reuniendo fragmentos de gracia
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {coleccionEnCamino.map((carta) => {
+                  const pct = Math.floor(
+                    (carta.fragmentos / carta.fragmentosRequeridos) * 100
+                  );
+                  return (
+                    <div key={carta.clave} className="flex flex-col gap-1.5">
+                      <Link
+                        href={`/dashboard/cartas/${carta.clave}`}
+                        className="group flex flex-col gap-2 rounded-xl p-2 transition-all hover:bg-muted/50 border border-transparent hover:border-border"
+                      >
+                        {marcoCarta(carta, <div className="relative aspect-[63/88] w-full overflow-hidden rounded-lg">
+                          <CartaVista
+                            carta={carta}
+                            modo="bloqueada"
+                            grado={carta.grado}
+                            fragmentos={carta.fragmentos}
+                            ancho={240}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>)}
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                            {carta.nombre}
+                          </span>
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>
+                              {carta.fragmentos}/{carta.fragmentosRequeridos}
+                            </span>
+                            <span className="font-medium text-foreground">{pct}%</span>
+                          </div>
+                          <Progress value={pct} className="h-1.5" />
+                        </div>
+                      </Link>
+                      {accionReclamo(carta)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* ============================================================ */}
@@ -523,14 +492,27 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
         {/* ============================================================ */}
         <TabsContent value="album" className="mt-6 flex flex-col gap-6">
           <div className="flex justify-end">
-            <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs">
-              <Link href="/dashboard/cartas/album">
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={vistaAlbum}
+              onValueChange={(v) => v && setVistaAlbum(v as "normal" | "3d")}
+              aria-label="Vista del álbum"
+            >
+              <ToggleGroupItem value="normal" className="gap-1.5 text-xs">
+                <LayoutGrid className="size-3.5" />
+                <span>Normal</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="3d" className="gap-1.5 text-xs">
                 <Orbit className="size-3.5" />
-                <span>Explorar en 3D</span>
-              </Link>
-            </Button>
+                <span>Álbum 3D</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          {cartasFiltradas.length === 0 ? (
+          {cartasFiltradas.length > 0 && vistaAlbum === "3d" ? (
+            <AlbumDomo cartas={cartasFiltradas} />
+          ) : cartasFiltradas.length === 0 ? (
             <Empty className="border rounded-2xl bg-muted/20 py-16">
               <EmptyMedia variant="icon">
                 <Filter className="size-6 text-muted-foreground" />
@@ -603,35 +585,11 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
           )}
         </TabsContent>
 
-        {/* ============================================================ */}
-        {/* PESTAÑA: TIENDA                                              */}
-        {/* ============================================================ */}
-        <TabsContent value="tienda" className="mt-6">
-          <TiendaCartasView
-            cartas={cartas}
-            usuario={usuario}
-            onCompraExitosa={handleCompraExitosa}
-            onActualizarSaldo={handleActualizarSaldo}
-          />
-        </TabsContent>
       </Tabs>
 
       {modalReclamo}
 
-      {/* Modal de Apertura Animado en 3 Etapas con Confeti */}
-      <ModalAperturaSobre
-        open={modalAperturaOpen}
-        onOpenChange={setModalAperturaOpen}
-        resultado={resultadoApertura}
-        onAbrirOtro={() => {
-          setModalAperturaOpen(false);
-          setTab("tienda");
-        }}
-        onVerColeccion={() => {
-          setModalAperturaOpen(false);
-          setTab("coleccion");
-        }}
-      />
+    </div>
     </div>
   );
 }

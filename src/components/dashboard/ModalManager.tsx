@@ -11,6 +11,7 @@ import { LeaderboardModal } from "./LeaderboardModal";
 import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 
 // Único confeti de la app (MagicUI). Los popups lo disparan vía contexto.
@@ -27,6 +28,8 @@ export function ModalManager() {
   const { isOpen, type, data, closeModal, openModal } = useModalStore();
   const confettiRef = useRef<ConfettiRef>(null);
   const celebrate = useCallback((opts?: Parameters<ConfettiRef["fire"]>[0]) => {
+    // Modo relajado (Homeschooling H6): sin confeti en ninguna celebración
+    if (document.documentElement.dataset.relajado) return;
     confettiRef.current?.fire(opts);
   }, []);
 
@@ -113,6 +116,9 @@ export function ModalManager() {
       {type === "TASK_SUCCESS" && (
         <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Misión Cumplida!">
           <div className="flex flex-col items-center text-center py-6">
+            {typeof document !== "undefined" && document.documentElement.dataset.relajado && (
+              <div className="mb-2 text-6xl text-[var(--success)]" aria-hidden>✓</div>
+            )}
             <img 
               src="/done-animate.svg" 
               alt="¡Buen trabajo!" 
@@ -281,7 +287,7 @@ function RulesPopup() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ textoEstricto: rules }),
       });
-      if (res.ok) alert("Reglas guardadas.");
+      if (res.ok) toast.success("Reglas guardadas.");
     } finally {
       setLoading(false);
     }
