@@ -70,7 +70,7 @@ export async function publicarAviso(a: Actor, d: { titulo: unknown; cuerpo?: unk
   // Un aviso de los padres les llega a los hijos en su campana
   const hijos = await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true } });
   if (hijos.length > 0) {
-    await prisma.avisoEstudio.createMany({ data: hijos.map((h) => ({ usuarioId: h.id, tipo: "muro", titulo: `${autor?.nombre ?? "Papá o mamá"} publicó en el muro`, cuerpo: v.titulo, href: "/dashboard/homeschooling/muro" })) });
+    await Promise.allSettled(hijos.map((h) => prisma.avisoEstudio.create({ data: { usuarioId: h.id, tipo: "muro", titulo: `${autor?.nombre ?? "Papá o mamá"} publicó en el muro`, cuerpo: v.titulo, href: "/dashboard/homeschooling/muro" } })));
   }
   return { id: p.id, tipo: "aviso", titulo: p.titulo, cuerpo: p.cuerpo, href: null, fijada: p.fijada, creadoEn: p.createdAt.toISOString(), autor, alumno: null, comentarios: 0, puedeBorrar: true };
 }

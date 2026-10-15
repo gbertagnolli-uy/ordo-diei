@@ -75,7 +75,7 @@ export default function AgregarVarias({ open, recursoId, onClose, onCreadas }: {
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder={"https://youtu.be/…\nEl Credo | https://youtu.be/…\n[Padre Nuestro](https://youtu.be/…)\nRepasar los mandamientos"}
-                className="font-mono text-sm"
+                className="field-sizing-fixed min-w-0 font-mono text-sm break-all"
               />
               <p className="text-xs text-muted-foreground">Hasta 100 líneas. Una línea sin enlace es una lección de texto.</p>
             </div>

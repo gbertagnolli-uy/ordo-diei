@@ -26,6 +26,7 @@ before(async () => {
 });
 
 after(async () => {
+  if (!sinBase) await prisma.materialEstudio.deleteMany({ where: { creadorId: { in: [ids.padre].filter(Boolean) } } });
   if (!sinBase) await prisma.usuario.deleteMany({ where: { id: { in: [ids.padre, ids.hijo, ids.hermano].filter(Boolean) } } });
   await prisma.$disconnect();
 });

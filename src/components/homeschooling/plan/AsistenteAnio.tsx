@@ -25,7 +25,7 @@ export default function AsistenteAnio({ alumnos, festividades, anio }: { alumnos
   const [hijos, setHijos] = useState<number[]>(alumnos.map((a) => a.id));
   const [rangos, setRangos] = useState<Rango[]>([]);
   // Fiestas de primera clase de ese año que caen de lunes a viernes
-  const fiestas = festividades.filter((x) => x.mayor && x.fecha.startsWith(String(anio)) && esDiaHabil(x.fecha));
+  const fiestas = festividades.filter((x) => x.mayor && x.fecha.startsWith(String(anio)) && esDiaHabil(x.fecha) && !/^vigilia/i.test(x.titulo));
   const [marcadas, setMarcadas] = useState<string[]>([]);
   const [ocupado, setOcupado] = useState(false);
 

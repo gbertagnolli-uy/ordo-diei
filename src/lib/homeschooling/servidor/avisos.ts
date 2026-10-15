@@ -15,9 +15,8 @@ export async function avisarComentario(d: { autorId: number; autorNombre: string
     : (await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Padre", "Madre"] } }, select: { id: true } })).map((u) => u.id);
   const ids = destinatarios.filter((id) => id !== d.autorId);
   if (ids.length === 0) return;
-  await prisma.avisoEstudio.createMany({
-    data: ids.map((usuarioId) => ({ usuarioId, tipo: "comentario", titulo: `${d.autorNombre} comentó en «${d.titulo}»`, cuerpo: resumen(d.texto), href: d.href })),
-  });
+  // Uno por uno: si un destinatario ya no existe (se borró justo ahora) los demás igual reciben su aviso
+  await Promise.allSettled(ids.map((usuarioId) => prisma.avisoEstudio.create({ data: { usuarioId, tipo: "comentario", titulo: `${d.autorNombre} comentó en «${d.titulo}»`, cuerpo: resumen(d.texto), href: d.href } })));
 }
 
 export async function misAvisos(a: Actor, limite = 30): Promise<{ avisos: AvisoVista[]; sinLeer: number }> {

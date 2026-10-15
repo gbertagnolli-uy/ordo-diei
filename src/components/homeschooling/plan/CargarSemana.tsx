@@ -75,7 +75,7 @@ function Formulario({ alumno, lunes, onLunes, onListo }: { alumno: { id: number;
             <Label htmlFor={`sem-${fecha}`} className="capitalize">
               {etiquetaDia(fecha)}
             </Label>
-            <Textarea id={`sem-${fecha}`} rows={2} value={porDia[fecha] ?? ""} onChange={(e) => cambiar(fecha, e.target.value)} placeholder="https://youtu.be/…  ·  Hacer la hoja de multiplicar" className="text-sm" />
+            <Textarea id={`sem-${fecha}`} rows={2} value={porDia[fecha] ?? ""} onChange={(e) => cambiar(fecha, e.target.value)} placeholder="https://youtu.be/…  ·  Hacer la hoja de multiplicar" className="field-sizing-fixed min-w-0 text-sm break-all" />
           </div>
         ))}
         <button type="button" onClick={() => setVerFinde((v) => !v)} className="text-sm text-primary underline underline-offset-2">
