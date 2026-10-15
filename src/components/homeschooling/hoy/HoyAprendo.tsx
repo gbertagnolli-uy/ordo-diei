@@ -19,6 +19,8 @@ import VisorHistoria from "@/components/homeschooling/neuro/VisorHistoria";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
+import type { MaterialVista } from "@/lib/homeschooling/servidor/materiales";
+import MaterialSuelto from "@/components/homeschooling/material/MaterialSuelto";
 import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidencia";
 import RepasoDeHoy from "./RepasoDeHoy";
 import TarjetaHoy from "./TarjetaHoy";
@@ -31,6 +33,7 @@ export default function HoyAprendo({
   dias,
   preferencia,
   historias,
+  sueltos = [],
 }: {
   nombre: string;
   fotoUrl: string | null;
@@ -38,6 +41,8 @@ export default function HoyAprendo({
   dias: DiaHoy[];
   preferencia: Preferencia;
   historias: HistoriaVista[];
+  /** Material que el padre dejó para hoy sin curso (lane 166) */
+  sueltos?: MaterialVista[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState<number | null>(null);
@@ -98,9 +103,11 @@ export default function HoyAprendo({
 
       <RepasoDeHoy />
 
+      <MaterialSuelto materiales={sueltos} />
+
       {vistaElegida.layout === "primero-despues" && dias.length > 0 ? (
         <PrimeroDespues dias={dias} recompensa={preferencia.recompensaDespues} onAbrir={(d) => setAbierto(d.diaId)} onFoto={setFotoDia} />
-      ) : dias.length === 0 ? (
+      ) : dias.length === 0 && sueltos.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">

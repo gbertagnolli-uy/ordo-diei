@@ -4,10 +4,13 @@
 // Cambios: sin pestaña de assets (los PDF van como enlace en la lección), lecciones que ya vienen del layout
 // (una sola consulta), fecha y miniaturas con las utilidades de HS0, plan de cada alumno y «Asignar a…», ui/ y tokens.
 
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, CheckCircle2, EllipsisVertical, Circle, Edit2, FileText, Play, Plus, Trash2, Video } from "lucide-react";
+import { useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, CheckCircle2, EllipsisVertical, Circle, Edit2, FileText, Paperclip, Play, Plus, Trash2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
@@ -59,6 +62,8 @@ export default function CursoDetalle({
   const canManage = hasPermission(userRole, "editar_curso");
   const recordings = module.recordings ?? [];
   const conLecciones = module.tipo === "curso_videos" || module.tipo === "enlaces";
+  // Material de una lección (lane 166)
+  const [materialDe, setMaterialDe] = useState<{ id: number; title: string } | null>(null);
 
   return (
     <div className="space-y-6">
@@ -206,6 +211,11 @@ export default function CursoDetalle({
                       {recording.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{recording.description}</p>}
                     </div>
                   </button>
+                  {canManage && (
+                    <Button variant="ghost" size="icon-sm" aria-label={`Material de «${recording.title}»`} title="Material de la lección" onClick={() => setMaterialDe({ id: recording.id, title: recording.title })}>
+                      <Paperclip />
+                    </Button>
+                  )}
                   {canManage && recordings.length > 1 && (
                     <div className="flex shrink-0 flex-col pr-2">
                       <Button variant="ghost" size="icon-xs" aria-label={`Subir «${recording.title}»`} disabled={indice === 0} onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice - 1))}>
@@ -223,6 +233,19 @@ export default function CursoDetalle({
           )}
         </>
       )}
+      <Sheet open={!!materialDe} onOpenChange={(o) => !o && setMaterialDe(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Material de la lección</SheetTitle>
+            <SheetDescription>{materialDe?.title}</SheetDescription>
+          </SheetHeader>
+          {materialDe && (
+            <div className="px-4 pb-4">
+              <ListaMaterial key={materialDe.id} destino={{ leccionId: materialDe.id }} contexto={`la lección «${materialDe.title}»`} />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

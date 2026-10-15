@@ -106,6 +106,8 @@ model Usuario {
   evidenciasRevisadas EvidenciaAprendizaje[]  @relation("EvidenciasRevisadas")
   intentosQuiz        IntentoQuiz[]           @relation("IntentosQuizAlumno")
   repasos             TarjetaRepaso[]         @relation("RepasosAlumno")
+  materialesAlumno    MaterialEstudio[]       @relation("MaterialesAlumno")
+  materialesCreados   MaterialEstudio[]       @relation("MaterialesCreados")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -786,12 +788,13 @@ model LeccionCurso {
   creadorId       Int              @map("Creador_ID")
   createdAt       DateTime         @default(now()) @map("Created_At")
 
-  recurso   RecursoCurso      @relation(fields: [recursoId], references: [id], onDelete: Cascade)
-  creador   Usuario           @relation("LeccionesCreadas", fields: [creadorId], references: [id])
-  progresos ProgresoLeccion[]
-  preguntas PreguntaLeccion[]
-  intentos  IntentoQuiz[]
-  repasos   TarjetaRepaso[]
+  recurso    RecursoCurso      @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  creador    Usuario           @relation("LeccionesCreadas", fields: [creadorId], references: [id])
+  progresos  ProgresoLeccion[]
+  preguntas  PreguntaLeccion[]
+  intentos   IntentoQuiz[]
+  repasos    TarjetaRepaso[]
+  materiales MaterialEstudio[]
 
   @@unique([recursoId, orden])
   @@map("Homeschool_Lecciones")
@@ -829,6 +832,7 @@ model DiaLectivo {
   plan       PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
   tarea      Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
   evidencias EvidenciaAprendizaje[]
+  materiales MaterialEstudio[]
 
   @@unique([planId, fecha])
   @@index([fecha, estado])
@@ -962,11 +966,59 @@ model TarjetaRepaso {
   @@map("Homeschool_Repasos")
 }
 
+// ─── Material de estudio (lane 166, M1) ─────────────────────────────────────
+// Lo que el padre le deja al hijo para un día o una lección, en el formato que sea. Vive FUERA de la base (YouTube, Drive,
+// Docs, enlaces); solo el texto y el markdown se guardan acá. Se cuelga de una lección, de un día lectivo o, suelto, de un
+// alumno y una fecha (tarea del día sin curso).
+enum TipoMaterial {
+  texto
+  markdown
+  video
+  pdf
+  documento
+  epub
+  web
+  archivo
+}
+
+model MaterialEstudio {
+  id                Int          @id @default(autoincrement())
+  titulo            String       @map("Titulo")
+  tipo              TipoMaterial @map("Tipo")
+  proveedor         String?      @map("Proveedor")
+  externoId         String?      @map("Externo_ID")
+  url               String?      @map("URL")
+  contenido         String?      @map("Contenido")
+  miniaturaUrl      String?      @map("Miniatura_URL")
+  orden             Int          @default(0) @map("Orden")
+  // Cuántas veces el hijo puede abrir la vista de impresión (lane P1); 0 = no se puede imprimir
+  limiteImpresiones Int          @default(2) @map("Limite_Impresiones")
+  leccionId         Int?         @map("Leccion_ID")
+  diaLectivoId      Int?         @map("Dia_Lectivo_ID")
+  // Material suelto: para un alumno en una fecha, sin curso
+  alumnoId          Int?         @map("Alumno_ID")
+  fecha             DateTime?    @map("Fecha") @db.Date
+  hechoEn           DateTime?    @map("Hecho_En")
+  creadorId         Int          @map("Creador_ID")
+  createdAt         DateTime     @default(now()) @map("Created_At")
+  updatedAt         DateTime     @updatedAt @map("Updated_At")
+
+  leccion    LeccionCurso? @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  diaLectivo DiaLectivo?   @relation(fields: [diaLectivoId], references: [id], onDelete: Cascade)
+  alumno     Usuario?      @relation("MaterialesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  creador    Usuario       @relation("MaterialesCreados", fields: [creadorId], references: [id])
+
+  @@index([leccionId, orden])
+  @@index([diaLectivoId, orden])
+  @@index([alumnoId, fecha])
+  @@map("Homeschool_Materiales")
+}
+
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
 
 model DiaLiturgico {
   version   String   @map("Version") // "1906" | "1888" | "1570"
-  fecha     DateTime @db.Date @map("Fecha")
+  fecha     DateTime @map("Fecha") @db.Date
   titulo    String   @map("Titulo") // "S. Callisti Papæ et Martyris"
   tituloEs  String?  @map("Titulo_Es") // "S. Calixto, Papa y Mártir" (si DO lo trae)
   rango     String   @map("Rango") // "Duplex"
@@ -990,7 +1042,7 @@ model DocumentoLiturgico {
   version   String    @map("Version")
   tipo      String    @map("Tipo") // "hora" | "missa" | "martyrologium" | "libro"
   clave     String    @map("Clave") // "2026-10-14/Laudes" · "2026-10-14" · "Sancti/10-14" · "Psalterium/92"
-  fecha     DateTime? @db.Date @map("Fecha")
+  fecha     DateTime? @map("Fecha") @db.Date
   titulo    Json      @map("Titulo")
   secciones Json      @map("Secciones") // Seccion[]
 
@@ -1003,8 +1055,8 @@ model GeneracionLiturgica {
   id         Int      @id @default(autoincrement())
   doCommit   String   @map("DO_Commit")
   versiones  String   @map("Versiones")
-  desde      DateTime @db.Date @map("Desde")
-  hasta      DateTime @db.Date @map("Hasta")
+  desde      DateTime @map("Desde") @db.Date
+  hasta      DateTime @map("Hasta") @db.Date
   documentos Int      @map("Documentos")
   bloques    Int      @map("Bloques_Nuevos")
   createdAt  DateTime @default(now()) @map("Created_At")

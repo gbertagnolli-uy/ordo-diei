@@ -4,6 +4,7 @@ import prisma from "../../prisma.ts";
 import { aClave, hoyEnFamilia } from "../../habitos/server.ts";
 import { estaBloqueado, motivoLeccionBloqueada, rangoTexto } from "../dia.ts";
 import { sincronizarDias, TIPOS_CON_LECCIONES, unidadesVistas } from "./progreso.ts";
+import { aVista, materialSueltoDeHoy, type MaterialVista } from "./materiales.ts";
 
 export type LeccionHoy = {
   id: number;
@@ -20,6 +21,8 @@ export type LeccionHoy = {
   quiz: boolean;
   /** Cantidad de checkpoints (pausas con pregunta) dentro del video */
   checkpoints: number;
+  /** Material que el padre dejó para esta lección (lane 166) */
+  materiales: MaterialVista[];
 };
 
 export type DiaHoy = {
@@ -38,6 +41,8 @@ export type DiaHoy = {
   unidadHasta: number;
   progreso: number;
   lecciones: LeccionHoy[];
+  /** Material que el padre dejó para este día (lane 166) */
+  materiales: MaterialVista[];
 };
 
 export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Promise<DiaHoy[]> {
@@ -68,6 +73,13 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
     }
     if (elegidos.length === 0) continue;
 
+    // Material del día y de sus lecciones, en una sola consulta (lane 166)
+    const idsLeccion = recurso.lecciones.filter((l) => elegidos.some((e) => l.orden >= e.dia.unidadDesde && l.orden <= e.dia.unidadHasta)).map((l) => l.id);
+    const materiales = await prisma.materialEstudio.findMany({
+      where: { OR: [{ diaLectivoId: { in: elegidos.map((e) => e.dia.id) } }, { leccionId: { in: idsLeccion } }] },
+      orderBy: [{ orden: "asc" }, { id: "asc" }],
+    });
+
     const conLecciones = TIPOS_CON_LECCIONES.includes(recurso.tipo);
     const preguntas = conLecciones ? await prisma.preguntaLeccion.findMany({ where: { leccion: { recursoId: recurso.id } }, select: { leccionId: true, segundoVideo: true } }) : [];
     const vistas = conLecciones ? await unidadesVistas(prisma, alumnoId, recurso.id) : null;
@@ -90,6 +102,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
                 videoId: l.videoId,
                 quiz: preguntas.some((q) => q.leccionId === l.id && q.segundoVideo === null),
                 checkpoints: preguntas.filter((q) => q.leccionId === l.id && q.segundoVideo !== null).length,
+                materiales: materiales.filter((m) => m.leccionId === l.id).map(aVista),
                 completada: vistas?.conProgreso.has(l.orden) ?? false,
                 bloqueada: !!motivo,
                 motivo,
@@ -111,9 +124,13 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
         unidadHasta: dia.unidadHasta,
         progreso: recurso.totalUnidades > 0 ? Math.min(100, Math.round((totalHecho / recurso.totalUnidades) * 100)) : 0,
         lecciones,
+        materiales: materiales.filter((m) => m.diaLectivoId === dia.id).map(aVista),
       });
     }
   }
   return salida;
 }
 
+/** Material suelto del alumno para hoy: tareas del día sin curso (lane 166) */
+export const materialSueltoHoy = materialSueltoDeHoy;
+export type { MaterialVista };

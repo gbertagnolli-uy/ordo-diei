@@ -119,3 +119,43 @@ export const datosHistoria = z.object({
   titulo: z.string().trim().min(1, "Falta el título de la historia").max(100),
   pasos: z.array(z.object({ texto: z.string().max(300), icono: z.string().max(30) })).max(8),
 });
+
+// ── Material de estudio (lane 166, M1) ──
+const tipoMaterial = z.enum(["texto", "markdown", "video", "pdf", "documento", "epub", "web", "archivo"]);
+const destinoMaterial = z.union([
+  z.object({ diaLectivoId: idPositivo }),
+  z.object({ leccionId: idPositivo }),
+  z.object({ alumnoId: idPositivo, fecha: claveFecha }),
+]);
+
+export const datosMaterial = z.object({
+  destino: destinoMaterial,
+  entrada: z.string().trim().min(1, "Pegá un enlace o escribí el texto").max(60000),
+  titulo: z.string().trim().max(150).nullable().optional(),
+  tipo: tipoMaterial.nullable().optional(),
+  limiteImpresiones: z.number().int().min(0).max(10).nullable().optional(),
+});
+
+export const cambiosMaterial = z.object({
+  titulo: z.string().trim().min(1, "Falta el título").max(150).optional(),
+  tipo: tipoMaterial.optional(),
+  limiteImpresiones: z.number().int().min(0).max(10).optional(),
+  contenido: z.string().max(60000).nullable().optional(),
+  orden: z.number().int().min(0).optional(),
+});
+
+export const destinoDe = (req: Request) => {
+  const q = new URL(req.url).searchParams;
+  const n = (k: string) => {
+    const v = Number(q.get(k));
+    return Number.isInteger(v) && v > 0 ? v : null;
+  };
+  const dia = n("diaId");
+  const leccion = n("leccionId");
+  const alumno = n("alumnoId");
+  const fecha = q.get("fecha");
+  if (dia) return { diaLectivoId: dia };
+  if (leccion) return { leccionId: leccion };
+  if (alumno && fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { alumnoId: alumno, fecha };
+  throw new Error("Falta el día, la lección o el alumno con su fecha");
+};

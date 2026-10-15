@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff } from "lucide-react";
+import { CalendarDays, CalendarOff, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,6 +17,7 @@ import CalendarView, { type EventoCalendario } from "@/components/homeschooling/
 import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import MateriaHeader from "@/components/homeschooling/cursos/MateriaHeader";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
 import HoyNoHayClase from "./HoyNoHayClase";
 
 export type DiaDelPlan = {
@@ -63,6 +64,8 @@ export default function PlanCalendario({
   const [sel, setSel] = useState<DiaDelPlan | null>(null);
   const [nuevaFecha, setNuevaFecha] = useState("");
   const [sinClase, setSinClase] = useState(false);
+  // Material suelto: tarea del día sin curso (lane 166)
+  const [sueltoFecha, setSueltoFecha] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
   const eventos = useMemo<EventoCalendario<Recurso>[]>(
@@ -119,7 +122,10 @@ export default function PlanCalendario({
         alumnoId={alumnoId}
         onAlumno={(id) => router.push(`/dashboard/homeschooling/plan?alumno=${id}`)}
       />
-      <div className="flex justify-end px-1">
+      <div className="flex flex-wrap justify-end gap-2 px-1">
+        <Button variant="outline" onClick={() => setSueltoFecha(aClaveLocal(new Date()))}>
+          <Paperclip /> Material para un día
+        </Button>
         <Button variant="outline" onClick={() => setSinClase(true)}>
           <CalendarOff /> Hoy no hay clase
         </Button>
@@ -157,7 +163,7 @@ export default function PlanCalendario({
       />
 
       <Sheet open={!!sel} onOpenChange={(o) => !o && setSel(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-sm">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-sm">
           {sel && (
             <>
               <SheetHeader>
@@ -171,6 +177,12 @@ export default function PlanCalendario({
                   {sel.unidadDesde === sel.unidadHasta ? `${ETIQUETA_UNIDAD[sel.unidadTipo] ?? "unidades"} ${sel.unidadDesde}` : `${ETIQUETA_UNIDAD[sel.unidadTipo] ?? "unidades"} ${sel.unidadDesde} a ${sel.unidadHasta}`}
                 </p>
                 <p className="text-muted-foreground">Estado: {ESTADO[sel.estado]}</p>
+                <div className="space-y-2">
+                  <h3 className="flex items-center gap-2 font-medium text-foreground">
+                    <Paperclip className="size-4" aria-hidden /> Material de este día
+                  </h3>
+                  <ListaMaterial key={sel.id} destino={{ diaLectivoId: sel.id }} contexto={`${sel.curso}, ${sel.fecha}`} />
+                </div>
                 {editable(sel) ? (
                   <>
                     <div className="flex gap-2">
@@ -189,6 +201,21 @@ export default function PlanCalendario({
                 )}
               </div>
             </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={sueltoFecha !== null} onOpenChange={(o) => !o && setSueltoFecha(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Material para un día</SheetTitle>
+            <SheetDescription>Lo que {quien?.nombre ?? "el alumno"} tiene que hacer ese día, sin importar el curso: una lectura, una hoja, un video.</SheetDescription>
+          </SheetHeader>
+          {sueltoFecha !== null && (
+            <div className="space-y-4 px-4 pb-4 text-sm">
+              <Input type="date" aria-label="Día" value={sueltoFecha} onChange={(e) => e.target.value && setSueltoFecha(e.target.value)} />
+              <ListaMaterial key={sueltoFecha} destino={{ alumnoId, fecha: sueltoFecha }} contexto={`${quien?.nombre ?? "el alumno"}, ${sueltoFecha}`} />
+            </div>
           )}
         </SheetContent>
       </Sheet>
