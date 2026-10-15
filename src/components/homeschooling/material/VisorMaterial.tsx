@@ -3,12 +3,13 @@
 // Propio de Ordo (lane 167, M2): visor de material a pantalla completa. Muestra cada tipo a su manera —video, markdown y texto
 // renderizados, PDF y Google Docs/Drive en visor embebido, y lo que no se puede incrustar (ePub, webs) con un botón claro para
 // abrirlo— y deja pasar al anterior/siguiente sin cerrar. El hijo lee o mira; no hay nada que configurar.
-import { useEffect } from "react";
-import { ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, ExternalLink, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ETIQUETA_TIPO } from "@/lib/homeschooling/material";
 import type { MaterialVista } from "@/lib/homeschooling/servidor/materiales";
+import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
 import IconoMaterial from "./IconoMaterial";
 import LectorEpub from "./LectorEpub";
 import MarkdownTexto from "./MarkdownTexto";
@@ -83,6 +84,8 @@ export default function VisorMaterial({
   acciones?: (m: MaterialVista) => React.ReactNode;
 }) {
   const m = indice !== null ? (lista[indice] ?? null) : null;
+  // Comentarios de la familia sobre este material: se cargan recién al abrirlos (lane 190)
+  const [conversando, setConversando] = useState<number | null>(null);
 
   // ← / → pasan al material anterior / siguiente
   useEffect(() => {
@@ -124,6 +127,16 @@ export default function VisorMaterial({
             </SheetHeader>
             <div className="mx-auto w-full min-w-0 max-w-4xl flex-1 p-4 sm:p-6">
               <Cuerpo key={m.id} m={m} />
+              <div className="mt-6 border-t pt-4">
+                <Button variant="ghost" size="sm" className="-ml-2 text-muted-foreground" aria-expanded={conversando === m.id} onClick={() => setConversando(conversando === m.id ? null : m.id)}>
+                  <MessageCircle /> {conversando === m.id ? "Ocultar comentarios" : "Comentarios de la familia"}
+                </Button>
+                {conversando === m.id && (
+                  <div className="mt-3">
+                    <ComentariosEstudio key={m.id} destino={{ materialId: m.id }} titulo="Comentarios" placeholder="Una duda, una idea, una felicitación…" />
+                  </div>
+                )}
+              </div>
             </div>
             {lista.length > 1 && (
               <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t bg-background/95 p-3 backdrop-blur">
