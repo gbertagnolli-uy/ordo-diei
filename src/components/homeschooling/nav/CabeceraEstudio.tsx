@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, NotebookPen, type LucideIcon } from "lucide-react";
+import { CalendarDays, CalendarOff, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, NotebookPen, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -18,6 +18,7 @@ type Pestana = { href: string; etiqueta: string; icono: LucideIcon; exacta?: boo
 const PADRE: Pestana[] = [
   { href: RAIZ, etiqueta: "Panel", icono: LayoutDashboard, exacta: true },
   { href: `${RAIZ}/plan`, etiqueta: "Plan", icono: CalendarDays },
+  { href: `${RAIZ}/semana`, etiqueta: "Semana", icono: CalendarRange },
   { href: `${RAIZ}/revision`, etiqueta: "Revisión", icono: ClipboardCheck, insignia: "revision" },
   { href: `${RAIZ}/libreta`, etiqueta: "Libreta", icono: NotebookPen },
   { href: `${RAIZ}/portafolio`, etiqueta: "Portafolio", icono: Camera },
