@@ -81,7 +81,11 @@ export function parsearCatecismo(texto: string): PreguntaCatecismo[] {
       const pregunta = limpiar(todo.slice(0, i + 1));
       const respuesta = limpiar(todo.slice(i + 1).replace(/^\s*[-–—]\s*/, ""));
       if (respuesta) out.push({ n, parte: p, capitulo: c, pregunta, respuesta });
+      return;
     }
+    // preguntas sin signo («Decidlos. - …», «Rezad el Padrenuestro. - …»): se corta en el guion o, si no lo hay, en el primer punto
+    const m = /^(.*?[.:])\s*[-–—]\s+(.*)$/.exec(todo) ?? /^(.*?\.)\s+(.*)$/.exec(todo);
+    if (m && m[1] && m[2]) out.push({ n, parte: p, capitulo: c, pregunta: limpiar(m[1]), respuesta: limpiar(m[2]) });
   };
 
   const cerrar = () => {
@@ -123,7 +127,7 @@ export function parsearCatecismo(texto: string): PreguntaCatecismo[] {
     }
     // subtítulos numerados dentro de un capítulo («5 °-Del propósito»): no son parte de la respuesta
     if (/^\d\s?[°o.]\s?-/.test(l)) continue;
-    if (esperaTitulo && !actual && /^[A-ZÁÉÍÓÚÑ ,.:;'«»“”-]+$/.test(l)) {
+    if (esperaTitulo && !actual && /^[A-ZÁÉÍÓÚÑÜ ,.:;'"«»“”-]+$/.test(l)) {
       // título en mayúsculas debajo de «PARTE …» / «CAPÍTULO …» (puede ocupar varias líneas)
       if (esperaTitulo === "capitulo") {
         const t = capitalizar(l);

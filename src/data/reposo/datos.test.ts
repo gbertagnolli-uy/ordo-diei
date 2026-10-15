@@ -64,18 +64,21 @@ test("el latín no conserva el carácter de control que dejó la ligadura œ", (
 });
 
 test("catecismo completo y ≥ 300 preguntas entran en los límites del reposo (§4.3)", () => {
-  assert.ok(catecismo.length >= 600, `solo ${catecismo.length}`);
+  assert.ok(catecismo.length >= 990, `solo ${catecismo.length}`); // PDF: 994 preguntas menos la 338, que falta en la fuente
   const caben = catecismo.filter((p) => p.pregunta.length <= 140 && p.respuesta.length <= 360);
   assert.ok(caben.length >= 300, `solo ${caben.length}`);
   assert.equal(new Set(catecismo.map((p) => p.n)).size, catecismo.length);
   const p1 = catecismo.find((p) => p.n === 1);
   assert.equal(p1?.pregunta, "¿Sois cristiano?");
   assert.equal(p1?.respuesta, "Sí, señor; soy cristiano por la gracia de Dios.");
+  assert.equal(catecismo.find((p) => p.n === 994)?.pregunta, "¿Qué haréis al oír doblar a muerto?");
+  assert.equal(catecismo.find((p) => p.n === 18)?.pregunta, "Decidlos.");
 });
 
-test("catecismo: toda pregunta es una pregunta y ninguna respuesta tiene restos del OCR", () => {
+test("catecismo: toda pregunta es una pregunta (o un mandato como «Decidlos.») y no hay restos de lectura", () => {
   for (const p of catecismo) {
-    assert.ok(p.pregunta.startsWith("¿") || p.pregunta.endsWith("?"), `n.º ${p.n}`);
+    assert.ok(p.pregunta.startsWith("¿") || /[?.]$/.test(p.pregunta), `n.º ${p.n}`);
+    assert.ok(!/\p{L}-\s|\p{L}-$/u.test(p.respuesta), `n.º ${p.n}: guion de fin de línea`);
     assert.ok(p.respuesta.length >= 8, `n.º ${p.n}`);
     assert.ok(!/[|_~^*{}\\]/.test(p.pregunta + p.respuesta), `n.º ${p.n}: símbolo del OCR`);
   }

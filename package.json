@@ -11,6 +11,8 @@
     "postinstall": "prisma generate",
     "imagenes": "node scripts/convertir-imagenes.mjs",
     "reposo:fuentes": "bash scripts/reposo/descargar-fuentes.sh",
+    "reposo:catecismo-pdf": "bash scripts/reposo/catecismo-pdf.sh",
+    "reposo:vulgata-epub": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reposo/verificar-vulgata-epub.ts",
     "reposo:frases": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reposo/generar-frases.ts",
     "liturgia:descargar": "bash scripts/liturgia/descargar.sh && bash scripts/liturgia/instalar-perl.sh",
     "liturgia:generar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/liturgia/generar.ts"
