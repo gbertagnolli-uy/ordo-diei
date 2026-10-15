@@ -21,6 +21,8 @@ import { updateGroup } from "@/lib/homeschooling/roost/services/group";
 import { toast } from "@/lib/toast";
 import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
 import PonerseAlDia from "./PonerseAlDia";
+import ResumenSemanal from "./ResumenSemanal";
+import type { ResumenSemanal as DatosSemana } from "@/lib/homeschooling/servidor/resumenSemana";
 import AsistenteCurso from "./AsistenteCurso";
 
 export type ProgresoAlumno = AlumnoLite & { cursos: number; porcentaje: number };
@@ -34,6 +36,7 @@ export default function PanelHomeschooling({
   progresos,
   pendientes,
   avisos,
+  semana,
 }: {
   materias: (Group & { course_count: number })[];
   panel: MateriaPanel[];
@@ -43,6 +46,7 @@ export default function PanelHomeschooling({
   progresos: ProgresoAlumno[];
   pendientes: number;
   avisos: { tarjetaId: number; texto: string }[];
+  semana?: DatosSemana;
 }) {
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
@@ -87,6 +91,8 @@ export default function PanelHomeschooling({
           ))}
         </div>
       )}
+
+      {semana && <ResumenSemanal semana={semana} />}
 
       {alumnos.length > 0 && (
         <section aria-label="Hoy" className="space-y-3">
