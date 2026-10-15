@@ -15,7 +15,7 @@ import MarkdownTexto from "./MarkdownTexto";
 function Cuerpo({ m }: { m: MaterialVista }) {
   const v = m.vista;
 
-  if (m.contenido !== null) return <MarkdownTexto texto={m.contenido} markdown={m.tipo === "markdown"} className="mx-auto max-w-prose" />;
+  if (m.contenido !== null) return <MarkdownTexto texto={m.contenido} markdown={m.tipo === "markdown"} className="mx-auto w-full min-w-0 max-w-prose" />;
 
   if (m.tipo === "video" && v.embedUrl) {
     return v.videoDirecto ? (
@@ -38,7 +38,7 @@ function Cuerpo({ m }: { m: MaterialVista }) {
 
   // ePub, páginas web y todo lo que no admite iframe
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed p-8 text-center">
+    <div className="mx-auto flex w-full min-w-0 max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed p-8 text-center">
       <IconoMaterial tipo={m.tipo} className="size-12 text-primary" />
       <div>
         <p className="text-lg font-semibold text-foreground">{m.titulo}</p>
