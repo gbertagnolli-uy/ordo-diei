@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
+import ImportarCurso from "./ImportarCurso";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
 import CursoCard from "./CursoCard";
 import { mover } from "./CursoDetalle";
@@ -20,6 +21,8 @@ export default function CursoGrid({
   onModuleClick,
   onAddModule,
   onReordenar,
+  materiaId,
+  onImportado,
 }: {
   modules: ModuleWithProgress[];
   isLoading: boolean;
@@ -27,6 +30,8 @@ export default function CursoGrid({
   onModuleClick: (moduleId: number) => void;
   onAddModule: () => void;
   onReordenar: (idsEnOrden: number[]) => void;
+  materiaId: number;
+  onImportado: (cursoId: number) => void;
 }) {
   const [ordenando, setOrdenando] = useState(false);
   const canManage = hasPermission(userRole, "crear_curso");
@@ -55,6 +60,7 @@ export default function CursoGrid({
                 <ListOrdered /> {ordenando ? "Listo" : "Ordenar"}
               </Button>
             )}
+            <ImportarCurso materiaId={materiaId} onImportado={onImportado} />
             <Button onClick={onAddModule}>
               <Plus /> Nuevo curso
             </Button>
@@ -75,9 +81,12 @@ export default function CursoGrid({
           </EmptyHeader>
           {canManage && (
             <EmptyContent>
-              <Button variant="outline" onClick={onAddModule}>
-                <Plus /> Crear el primer curso
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button variant="outline" onClick={onAddModule}>
+                  <Plus /> Crear el primer curso
+                </Button>
+                <ImportarCurso materiaId={materiaId} onImportado={onImportado} />
+              </div>
             </EmptyContent>
           )}
         </Empty>

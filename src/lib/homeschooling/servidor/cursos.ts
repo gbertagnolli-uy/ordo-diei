@@ -224,7 +224,7 @@ export type DatosLeccion = {
 };
 
 /** Video a partir de la URL (HS0); una URL que no es YouTube/Vimeo queda como enlace sin reproductor */
-function datosDeVideo(url: string | null | undefined) {
+export function datosDeVideo(url: string | null | undefined) {
   const limpia = url?.trim() || null;
   const video = limpia ? parsearEnlaceVideo(limpia) : null;
   return {
@@ -245,7 +245,7 @@ async function maxUnidadCumplida(tx: Tx, recursoId: number) {
 }
 
 /** Sincroniza totalUnidades con las lecciones y recalcula los planes activos (regla 8) */
-async function sincronizarTotal(tx: Tx, recurso: { id: number; tipo: TipoRecurso }, hoy: string) {
+export async function sincronizarTotal(tx: Tx, recurso: { id: number; tipo: TipoRecurso }, hoy: string) {
   if (!TIPOS_CON_LECCIONES.includes(recurso.tipo)) return;
   const total = await tx.leccionCurso.count({ where: { recursoId: recurso.id } });
   await tx.recursoCurso.update({ where: { id: recurso.id }, data: { totalUnidades: total } });
@@ -268,6 +268,33 @@ export async function crearLeccion(a: Actor, d: DatosLeccion, hoy: string) {
     await sincronizarTotal(tx, recurso, hoy);
     return mapRecording(leccion);
   });
+}
+
+/** Varias lecciones de una vez (carga masiva, lane 170): una sola transacción y un solo recálculo de los planes */
+export async function crearLeccionesEnLote(a: Actor, recursoId: number, items: { titulo: string; url?: string | null; instrucciones?: string | null }[], hoy: string) {
+  exigirPadre(a);
+  if (items.length === 0) throw new DatoInvalidoError("No hay lecciones para crear");
+  if (items.length > 100) throw new DatoInvalidoError("Se pueden crear hasta 100 lecciones por vez");
+  for (const it of items) {
+    if (!it.titulo.trim()) throw new DatoInvalidoError("Falta el título de una lección");
+    if (it.url?.trim() && !/^https?:\/\//i.test(it.url.trim())) throw new DatoInvalidoError(`El enlace de «${it.titulo.trim()}» tiene que empezar con http:// o https://`);
+  }
+  return prisma.$transaction(
+    async (tx) => {
+      const recurso = await tx.recursoCurso.findUnique({ where: { id: recursoId } });
+      if (!recurso) throw new NoEncontradoError("Curso no encontrado");
+      if (!TIPOS_CON_LECCIONES.includes(recurso.tipo)) throw new DatoInvalidoError("Este curso no tiene lecciones: se reparte por páginas o unidades");
+      let orden = (await tx.leccionCurso.aggregate({ where: { recursoId }, _max: { orden: true } }))._max.orden ?? 0;
+      const creadas = [];
+      for (const it of items) {
+        orden += 1;
+        creadas.push(await tx.leccionCurso.create({ data: { recursoId, orden, titulo: it.titulo.trim().slice(0, 150), instrucciones: it.instrucciones ?? null, creadorId: a.id, ...datosDeVideo(it.url) } }));
+      }
+      await sincronizarTotal(tx, recurso, hoy);
+      return creadas.map((c) => mapRecording(c));
+    },
+    { timeout: 30_000 }
+  );
 }
 
 export async function editarLeccion(a: Actor, id: number, d: Partial<Omit<DatosLeccion, "recursoId">>) {

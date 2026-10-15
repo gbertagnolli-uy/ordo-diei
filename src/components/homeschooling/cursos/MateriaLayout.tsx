@@ -19,6 +19,7 @@ import { toast } from "@/lib/toast";
 import AsistenteCurso from "@/components/homeschooling/plan/AsistenteCurso";
 import EditarPlan, { type PlanEditable } from "@/components/homeschooling/plan/EditarPlan";
 import { api } from "@/lib/homeschooling/roost/services/http";
+import AgregarVarias from "./AgregarVarias";
 import CursoDetalle, { type AccionPlan, type PlanVista } from "./CursoDetalle";
 import CursoForm from "./CursoForm";
 import EditorPreguntas from "./EditorPreguntas";
@@ -61,6 +62,7 @@ export default function MateriaLayout({
   const [leccionForm, setLeccionForm] = useState<{ open: boolean; editing: RecordingWithCompletion | null }>({ open: false, editing: null });
   const [asignar, setAsignar] = useState<Module | null>(null);
   const [preguntas, setPreguntas] = useState(false);
+  const [agregarVarias, setAgregarVarias] = useState(false);
   const [editarMateria, setEditarMateria] = useState(false);
   const [archivar, setArchivar] = useState(false);
   const [editarPlan, setEditarPlan] = useState<PlanEditable | null>(null);
@@ -205,7 +207,7 @@ export default function MateriaLayout({
 
         <div className="p-4 sm:p-6">
           {view === "grid" && (
-            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onReordenar={reordenarCursos} />
+            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onReordenar={reordenarCursos} materiaId={group.id} onImportado={(id) => { refrescar(); irAlCurso(id); }} />
           )}
 
           {view === "module" && activeModule && (
@@ -217,6 +219,17 @@ export default function MateriaLayout({
               onBack={irALaGrilla}
               materiaNombre={group.name}
               onAddRecording={() => setLeccionForm({ open: true, editing: null })}
+              onAddVarias={() => setAgregarVarias(true)}
+              onDuplicar={async () => {
+                try {
+                  const r = await api<{ id: number }>(`/api/homeschooling/cursos/${activeModule.id}/duplicar`, { method: "POST", body: {} });
+                  toast.success("Curso duplicado");
+                  refrescar();
+                  irAlCurso(r.id);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "No se pudo duplicar el curso");
+                }
+              }}
               onEditModule={() => setCursoForm({ open: true, editing: activeModule })}
               onDeleteModule={() => setBorrar({ tipo: "curso", id: activeModule.id, nombre: activeModule.title })}
               onAsignar={() => setAsignar(activeModule)}
@@ -269,6 +282,19 @@ export default function MateriaLayout({
           onClose={() => setLeccionForm({ open: false, editing: null })}
           onSuccess={() => {
             setLeccionForm({ open: false, editing: null });
+            refrescar();
+          }}
+        />
+      )}
+
+      {activeModuleId && (
+        <AgregarVarias
+          key={activeModuleId}
+          open={agregarVarias}
+          recursoId={activeModuleId}
+          onClose={() => setAgregarVarias(false)}
+          onCreadas={() => {
+            setAgregarVarias(false);
             refrescar();
           }}
         />
