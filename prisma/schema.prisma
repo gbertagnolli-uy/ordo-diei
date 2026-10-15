@@ -114,6 +114,7 @@ model Usuario {
   comentariosEstudio  ComentarioEstudio[]     @relation("ComentariosEstudioAutor")
   reaccionesEstudio   ReaccionEstudio[]       @relation("ReaccionesEstudioUsuario")
   avisosEstudio       AvisoEstudio[]          @relation("AvisosEstudioUsuario")
+  lecturas            LecturaLibro[]          @relation("LecturasAlumno")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -1136,6 +1137,55 @@ model AvisoEstudio {
 
   @@index([usuarioId, leidoEn, createdAt])
   @@map("Homeschool_Avisos")
+}
+
+// ─── Lectura real (lane 175, L1) ────────────────────────────────────────────
+// La lista de lectura de cada hijo: libros por leer, leyendo y leídos, con las páginas, la valoración y la narración (lo que el
+// chico contó con sus palabras, anotado por un padre). Los libros son físicos: acá solo se lleva la cuenta.
+enum EstadoLectura {
+  por_leer
+  leyendo
+  leido
+}
+
+model LecturaLibro {
+  id            Int           @id @default(autoincrement())
+  alumnoId      Int           @map("Alumno_ID")
+  titulo        String        @map("Titulo")
+  autor         String?       @map("Autor")
+  portadaUrl    String?       @map("Portada_URL")
+  estado        EstadoLectura @default(por_leer) @map("Estado")
+  paginasTotal  Int?          @map("Paginas_Total")
+  paginaActual  Int           @default(0) @map("Pagina_Actual")
+  empezadoEn    DateTime?     @map("Empezado_En") @db.Date
+  terminadoEn   DateTime?     @map("Terminado_En") @db.Date
+  estrellas     Int?          @map("Estrellas")
+  narracion     String?       @map("Narracion")
+  asignadoPorId Int?          @map("Asignado_Por_ID")
+  createdAt     DateTime      @default(now()) @map("Created_At")
+  updatedAt     DateTime      @updatedAt @map("Updated_At")
+
+  alumno   Usuario         @relation("LecturasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  sesiones SesionLectura[]
+
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Lecturas")
+}
+
+// Cada vez que se registra lectura: cuántas páginas y minutos, para la semana y la racha
+model SesionLectura {
+  id        Int      @id @default(autoincrement())
+  libroId   Int      @map("Libro_ID")
+  alumnoId  Int      @map("Alumno_ID")
+  fecha     DateTime @map("Fecha") @db.Date
+  paginas   Int      @map("Paginas")
+  minutos   Int?     @map("Minutos")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  libro LecturaLibro @relation(fields: [libroId], references: [id], onDelete: Cascade)
+
+  @@index([alumnoId, fecha])
+  @@map("Homeschool_Sesiones_Lectura")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
