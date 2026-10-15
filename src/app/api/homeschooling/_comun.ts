@@ -247,3 +247,6 @@ export const datosComentarioBoletin = z.object({ comentario: z.string().max(2000
 // ── Muro de la familia (lane 184, Q2) ──
 export const datosAviso = z.object({ titulo: z.string().max(500), cuerpo: z.string().max(5000).nullable().optional(), fijada: z.boolean().optional() });
 export const datosFijar = z.object({ fijada: z.boolean() });
+
+// ── Mensajes de la familia (lane 191, G7) ──
+export const datosMensaje = z.object({ paraId: idPositivo, texto: z.string().max(5000) });
