@@ -39,6 +39,7 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
   const [estrellas, setEstrellas] = useState(0);
   const [nota, setNota] = useState("");
   const [q, setQ] = useState("");
+  const [aprobandoTodas, setAprobandoTodas] = useState(false);
   const visibles = filtrar(evidencias, q, (e) => [e.title, e.description, e.author_name, e.materia_name]);
   const [ajustando, setAjustando] = useState<ShowcaseWithDetails | null>(null);
   const [comentario, setComentario] = useState("");
@@ -101,7 +102,16 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
         ))}
       </div>
 
-      {evidencias.length > 0 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar por título, alumno o materia…" cantidad={visibles.length} />}
+      {evidencias.length > 0 && (
+        <div className="flex flex-wrap items-start gap-3">
+          <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar por título, alumno o materia…" cantidad={visibles.length} />
+          {estado === "pendiente" && visibles.length > 1 && (
+            <Button variant="outline" className="ml-auto" disabled={ocupado} onClick={() => setAprobandoTodas(true)}>
+              <Check /> Aprobar las {visibles.length}
+            </Button>
+          )}
+        </div>
+      )}
 
       {evidencias.length === 0 ? (
         <Empty className="border border-dashed">
@@ -164,6 +174,31 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
           })}
         </ul>
       )}
+
+      <Dialog open={aprobandoTodas} onOpenChange={(o) => !o && !ocupado && setAprobandoTodas(false)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Aprobar las {visibles.length}?</DialogTitle>
+            <DialogDescription>Se aprueban todas las que se ven ahora, sin estrellas ni nota. Si querés valorar alguna, cerrá esto y aprobala de a una.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAprobandoTodas(false)} disabled={ocupado}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={ocupado}
+              onClick={() =>
+                correr(async () => {
+                  for (const e of visibles) await approveShowcase(e.id, null);
+                  setAprobandoTodas(false);
+                }, `${visibles.length} aprobadas`)
+              }
+            >
+              {ocupado && <Spinner />} Aprobar todas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!aprobando} onOpenChange={(o) => !o && !ocupado && (setAprobando(null), setEstrellas(0), setNota(""))}>
         <DialogContent className="sm:max-w-sm">
