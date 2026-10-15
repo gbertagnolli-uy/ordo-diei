@@ -1,30 +1,20 @@
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CalendariumVista } from "@/components/liturgia/CalendariumVista";
+import { redirect } from "next/navigation";
+import { PanelLiturgia } from "@/components/liturgia/PanelLiturgia";
 
 export const metadata = {
-  title: "Calendarium · Calendario litúrgico | Ordo Diei",
-  description: "Calendario litúrgico católico tradicional según Divinum Officium (Tridentine 1906, 1888, 1570).",
+  title: "Liturgia | Ordo Diei",
+  description: "Calendario, Misal, Breviario y devociones según el rito tradicional.",
 };
 
 /**
- * Pantalla Calendarium (SPEC liturgia §10.1).
- * Suspense es obligatorio porque `CalendariumVista` usa `useParametrosLiturgia` (`useSearchParams`).
+ * Panel Liturgia. Antes el Calendarium vivía en esta ruta: los enlaces viejos con `?fecha=` o `?version=`
+ * se reenvían a `/calendarium` conservando los parámetros.
  */
-export default function CalendariumPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full rounded-xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <Skeleton className="lg:col-span-8 h-48 rounded-xl" />
-            <Skeleton className="lg:col-span-4 h-48 rounded-xl" />
-          </div>
-        </div>
-      }
-    >
-      <CalendariumVista />
-    </Suspense>
-  );
+export default async function LiturgiaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(await searchParams)) {
+    for (const valor of Array.isArray(v) ? v : v === undefined ? [] : [v]) query.append(k, valor);
+  }
+  if (query.size > 0) redirect(`/dashboard/liturgia/calendarium?${query}`);
+  return <PanelLiturgia />;
 }

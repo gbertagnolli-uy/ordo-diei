@@ -94,7 +94,7 @@ export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProp
             </Button>
 
             <Button asChild variant="outline" size="sm" className="text-xs gap-1.5">
-              <Link href={`/dashboard/liturgia?fecha=2026-${santoSeleccionado.fecha}&version=${version}`}>
+              <Link href={`/dashboard/liturgia/calendarium?fecha=2026-${santoSeleccionado.fecha}&version=${version}`}>
                 <Calendar className="size-3.5" />
                 <span>Ver en Calendarium 2026</span>
               </Link>
