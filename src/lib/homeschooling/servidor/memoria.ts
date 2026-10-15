@@ -6,6 +6,8 @@ import type { Memorizacion } from "@prisma/client";
 import { aClave, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "../../habitos/server.ts";
 import { esPadre } from "../../habitos/permisos.ts";
 import { CATALOGO_MEMORIA, itemDeCatalogo } from "../catolico.ts";
+import { LOGROS } from "../muro.ts";
+import { publicarLogroDe } from "./muro.ts";
 import { DatoInvalidoError } from "./planes.ts";
 import { nuevaTarjeta, responderNivel, type NivelRecitado, type TarjetaGuardada } from "./repaso.ts";
 
@@ -88,6 +90,7 @@ export async function calificarRecitado(a: Actor, id: number, nivel: string, aho
   if (!m) throw new NoEncontradoError("Texto no encontrado");
   const r = responderNivel(m.tarjeta as unknown as TarjetaGuardada, nivel as NivelRecitado, ahora);
   const actualizada = await prisma.memorizacion.update({ where: { id }, data: { tarjeta: r.tarjeta, proximo: r.proximo, repasos: { increment: 1 }, dominada: r.resuelta, ultimoEn: ahora } });
+  if (r.resuelta && !m.dominada) await publicarLogroDe(m.alumnoId, (n) => LOGROS.oracion(n, m.titulo), "/dashboard/homeschooling/muro");
   return aVista(actualizada, hoyEnFamilia());
 }
 

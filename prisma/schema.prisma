@@ -118,6 +118,8 @@ model Usuario {
   memorizaciones      Memorizacion[]          @relation("MemorizacionesAlumno")
   impresionesHoja     ImpresionDia[]          @relation("ImpresionesDiaAlumno")
   boletines           BoletinAlumno[]         @relation("BoletinesAlumno")
+  publicacionesAutor  PublicacionFamilia[]    @relation("PublicacionesAutor")
+  publicacionesSobre  PublicacionFamilia[]    @relation("PublicacionesSobre")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -1090,21 +1092,24 @@ model Calificacion {
 // Comentarios y reacciones entre los integrantes de UNA familia: padres e hijos, sobre una lección, un material o una evidencia.
 // Cuelga de exactamente uno de leccionId / materialId / evidenciaId. Reacciones: 👍 ❤️ 🙏 sobre un comentario o una evidencia.
 model ComentarioEstudio {
-  id          Int       @id @default(autoincrement())
-  autorId     Int       @map("Autor_ID")
-  leccionId   Int?      @map("Leccion_ID")
-  materialId  Int?      @map("Material_ID")
-  evidenciaId Int?      @map("Evidencia_ID")
-  texto       String    @map("Texto")
-  createdAt   DateTime  @default(now()) @map("Created_At")
-  editadoEn   DateTime? @map("Editado_En")
+  id            Int       @id @default(autoincrement())
+  autorId       Int       @map("Autor_ID")
+  leccionId     Int?      @map("Leccion_ID")
+  materialId    Int?      @map("Material_ID")
+  evidenciaId   Int?      @map("Evidencia_ID")
+  publicacionId Int?      @map("Publicacion_ID")
+  texto         String    @map("Texto")
+  createdAt     DateTime  @default(now()) @map("Created_At")
+  editadoEn     DateTime? @map("Editado_En")
 
-  autor      Usuario               @relation("ComentariosEstudioAutor", fields: [autorId], references: [id], onDelete: Cascade)
-  leccion    LeccionCurso?         @relation(fields: [leccionId], references: [id], onDelete: Cascade)
-  material   MaterialEstudio?      @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  evidencia  EvidenciaAprendizaje? @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
-  reacciones ReaccionEstudio[]
+  autor       Usuario               @relation("ComentariosEstudioAutor", fields: [autorId], references: [id], onDelete: Cascade)
+  leccion     LeccionCurso?         @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  material    MaterialEstudio?      @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  evidencia   EvidenciaAprendizaje? @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+  publicacion PublicacionFamilia?   @relation(fields: [publicacionId], references: [id], onDelete: Cascade)
+  reacciones  ReaccionEstudio[]
 
+  @@index([publicacionId, createdAt])
   @@index([leccionId, createdAt])
   @@index([materialId, createdAt])
   @@index([evidenciaId, createdAt])
@@ -1112,19 +1117,22 @@ model ComentarioEstudio {
 }
 
 model ReaccionEstudio {
-  id           Int      @id @default(autoincrement())
-  usuarioId    Int      @map("Usuario_ID")
-  comentarioId Int?     @map("Comentario_ID")
-  evidenciaId  Int?     @map("Evidencia_ID")
-  emoji        String   @map("Emoji")
-  createdAt    DateTime @default(now()) @map("Created_At")
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int      @map("Usuario_ID")
+  comentarioId  Int?     @map("Comentario_ID")
+  evidenciaId   Int?     @map("Evidencia_ID")
+  publicacionId Int?     @map("Publicacion_ID")
+  emoji         String   @map("Emoji")
+  createdAt     DateTime @default(now()) @map("Created_At")
 
-  usuario    Usuario               @relation("ReaccionesEstudioUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
-  comentario ComentarioEstudio?    @relation(fields: [comentarioId], references: [id], onDelete: Cascade)
-  evidencia  EvidenciaAprendizaje? @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+  usuario     Usuario               @relation("ReaccionesEstudioUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  comentario  ComentarioEstudio?    @relation(fields: [comentarioId], references: [id], onDelete: Cascade)
+  evidencia   EvidenciaAprendizaje? @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+  publicacion PublicacionFamilia?   @relation(fields: [publicacionId], references: [id], onDelete: Cascade)
 
   @@unique([usuarioId, comentarioId, emoji])
   @@unique([usuarioId, evidenciaId, emoji])
+  @@unique([usuarioId, publicacionId, emoji])
   @@map("Homeschool_Reacciones")
 }
 
@@ -1263,6 +1271,29 @@ model BoletinAlumno {
 
   @@unique([periodoId, alumnoId])
   @@map("Homeschool_Boletines")
+}
+
+// ─── Muro de la familia (lane 184, Q2) ──────────────────────────────────────
+// Lo que se cuenta en casa: avisos de los padres («mañana vamos a la plaza») y logros que la app anota sola (un libro terminado,
+// una oración aprendida, un trabajo destacado). Lo ve toda la familia; se comenta y se reacciona como en cualquier otro lugar.
+model PublicacionFamilia {
+  id        Int      @id @default(autoincrement())
+  autorId   Int?     @map("Autor_ID")
+  alumnoId  Int?     @map("Alumno_ID")
+  tipo      String   @map("Tipo")
+  titulo    String   @map("Titulo")
+  cuerpo    String?  @map("Cuerpo")
+  href      String?  @map("Href")
+  fijada    Boolean  @default(false) @map("Fijada")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  autor       Usuario?            @relation("PublicacionesAutor", fields: [autorId], references: [id], onDelete: SetNull)
+  alumno      Usuario?            @relation("PublicacionesSobre", fields: [alumnoId], references: [id], onDelete: Cascade)
+  comentarios ComentarioEstudio[]
+  reacciones  ReaccionEstudio[]
+
+  @@index([fijada, createdAt])
+  @@map("Homeschool_Muro")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
