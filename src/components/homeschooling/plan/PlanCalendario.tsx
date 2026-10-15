@@ -20,6 +20,7 @@ import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader
 import CargarSemana from "@/components/homeschooling/plan/CargarSemana";
 import SuscribirCalendario from "@/components/homeschooling/plan/SuscribirCalendario";
 import { COLOR_LITURGICO, type Festividad } from "@/lib/homeschooling/festividades";
+import { colorDeHijo } from "@/lib/homeschooling/coloresHijos";
 import HojaDelDiaPadre from "@/components/homeschooling/plan/HojaDelDiaPadre";
 import CalificarDia from "@/components/homeschooling/libreta/CalificarDia";
 import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
@@ -36,6 +37,9 @@ export type DiaDelPlan = {
   materia: string;
   materiaColor: string | null;
   unidadTipo: string;
+  /** Solo en la vista «Todos»: de qué hijo es el día (lane 196) */
+  alumnoId?: number;
+  alumno?: string;
 };
 export type NoLectivoVista = { id: number; fecha: string; motivo: string };
 export type ActividadVista = { id: number; titulo: string; inicio: string; fin: string };
@@ -79,11 +83,15 @@ export default function PlanCalendario({
   const [sueltoFecha, setSueltoFecha] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
+  // alumnoId 0 = «Todos»: todos los hijos en un calendario, cada uno de su color
+  const todos = alumnoId === 0;
+  const idsHijos = alumnos.map((a) => a.id);
+
   const eventos = useMemo<EventoCalendario<Recurso>[]>(
     () => [
       ...dias.map((d) => ({
         id: `d${d.id}`,
-        title: `${d.curso}: ${d.unidadDesde === d.unidadHasta ? d.unidadDesde : `${d.unidadDesde}–${d.unidadHasta}`}`,
+        title: `${todos && d.alumno ? `${d.alumno} · ` : ""}${d.curso}: ${d.unidadDesde === d.unidadHasta ? d.unidadDesde : `${d.unidadDesde}–${d.unidadHasta}`}`,
         start: aFechaLocal(d.fecha),
         end: aFechaLocal(d.fecha),
         allDay: true,
@@ -114,7 +122,7 @@ export default function PlanCalendario({
         resource: { tipo: "sin_clase" as const, motivo: n.motivo },
       })),
     ],
-    [dias, noLectivos, actividades, festividades]
+    [dias, noLectivos, actividades, festividades, todos]
   );
 
   const cambiar = async (diaId: number, cuerpo: { accion: "mover"; fecha: string } | { accion: "omitir" }) => {
@@ -135,18 +143,30 @@ export default function PlanCalendario({
   return (
     <div className="space-y-4">
       <MateriaHeader
-        group={{ id: 0, name: "Plan de estudio", description: quien ? `Calendario de ${quien.nombre}` : null, cover_url: null, icon: null, color: null, dificultad: "Media", display_order: 0, is_active: true, created_by: 0 }}
+        group={{ id: 0, name: "Plan de estudio", description: todos ? "Todos los hijos, cada uno de su color" : quien ? `Calendario de ${quien.nombre}` : null, cover_url: null, icon: null, color: null, dificultad: "Media", display_order: 0, is_active: true, created_by: 0 }}
         icono={<CalendarDays className="size-5" />}
         alumnos={alumnos}
         alumnoId={alumnoId}
-        onAlumno={(id) => router.push(`/dashboard/homeschooling/plan?alumno=${id}`)}
+        conTodos
+        onAlumno={(id) => router.push(`/dashboard/homeschooling/plan?alumno=${id === 0 ? "todos" : id}`)}
       />
+      {todos && (
+        <ul className="flex flex-wrap gap-3 px-1 text-sm" aria-label="Colores de cada hijo">
+          {alumnos.map((a) => (
+            <li key={a.id} className="flex items-center gap-1.5 text-foreground">
+              <span className="size-3 rounded-full" style={{ backgroundColor: colorDeHijo(idsHijos, a.id) }} aria-hidden /> {a.nombre}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex flex-wrap justify-end gap-2 px-1">
-        {rutaCalendario && <SuscribirCalendario ruta={rutaCalendario} nombre={quien?.nombre ?? "el alumno"} />}
-        <CargarSemana alumnos={alumnos} alumnoId={alumnoId} hoy={aClaveLocal(new Date())} />
-        <Button variant="outline" onClick={() => setSueltoFecha(aClaveLocal(new Date()))}>
-          <Paperclip /> Material para un día
-        </Button>
+        {!todos && rutaCalendario && <SuscribirCalendario ruta={rutaCalendario} nombre={quien?.nombre ?? "el alumno"} />}
+        {!todos && <CargarSemana alumnos={alumnos} alumnoId={alumnoId} hoy={aClaveLocal(new Date())} />}
+        {!todos && (
+          <Button variant="outline" onClick={() => setSueltoFecha(aClaveLocal(new Date()))}>
+            <Paperclip /> Material para un día
+          </Button>
+        )}
         <Button variant="outline" onClick={() => setSinClase(true)}>
           <CalendarOff /> Hoy no hay clase
         </Button>
@@ -172,7 +192,7 @@ export default function PlanCalendario({
             };
           }
           const d = e.resource.dia;
-          return { style: { backgroundColor: colorCss(d.materiaColor), opacity: d.estado === "movida" || d.estado === "omitida" ? 0.45 : 1 } };
+          return { style: { backgroundColor: todos && d.alumnoId ? colorDeHijo(idsHijos, d.alumnoId) : colorCss(d.materiaColor), opacity: d.estado === "movida" || d.estado === "omitida" ? 0.45 : 1 } };
         }}
         onSelectEvent={(e) => {
           if (e.resource.tipo === "dia") {
@@ -194,7 +214,7 @@ export default function PlanCalendario({
               <SheetHeader>
                 <SheetTitle>{sel.curso}</SheetTitle>
                 <SheetDescription>
-                  {sel.materia} · {sel.fecha}
+                  {sel.alumno ? `${sel.alumno} · ` : ""}{sel.materia} · {sel.fecha}
                 </SheetDescription>
               </SheetHeader>
               <div className="space-y-4 px-4 text-sm">

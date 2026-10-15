@@ -19,6 +19,7 @@ export default function MateriaHeader({
   onEditar,
   onArchivar,
   icono,
+  conTodos = false,
 }: {
   group: Group;
   alumnos: AlumnoLite[];
@@ -28,6 +29,8 @@ export default function MateriaHeader({
   onArchivar?: () => void;
   /** Reemplaza la inicial de la materia (p. ej. el calendario del plan) */
   icono?: React.ReactNode;
+  /** Agrega la opción «Todos» (id 0), p. ej. en el calendario del plan (lane 196) */
+  conTodos?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 border-b bg-card px-6 py-4">
@@ -57,6 +60,11 @@ export default function MateriaHeader({
 
       {onAlumno && alumnos.length > 0 && (
         <div className="no-scrollbar flex w-full min-w-0 items-center gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Alumno">
+          {conTodos && (
+            <button role="tab" aria-selected={alumnoId === 0} onClick={() => onAlumno(0)} className={`flex shrink-0 items-center rounded-full border px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${alumnoId === 0 ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
+              Todos
+            </button>
+          )}
           {alumnos.map((a) => (
             <button
               key={a.id}
