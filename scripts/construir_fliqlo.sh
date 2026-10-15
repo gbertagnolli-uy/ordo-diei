@@ -16,4 +16,5 @@ cp -r "$APP/build/web" "$RAIZ/public/fliqlo"
 rm -rf "$APP/build"
 # Esta compilación usa solo CanvasKit (JS): se descartan las variantes skwasm/wimp/webparagraph (--wasm)
 rm -rf "$RAIZ"/public/fliqlo/canvaskit/{skwasm*,wimp*,webparagraph}
+find "$RAIZ/public/fliqlo" -name "*.symbols" -delete
 echo "Listo: public/fliqlo/ ($(du -sh "$RAIZ/public/fliqlo" | cut -f1))"
