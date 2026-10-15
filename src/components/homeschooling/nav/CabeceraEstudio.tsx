@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, NotebookPen, type LucideIcon } from "lucide-react";
+import { CalendarDays, CalendarOff, Brain, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, NotebookPen, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -23,6 +23,7 @@ const PADRE: Pestana[] = [
   { href: `${RAIZ}/revision`, etiqueta: "Revisión", icono: ClipboardCheck, insignia: "revision" },
   { href: `${RAIZ}/libreta`, etiqueta: "Libreta", icono: NotebookPen },
   { href: `${RAIZ}/lectura`, etiqueta: "Lectura", icono: Library },
+  { href: `${RAIZ}/memoria`, etiqueta: "Memoria", icono: Brain },
   { href: `${RAIZ}/portafolio`, etiqueta: "Portafolio", icono: Camera },
   { href: `${RAIZ}/horas`, etiqueta: "Actividades", icono: Compass },
   { href: `${RAIZ}/reportes`, etiqueta: "Reportes", icono: FileBarChart },
@@ -33,6 +34,7 @@ const PADRE: Pestana[] = [
 const HIJO: Pestana[] = [
   { href: RAIZ, etiqueta: "Hoy", icono: GraduationCap, exacta: true },
   { href: `${RAIZ}/lectura`, etiqueta: "Lectura", icono: Library },
+  { href: `${RAIZ}/memoria`, etiqueta: "Memoria", icono: Brain },
   { href: `${RAIZ}/portafolio`, etiqueta: "Portafolio", icono: Camera },
   { href: `${RAIZ}/horas`, etiqueta: "Actividades", icono: Compass },
   { href: `${RAIZ}/reportes`, etiqueta: "Reportes", icono: FileBarChart },
