@@ -163,29 +163,33 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
 
             <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 p-4">
               {actual ? (
-                <>
-                  {embed ? (
-                    <ReproductorLeccion key={actual.id} leccionId={actual.id} src={embed} titulo={actual.titulo} tieneCheckpoints={actual.checkpoints > 0} />
-                  ) : (
-                    actual.url && (
-                      <Button asChild variant="outline" size="lg">
-                        <a href={actual.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink /> Abrir el material
-                        </a>
-                      </Button>
-                    )
-                  )}
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground">
-                      {actual.orden}. {actual.titulo}
-                    </h2>
-                    {actual.instrucciones && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{actual.instrucciones}</p>}
-                  </div>
-                  <MaterialesDelDia materiales={actual.materiales} titulo="Material de esta lección" />
-                  <ComentariosEstudio key={actual.id} destino={{ leccionId: actual.id }} titulo="Preguntas y comentarios" placeholder="Escribile a mamá o a papá sobre esta lección…" />
-                  {haciendoQuiz && <QuizFinal leccionId={actual.id} onAprobado={quizAprobado} onRepasar={() => setHaciendoQuiz(false)} />}
-                  {lecciones.length > 1 && <LeccionesDelDia lecciones={lecciones} completadas={completadas} activaId={activaId} onSelect={cambiar} />}
-                </>
+                haciendoQuiz ? (
+                  // Con el quiz en marcha se muestra solo el quiz (en el teléfono quedaba debajo de todo lo demás)
+                  <QuizFinal leccionId={actual.id} onAprobado={quizAprobado} onRepasar={() => setHaciendoQuiz(false)} />
+                ) : (
+                  <>
+                    {embed ? (
+                      <ReproductorLeccion key={actual.id} leccionId={actual.id} src={embed} titulo={actual.titulo} tieneCheckpoints={actual.checkpoints > 0} />
+                    ) : (
+                      actual.url && (
+                        <Button asChild variant="outline" size="lg">
+                          <a href={actual.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink /> Abrir el material
+                          </a>
+                        </Button>
+                      )
+                    )}
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground">
+                        {actual.orden}. {actual.titulo}
+                      </h2>
+                      {actual.instrucciones && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{actual.instrucciones}</p>}
+                    </div>
+                    <MaterialesDelDia materiales={actual.materiales} titulo="Material de esta lección" />
+                    <ComentariosEstudio key={actual.id} destino={{ leccionId: actual.id }} titulo="Preguntas y comentarios" placeholder="Escribile a mamá o a papá sobre esta lección…" />
+                    {lecciones.length > 1 && <LeccionesDelDia lecciones={lecciones} completadas={completadas} activaId={activaId} onSelect={cambiar} />}
+                  </>
+                )
               ) : (
                 <div className="space-y-3 rounded-xl border bg-card p-5">
                   <p className="text-lg font-semibold text-foreground">{dia.rango}</p>

@@ -81,7 +81,7 @@ export default function MateriaSidebar({
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-medium text-foreground">{module.title}</h3>
                   <div className="mt-1">
-                    <Progress value={module.progress_percentage} />
+                    <Progress value={module.progress_percentage} aria-label={`Avance de ${module.title}`} />
                   </div>
                 </div>
               </button>

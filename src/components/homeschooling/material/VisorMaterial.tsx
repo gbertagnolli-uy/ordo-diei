@@ -102,7 +102,7 @@ export default function VisorMaterial({
 
   return (
     <Sheet open={m !== null} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="bottom" className="h-svh max-h-svh gap-0 overflow-y-auto rounded-none p-0 data-[side=bottom]:h-svh data-[side=bottom]:max-h-svh">
+      <SheetContent side="bottom" className="h-svh max-h-svh gap-0 overflow-y-auto rounded-none p-0 data-[side=bottom]:h-svh data-[side=bottom]:max-h-svh [&>[data-slot=sheet-close]]:z-20">
         {m && indice !== null && (
           <>
             <SheetHeader className="sticky top-0 z-10 border-b bg-background/95 p-3 pr-14 backdrop-blur">

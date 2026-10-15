@@ -79,7 +79,7 @@ export default function CursoDetalle({
           <h2 className="text-xl font-bold text-foreground">{module.title}</h2>
           {module.description && <p className="mt-1 text-sm text-muted-foreground">{module.description}</p>}
           <div className="mt-3 max-w-xs space-y-1">
-            <Progress value={module.progress_percentage} />
+            <Progress value={module.progress_percentage} aria-label={`Avance de ${module.title}`} />
             <p className="text-xs text-muted-foreground">{module.progress_percentage}%</p>
           </div>
         </div>

@@ -105,7 +105,7 @@ export default function HoyAprendo({
 
       {estadoDia.total > 0 && (
         <div className="space-y-1.5" aria-label="Avance de hoy">
-          <Progress value={avanceDelDia(estadoDia)} />
+          <Progress value={avanceDelDia(estadoDia)} aria-label="Avance de hoy" />
           <p className="text-xs text-muted-foreground tabular-nums">
             {estadoDia.hechos} de {estadoDia.total} listo{estadoDia.hechos === 1 ? "" : "s"} hoy
           </p>
@@ -117,8 +117,6 @@ export default function HoyAprendo({
       ))}
 
       <RepasoDeHoy />
-
-      <MaterialSuelto materiales={sueltos} />
 
       {vistaElegida.layout === "primero-despues" && dias.length > 0 ? (
         <PrimeroDespues dias={dias} recompensa={preferencia.recompensaDespues} onAbrir={(d) => setAbierto(d.diaId)} onFoto={setFotoDia} />
@@ -179,6 +177,8 @@ export default function HoyAprendo({
           )}
         </>
       )}
+
+      <MaterialSuelto materiales={sueltos} />
 
       <nav aria-label="Más cosas" className="grid grid-cols-2 gap-3">
         <Link href={`${BASE}/lectura`} className="flex flex-col gap-1 rounded-2xl border bg-card p-4 transition-colors hover:border-primary/50">

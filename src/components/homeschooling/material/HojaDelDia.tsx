@@ -31,7 +31,7 @@ export default function HojaDelDia({ hoja }: { hoja: HojaDia }) {
           <p className="text-xs tracking-widest uppercase">{hoja.materia} · hoja del día</p>
           <h1 className="text-3xl font-bold">{hoja.curso}</h1>
           <p className="text-sm">
-            {hoja.alumno} · <span className="capitalize">{FECHA.format(new Date(`${hoja.fecha}T00:00:00Z`))}</span>
+            {hoja.alumno} · <span className="inline-block first-letter:uppercase">{FECHA.format(new Date(`${hoja.fecha}T00:00:00Z`))}</span>
           </p>
           <p className="text-sm font-medium">
             Hoy: {hoja.rango} · unos {minutos}
