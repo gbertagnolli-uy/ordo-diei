@@ -159,3 +159,27 @@ export const destinoDe = (req: Request) => {
   if (alumno && fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { alumnoId: alumno, fecha };
   throw new Error("Falta el día, la lección o el alumno con su fecha");
 };
+
+// ── Libreta de calificaciones (lane 172, K1) ──
+const tipoNota = z.enum(["tarea", "examen", "proyecto", "lectura", "oral"]);
+const puntajeNota = z.number().int().min(0, "La nota va de 0 a 100").max(100, "La nota va de 0 a 100");
+
+export const datosNota = z.object({
+  alumnoId: idPositivo,
+  materiaId: idPositivo,
+  titulo: z.string().trim().min(1, "Falta el título").max(150),
+  tipo: tipoNota.optional(),
+  puntaje: puntajeNota,
+  comentario: z.string().trim().max(1000).nullable().optional(),
+  fecha: claveFecha,
+});
+
+export const cambiosNota = z.object({
+  titulo: z.string().trim().min(1, "Falta el título").max(150).optional(),
+  tipo: tipoNota.optional(),
+  puntaje: puntajeNota.optional(),
+  comentario: z.string().trim().max(1000).nullable().optional(),
+  fecha: claveFecha.optional(),
+});
+
+export const notaDeDia = z.object({ puntaje: puntajeNota, comentario: z.string().trim().max(1000).nullable().optional() });

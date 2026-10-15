@@ -109,6 +109,8 @@ model Usuario {
   materialesAlumno    MaterialEstudio[]       @relation("MaterialesAlumno")
   materialesCreados   MaterialEstudio[]       @relation("MaterialesCreados")
   impresiones         ImpresionMaterial[]     @relation("ImpresionesAlumno")
+  calificaciones      Calificacion[]          @relation("CalificacionesAlumno")
+  calificacionesDadas Calificacion[]          @relation("CalificacionesDadas")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -735,10 +737,11 @@ model Materia {
   creadorId   Int             @map("Creador_ID")
   createdAt   DateTime        @default(now()) @map("Created_At")
 
-  creador     Usuario            @relation("MateriasCreadas", fields: [creadorId], references: [id])
-  recursos    RecursoCurso[]
-  actividades ActividadOffline[]
-  metas       MetaHoras[]
+  creador        Usuario            @relation("MateriasCreadas", fields: [creadorId], references: [id])
+  recursos       RecursoCurso[]
+  actividades    ActividadOffline[]
+  metas          MetaHoras[]
+  calificaciones Calificacion[]
 
   @@index([activa, orden])
   @@map("Homeschool_Materias")
@@ -830,10 +833,11 @@ model DiaLectivo {
   tareaId     Int?             @unique @map("Tarea_ID")
   createdAt   DateTime         @default(now()) @map("Created_At")
 
-  plan       PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
-  tarea      Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
-  evidencias EvidenciaAprendizaje[]
-  materiales MaterialEstudio[]
+  plan         PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tarea        Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+  evidencias   EvidenciaAprendizaje[]
+  materiales   MaterialEstudio[]
+  calificacion Calificacion?
 
   @@unique([planId, fecha])
   @@index([fecha, estado])
@@ -1032,6 +1036,40 @@ model ImpresionMaterial {
 
   @@index([materialId, alumnoId])
   @@map("Homeschool_Impresiones")
+}
+
+// ─── Libreta de calificaciones (lane 172, K1) ───────────────────────────────
+// Lo que el padre corrige: la nota de un día de clase (una por día) o de un examen/proyecto suelto. 0–100; la letra y el
+// promedio se calculan al mostrar. Solo la escriben los padres.
+enum TipoCalificacion {
+  tarea
+  examen
+  proyecto
+  lectura
+  oral
+}
+
+model Calificacion {
+  id              Int              @id @default(autoincrement())
+  alumnoId        Int              @map("Alumno_ID")
+  materiaId       Int              @map("Materia_ID")
+  diaLectivoId    Int?             @unique @map("Dia_Lectivo_ID")
+  titulo          String           @map("Titulo")
+  tipo            TipoCalificacion @default(tarea) @map("Tipo")
+  puntaje         Int              @map("Puntaje")
+  comentario      String?          @map("Comentario")
+  fecha           DateTime         @map("Fecha") @db.Date
+  calificadaPorId Int              @map("Calificada_Por_ID")
+  createdAt       DateTime         @default(now()) @map("Created_At")
+  updatedAt       DateTime         @updatedAt @map("Updated_At")
+
+  alumno        Usuario     @relation("CalificacionesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  calificadaPor Usuario     @relation("CalificacionesDadas", fields: [calificadaPorId], references: [id])
+  materia       Materia     @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  diaLectivo    DiaLectivo? @relation(fields: [diaLectivoId], references: [id], onDelete: SetNull)
+
+  @@index([alumnoId, materiaId, fecha])
+  @@map("Homeschool_Calificaciones")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──

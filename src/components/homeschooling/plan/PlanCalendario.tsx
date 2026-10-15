@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, Paperclip } from "lucide-react";
+import { CalendarDays, CalendarOff, NotebookPen, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,6 +17,7 @@ import CalendarView, { type EventoCalendario } from "@/components/homeschooling/
 import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import MateriaHeader from "@/components/homeschooling/cursos/MateriaHeader";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import CalificarDia from "@/components/homeschooling/libreta/CalificarDia";
 import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
 import HoyNoHayClase from "./HoyNoHayClase";
 
@@ -64,6 +65,7 @@ export default function PlanCalendario({
   const [sel, setSel] = useState<DiaDelPlan | null>(null);
   const [nuevaFecha, setNuevaFecha] = useState("");
   const [sinClase, setSinClase] = useState(false);
+  const [calificando, setCalificando] = useState<DiaDelPlan | null>(null);
   // Material suelto: tarea del día sin curso (lane 166)
   const [sueltoFecha, setSueltoFecha] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -177,6 +179,11 @@ export default function PlanCalendario({
                   {sel.unidadDesde === sel.unidadHasta ? `${ETIQUETA_UNIDAD[sel.unidadTipo] ?? "unidades"} ${sel.unidadDesde}` : `${ETIQUETA_UNIDAD[sel.unidadTipo] ?? "unidades"} ${sel.unidadDesde} a ${sel.unidadHasta}`}
                 </p>
                 <p className="text-muted-foreground">Estado: {ESTADO[sel.estado]}</p>
+                {sel.estado === "hecha" && (
+                  <Button variant="outline" onClick={() => setCalificando(sel)}>
+                    <NotebookPen /> Calificar este día
+                  </Button>
+                )}
                 <div className="space-y-2">
                   <h3 className="flex items-center gap-2 font-medium text-foreground">
                     <Paperclip className="size-4" aria-hidden /> Material de este día
@@ -219,6 +226,8 @@ export default function PlanCalendario({
           )}
         </SheetContent>
       </Sheet>
+
+      <CalificarDia diaId={calificando?.id ?? null} titulo={calificando ? `${calificando.curso}, ${calificando.fecha}` : ""} onClose={() => setCalificando(null)} />
 
       <HoyNoHayClase open={sinClase} onClose={() => setSinClase(false)} alumnos={alumnos} />
     </div>
