@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { ETIQUETA_TIPO } from "@/lib/homeschooling/material";
 import type { MaterialVista } from "@/lib/homeschooling/servidor/materiales";
 import IconoMaterial from "./IconoMaterial";
+import LectorEpub from "./LectorEpub";
 import MarkdownTexto from "./MarkdownTexto";
 
 function Cuerpo({ m }: { m: MaterialVista }) {
@@ -23,6 +24,17 @@ function Cuerpo({ m }: { m: MaterialVista }) {
     ) : (
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
         <iframe src={v.embedUrl} title={m.titulo} className="absolute inset-0 size-full" allow="fullscreen; picture-in-picture" allowFullScreen />
+      </div>
+    );
+  }
+
+  // ePub y PDF con enlace propio: se muestran adentro, bajados por la app (sin CORS ni bloqueos de otros sitios)
+  if (m.tipo === "epub" && v.archivoUrl) return <LectorEpub key={m.id} origen={v.archivoUrl} titulo={m.titulo} />;
+  if (m.tipo === "pdf" && v.archivoUrl && m.proveedor !== "drive") {
+    return (
+      <div className="space-y-2">
+        <iframe src={v.archivoUrl} title={m.titulo} className="h-[72svh] w-full rounded-xl border bg-background" />
+        <p className="text-center text-xs text-muted-foreground">Si no se ve, abrilo en otra pestaña con el botón de arriba.</p>
       </div>
     );
   }

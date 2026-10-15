@@ -107,3 +107,11 @@ test("impresionesRestantes: límite + extras − usadas, nunca negativo", () => 
   assert.equal(impresionesRestantes(0, 0, 0), 0);
   assert.equal(impresionesRestantes(1, 5, 0), 0);
 });
+
+test("vistaMaterial: PDF y ePub con enlace tienen ruta propia en la app; lo demás no", () => {
+  assert.equal(vistaMaterial({ id: 7, tipo: "epub", proveedor: "web", externoId: null, url: "https://x.org/a.epub" }).archivoUrl, "/api/homeschooling/materiales/7/archivo");
+  assert.equal(vistaMaterial({ id: 8, tipo: "pdf", proveedor: "drive", externoId: DOC, url: "u" }).archivoUrl, "/api/homeschooling/materiales/8/archivo");
+  assert.equal(vistaMaterial({ id: 9, tipo: "video", proveedor: "youtube", externoId: YT, url: "u" }).archivoUrl, null);
+  assert.equal(vistaMaterial({ id: 10, tipo: "web", proveedor: "web", externoId: null, url: "https://x.org" }).archivoUrl, null);
+  assert.equal(vistaMaterial({ tipo: "pdf", proveedor: "web", externoId: null, url: "https://x.org/a.pdf" }).archivoUrl, null);
+});
