@@ -265,5 +265,5 @@ function Clock() {
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
-  return <span className="truncate font-mono text-xs text-sidebar-foreground/60 tabular-nums">{time}</span>;
+  return <span className="truncate font-mono text-xs text-sidebar-foreground/80 tabular-nums">{time}</span>;
 }

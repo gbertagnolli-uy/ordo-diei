@@ -67,7 +67,7 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
         </nav>
       )}
 
-      <section aria-label="Resumen" className="grid grid-cols-3 gap-3">
+      <section aria-label="Resumen" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatsCard title="Toca recitar hoy" value={datos.tocanHoy} icon={Mic} color={datos.tocanHoy > 0 ? "warning" : "success"} />
         <StatsCard title="Aprendiendo" value={datos.items.length - datos.dominadas} icon={Brain} color="primary" />
         <StatsCard title="Ya las sabe" value={datos.dominadas} icon={CheckCircle2} color="success" />
