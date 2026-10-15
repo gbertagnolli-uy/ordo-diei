@@ -22,6 +22,7 @@ const material = z.object({
   url: texto(500).nullable().optional(),
   contenido: z.string().max(50000).nullable().optional(),
   limiteImpresiones: z.number().int().min(0).max(10).optional(),
+  soloPadres: z.boolean().optional(),
 });
 
 const leccion = z.object({

@@ -18,6 +18,9 @@ import { approveShowcase, featureShowcase, rejectShowcase, unfeatureShowcase } f
 import { SHOWCASE_STATUS_INFO, type ShowcaseStats, type ShowcaseStatus, type ShowcaseWithDetails } from "@/lib/homeschooling/roost/tipos";
 import { toast } from "@/lib/toast";
 import { StarRating } from "@/components/homeschooling/roost/StarRating";
+import ChipsPuntaje from "@/components/homeschooling/libreta/ChipsPuntaje";
+import { puntajeValido } from "@/lib/homeschooling/calificaciones";
+import { api } from "@/lib/homeschooling/roost/services/http";
 import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
 
 const TABS: { valor: ShowcaseStatus | "todas"; etiqueta: string }[] = [
@@ -32,6 +35,7 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
   const params = useSearchParams();
   const [aprobando, setAprobando] = useState<ShowcaseWithDetails | null>(null);
   const [estrellas, setEstrellas] = useState(0);
+  const [nota, setNota] = useState("");
   const [ajustando, setAjustando] = useState<ShowcaseWithDetails | null>(null);
   const [comentario, setComentario] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -51,6 +55,7 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
       setAprobando(null);
       setAjustando(null);
       setEstrellas(0);
+      setNota("");
       setComentario("");
       refrescar();
     } catch (e) {
@@ -154,18 +159,35 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
         </ul>
       )}
 
-      <Dialog open={!!aprobando} onOpenChange={(o) => !o && !ocupado && (setAprobando(null), setEstrellas(0))}>
+      <Dialog open={!!aprobando} onOpenChange={(o) => !o && !ocupado && (setAprobando(null), setEstrellas(0), setNota(""))}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Aprobar «{aprobando?.title || "Sin título"}»</DialogTitle>
             <DialogDescription>Podés dejar una valoración. Las estrellas no dan monedas.</DialogDescription>
           </DialogHeader>
           <StarRating rating={estrellas} onChange={setEstrellas} size="lg" />
+          {aprobando?.dia_lectivo_id ? (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-foreground">Nota del día (opcional)</p>
+              <ChipsPuntaje valor={nota} onChange={setNota} />
+              <p className="text-xs text-muted-foreground">Queda en la libreta de {aprobando.author_name}.</p>
+            </div>
+          ) : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => (setAprobando(null), setEstrellas(0))} disabled={ocupado}>
+            <Button variant="outline" onClick={() => (setAprobando(null), setEstrellas(0), setNota(""))} disabled={ocupado}>
               Cancelar
             </Button>
-            <Button onClick={() => aprobando && correr(() => approveShowcase(aprobando.id, estrellas || null), "Aprobada")} disabled={ocupado}>
+            <Button
+              onClick={() =>
+                aprobando &&
+                correr(async () => {
+                  await approveShowcase(aprobando.id, estrellas || null);
+                  const n = Number(nota);
+                  if (aprobando.dia_lectivo_id && nota.trim() !== "" && puntajeValido(n)) await api(`/api/homeschooling/dias/${aprobando.dia_lectivo_id}/nota`, { method: "PUT", body: { puntaje: n } });
+                }, nota.trim() !== "" ? "Aprobada y calificada" : "Aprobada")
+              }
+              disabled={ocupado || (nota.trim() !== "" && !puntajeValido(Number(nota)))}
+            >
               {ocupado && <Spinner />} Aprobar
             </Button>
           </DialogFooter>

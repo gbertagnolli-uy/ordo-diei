@@ -23,6 +23,8 @@ export type MaterialVista = {
   miniaturaUrl: string | null;
   orden: number;
   limiteImpresiones: number;
+  /** Clave de respuestas / material solo para padres: el hijo no lo ve */
+  soloPadres: boolean;
   imprimible: boolean;
   vista: VistaMaterial;
   hecho: boolean;
@@ -60,6 +62,7 @@ export function aVista(m: MaterialEstudio, uso?: UsoImpresion): MaterialVista {
     miniaturaUrl: m.miniaturaUrl,
     orden: m.orden,
     limiteImpresiones: m.limiteImpresiones,
+    soloPadres: m.soloPadres,
     imprimible: m.limiteImpresiones > 0 && esImprimible(base),
     vista: vistaMaterial(base),
     hecho: m.hechoEn !== null,
@@ -120,7 +123,7 @@ const dondeDestino = (d: Destino): Prisma.MaterialEstudioWhereInput =>
 
 export async function listarMateriales(a: Actor, d: Destino): Promise<MaterialVista[]> {
   if (!(await puedeVerDestino(a, d))) throw new NoAutorizadoError("No tenés acceso a este material");
-  const filas = await prisma.materialEstudio.findMany({ where: dondeDestino(d), orderBy: [{ orden: "asc" }, { id: "asc" }] });
+  const filas = await prisma.materialEstudio.findMany({ where: { ...dondeDestino(d), ...(esPadre(a.rol) ? {} : { soloPadres: false }) }, orderBy: [{ orden: "asc" }, { id: "asc" }] });
   return esPadre(a.rol) ? filas.map((f) => aVista(f)) : aVistasDeAlumno(filas, a.id);
 }
 
@@ -128,7 +131,7 @@ export async function obtenerMaterial(a: Actor, id: number): Promise<MaterialVis
   const m = await prisma.materialEstudio.findUnique({ where: { id } });
   if (!m) throw new NoEncontradoError("Material no encontrado");
   const destino: Destino = m.diaLectivoId ? { diaLectivoId: m.diaLectivoId } : m.leccionId ? { leccionId: m.leccionId } : { alumnoId: m.alumnoId ?? 0, fecha: m.fecha ? aClave(m.fecha) : "" };
-  if (!(await puedeVerDestino(a, destino))) throw new NoAutorizadoError("No tenés acceso a este material");
+  if (!(await puedeVerDestino(a, destino)) || (m.soloPadres && !esPadre(a.rol))) throw new NoAutorizadoError("No tenés acceso a este material");
   return esPadre(a.rol) ? aVista(m) : (await aVistasDeAlumno([m], a.id))[0];
 }
 
@@ -155,6 +158,8 @@ export type DatosMaterial = {
   /** El padre corrige el tipo detectado (p. ej. un archivo de Drive que es un PDF) */
   tipo?: TipoMaterial | null;
   limiteImpresiones?: number | null;
+  /** Clave de respuestas: solo la ven los padres */
+  soloPadres?: boolean;
 };
 
 /** Resuelve lo pegado: detecta el tipo y mejora el título con la página (sin bloquear si falla) */
@@ -193,6 +198,7 @@ export async function crearMaterial(a: Actor, datos: DatosMaterial): Promise<Mat
       miniaturaUrl: det.miniaturaUrl,
       orden: (ultimo._max.orden ?? -1) + 1,
       limiteImpresiones: limite,
+      soloPadres: datos.soloPadres ?? false,
       creadorId: a.id,
       ...("diaLectivoId" in d ? { diaLectivoId: d.diaLectivoId } : "leccionId" in d ? { leccionId: d.leccionId } : { alumnoId: d.alumnoId, fecha: comoFecha(d.fecha) }),
     },
@@ -200,7 +206,7 @@ export async function crearMaterial(a: Actor, datos: DatosMaterial): Promise<Mat
   return aVista(creado);
 }
 
-export type CambiosMaterial = { titulo?: string; tipo?: TipoMaterial; limiteImpresiones?: number; contenido?: string | null; orden?: number };
+export type CambiosMaterial = { titulo?: string; tipo?: TipoMaterial; limiteImpresiones?: number; soloPadres?: boolean; contenido?: string | null; orden?: number };
 
 export async function actualizarMaterial(a: Actor, id: number, c: CambiosMaterial): Promise<MaterialVista> {
   exigirPadre(a);
@@ -220,6 +226,7 @@ export async function actualizarMaterial(a: Actor, id: number, c: CambiosMateria
   }
   if (c.contenido !== undefined && (c.contenido ?? "").length > MAX_CONTENIDO) throw new DatoInvalidoError("El texto es demasiado largo (máximo 50.000 caracteres)");
   if (c.orden !== undefined) data.orden = c.orden;
+  if (c.soloPadres !== undefined) data.soloPadres = c.soloPadres;
 
   const actual = await prisma.materialEstudio.findUnique({ where: { id } });
   if (!actual) throw new NoEncontradoError("Material no encontrado");
@@ -247,6 +254,6 @@ export async function marcarMaterialHecho(a: Actor, id: number, hecho: boolean):
 
 /** Material suelto de un alumno en una fecha, para «Hoy» */
 export async function materialSueltoDeHoy(alumnoId: number, hoy: string): Promise<MaterialVista[]> {
-  const filas = await prisma.materialEstudio.findMany({ where: { alumnoId, fecha: comoFecha(hoy) }, orderBy: [{ orden: "asc" }, { id: "asc" }] });
+  const filas = await prisma.materialEstudio.findMany({ where: { alumnoId, fecha: comoFecha(hoy), soloPadres: false }, orderBy: [{ orden: "asc" }, { id: "asc" }] });
   return aVistasDeAlumno(filas, alumnoId);
 }

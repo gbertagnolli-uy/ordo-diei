@@ -43,12 +43,12 @@ export async function hojaSemana(a: Actor, alumnoId: number, lunes: string): Pro
       orderBy: [{ fecha: "asc" }, { id: "asc" }],
       include: {
         tarea: { select: { estado: true } },
-        materiales: { orderBy: [{ orden: "asc" }, { id: "asc" }], select: { titulo: true } },
-        plan: { select: { recurso: { select: { id: true, titulo: true, tipo: true, unidadTipo: true, minutosPorUnidad: true, materia: { select: { nombre: true, color: true } }, lecciones: { select: { orden: true, titulo: true, materiales: { select: { titulo: true }, orderBy: { orden: "asc" } } }, orderBy: { orden: "asc" } } } } } },
+        materiales: { where: { soloPadres: false }, orderBy: [{ orden: "asc" }, { id: "asc" }], select: { titulo: true } },
+        plan: { select: { recurso: { select: { id: true, titulo: true, tipo: true, unidadTipo: true, minutosPorUnidad: true, materia: { select: { nombre: true, color: true } }, lecciones: { select: { orden: true, titulo: true, materiales: { where: { soloPadres: false }, select: { titulo: true }, orderBy: { orden: "asc" } } }, orderBy: { orden: "asc" } } } } } },
       },
     }),
     prisma.diaNoLectivo.findMany({ where: { alumnoId, fecha: rango }, select: { fecha: true, motivo: true } }),
-    prisma.materialEstudio.findMany({ where: { alumnoId, fecha: rango }, orderBy: [{ orden: "asc" }, { id: "asc" }], select: { fecha: true, titulo: true } }),
+    prisma.materialEstudio.findMany({ where: { alumnoId, fecha: rango, soloPadres: false }, orderBy: [{ orden: "asc" }, { id: "asc" }], select: { fecha: true, titulo: true } }),
     prisma.actividadOffline.findMany({ where: { inicio: { gte: aFecha(sumarDias(desde, -1)), lt: aFecha(sumarDias(hasta, 2)) }, participantes: { some: { alumnoId } } }, orderBy: { inicio: "asc" }, select: { titulo: true, inicio: true, lugar: true } }),
   ]);
 

@@ -1,7 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import prisma from "../../prisma.ts";
-import { actualizarMaterial, borrarMaterial, crearMaterial, listarMateriales, marcarMaterialHecho, materialSueltoDeHoy } from "./materiales.ts";
+import { actualizarMaterial, borrarMaterial, crearMaterial, listarMateriales, marcarMaterialHecho, materialSueltoDeHoy, obtenerMaterial } from "./materiales.ts";
 
 const hijo = { id: 999999, rol: "Hijo" };
 const rechazo = (e: { status?: number }) => e.status === 403;
@@ -70,4 +70,20 @@ test("flujo del material suelto: el padre lo deja, el hermano no lo ve, el hijo 
 
 test("el material suelto es solo para hijos", { skip: sinBase }, async () => {
   await assert.rejects(crearMaterial({ id: ids.padre, rol: "Padre" }, { destino: { alumnoId: ids.padre, fecha: "2031-03-04" }, entrada: "x" }), { status: 400 });
+});
+
+test("la clave de respuestas (solo padres) no la ve ni la lista el hijo", { skip: sinBase }, async () => {
+  const padre = { id: ids.padre, rol: "Padre" };
+  const yo = { id: ids.hijo, rol: "Hijo" };
+  const fecha = "2031-03-05";
+  const hoja = await crearMaterial(padre, { destino: { alumnoId: ids.hijo, fecha }, entrada: "Ejercicios 1 a 5" });
+  const clave = await crearMaterial(padre, { destino: { alumnoId: ids.hijo, fecha }, entrada: "1) 4  2) 9  3) 16", titulo: "Clave", soloPadres: true });
+  assert.equal(clave.soloPadres, true);
+  assert.deepEqual((await listarMateriales(yo, { alumnoId: ids.hijo, fecha })).map((m) => m.id), [hoja.id]);
+  assert.deepEqual((await listarMateriales(padre, { alumnoId: ids.hijo, fecha })).map((m) => m.id), [hoja.id, clave.id]);
+  assert.deepEqual((await materialSueltoDeHoy(ids.hijo, fecha)).map((m) => m.id), [hoja.id]);
+  await assert.rejects(obtenerMaterial(yo, clave.id), { status: 403 });
+  assert.equal((await obtenerMaterial(padre, clave.id)).titulo, "Clave");
+  await borrarMaterial(padre, hoja.id);
+  await borrarMaterial(padre, clave.id);
 });

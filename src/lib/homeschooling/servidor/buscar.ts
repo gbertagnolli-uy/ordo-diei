@@ -27,7 +27,7 @@ export async function buscarEnEstudio(a: Actor, consulta: string): Promise<Resul
   const whereLeccion: Prisma.LeccionCursoWhereInput = { OR: [{ titulo: tiene(q) }, { instrucciones: tiene(q) }], ...(padre ? {} : { recurso: conPlan }) };
   const whereMaterial: Prisma.MaterialEstudioWhereInput = {
     OR: [{ titulo: tiene(q) }, { contenido: tiene(q) }],
-    ...(padre ? {} : { AND: [{ OR: [{ alumnoId: a.id }, { diaLectivo: { plan: { alumnoId: a.id } } }, { leccion: { recurso: conPlan } }] }] }),
+    ...(padre ? {} : { soloPadres: false, AND: [{ OR: [{ alumnoId: a.id }, { diaLectivo: { plan: { alumnoId: a.id } } }, { leccion: { recurso: conPlan } }] }] }),
   };
   const whereEvidencia: Prisma.EvidenciaAprendizajeWhereInput = { OR: [{ titulo: tiene(q) }, { nota: tiene(q) }], ...(padre ? {} : { alumnoId: a.id }) };
   const whereActividad: Prisma.ActividadOfflineWhereInput = { OR: [{ titulo: tiene(q) }, { descripcion: tiene(q) }, { lugar: tiene(q) }], ...(padre ? {} : { participantes: { some: { alumnoId: a.id } } }) };

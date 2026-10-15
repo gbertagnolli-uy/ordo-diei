@@ -39,6 +39,7 @@ export default function AgregarMaterial({
   const tituloEditado = useRef(false);
   const [tipo, setTipo] = useState<TipoMaterial>("texto");
   const [limite, setLimite] = useState(2);
+  const [soloPadres, setSoloPadres] = useState(false);
   const [detectando, setDetectando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [det, setDet] = useState<MaterialDetectado | null>(null);
@@ -51,6 +52,7 @@ export default function AgregarMaterial({
     tituloEditado.current = false;
     setTipo("texto");
     setLimite(2);
+    setSoloPadres(false);
     setDet(null);
   }, [open]);
 
@@ -96,7 +98,7 @@ export default function AgregarMaterial({
     try {
       const creado = await api<MaterialVista>("/api/homeschooling/materiales", {
         method: "POST",
-        body: { destino, entrada: entrada.trim(), titulo: titulo.trim() || null, tipo, limiteImpresiones: limite },
+        body: { destino, entrada: entrada.trim(), titulo: titulo.trim() || null, tipo, limiteImpresiones: soloPadres ? 0 : limite, soloPadres },
       });
       toast.success("Material agregado");
       onCreado(creado);
@@ -173,7 +175,15 @@ export default function AgregarMaterial({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm">
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={soloPadres} onChange={(e) => setSoloPadres(e.target.checked)} className="mt-0.5 size-4 accent-primary" />
+                <span>
+                  <span className="font-medium text-foreground">Solo para padres</span>
+                  <span className="block text-xs text-muted-foreground">Clave de respuestas o guía del maestro: el hijo no la ve ni la imprime.</span>
+                </span>
+              </label>
+
+              <div className={`flex flex-wrap items-center gap-2 text-sm ${soloPadres ? "pointer-events-none opacity-50" : ""}`}>
                 <Printer className="size-4 text-muted-foreground" aria-hidden />
                 <Label htmlFor="mat-limite" className="font-normal">
                   El alumno puede imprimirlo

@@ -1009,6 +1009,8 @@ model MaterialEstudio {
   orden             Int          @default(0) @map("Orden")
   // Cuántas veces el hijo puede abrir la vista de impresión (lane P1); 0 = no se puede imprimir
   limiteImpresiones Int          @default(2) @map("Limite_Impresiones")
+  // Clave de respuestas y material solo para padres: el hijo no lo ve, no lo imprime ni sale en sus hojas (lane 183)
+  soloPadres        Boolean      @default(false) @map("Solo_Padres")
   leccionId         Int?         @map("Leccion_ID")
   diaLectivoId      Int?         @map("Dia_Lectivo_ID")
   // Material suelto: para un alumno en una fecha, sin curso

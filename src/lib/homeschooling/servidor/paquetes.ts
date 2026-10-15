@@ -39,7 +39,7 @@ export async function exportarCurso(a: Actor, recursoId: number): Promise<Paquet
       instrucciones: l.instrucciones,
       url: l.url,
       preguntas: l.preguntas.map((p) => ({ enunciado: p.enunciado, opciones: p.opciones as string[], correcta: p.correcta, explicacion: p.explicacion, segundoVideo: p.segundoVideo })),
-      materiales: l.materiales.map((m) => ({ titulo: m.titulo, tipo: m.tipo, url: m.url, contenido: m.contenido, limiteImpresiones: m.limiteImpresiones })),
+      materiales: l.materiales.map((m) => ({ titulo: m.titulo, tipo: m.tipo, url: m.url, contenido: m.contenido, limiteImpresiones: m.limiteImpresiones, soloPadres: m.soloPadres })),
     })),
   };
 }
@@ -97,6 +97,7 @@ export async function importarPaquete(a: Actor, materiaId: number, paquete: Paqu
                   contenido: det.contenido,
                   miniaturaUrl: det.miniaturaUrl,
                   limiteImpresiones: m.limiteImpresiones ?? 2,
+                  soloPadres: m.soloPadres ?? false,
                 };
               }),
             });
