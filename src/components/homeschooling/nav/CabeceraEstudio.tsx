@@ -4,10 +4,12 @@
 // pestañas para moverse entre las secciones (el padre y el hijo ven las suyas). Sticky y oculta al imprimir.
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CalendarDays, CalendarOff, Camera, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, type LucideIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { CalendarDays, CalendarOff, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, type LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import BuscadorEstudio from "./BuscadorEstudio";
 
 const RAIZ = "/dashboard/homeschooling";
 
@@ -33,6 +35,7 @@ const HIJO: Pestana[] = [
 
 export default function CabeceraEstudio({ esPadre, pendientes }: { esPadre: boolean; pendientes: number }) {
   const ruta = usePathname() ?? "";
+  const router = useRouter();
   const pestanas = esPadre ? PADRE : HIJO;
   // Una materia o un curso cuelgan del Panel (o de «Hoy», para el hijo)
   const activa = (p: Pestana) => (p.exacta ? ruta === p.href || ruta.startsWith(`${RAIZ}/materias`) : ruta === p.href || ruta.startsWith(`${p.href}/`));
@@ -43,6 +46,14 @@ export default function CabeceraEstudio({ esPadre, pendientes }: { esPadre: bool
       <div className="flex h-12 items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon-sm" aria-label="Atrás" title="Atrás" onClick={() => router.back()}>
+            <ChevronLeft />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Adelante" title="Adelante" onClick={() => router.forward()}>
+            <ChevronRight />
+          </Button>
+        </div>
         <nav aria-label="Ubicación" className="flex min-w-0 items-center gap-1.5 text-sm">
           <Link href={RAIZ} className="font-medium text-muted-foreground hover:text-foreground">
             Estudio
@@ -54,6 +65,7 @@ export default function CabeceraEstudio({ esPadre, pendientes }: { esPadre: bool
             </>
           )}
         </nav>
+        <BuscadorEstudio />
       </div>
       <nav aria-label="Secciones de Estudio" className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2">
         {pestanas.map((p) => {
