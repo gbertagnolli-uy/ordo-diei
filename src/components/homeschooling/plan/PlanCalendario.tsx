@@ -18,6 +18,7 @@ import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import MateriaHeader from "@/components/homeschooling/cursos/MateriaHeader";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
 import SuscribirCalendario from "@/components/homeschooling/plan/SuscribirCalendario";
+import { COLOR_LITURGICO, type Festividad } from "@/lib/homeschooling/festividades";
 import HojaDelDiaPadre from "@/components/homeschooling/plan/HojaDelDiaPadre";
 import CalificarDia from "@/components/homeschooling/libreta/CalificarDia";
 import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
@@ -38,7 +39,7 @@ export type DiaDelPlan = {
 export type NoLectivoVista = { id: number; fecha: string; motivo: string };
 export type ActividadVista = { id: number; titulo: string; inicio: string; fin: string };
 
-type Recurso = { tipo: "dia"; dia: DiaDelPlan } | { tipo: "sin_clase"; motivo: string } | { tipo: "actividad"; titulo: string };
+type Recurso = { tipo: "dia"; dia: DiaDelPlan } | { tipo: "sin_clase"; motivo: string } | { tipo: "actividad"; titulo: string } | { tipo: "liturgia"; color: string; mayor: boolean };
 
 const aFechaLocal = (clave: string) => {
   const [y, m, d] = clave.split("-").map(Number);
@@ -57,6 +58,7 @@ export default function PlanCalendario({
   alumnos,
   alumnoId,
   rutaCalendario,
+  festividades = [],
 }: {
   dias: DiaDelPlan[];
   noLectivos: NoLectivoVista[];
@@ -64,6 +66,8 @@ export default function PlanCalendario({
   alumnos: AlumnoLite[];
   alumnoId: number;
   rutaCalendario?: string;
+  /** Domingos y fiestas del año litúrgico para marcar (lane 188) */
+  festividades?: Festividad[];
 }) {
   const router = useRouter();
   const [sel, setSel] = useState<DiaDelPlan | null>(null);
@@ -92,6 +96,14 @@ export default function PlanCalendario({
         allDay: false,
         resource: { tipo: "actividad" as const, titulo: a.titulo },
       })),
+      ...festividades.map((f) => ({
+        id: `l${f.fecha}`,
+        title: f.titulo,
+        start: aFechaLocal(f.fecha),
+        end: aFechaLocal(f.fecha),
+        allDay: true,
+        resource: { tipo: "liturgia" as const, color: f.color, mayor: f.mayor },
+      })),
       ...noLectivos.map((n) => ({
         id: `n${n.id}`,
         title: `Sin clase: ${n.motivo}`,
@@ -101,7 +113,7 @@ export default function PlanCalendario({
         resource: { tipo: "sin_clase" as const, motivo: n.motivo },
       })),
     ],
-    [dias, noLectivos, actividades]
+    [dias, noLectivos, actividades, festividades]
   );
 
   const cambiar = async (diaId: number, cuerpo: { accion: "mover"; fecha: string } | { accion: "omitir" }) => {
@@ -143,6 +155,10 @@ export default function PlanCalendario({
         events={eventos}
         draggableAccessor={(e) => e.resource.tipo === "dia" && editable(e.resource.dia)}
         eventPropGetter={(e) => {
+          if (e.resource.tipo === "liturgia") {
+            const c = COLOR_LITURGICO[e.resource.color] ?? COLOR_LITURGICO.blanco;
+            return { style: { backgroundColor: c.fondo, color: c.texto, fontSize: "0.7rem", fontWeight: e.resource.mayor ? 700 : 500, opacity: 0.92 } };
+          }
           if (e.resource.tipo === "actividad") return { style: { backgroundColor: "var(--warning)" } };
           if (e.resource.tipo === "sin_clase") {
             return {
