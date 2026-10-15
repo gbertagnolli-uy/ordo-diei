@@ -192,3 +192,6 @@ export function impresionesRestantes(limite: number, usadas: number, extras: num
 
 /** Cuánto vale una hoja impresa antes de caducar su enlace (minutos): alcanza para volver a mandarla si la impresora falla */
 export const MINUTOS_HOJA_IMPRESA = 15;
+
+/** Veces que un alumno puede imprimir la hoja de un día (más las que le dé un padre) */
+export const IMPRESIONES_HOJA_DIA = 2;
