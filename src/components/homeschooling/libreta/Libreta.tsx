@@ -5,7 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Edit2, Plus, Printer, Trash2 } from "lucide-react";
+import { Edit2, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -46,6 +46,11 @@ export default function Libreta({ libreta, alumnos }: { libreta: LibretaDatos; a
           <NotebookPen className="size-6" /> Libreta de {libreta.alumno.nombre}
         </h1>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/dashboard/homeschooling/boletin?alumno=${libreta.alumno.id}`}>
+              <ScrollText /> Boletín
+            </Link>
+          </Button>
           <Button variant="outline" onClick={() => window.print()}>
             <Printer /> Imprimir
           </Button>
