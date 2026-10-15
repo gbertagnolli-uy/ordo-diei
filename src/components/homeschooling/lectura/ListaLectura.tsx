@@ -9,7 +9,7 @@ import { BookMarked, BookOpen, CheckCircle2, Edit2, Flame, Library, Play, Plus, 
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
-import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
+import ResumenCompacto from "@/components/homeschooling/nav/ResumenCompacto";
 import { StarRating } from "@/components/homeschooling/roost/StarRating";
 import { ETIQUETA_LECTURA, type EstadoLectura } from "@/lib/homeschooling/lectura";
 import { api } from "@/lib/homeschooling/roost/services/http";
@@ -80,11 +80,13 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
         </nav>
       )}
 
-      <section aria-label="Resumen" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatsCard title="Leídos este año" value={datos.resumen.librosLeidosAnio} icon={BookMarked} color="success" />
-        <StatsCard title="Páginas esta semana" value={datos.resumen.paginasSemana} icon={BookOpen} color="primary" />
-        <StatsCard title="Racha de lectura" value={datos.resumen.racha === 0 ? "—" : `${datos.resumen.racha} ${datos.resumen.racha === 1 ? "día" : "días"}`} icon={Flame} color={datos.resumen.racha > 0 ? "warning" : "primary"} />
-      </section>
+      <ResumenCompacto
+        datos={[
+          { rotulo: "Leídos este año", valor: datos.resumen.librosLeidosAnio, icono: BookMarked, color: "text-success" },
+          { rotulo: "Páginas esta semana", valor: datos.resumen.paginasSemana, icono: BookOpen },
+          { rotulo: "Racha de lectura", valor: datos.resumen.racha === 0 ? "—" : `${datos.resumen.racha} ${datos.resumen.racha === 1 ? "día" : "días"}`, icono: Flame, color: datos.resumen.racha > 0 ? "text-warning" : "text-foreground" },
+        ]}
+      />
 
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Estado de lectura">
         {(["leyendo", "por_leer", "leido"] as const).map((e) => (
@@ -147,7 +149,7 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
                   <>
                     {l.porcentaje !== null ? (
                       <div className="space-y-1">
-                        <Progress value={l.porcentaje} />
+                        <Progress value={l.porcentaje} aria-label={`Avance de ${l.titulo}`} />
                         <p className="text-xs text-muted-foreground">
                           Página {l.paginaActual} de {l.paginasTotal} · {l.porcentaje}%
                         </p>

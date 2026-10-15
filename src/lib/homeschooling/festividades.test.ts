@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aFestividades, COLOR_LITURGICO, esFestividadMarcada } from "./festividades.ts";
+import { aFestividades, COLOR_LITURGICO, esFestividadMarcada, tituloEnEspanol } from "./festividades.ts";
 
 const d = (fecha: string, rango: string, dominical = false, tituloEs: string | null = null, color = "blanco") => ({ fecha, titulo: `T ${fecha}`, tituloEs, rango, color, dominical });
 
@@ -27,4 +27,12 @@ test("aFestividades: filtra, usa el título en español, marca las mayores y ord
 
 test("hay un color de fondo y de texto para cada color litúrgico", () => {
   for (const c of ["blanco", "rojo", "verde", "morado", "negro", "rosa"]) assert.ok(COLOR_LITURGICO[c].fondo.startsWith("#") && COLOR_LITURGICO[c].texto.startsWith("#"), c);
+});
+
+test("tituloEnEspanol: el de la base, si no la lista, si no el original", () => {
+  assert.equal(tituloEnEspanol("S. Matthiæ Apostoli", "S. Matías, Apóstol"), "S. Matías, Apóstol");
+  assert.equal(tituloEnEspanol("In Nativitate Domini", null), "La Natividad del Señor (Navidad)");
+  assert.equal(tituloEnEspanol("In Conceptione Immaculata Beatæ Mariæ Virginis", null), "La Inmaculada Concepción");
+  assert.equal(tituloEnEspanol("In Epiphania Domini", "  "), "La Epifanía del Señor");
+  assert.equal(tituloEnEspanol("Titulus ignotus", null), "Titulus ignotus");
 });

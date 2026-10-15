@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { Brain, CheckCircle2, ChevronDown, Mic, PenLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
+import ResumenCompacto from "@/components/homeschooling/nav/ResumenCompacto";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import type { ListaMemoria as Datos } from "@/lib/homeschooling/servidor/memoria";
 import { toast } from "@/lib/toast";
@@ -67,11 +67,13 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
         </nav>
       )}
 
-      <section aria-label="Resumen" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatsCard title="Toca recitar hoy" value={datos.tocanHoy} icon={Mic} color={datos.tocanHoy > 0 ? "warning" : "success"} />
-        <StatsCard title="Aprendiendo" value={datos.items.length - datos.dominadas} icon={Brain} color="primary" />
-        <StatsCard title="Ya las sabe" value={datos.dominadas} icon={CheckCircle2} color="success" />
-      </section>
+      <ResumenCompacto
+        datos={[
+          { rotulo: "Toca recitar hoy", valor: datos.tocanHoy, icono: Mic, color: datos.tocanHoy > 0 ? "text-warning" : "text-success" },
+          { rotulo: "Aprendiendo", valor: datos.items.length - datos.dominadas, icono: Brain },
+          { rotulo: "Ya las sabe", valor: datos.dominadas, icono: CheckCircle2, color: "text-success" },
+        ]}
+      />
 
       {datos.items.length > 5 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar una oración o una lista…" cantidad={visibles.length} />}
 
@@ -100,7 +102,7 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
                     </span>
                   </span>
                 </button>
-                {m.dominada ? <CheckCircle2 className="size-5 shrink-0 text-success" aria-label="La sabe" /> : m.toca ? <span className="size-2.5 shrink-0 rounded-full bg-warning" aria-label="Toca hoy" /> : null}
+                {m.dominada ? <CheckCircle2 role="img" className="size-5 shrink-0 text-success" aria-label="La sabe" /> : m.toca ? <span role="img" className="size-2.5 shrink-0 rounded-full bg-warning" aria-label="Toca hoy" /> : null}
                 {esPadre && (
                   <>
                     <Button asChild variant="ghost" size="icon-sm" aria-label={`Hoja para copiar «${m.titulo}»`} title="Hoja para copiar a mano">

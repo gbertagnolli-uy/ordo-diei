@@ -36,7 +36,7 @@ export default function CursoCard({ module, onClick }: { module: ModuleWithProgr
         {module.description && <p className="line-clamp-2 text-sm text-muted-foreground">{module.description}</p>}
 
         <div className="space-y-1.5">
-          <Progress value={module.progress_percentage} />
+          <Progress value={module.progress_percentage} aria-label={`Avance de ${module.title}`} />
           <p className="text-xs text-muted-foreground">
             {module.progress_percentage}%
             {module.total_unidades > 0 && (

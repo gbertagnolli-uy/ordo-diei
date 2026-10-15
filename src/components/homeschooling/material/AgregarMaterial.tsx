@@ -114,12 +114,12 @@ export default function AgregarMaterial({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && !guardando && onClose()}>
-      <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[92svh] overflow-x-hidden overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Agregar material</DialogTitle>
           <DialogDescription>{contexto ? `Para ${contexto}. ` : ""}Pegá un enlace (YouTube, Drive, Google Docs, PDF, ePub, una web) o escribí el texto. La app detecta lo demás.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={guardar} className="space-y-4">
+        <form onSubmit={guardar} className="min-w-0 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="mat-entrada">Pegá lo que tengas</Label>
             <Textarea
@@ -129,7 +129,7 @@ export default function AgregarMaterial({
               onChange={(e) => setEntrada(e.target.value)}
               rows={entrada.includes("\n") || entrada.length > 90 ? 8 : 3}
               placeholder={"https://docs.google.com/document/d/…\nhttps://youtu.be/…\no escribí: «Leé el capítulo 3 y copiá el resumen en el cuaderno»"}
-              className="font-mono text-sm"
+              className="field-sizing-fixed min-w-0 font-mono text-sm break-all"
             />
             <p className="text-xs text-muted-foreground">Los archivos grandes quedan en Drive o YouTube: acá solo se guarda el enlace. En Drive, compartilos con «cualquiera con el enlace».</p>
           </div>
@@ -152,7 +152,7 @@ export default function AgregarMaterial({
                 </div>
               )}
 
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <div className="space-y-1.5">
                   <Label htmlFor="mat-titulo">Título</Label>
                   <Input

@@ -41,7 +41,7 @@ export default function TarjetaHoy({ dia, onClick, onFoto }: { dia: DiaHoy; onCl
         </span>
         <span className="block truncate text-lg font-semibold text-foreground">{dia.recurso.titulo}</span>
         <span className="block text-sm text-muted-foreground">{bloqueada ? bloqueo : dia.rango}</span>
-        <Progress value={dia.progreso} />
+        <Progress value={dia.progreso} aria-label={`Avance de ${dia.recurso.titulo}`} />
       </span>
 
       {hecho ? (
