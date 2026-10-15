@@ -187,19 +187,19 @@ export const cambiosNota = z.object({
 export const notaDeDia = z.object({ puntaje: puntajeNota, comentario: z.string().trim().max(1000).nullable().optional() });
 
 // ── Comentarios, reacciones y avisos de la familia (lane 174, Q1/Q3) ──
-export const destinoComentario = z.union([z.object({ leccionId: idPositivo }), z.object({ materialId: idPositivo }), z.object({ evidenciaId: idPositivo })]);
+export const destinoComentario = z.union([z.object({ leccionId: idPositivo }), z.object({ materialId: idPositivo }), z.object({ evidenciaId: idPositivo }), z.object({ publicacionId: idPositivo })]);
 
 export const destinoComentarioDe = (req: Request) => {
   const q = new URL(req.url).searchParams;
-  for (const k of ["leccionId", "materialId", "evidenciaId"] as const) {
+  for (const k of ["leccionId", "materialId", "evidenciaId", "publicacionId"] as const) {
     const v = Number(q.get(k));
-    if (Number.isInteger(v) && v > 0) return { [k]: v } as { leccionId: number } | { materialId: number } | { evidenciaId: number };
+    if (Number.isInteger(v) && v > 0) return { [k]: v } as { leccionId: number } | { materialId: number } | { evidenciaId: number } | { publicacionId: number };
   }
   throw new Error("Falta la lección, el material o la evidencia");
 };
 
 export const datosComentario = z.object({ destino: destinoComentario, texto: z.string().max(5000) });
-export const datosReaccion = z.object({ objetivo: z.union([z.object({ comentarioId: idPositivo }), z.object({ evidenciaId: idPositivo })]), emoji: z.string().max(10) });
+export const datosReaccion = z.object({ objetivo: z.union([z.object({ comentarioId: idPositivo }), z.object({ evidenciaId: idPositivo }), z.object({ publicacionId: idPositivo })]), emoji: z.string().max(10) });
 export const datosLeidos = z.object({ ids: z.array(idPositivo).max(200).optional() });
 
 // ── Lectura real (lane 175, L1) ──
@@ -243,3 +243,7 @@ export const datosRecitado = z.object({ nivel: z.enum(["otra_vez", "dificil", "b
 export const datosPeriodo = z.object({ nombre: z.string().trim().min(1, "Falta el nombre del período").max(80), inicio: claveFecha, fin: claveFecha });
 export const datosTrimestres = z.object({ anio: z.number().int().min(2000).max(2100) });
 export const datosComentarioBoletin = z.object({ comentario: z.string().max(2000).nullable() });
+
+// ── Muro de la familia (lane 184, Q2) ──
+export const datosAviso = z.object({ titulo: z.string().max(500), cuerpo: z.string().max(5000).nullable().optional(), fijada: z.boolean().optional() });
+export const datosFijar = z.object({ fijada: z.boolean() });

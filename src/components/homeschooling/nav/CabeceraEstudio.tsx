@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, Brain, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, NotebookPen, type LucideIcon } from "lucide-react";
+import { CalendarDays, CalendarOff, Brain, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, Megaphone, NotebookPen, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -18,6 +18,7 @@ type Pestana = { href: string; etiqueta: string; icono: LucideIcon; exacta?: boo
 
 const PADRE: Pestana[] = [
   { href: RAIZ, etiqueta: "Panel", icono: LayoutDashboard, exacta: true },
+  { href: `${RAIZ}/muro`, etiqueta: "Familia", icono: Megaphone },
   { href: `${RAIZ}/plan`, etiqueta: "Plan", icono: CalendarDays },
   { href: `${RAIZ}/semana`, etiqueta: "Semana", icono: CalendarRange },
   { href: `${RAIZ}/revision`, etiqueta: "Revisión", icono: ClipboardCheck, insignia: "revision" },
@@ -33,6 +34,7 @@ const PADRE: Pestana[] = [
 
 const HIJO: Pestana[] = [
   { href: RAIZ, etiqueta: "Hoy", icono: GraduationCap, exacta: true },
+  { href: `${RAIZ}/muro`, etiqueta: "Familia", icono: Megaphone },
   { href: `${RAIZ}/lectura`, etiqueta: "Lectura", icono: Library },
   { href: `${RAIZ}/memoria`, etiqueta: "Memoria", icono: Brain },
   { href: `${RAIZ}/portafolio`, etiqueta: "Portafolio", icono: Camera },

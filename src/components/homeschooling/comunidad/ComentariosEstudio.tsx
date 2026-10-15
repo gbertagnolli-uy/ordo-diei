@@ -90,12 +90,12 @@ export default function ComentariosEstudio({ destino, titulo = "Comentarios", pl
     }
   };
 
-  const reaccionar = async (objetivo: { comentarioId: number } | { evidenciaId: number }, emoji: Emoji) => {
+  const reaccionar = async (objetivo: { comentarioId: number } | { evidenciaId: number } | { publicacionId: number }, emoji: Emoji) => {
     try {
       const r = await api<ResumenReacciones>("/api/homeschooling/reacciones", { method: "POST", body: { objetivo, emoji } });
       setDatos((d) => {
         if (!d) return d;
-        if ("evidenciaId" in objetivo) return { ...d, reacciones: r };
+        if ("evidenciaId" in objetivo || "publicacionId" in objetivo) return { ...d, reacciones: r };
         return { ...d, comentarios: d.comentarios.map((c) => (c.id === objetivo.comentarioId ? { ...c, reacciones: r } : c)) };
       });
     } catch (e) {
@@ -110,7 +110,9 @@ export default function ComentariosEstudio({ destino, titulo = "Comentarios", pl
         {datos && datos.comentarios.length > 0 && <span className="ml-1.5 font-normal text-muted-foreground">({datos.comentarios.length})</span>}
       </h3>
 
-      {datos?.reacciones && "evidenciaId" in destino && <Reacciones resumen={datos.reacciones} onAlternar={(e) => reaccionar({ evidenciaId: destino.evidenciaId }, e)} />}
+      {datos?.reacciones && ("evidenciaId" in destino || "publicacionId" in destino) && (
+        <Reacciones resumen={datos.reacciones} onAlternar={(e) => reaccionar("evidenciaId" in destino ? { evidenciaId: destino.evidenciaId } : { publicacionId: destino.publicacionId }, e)} />
+      )}
 
       {datos === null ? (
         <Skeleton className="h-16 w-full rounded-xl" />

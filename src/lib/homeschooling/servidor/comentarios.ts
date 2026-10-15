@@ -10,7 +10,7 @@ import { DatoInvalidoError } from "./planes.ts";
 import { obtenerMaterial, type Actor } from "./materiales.ts";
 import { avisarComentario } from "./avisos.ts";
 
-export type DestinoComentario = { leccionId: number } | { materialId: number } | { evidenciaId: number };
+export type DestinoComentario = { leccionId: number } | { materialId: number } | { evidenciaId: number } | { publicacionId: number };
 export type ResumenReacciones = Record<Emoji, { total: number; mia: boolean }>;
 export type ComentarioVista = {
   id: number;
@@ -57,6 +57,12 @@ async function exigirAcceso(a: Actor, d: DestinoComentario): Promise<{ alumnoIds
     }
     return { alumnoIds, titulo: m.titulo, href: RAIZ };
   }
+  if ("publicacionId" in d) {
+    // El muro es de toda la familia: cualquiera puede ver y comentar; el aviso de un comentario va al hijo de quien se habla
+    const p = await prisma.publicacionFamilia.findUnique({ where: { id: d.publicacionId }, select: { titulo: true, alumnoId: true } });
+    if (!p) throw new NoEncontradoError("Publicación no encontrada");
+    return { alumnoIds: p.alumnoId ? [p.alumnoId] : [], titulo: p.titulo, href: `${RAIZ}/muro` };
+  }
   const e = await prisma.evidenciaAprendizaje.findUnique({ where: { id: d.evidenciaId }, select: { alumnoId: true, titulo: true, destacada: true } });
   if (!e) throw new NoEncontradoError("Evidencia no encontrada");
   if (!esPadre(a.rol) && e.alumnoId !== a.id && !e.destacada) throw new NoAutorizadoError("No tenés acceso a esta evidencia");
@@ -73,7 +79,7 @@ export async function conversacion(a: Actor, d: DestinoComentario): Promise<Conv
     take: 200,
     include: { autor: { select: { id: true, nombre: true, fotoUrl: true, rolFamiliar: true } }, reacciones: { select: { emoji: true, usuarioId: true } } },
   });
-  const propias = "evidenciaId" in d ? await prisma.reaccionEstudio.findMany({ where: { evidenciaId: d.evidenciaId }, select: { emoji: true, usuarioId: true } }) : null;
+  const propias = "evidenciaId" in d || "publicacionId" in d ? await prisma.reaccionEstudio.findMany({ where: "evidenciaId" in d ? { evidenciaId: d.evidenciaId } : { publicacionId: d.publicacionId }, select: { emoji: true, usuarioId: true } }) : null;
   return {
     comentarios: filas.map((c) => ({
       id: c.id,
@@ -108,16 +114,21 @@ export async function borrarComentario(a: Actor, id: number): Promise<void> {
 }
 
 /** Pone o saca una reacción (una por emoji y persona); devuelve el resumen del comentario o la evidencia */
-export async function alternarReaccion(a: Actor, objetivo: { comentarioId: number } | { evidenciaId: number }, emoji: unknown): Promise<ResumenReacciones> {
+export async function alternarReaccion(a: Actor, objetivo: { comentarioId: number } | { evidenciaId: number } | { publicacionId: number }, emoji: unknown): Promise<ResumenReacciones> {
   if (!esEmoji(emoji)) throw new DatoInvalidoError("Reacción no válida");
   if ("comentarioId" in objetivo) {
-    const c = await prisma.comentarioEstudio.findUnique({ where: { id: objetivo.comentarioId }, select: { leccionId: true, materialId: true, evidenciaId: true } });
+    const c = await prisma.comentarioEstudio.findUnique({ where: { id: objetivo.comentarioId }, select: { leccionId: true, materialId: true, evidenciaId: true, publicacionId: true } });
     if (!c) throw new NoEncontradoError("Comentario no encontrado");
-    await exigirAcceso(a, c.leccionId ? { leccionId: c.leccionId } : c.materialId ? { materialId: c.materialId } : { evidenciaId: c.evidenciaId as number });
+    await exigirAcceso(a, c.leccionId ? { leccionId: c.leccionId } : c.materialId ? { materialId: c.materialId } : c.publicacionId ? { publicacionId: c.publicacionId } : { evidenciaId: c.evidenciaId as number });
   } else {
-    await exigirAcceso(a, { evidenciaId: objetivo.evidenciaId });
+    await exigirAcceso(a, "evidenciaId" in objetivo ? { evidenciaId: objetivo.evidenciaId } : { publicacionId: objetivo.publicacionId });
   }
-  const clave = "comentarioId" in objetivo ? { usuarioId_comentarioId_emoji: { usuarioId: a.id, comentarioId: objetivo.comentarioId, emoji } } : { usuarioId_evidenciaId_emoji: { usuarioId: a.id, evidenciaId: objetivo.evidenciaId, emoji } };
+  const clave =
+    "comentarioId" in objetivo
+      ? { usuarioId_comentarioId_emoji: { usuarioId: a.id, comentarioId: objetivo.comentarioId, emoji } }
+      : "evidenciaId" in objetivo
+        ? { usuarioId_evidenciaId_emoji: { usuarioId: a.id, evidenciaId: objetivo.evidenciaId, emoji } }
+        : { usuarioId_publicacionId_emoji: { usuarioId: a.id, publicacionId: objetivo.publicacionId, emoji } };
   const existe = await prisma.reaccionEstudio.findUnique({ where: clave });
   if (existe) await prisma.reaccionEstudio.delete({ where: { id: existe.id } });
   else await prisma.reaccionEstudio.create({ data: { usuarioId: a.id, emoji, ...objetivo } });

@@ -10,6 +10,8 @@ import { esPadre } from "../../habitos/permisos.ts";
 import { claveDeUrl } from "../../archivos.ts";
 import { mapShowcase } from "../roost/dto.ts";
 import type { ShowcaseStats, ShowcaseWithDetails } from "../roost/tipos.ts";
+import { LOGROS } from "../muro.ts";
+import { publicarLogroDe } from "./muro.ts";
 import { ConflictoError, DatoInvalidoError } from "./planes.ts";
 
 export type Actor = { id: number; rol: string };
@@ -160,7 +162,9 @@ export async function actuarSobreEvidencia(a: Actor, id: number, accion: AccionE
       data = { destacada: false, destacadaEn: null };
       break;
   }
-  return mapShowcase(await prisma.evidenciaAprendizaje.update({ where: { id }, data, include: INCLUIR }));
+  const guardada = await prisma.evidenciaAprendizaje.update({ where: { id }, data, include: INCLUIR });
+  if (accion.accion === "destacar" && !actual.destacada) await publicarLogroDe(actual.alumnoId, (n) => LOGROS.destacada(n, guardada.titulo || "Trabajo"), "/dashboard/homeschooling/muro");
+  return mapShowcase(guardada);
 }
 
 /** Agregar una foto: el dueño o un padre, mientras no esté aprobada */

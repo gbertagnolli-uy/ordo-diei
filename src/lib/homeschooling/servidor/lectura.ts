@@ -5,6 +5,8 @@ import type { LecturaLibro, Prisma } from "@prisma/client";
 import { aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "../../habitos/server.ts";
 import { esPadre } from "../../habitos/permisos.ts";
 import { ESTADOS_LECTURA, paginasNuevas, porcentajeLeido, resumirLectura, type EstadoLectura, type ResumenLectura } from "../lectura.ts";
+import { LOGROS } from "../muro.ts";
+import { publicarLogroDe } from "./muro.ts";
 import { DatoInvalidoError } from "./planes.ts";
 
 export type Actor = { id: number; rol: string };
@@ -122,6 +124,9 @@ export async function registrarLectura(a: Actor, id: number, d: { hastaPagina: n
       },
     });
     return aVista(actualizado);
+  }).then(async (vista) => {
+    if (terminaSolo && libro.estado !== "leido") await publicarLogroDe(libro.alumnoId, (n) => LOGROS.libro(n, libro.titulo), "/dashboard/homeschooling/muro");
+    return vista;
   });
 }
 
@@ -134,7 +139,8 @@ export async function terminarLibro(a: Actor, id: number, d: CierreLibro, hoy = 
   if (!FECHA.test(fecha) || fecha > hoy) throw new DatoInvalidoError("La fecha no puede ser futura");
   if (d.estrellas != null && (!Number.isInteger(d.estrellas) || d.estrellas < 1 || d.estrellas > 5)) throw new DatoInvalidoError("La valoración va de 1 a 5");
   if ((d.narracion ?? "").length > 3000) throw new DatoInvalidoError("La narración es demasiado larga (máximo 3000 caracteres)");
-  return aVista(
+  const yaEstabaLeido = libro.estado === "leido";
+  const vista = aVista(
     await prisma.lecturaLibro.update({
       where: { id },
       data: {
@@ -147,6 +153,8 @@ export async function terminarLibro(a: Actor, id: number, d: CierreLibro, hoy = 
       },
     })
   );
+  if (!yaEstabaLeido) await publicarLogroDe(libro.alumnoId, (n) => LOGROS.libro(n, libro.titulo), "/dashboard/homeschooling/muro");
+  return vista;
 }
 
 export type CambiosLibro = { titulo?: string; autor?: string | null; paginasTotal?: number | null; portadaUrl?: string | null; estado?: EstadoLectura; narracion?: string | null; estrellas?: number | null };
