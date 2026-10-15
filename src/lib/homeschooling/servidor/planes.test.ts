@@ -2,7 +2,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import prisma from "../../prisma.ts";
 import { aClave, aFecha } from "../../habitos/server.ts";
-import { cambiarPlan, crearPlan, marcarNoLectivo, moverDia, omitirDia, ponerseAlDia, quitarPlan, recalcular, vistaPonerseAlDia } from "./planes.ts";
+import { cambiarPlan, crearPlan, marcarNoLectivo, moverDia, omitirDia, ponerseAlDia, quitarPlan, recalcular, vistaPonerseAlDia, configurarAnio } from "./planes.ts";
 
 // Escribe en la base de DATABASE_URL, que hoy es la de producción: solo corre con PERMITIR_TESTS_DB=1
 const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base real)";
@@ -131,4 +131,16 @@ test("pausar, reanudar y extender el fin de un plan; quitarlo con días cumplido
 test("ponerse al día: solo padres", async () => {
   await assert.rejects(vistaPonerseAlDia(999999, 1, "2031-01-01"), (e: { status?: number }) => e.status === 403 || e.status === 404);
   await assert.rejects(ponerseAlDia(999999, 1, "2031-01-01"), (e: { status?: number }) => e.status === 403 || e.status === 404);
+});
+
+test("configurar el año: solo padres y con datos válidos", async () => {
+  const base = { alumnoIds: [3], vacaciones: [{ motivo: "Invierno", desde: "2031-07-07", hasta: "2031-07-18" }], fiestas: [], hoy: "2031-01-01" };
+  await assert.rejects(configurarAnio({ ...base, actorId: 999999 }), (e: { status?: number }) => e.status === 403 || e.status === 404);
+  const padre = await prisma.usuario.findFirst({ where: { rolFamiliar: { in: ["Padre", "Madre"] } }, select: { id: true } });
+  if (!padre) return;
+  await assert.rejects(configurarAnio({ ...base, actorId: padre.id, alumnoIds: [] }), { status: 400 });
+  await assert.rejects(configurarAnio({ ...base, actorId: padre.id, vacaciones: [], fiestas: [] }), { status: 400 });
+  await assert.rejects(configurarAnio({ ...base, actorId: padre.id, vacaciones: [{ motivo: "x", desde: "2031-08-01", hasta: "2031-07-01" }] }), { status: 400 });
+  await assert.rejects(configurarAnio({ ...base, actorId: padre.id, fiestas: [{ fecha: "mañana", motivo: "x" }] }), { status: 400 });
+  await assert.rejects(configurarAnio({ ...base, actorId: padre.id, alumnoIds: [padre.id] }), { status: 404 });
 });
