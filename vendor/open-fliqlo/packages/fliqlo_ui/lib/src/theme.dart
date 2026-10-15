@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 
 /// Visual tokens for the Open Fliqlo clock face.
 abstract final class FliqloTheme {
-  static const Color background = Color(0xFF000000);
-  static const Color digitBackground = Color(0xFF1A1A1A);
-  static const Color digitForeground = Color(0xFFF5F5F5);
-  static const Color hinge = Color(0xFF0A0A0A);
+  // [Ordo Diei] Paleta oscura (original) y clara, elegida al arrancar con [light];
+  // [transparentBackground] deja el fondo sin pintar para embeber el reloj en otra página.
+  static bool light = false;
+  static bool transparentBackground = false;
+
+  static Color get background => transparentBackground
+      ? const Color(0x00000000)
+      : (light ? const Color(0xFFFAF9F6) : const Color(0xFF000000));
+  static Color get digitBackground =>
+      light ? const Color(0xFFEDEBE4) : const Color(0xFF1A1A1A);
+  static Color get digitForeground =>
+      light ? const Color(0xFF1C1B19) : const Color(0xFFF5F5F5);
+  static Color get hinge =>
+      light ? const Color(0xFFC9C6BC) : const Color(0xFF0A0A0A);
   static const Color sheetBackground = Color(0xFF141414);
   static const Color sheetForeground = Color(0xFFE8E8E8);
 
@@ -19,12 +29,12 @@ abstract final class FliqloTheme {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         surface: sheetBackground,
         onSurface: sheetForeground,
         primary: digitForeground,
       ),
-      sliderTheme: const SliderThemeData(
+      sliderTheme: SliderThemeData(
         activeTrackColor: digitForeground,
         inactiveTrackColor: Color(0xFF333333),
         thumbColor: digitForeground,

@@ -183,15 +183,9 @@ class _ClockScreenState extends State<ClockScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_ready || _engine == null) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
-          ),
-        ),
+      return Scaffold(
+        backgroundColor: FliqloTheme.background,
+        body: const SizedBox.expand(),
       );
     }
 

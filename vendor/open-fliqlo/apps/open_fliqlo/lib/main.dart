@@ -1,5 +1,6 @@
 import 'package:fliqlo_core/fliqlo_core.dart';
 import 'package:fliqlo_ui/fliqlo_ui.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -15,6 +16,20 @@ FliqloSettingsOverrides appSettingsOverrides = const FliqloSettingsOverrides();
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // [Ordo Diei] En la web los ajustes llegan por la URL del iframe:
+  //   ?tema=claro|oscuro  ?fondo=transparente  ?modo=lockscreen  ?show-seconds=true ...
+  // `tema`, `fondo` y `modo` son propios; el resto son las banderas de siempre (--clave=valor).
+  if (kIsWeb) {
+    final query = Uri.base.queryParameters;
+    FliqloTheme.light = query['tema'] == 'claro';
+    FliqloTheme.transparentBackground = query['fondo'] == 'transparente';
+    args = [
+      if (query['modo'] != null) '--${query['modo']}',
+      for (final e in query.entries)
+        if (!{'tema', 'fondo', 'modo'}.contains(e.key)) '--${e.key}=${e.value}',
+    ];
+  }
 
   appLaunchMode = LaunchModeParser.fromArgs(args);
   appSettingsOverrides = FliqloSettingsArgsParser.parse(args);

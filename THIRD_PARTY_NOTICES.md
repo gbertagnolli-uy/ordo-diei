@@ -6,5 +6,5 @@
 - Uso doméstico con permiso del usuario (ver `vault/nuevas-features/DECISIONES.md`, D23).
 
 ## Open Fliqlo — https://github.com/CogitoForge-AI/Open-Fliqlo
-- Licencia MIT. Es una app Flutter, no se puede importar desde React: `src/components/rutina/RelojFlip.tsx` porta su diseño del dígito (proporciones, bisagra, colores del modo oscuro, giro de la solapa de 500 ms) a CSS.
-- Fuente de los dígitos: Gluqlo (`public/fonts/gluqlo.ttf`, licencia ISC en `public/fonts/LICENSE-gluqlo.txt`).
+- Licencia MIT; la fuente de los dígitos es Gluqlo (ISC, `vendor/open-fliqlo/packages/fliqlo_ui/fonts/LICENSE-gluqlo.txt`).
+- Clon en `vendor/open-fliqlo/` (ver `ORIGEN.md`: commit clonado y cambios). Es una app Flutter: se compila con `scripts/construir_fliqlo.sh` a `public/fliqlo/` y `RelojFlip.tsx` la embebe en un iframe.

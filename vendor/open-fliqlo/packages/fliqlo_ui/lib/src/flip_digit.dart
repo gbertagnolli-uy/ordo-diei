@@ -163,7 +163,8 @@ class FlipDigitPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Colors.black.withValues(alpha: 0.35 * math.sin(progress * math.pi)),
+          Colors.black.withValues(
+              alpha: (FliqloTheme.light ? 0.16 : 0.35) * math.sin(progress * math.pi)),
           Colors.transparent,
         ],
       ).createShader(Rect.fromLTWH(0, half - 4, size.width, half * 0.4));
