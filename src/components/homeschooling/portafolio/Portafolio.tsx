@@ -6,8 +6,9 @@
 
 import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Camera, Star } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Camera, Printer, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -33,6 +34,14 @@ export default function Portafolio({
   materias: { id: number; name: string }[];
 }) {
   const router = useRouter();
+  const params = useSearchParams();
+  // El portafolio impreso respeta el hijo y la materia que se están mirando
+  const imprimirQuery = (() => {
+    const q = new URLSearchParams();
+    if (params.get("alumno")) q.set("alumno", params.get("alumno") as string);
+    if (params.get("materia")) q.set("materia", params.get("materia") as string);
+    return q.toString() ? `?${q}` : "";
+  })();
   const [abierta, setAbierta] = useState<ShowcaseWithDetails | null>(null);
   const [nueva, setNueva] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -60,6 +69,13 @@ export default function Portafolio({
         {!esPadre && (
           <Button onClick={() => setNueva(true)}>
             <Camera /> Mostrar mi trabajo
+          </Button>
+        )}
+        {esPadre && (
+          <Button asChild variant="outline">
+            <Link href={`/dashboard/homeschooling/portafolio/imprimir${imprimirQuery}`}>
+              <Printer /> Portafolio para imprimir
+            </Link>
           </Button>
         )}
       </div>
