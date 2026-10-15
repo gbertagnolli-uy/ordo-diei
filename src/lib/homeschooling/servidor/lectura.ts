@@ -194,3 +194,9 @@ export async function borrarLibro(a: Actor, id: number): Promise<void> {
   await libroPropio(a, id);
   await prisma.lecturaLibro.delete({ where: { id } });
 }
+
+/** El libro que está leyendo (el último que tocó) y cuántos tiene en marcha, para la pantalla «Hoy» del hijo */
+export async function lecturaEnCurso(alumnoId: number): Promise<{ titulo: string; porcentaje: number | null } | null> {
+  const l = await prisma.lecturaLibro.findFirst({ where: { alumnoId, estado: "leyendo" }, orderBy: { updatedAt: "desc" }, select: { titulo: true, paginaActual: true, paginasTotal: true } });
+  return l ? { titulo: l.titulo, porcentaje: porcentajeLeido(l.paginaActual, l.paginasTotal) } : null;
+}

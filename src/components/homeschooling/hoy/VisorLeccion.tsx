@@ -128,6 +128,19 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
     setActivaId(l.id);
   };
 
+  // ← / → pasan a la lección anterior / siguiente (la siguiente solo si esta ya está hecha o no tiene candado)
+  useEffect(() => {
+    if (!dia || haciendoQuiz) return;
+    const tecla = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "ArrowLeft" && indice > 0) cambiar(lecciones[indice - 1]);
+      if (e.key === "ArrowRight" && indice >= 0 && indice < lecciones.length - 1 && (hechaActual || !lecciones[indice + 1].bloqueada)) cambiar(lecciones[indice + 1]);
+    };
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [dia, haciendoQuiz, indice, hechaActual, lecciones]);
+
   return (
     <Sheet open={!!dia} onOpenChange={(o) => !o && !cargando && onClose()}>
       <SheetContent side="bottom" className="h-svh max-h-svh gap-0 overflow-y-auto rounded-none p-0 data-[side=bottom]:h-svh data-[side=bottom]:max-h-svh">
@@ -137,7 +150,15 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
               <SheetTitle>{dia.recurso.titulo}</SheetTitle>
               <SheetDescription>
                 {dia.materia.nombre} · {dia.rango}
+                {lecciones.length > 1 && indice >= 0 ? ` · lección ${indice + 1} de ${lecciones.length}` : ""}
               </SheetDescription>
+              {lecciones.length > 1 && (
+                <div className="mt-2 flex gap-1" role="progressbar" aria-valuemin={0} aria-valuemax={lecciones.length} aria-valuenow={lecciones.filter((l) => l.completada || completadas.has(l.id)).length} aria-label="Lecciones del día">
+                  {lecciones.map((l) => (
+                    <span key={l.id} className={`h-1.5 flex-1 rounded-full transition-colors ${l.completada || completadas.has(l.id) ? "bg-success" : l.id === activaId ? "bg-primary" : "bg-muted"}`} />
+                  ))}
+                </div>
+              )}
             </SheetHeader>
 
             <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 p-4">
