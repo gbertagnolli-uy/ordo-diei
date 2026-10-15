@@ -9,6 +9,7 @@ import {
   BookMarked,
   BookOpen,
   CalendarCheck,
+  CalendarClock,
   CalendarDays,
   CalendarRange,
   CircleDot,
@@ -151,6 +152,18 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>Rutina</SidebarGroupLabel>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/dashboard/horarios" || pathname === "/dashboard/rutina"}
+                tooltip="Horarios y Rutina"
+              >
+                <Link href="/dashboard/horarios">
+                  <CalendarClock />
+                  <span>Horarios</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/habitos"} tooltip="Mis hábitos">
                 <Link href="/dashboard/habitos">
