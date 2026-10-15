@@ -250,3 +250,9 @@ export const datosFijar = z.object({ fijada: z.boolean() });
 
 // ── Mensajes de la familia (lane 191, G7) ──
 export const datosMensaje = z.object({ paraId: idPositivo, texto: z.string().max(5000) });
+
+// ── Cargar la semana (lane 192) ──
+export const datosCargaSemana = z.object({
+  alumnoId: idPositivo,
+  dias: z.array(z.object({ fecha: claveFecha, lineas: z.array(z.string().max(2000)).max(20) })).min(1).max(7),
+});
