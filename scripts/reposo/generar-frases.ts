@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parsearCatecismo, type PreguntaCatecismo } from "./catecismo.ts";
+import { armarCatecismoPdf } from "./catecismo-pdf.ts";
 import { limpiarPregunta } from "./catecismo-ocr.ts";
 import { idDeReferencia, parsearSeleccion, referenciaLegible, type Referencia } from "./citas.ts";
 import { LIBROS, type Libro } from "./libros.ts";
@@ -263,12 +264,23 @@ export function armarCatecismo(texto: string): PreguntaCatecismo[] {
 function main() {
   const borrador = process.argv.includes("--borrador");
   const soloCatecismo = process.argv.includes("--solo-catecismo");
-  for (const f of ["catecismo/catecismo-1973.txt", "vulgata/Ps.lat", "torres-amat/AI158.txt"]) {
+  const archivos = soloCatecismo ? [] : ["vulgata/Ps.lat", "torres-amat/AI158.txt"];
+  for (const f of archivos) {
     if (!existsSync(join(CACHE, f))) throw new Error(`Falta ${f}: corré scripts/reposo/descargar-fuentes.sh`);
   }
   mkdirSync(SALIDA, { recursive: true });
 
-  const catecismo = armarCatecismo(readFileSync(join(CACHE, "catecismo", "catecismo-1973.txt"), "utf8"));
+  // Catecismo: el PDF con texto (994 preguntas, scripts/reposo/catecismo-pdf.sh) manda; el OCR de 1973 es solo el respaldo.
+  const rutaPdf = join(CACHE, "catecismo", "catecismo-pdf.txt");
+  let catecismo: PreguntaCatecismo[];
+  if (existsSync(rutaPdf)) {
+    catecismo = armarCatecismoPdf(readFileSync(rutaPdf, "utf8"));
+  } else {
+    const rutaOcr = join(CACHE, "catecismo", "catecismo-1973.txt");
+    if (!existsSync(rutaOcr)) throw new Error("Falta el catecismo: corré scripts/reposo/catecismo-pdf.sh <pdf> o scripts/reposo/descargar-fuentes.sh");
+    console.error("Aviso: sin catecismo-pdf.txt; se usa el OCR de 1973 (menos preguntas y con errores).");
+    catecismo = armarCatecismo(readFileSync(rutaOcr, "utf8"));
+  }
   if (!borrador) {
     writeFileSync(join(SALIDA, "catecismo-pio-x.json"), JSON.stringify(catecismo, null, 1) + "\n");
     console.log(`Catecismo: ${catecismo.length} preguntas`);
