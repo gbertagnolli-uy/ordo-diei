@@ -298,3 +298,44 @@ export async function quitarNoLectivo(datos: { actorId: number; id: number; hoy:
     return { ok: true };
   });
 }
+
+// ---------- Gestión de un plan ya creado ----------
+
+export type CambiosPlan = { estado?: "activo" | "pausado" | "finalizado"; fin?: string; diasSemana?: number[] };
+
+/**
+ * Pausa, reanuda o termina un plan, o cambia su fecha de fin y sus días de la semana. Si el plan queda activo, se recalcula:
+ * lo no hecho se vuelve a repartir desde hoy hasta la nueva fecha de fin.
+ */
+export async function cambiarPlan(actor: { id: number }, planId: number, c: CambiosPlan, hoy: string) {
+  await exigirPadre(actor.id);
+  return prisma.$transaction(async (tx) => {
+    const plan = await tx.planCurso.findUnique({ where: { id: planId } });
+    if (!plan) throw new NoEncontradoError("Plan no encontrado");
+    const fin = c.fin ?? aClave(plan.fin);
+    const diasSemana = c.diasSemana ?? plan.diasSemana;
+    validarRango(aClave(plan.inicio), fin, diasSemana);
+    if (c.fin !== undefined && fin < hoy) throw new DatoInvalidoError("La fecha de fin no puede ser anterior a hoy");
+
+    const estado = c.estado ?? plan.estado;
+    await tx.planCurso.update({ where: { id: planId }, data: { estado, fin: aFecha(fin), diasSemana: [...new Set(diasSemana)].sort() } });
+    // Reanudar o cambiar fechas/días de un plan activo: se reparte de nuevo lo que falta
+    const resultado = estado === "activo" ? await recalcularEn(tx, planId, hoy) : null;
+    return { ok: true, estado, recalculo: resultado };
+  });
+}
+
+/** Quita un plan que todavía no tiene días cumplidos; borra las Tareas del plan que sigan `Pendiente` */
+export async function quitarPlan(actor: { id: number }, planId: number) {
+  await exigirPadre(actor.id);
+  await prisma.$transaction(async (tx) => {
+    const plan = await tx.planCurso.findUnique({ where: { id: planId }, include: { dias: { select: { estado: true, tareaId: true } } } });
+    if (!plan) throw new NoEncontradoError("Plan no encontrado");
+    if (plan.dias.some((d) => d.estado === "hecha" || d.estado === "omitida")) {
+      throw new ConflictoError("Ese plan ya tiene días cumplidos; pausalo o terminalo en vez de quitarlo");
+    }
+    const tareaIds = plan.dias.map((d) => d.tareaId).filter((id): id is number => id !== null);
+    await tx.planCurso.delete({ where: { id: planId } });
+    if (tareaIds.length) await tx.tarea.deleteMany({ where: { id: { in: tareaIds }, estado: "Pendiente" } });
+  });
+}

@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarCheck, CheckCircle2, Circle, ClipboardCheck, GraduationCap, History, Plus } from "lucide-react";
+import { AlertTriangle, ArchiveRestore, CalendarCheck, CheckCircle2, Circle, ClipboardCheck, GraduationCap, History, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
@@ -17,6 +17,8 @@ import { colorCss } from "@/components/homeschooling/cursos/iconos";
 import IconoMateria from "@/components/homeschooling/cursos/IconoMateria";
 import MateriaForm from "@/components/homeschooling/cursos/MateriaForm";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import { updateGroup } from "@/lib/homeschooling/roost/services/group";
+import { toast } from "@/lib/toast";
 import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
 import AsistenteCurso from "./AsistenteCurso";
 
@@ -26,6 +28,7 @@ export default function PanelHomeschooling({
   materias,
   panel,
   hoy,
+  archivadas,
   alumnos,
   progresos,
   pendientes,
@@ -34,6 +37,7 @@ export default function PanelHomeschooling({
   materias: (Group & { course_count: number })[];
   panel: MateriaPanel[];
   hoy: HoyAlumno[];
+  archivadas: { id: number; nombre: string }[];
   alumnos: AlumnoLite[];
   progresos: ProgresoAlumno[];
   pendientes: number;
@@ -190,6 +194,33 @@ export default function PanelHomeschooling({
           </div>
         )}
       </section>
+
+      {archivadas.length > 0 && (
+        <section aria-label="Materias archivadas" className="space-y-2">
+          <h2 className="text-lg font-semibold text-foreground">Archivadas</h2>
+          <ul className="divide-y rounded-xl border bg-card">
+            {archivadas.map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                <span className="truncate text-foreground">{m.nombre}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await updateGroup(m.id, { is_active: true });
+                      router.refresh();
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "No se pudo restaurar");
+                    }
+                  }}
+                >
+                  <ArchiveRestore /> Restaurar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <MateriaForm
         open={materiaForm}

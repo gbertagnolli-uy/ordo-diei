@@ -53,3 +53,8 @@
 
 ## Resueltos
 _(ninguno todavía)_
+
+- **P-11 (lane 156):** reordenar cursos (botón «Ordenar» en la materia) y lecciones (subir/bajar en el curso) con las rutas `PUT` que ya existían; editar y archivar una materia desde su cabecera, y «Archivadas» con «Restaurar» en el panel; pausar, reanudar, terminar, cambiar fecha de fin y días de la semana, y quitar un plan (`PATCH|DELETE /api/homeschooling/planes/[id]`; al reanudar o reprogramar se recalcula lo que falta; un plan con días cumplidos no se quita).
+- **Cámara en `TarjetaHoy` y en Primero/Después (spec H3):** botón de foto junto a cada tarjeta.
+- **Contraste AA (spec H6):** medido con los tokens reales en los dos temas (`contraste.test.ts`). Todo cumplía salvo `text-destructive` sobre `bg-destructive/10` en el tema oscuro (4,04); esos avisos pasaron a `text-foreground`.
+- **P-40 (parcial):** N4 existe y se conectó (`useMantenerActivo` mientras el visor, la foto, el reloj y el cronómetro están activos). Reloj visual de la lección (`TemporizadorLeccion`) en Primero/Después y botón «Cronometrar» para actividades (`Cronometro`, guarda el inicio en `localStorage`). El `TemporizadorDisco` de la rutina no se reutilizó: está atado a las etapas de la rutina. Sonidos y música (N2/N3) y borradores (N5) siguen sin existir: ver la decisión en la lane 157.

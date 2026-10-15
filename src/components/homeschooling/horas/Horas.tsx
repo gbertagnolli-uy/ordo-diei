@@ -17,6 +17,7 @@ import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader
 import ActividadCard from "./ActividadCard";
 import ActividadDetalle from "./ActividadDetalle";
 import ActividadForm from "./ActividadForm";
+import Cronometro from "./Cronometro";
 
 export default function Horas({
   actividades,
@@ -39,6 +40,7 @@ export default function Horas({
   const [abierta, setAbierta] = useState<EventWithDetails | null>(null);
   const [form, setForm] = useState<{ open: boolean; editing: EventWithDetails | null }>({ open: false, editing: null });
   const [borrar, setBorrar] = useState<EventWithDetails | null>(null);
+  const [medida, setMedida] = useState<{ inicio: Date; fin: Date } | null>(null);
   const titulo = new Date(`${mes}-01T12:00:00`).toLocaleDateString("es", { month: "long", year: "numeric" });
 
   const confirmarBorrado = async () => {
@@ -57,14 +59,26 @@ export default function Horas({
     <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-foreground">Actividades</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {esPadre && materias.length > 0 && alumnos.length > 0 && (
+            <Cronometro
+              onParar={(inicio, fin) => {
+                setMedida({ inicio, fin });
+                setForm({ open: true, editing: null });
+              }}
+            />
+          )}
           <Button asChild variant="outline">
             <Link href="/dashboard/homeschooling/reportes">
               <FileBarChart /> Reportes
             </Link>
           </Button>
           {esPadre && (
-            <Button onClick={() => setForm({ open: true, editing: null })} disabled={materias.length === 0 || alumnos.length === 0}>
+            <Button onClick={() => {
+                setMedida(null);
+                setForm({ open: true, editing: null });
+              }}
+              disabled={materias.length === 0 || alumnos.length === 0}>
               <Plus /> Nueva actividad
             </Button>
           )}
@@ -116,6 +130,7 @@ export default function Horas({
       <ActividadForm
         open={form.open}
         editing={form.editing}
+        inicial={medida}
         materias={materias}
         alumnos={alumnos}
         onClose={() => setForm({ open: false, editing: null })}

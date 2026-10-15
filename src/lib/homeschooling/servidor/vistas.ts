@@ -19,9 +19,9 @@ export async function planesPorCurso(materiaId: number) {
     include: { alumno: { select: { nombre: true } } },
     orderBy: { inicio: "asc" },
   });
-  const salida: Record<number, { alumnoId: number; nombre: string; inicio: string; fin: string }[]> = {};
+  const salida: Record<number, { id: number; alumnoId: number; nombre: string; inicio: string; fin: string; estado: string; diasSemana: number[] }[]> = {};
   for (const p of planes) {
-    (salida[p.recursoId] ??= []).push({ alumnoId: p.alumnoId, nombre: p.alumno.nombre, inicio: aClave(p.inicio), fin: aClave(p.fin) });
+    (salida[p.recursoId] ??= []).push({ id: p.id, alumnoId: p.alumnoId, nombre: p.alumno.nombre, inicio: aClave(p.inicio), fin: aClave(p.fin), estado: p.estado, diasSemana: p.diasSemana });
   }
   return salida;
 }

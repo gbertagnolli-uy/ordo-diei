@@ -98,7 +98,7 @@ export default function Portafolio({
                 {abierta.description && <p className="whitespace-pre-wrap text-sm text-foreground">{abierta.description}</p>}
                 {abierta.stars ? <StarRating rating={abierta.stars} readonly /> : null}
                 {abierta.moderation_notes && (
-                  <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">Para ajustar: {abierta.moderation_notes}</p>
+                  <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-foreground">Para ajustar: {abierta.moderation_notes}</p>
                 )}
 
                 {esPadre && abierta.status === "aprobada" && (

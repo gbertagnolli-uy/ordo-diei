@@ -15,8 +15,8 @@ export type MateriaPanel = {
   cursos: { id: number; titulo: string; porcentaje: number; alumnos: number }[];
 };
 
-export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlumno[]; materias: MateriaPanel[] }> {
-  const [alumnos, deHoy, atrasados, materias] = await Promise.all([
+export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlumno[]; materias: MateriaPanel[]; archivadas: { id: number; nombre: string }[] }> {
+  const [alumnos, deHoy, atrasados, materias, archivadas] = await Promise.all([
     alumnosDeFamilia(),
     prisma.diaLectivo.findMany({
       where: { fecha: aFecha(hoy), plan: { estado: "activo" }, estado: { in: ["pendiente", "hecha", "omitida"] } },
@@ -36,6 +36,7 @@ export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlum
         },
       },
     }),
+    prisma.materia.findMany({ where: { activa: false }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
   ]);
 
   const hoyPorAlumno: HoyAlumno[] = alumnos.map((a) => ({
@@ -65,6 +66,6 @@ export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlum
     }),
   }));
 
-  return { hoy: hoyPorAlumno, materias: panel };
+  return { hoy: hoyPorAlumno, materias: panel, archivadas };
 }
 

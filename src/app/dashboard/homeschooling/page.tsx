@@ -43,5 +43,5 @@ export default async function HomeschoolingPage() {
     avisosParaPadre(actor),
     resumenPanel(),
   ]);
-  return <PanelHomeschooling materias={materias} panel={panel.materias} hoy={panel.hoy} alumnos={alumnos} progresos={progresos} pendientes={evidencias.pending} avisos={avisos} />;
+  return <PanelHomeschooling materias={materias} panel={panel.materias} hoy={panel.hoy} archivadas={panel.archivadas} alumnos={alumnos} progresos={progresos} pendientes={evidencias.pending} avisos={avisos} />;
 }

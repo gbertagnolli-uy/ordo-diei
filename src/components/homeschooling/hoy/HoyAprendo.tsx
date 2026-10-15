@@ -19,6 +19,7 @@ import VisorHistoria from "@/components/homeschooling/neuro/VisorHistoria";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
+import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidencia";
 import RepasoDeHoy from "./RepasoDeHoy";
 import TarjetaHoy from "./TarjetaHoy";
 import VisorLeccion from "./VisorLeccion";
@@ -41,6 +42,7 @@ export default function HoyAprendo({
   const router = useRouter();
   const [abierto, setAbierto] = useState<number | null>(null);
   const [historia, setHistoria] = useState<HistoriaVista | null>(null);
+  const [fotoDia, setFotoDia] = useState<DiaHoy | null>(null);
   const vistaElegida = decidirVista(preferencia);
 
   // El alumno puede apagar o prender su modo calmo; el atributo se aplica enseguida y se guarda en segundo plano
@@ -97,7 +99,7 @@ export default function HoyAprendo({
       <RepasoDeHoy />
 
       {vistaElegida.layout === "primero-despues" && dias.length > 0 ? (
-        <PrimeroDespues dias={dias} recompensa={preferencia.recompensaDespues} onAbrir={(d) => setAbierto(d.diaId)} />
+        <PrimeroDespues dias={dias} recompensa={preferencia.recompensaDespues} onAbrir={(d) => setAbierto(d.diaId)} onFoto={setFotoDia} />
       ) : dias.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
@@ -111,12 +113,19 @@ export default function HoyAprendo({
       ) : (
         <div className="space-y-3">
           {dias.map((d) => (
-            <TarjetaHoy key={d.diaId} dia={d} onClick={(x) => setAbierto(x.diaId)} />
+            <TarjetaHoy key={d.diaId} dia={d} onClick={(x) => setAbierto(x.diaId)} onFoto={setFotoDia} />
           ))}
         </div>
       )}
 
       <VisorLeccion dia={dia} onClose={() => setAbierto(null)} />
+      <EnviarEvidencia
+        open={!!fotoDia}
+        onClose={() => setFotoDia(null)}
+        diaLectivoId={fotoDia?.diaId ?? null}
+        titulo={fotoDia ? `${fotoDia.recurso.titulo}: ${fotoDia.rango}` : undefined}
+        onEnviada={() => router.refresh()}
+      />
       <VisorHistoria key={historia?.id ?? 0} historia={historia} onClose={() => setHistoria(null)} />
     </div>
   );

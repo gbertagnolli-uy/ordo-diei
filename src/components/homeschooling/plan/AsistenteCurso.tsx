@@ -21,17 +21,9 @@ import { toast } from "@/lib/toast";
 import CursoForm from "@/components/homeschooling/cursos/CursoForm";
 import MateriaForm from "@/components/homeschooling/cursos/MateriaForm";
 import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import { DIAS_SEMANA as DIAS } from "./dias";
 import { STEPPER_VARS } from "./stepperVars";
 
-const DIAS = [
-  { iso: 1, corto: "L", largo: "Lunes" },
-  { iso: 2, corto: "M", largo: "Martes" },
-  { iso: 3, corto: "M", largo: "Miércoles" },
-  { iso: 4, corto: "J", largo: "Jueves" },
-  { iso: 5, corto: "V", largo: "Viernes" },
-  { iso: 6, corto: "S", largo: "Sábado" },
-  { iso: 7, corto: "D", largo: "Domingo" },
-];
 
 const hoyLocal = () => new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD en la zona del navegador
 const finDeAnio = () => `${new Date().getFullYear()}-11-30`;
