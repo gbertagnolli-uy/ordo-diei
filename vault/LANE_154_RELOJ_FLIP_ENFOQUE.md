@@ -19,3 +19,8 @@
 - Modo dark = colores originales de Fliqlo (`#1A1A1A` / `#F5F5F5` / bisagra `#0A0A0A`); modo light = variante clara propia. Sigue el tema de la app (`useThemeStore`); en Enfoque la barra superior suma un botón sol/luna porque el dock queda tapado por el overlay.
 - El reloj muestra la hora real (HH:MM), no la congelada por la pausa del temporizador.
 - Dentro del disco queda solo el tiempo restante; ícono, estado, título y horario pasan debajo del disco.
+
+## Hecho
+- `RelojFlip.tsx` (nuevo): hora real HH:MM con dígitos de solapa, tokens `--flip-*` en `globals.css` (claro/oscuro), fuente en `public/fonts/`.
+- `TemporizadorDisco.tsx`: disco con solo el tiempo; ícono, «Tiempo restante», título y horario debajo. En Enfoque: reloj Flip arriba (jerarquía principal), disco más chico debajo, botón sol/luna en la barra. Los controles y la lógica no cambian.
+- Verificado con capturas en Chromium (claro, oscuro, 1280 px y 390 px) con una página temporal ya borrada; `tsc` en verde. `eslint` solo marca un error que ya existía en `EditorEtapaModal.tsx`.
