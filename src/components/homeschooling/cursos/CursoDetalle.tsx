@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
-import { miniaturaVideo } from "@/lib/homeschooling/video";
+import { esArchivoVideo, miniaturaVideo } from "@/lib/homeschooling/video";
 
 /** Mueve un elemento de una posición a otra (devuelve una copia) */
 export function mover<T>(lista: T[], de: number, a: number): T[] {
@@ -195,7 +195,7 @@ export default function CursoDetalle({
                         />
                       )}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        {recording.video_id ? <Play className="size-5 text-foreground/80" fill="currentColor" /> : <FileText className="size-5 text-muted-foreground" />}
+                        {recording.video_id || esArchivoVideo(recording.video_url) ? <Play className="size-5 text-foreground/80" fill="currentColor" /> : <FileText className="size-5 text-muted-foreground" />}
                       </div>
                     </div>
 

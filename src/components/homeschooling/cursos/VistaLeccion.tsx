@@ -7,7 +7,7 @@
 import { ArrowLeft, ArrowRight, CircleHelp, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
-import { urlEmbed } from "@/lib/homeschooling/video";
+import { esArchivoVideo, urlEmbed } from "@/lib/homeschooling/video";
 
 type Vecina = { id: number; title: string } | null;
 
@@ -40,7 +40,9 @@ export default function VistaLeccion({
         <ArrowLeft /> <span className="max-w-48 truncate">{cursoTitulo}</span>
       </Button>
 
-      {embed ? (
+      {!embed && esArchivoVideo(recording.video_url) ? (
+        <video src={recording.video_url ?? undefined} controls className="aspect-video w-full rounded-lg bg-muted" />
+      ) : embed ? (
         <div className="overflow-hidden rounded-lg bg-muted">
           <div className="relative aspect-video">
             <iframe
