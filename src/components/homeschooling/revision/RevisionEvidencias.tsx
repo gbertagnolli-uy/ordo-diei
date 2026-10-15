@@ -22,6 +22,8 @@ import ChipsPuntaje from "@/components/homeschooling/libreta/ChipsPuntaje";
 import { puntajeValido } from "@/lib/homeschooling/calificaciones";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import { StatsCard } from "@/components/homeschooling/roost/StatsCard";
+import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
+import { filtrar } from "@/lib/homeschooling/buscarTexto";
 
 const TABS: { valor: ShowcaseStatus | "todas"; etiqueta: string }[] = [
   { valor: "pendiente", etiqueta: "Pendientes" },
@@ -36,6 +38,8 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
   const [aprobando, setAprobando] = useState<ShowcaseWithDetails | null>(null);
   const [estrellas, setEstrellas] = useState(0);
   const [nota, setNota] = useState("");
+  const [q, setQ] = useState("");
+  const visibles = filtrar(evidencias, q, (e) => [e.title, e.description, e.author_name, e.materia_name]);
   const [ajustando, setAjustando] = useState<ShowcaseWithDetails | null>(null);
   const [comentario, setComentario] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -97,6 +101,8 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
         ))}
       </div>
 
+      {evidencias.length > 0 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar por título, alumno o materia…" cantidad={visibles.length} />}
+
       {evidencias.length === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
@@ -109,7 +115,7 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
         </Empty>
       ) : (
         <ul className="divide-y overflow-hidden rounded-xl border bg-card">
-          {evidencias.map((e) => {
+          {visibles.map((e) => {
             const info = SHOWCASE_STATUS_INFO[e.status];
             const revisable = e.status === "pendiente";
             return (
