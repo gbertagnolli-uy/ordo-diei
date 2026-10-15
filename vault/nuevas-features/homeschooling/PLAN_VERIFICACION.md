@@ -753,3 +753,28 @@ Decisiones tomadas al revisar la primera corrida de `verificar_invariantes.sh` s
 | D-26 | El enlace «Estudio» del `AppSidebar` se cuenta por su `href`, no por el texto (aparece en el tooltip y en el span). | Falso positivo del conteo. | Sección de navegación |
 
 Con esto la corrida sobre `dev` queda sin FALLA (los MIRAR son borrados de Tareas filtrados por `Pendiente`, el `select` de `preguntasParaAlumno` y los índices extra de `EvidenciaImagen`/`HistoriaSocial`).
+
+## Verificación real (2026-10-15, lane 158)
+
+Se corrió contra la **base real** y con un **Chromium real** (autorizado por el usuario al pedir «implementa todo lo que no se hizo»); las herramientas quedaron en `scripts/e2e-homeschooling/` (README con el cómo). Todo lo creado lleva la marca `__test_hs` y se borró al terminar; la base volvió a su línea de base (8 usuarios, 1 materia real intacta).
+
+| Qué | Resultado |
+|---|---|
+| Tests con base real (`PERMITIR_TESTS_DB=1`, 23 tests de `servidor/*.test.ts`) | 19 pasaban y **4 fallaban por un defecto real** (reordenar y borrar lecciones usaban SQL crudo, que no respeta el esquema `family_tasker`). Arreglado sin SQL crudo; ahora **23/23** |
+| Fase A, reglas por API (53 chequeos: permisos, guardia, quiz, 18:00, premios sin doble cobro, evidencia sin tocar saldos, horas, apoyos) | **53/53** |
+| Fase B, 15 páginas × móvil/tablet/escritorio (45) | **45/45** sin errores de consola, sin redirecciones al login y sin desborde horizontal (antes: 15 desbordes) |
+| Fase C, interacción (navegación, atrás del navegador, pestañas, reordenar, planes, archivar, Primero/Después con reloj, historia, cámara, visor, logro, cronómetro) | **50/50** |
+| Fase D, gestos e impresión (deslizar, calendario, impresión + PDF A4, checkpoint) | **19/19** (el arrastre del calendario y el video real: ver hallazgos) |
+
+Capturas representativas (sin los hijos reales): `verificacion/capturas/`.
+
+### Defectos que encontró y que se corrigieron
+1. Reordenar y borrar lecciones fallaban en producción (SQL crudo fuera del esquema de la familia).
+2. La barra de alumnos (todos los hijos) empujaba el ancho de materia, curso, lección y plan: ahora se desplaza.
+3. Las páginas con `mx-auto max-w-*` se ensanchaban con su contenido (calendario de 921 px en un celular de 390): `w-full min-w-0`.
+4. Cambiar de curso o lección dentro de la materia tardaba ~0,7 s (volvía a ejecutar la página del servidor con la base remota) y «atrás» del navegador salía de la materia: ahora `history.pushState`.
+5. El visor de lecciones no ocupaba la pantalla (la clase base del `Sheet` pisaba `h-svh`).
+6. El orden se veía recién a los ~2 s: ahora el reordenado es optimista.
+7. Sin señal de carga al cambiar de sección: `loading.tsx` con esqueleto.
+8. El arrastre de días en el calendario nunca se activaba (`selectable` apagado): corregido (ver hallazgos: el gesto no se pudo comprobar).
+9. Texto `destructive` sobre su tinte en el tema oscuro (AA): `text-foreground`.

@@ -56,7 +56,7 @@ export default function Horas({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-foreground">Actividades</h1>
         <div className="flex flex-wrap gap-2">

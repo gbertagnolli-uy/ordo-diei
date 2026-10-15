@@ -22,7 +22,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const [dias, noLectivos, todas] = await Promise.all([diasDelAlumno(alumnoId), noLectivosDelAlumno(alumnoId), listarActividades(actor)]);
   const actividades = todas.filter((a) => a.participantes.some((p) => p.id === alumnoId)).map((a) => ({ id: a.id, titulo: a.title, inicio: a.start_time, fin: a.end_time }));
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-6xl p-4 sm:p-6">
       <PlanCalendario dias={dias} noLectivos={noLectivos} actividades={actividades} alumnos={alumnos} alumnoId={alumnoId} />
     </div>
   );

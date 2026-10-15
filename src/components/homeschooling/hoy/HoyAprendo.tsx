@@ -59,7 +59,7 @@ export default function HoyAprendo({
   const dia = dias.find((d) => d.diaId === abierto) ?? null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-6 p-4 sm:p-6">
       <header className="flex items-center gap-3">
         <Avatar size="lg">
           {fotoUrl && <AvatarImage src={fotoUrl} alt="" />}

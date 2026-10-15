@@ -81,7 +81,7 @@ codigo_de() { # nombre de rama (o asunto del merge) → código de lane
     *hs-quizzes*|*-h4-*) echo H4 ;;
     *hs-horas*|*-h5-*) echo H5 ;;
     *hs-neuro*|*-h6-*) echo H6 ;;
-    *hs-ui-faltante*|*hs-navegacion*|*hs-integracion*) echo FIX ;;
+    *hs-ui-faltante*|*hs-navegacion*|*hs-integracion*|*hs-verificacion*) echo FIX ;;
     *-hs-*|*homeschool*) echo DOCS ;;
     *) echo "" ;;
   esac

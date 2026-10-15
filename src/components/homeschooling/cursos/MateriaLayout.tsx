@@ -98,7 +98,9 @@ export default function MateriaLayout({
     onCambio();
   };
 
-  const reordenar = async (fn: () => Promise<void>) => {
+  // El orden se ve al instante (la base puede tardar un par de segundos) y, si falla, se vuelve a leer del servidor
+  const reordenar = async (optimista: () => void, fn: () => Promise<void>) => {
+    optimista();
     try {
       await fn();
       refrescar();
@@ -107,6 +109,25 @@ export default function MateriaLayout({
       refrescar();
     }
   };
+
+  const reordenarCursos = (ids: number[]) =>
+    reordenar(
+      () => setModules((prev) => ids.map((id) => prev.find((m) => m.id === id)).filter((m): m is ModuleWithProgress => !!m)),
+      () => reorderModules(group.id, ids)
+    );
+
+  const reordenarLecciones = (moduleId: number, ids: number[]) =>
+    reordenar(
+      () =>
+        setModules((prev) =>
+          prev.map((m) =>
+            m.id !== moduleId || !m.recordings
+              ? m
+              : { ...m, recordings: ids.map((id, i) => ({ ...m.recordings!.find((r) => r.id === id)!, display_order: i + 1 })) }
+          )
+        ),
+      () => reorderRecordings(moduleId, ids)
+    );
 
   const accionPlan = async (plan: PlanVista, accion: AccionPlan) => {
     if (accion === "editar") return setEditarPlan({ id: plan.id, nombre: plan.nombre, inicio: plan.inicio, fin: plan.fin, diasSemana: plan.diasSemana });
@@ -184,7 +205,7 @@ export default function MateriaLayout({
 
         <div className="p-4 sm:p-6">
           {view === "grid" && (
-            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onReordenar={(ids) => reordenar(() => reorderModules(group.id, ids))} />
+            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onReordenar={reordenarCursos} />
           )}
 
           {view === "module" && activeModule && (
@@ -200,7 +221,7 @@ export default function MateriaLayout({
               onDeleteModule={() => setBorrar({ tipo: "curso", id: activeModule.id, nombre: activeModule.title })}
               onAsignar={() => setAsignar(activeModule)}
               onPlan={accionPlan}
-              onReordenarLecciones={(ids) => reordenar(() => reorderRecordings(activeModule.id, ids))}
+              onReordenarLecciones={(ids) => reordenarLecciones(activeModule.id, ids)}
               onToggleLibre={async (libre) => {
                 try {
                   await updateModule(activeModule.id, { navegacion_libre: libre });

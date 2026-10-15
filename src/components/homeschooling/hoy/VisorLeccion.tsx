@@ -127,7 +127,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
 
   return (
     <Sheet open={!!dia} onOpenChange={(o) => !o && !cargando && onClose()}>
-      <SheetContent side="bottom" className="h-svh max-h-svh gap-0 overflow-y-auto rounded-none p-0">
+      <SheetContent side="bottom" className="h-svh max-h-svh gap-0 overflow-y-auto rounded-none p-0 data-[side=bottom]:h-svh data-[side=bottom]:max-h-svh">
         {dia && (
           <>
             <SheetHeader className="border-b p-4 pr-14">
@@ -137,7 +137,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
               </SheetDescription>
             </SheetHeader>
 
-            <div className="mx-auto w-full max-w-3xl space-y-5 p-4">
+            <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 p-4">
               {actual ? (
                 <>
                   {embed ? (

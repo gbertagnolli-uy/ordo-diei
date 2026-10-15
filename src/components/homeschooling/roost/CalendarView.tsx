@@ -85,7 +85,8 @@ export default function CalendarView<T = unknown>({
         startAccessor="start"
         endAccessor="end"
         style={{ height: "100%", minHeight: 400 }}
-        selectable={!!onSelectSlot}
+        // El arrastre de react-big-calendar usa su motor de selección: sin `selectable` los eventos no se mueven
+        selectable={!!onSelectSlot || !!onEventDrop}
         onSelectEvent={onSelectEvent as ((e: EventoCalendario) => void) | undefined}
         onSelectSlot={onSelectSlot}
         onEventDrop={onEventDrop as ((a: EventInteractionArgs<EventoCalendario>) => void) | undefined}

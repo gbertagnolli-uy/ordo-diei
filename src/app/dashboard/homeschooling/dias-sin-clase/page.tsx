@@ -13,7 +13,7 @@ export default async function DiasSinClasePage() {
   if (!esPadre(session.user.rolFamiliar)) redirect("/dashboard/homeschooling");
   const [dias, alumnos] = await Promise.all([listarNoLectivos(Number(session.user.id)), alumnosDeFamilia()]);
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-3xl p-4 sm:p-6">
       <DiasSinClase dias={dias} alumnos={alumnos} />
     </div>
   );

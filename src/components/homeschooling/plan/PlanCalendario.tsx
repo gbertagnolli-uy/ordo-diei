@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarOff } from "lucide-react";
+import { CalendarDays, CalendarOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -114,6 +114,7 @@ export default function PlanCalendario({
     <div className="space-y-4">
       <MateriaHeader
         group={{ id: 0, name: "Plan de estudio", description: quien ? `Calendario de ${quien.nombre}` : null, cover_url: null, icon: null, color: null, dificultad: "Media", display_order: 0, is_active: true, created_by: 0 }}
+        icono={<CalendarDays className="size-5" />}
         alumnos={alumnos}
         alumnoId={alumnoId}
         onAlumno={(id) => router.push(`/dashboard/homeschooling/plan?alumno=${id}`)}

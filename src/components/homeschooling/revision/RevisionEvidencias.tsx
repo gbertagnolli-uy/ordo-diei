@@ -68,7 +68,7 @@ export default function RevisionEvidencias({ evidencias, stats, estado }: { evid
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-5 p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-foreground">Revisión de evidencias</h1>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
