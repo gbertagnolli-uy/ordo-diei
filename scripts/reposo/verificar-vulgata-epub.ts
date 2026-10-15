@@ -13,7 +13,7 @@ export const ARCHIVO_EPUB: Record<string, string> = {
   Gn: "c6_Vulgata_Clementina_Liber_Genesis", Ex: "c7_Vulgata_Clementina_Liber_Exodus", Dt: "c10_Vulgata_Clementina_Liber_Deuteronomii",
   Jos: "c11_Vulgata_Clementina_Liber_Josue", "1Rg": "c14_Vulgata_Clementina_Liber_I_Regum", Tob: "c22_Vulgata_Clementina_Liber_Tobiae",
   Job: "c25_Vulgata_Clementina_Liber_Job", Ps: "c26_Vulgata_Clementina_Liber_Psalmorum", Pr: "c27_Vulgata_Clementina_Liber_Proverbiorum",
-  Ecl: "c28_Vulgata_Clementina_Liber_Ecclesiastes", Sap: "c30_Vulgata_Clementina_Liber_Sapientiae", Sir: "c31_Vulgata_Clementina_Liber_Ecclesiasticus",
+  Ecl: "c28_Vulgata_Clementina_Liber_Ecclesiastes", Ct: "c29_Vulgata_Clementina_Canticum_Canticorum", Sap: "c30_Vulgata_Clementina_Liber_Sapientiae", Sir: "c31_Vulgata_Clementina_Liber_Ecclesiasticus",
   Is: "c32_Vulgata_Clementina_Prophetia_Isaiae", Jr: "c33_Vulgata_Clementina_Prophetia_Jeremiae", "2Mcc": "c51_Vulgata_Clementina_Liber_II_Machabaeorum",
   Mt: "c52_Vulgata_Clementina_Evangelium_Secundum_Matthaeum", Mc: "c53_Vulgata_Clementina_Evangelium_Secundum_Marcum",
   Lc: "c54_Vulgata_Clementina_Evangelium_Secundum_Lucam", Jo: "c55_Vulgata_Clementina_Evangelium_Secundum_Joannem",

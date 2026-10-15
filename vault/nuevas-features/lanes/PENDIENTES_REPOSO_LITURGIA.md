@@ -171,3 +171,9 @@ Textual: «Usa lo que te pasé del rosario, la selección usala así, eso de que
 - **L9**: el usuario da por buena la fuente que aportó (página «Meditationes Rosarii»); queda citada en `rosario.ts` y **ya no es un pendiente**. No se exige edición impresa.
 - **R1**: la selección de citas se usa tal cual (aprobada).
 - **«🔨 en curso»**: era solo la etiqueta de la tabla de `LANES.md` (L2, L3, R1 y R2 pasaron de «lista» a «integrada» sin la etiqueta intermedia). No tiene efecto en el código ni en la base; no se corrige.
+
+### Rosarium: las citas salen de la Vulgata (lane 152, 2026-10-14)
+Textual: «L9, te pasé simplemente cuáles misterios se usan en cada día. Las citas las debes obtener de la Vulgata Clementina que te compartí el archivo, ya lo copié a esta PC».
+- Lo que aportó el usuario fue **qué misterios van cada día** (eso ya estaba y no cambia). Las citas que había puesto AGY en cada misterio eran propias, sin respaldo (p. ej. «Lc 2, 22-38», «Hch 1, 9-11»); se **reemplazaron** por lecturas en latín tomadas del **epub de la Vulgata Clementina** (Wikisource, CC BY-SA 3.0 / GFDL): `src/data/liturgia/rosarium-lecturas.json`, generado con `npm run liturgia:rosarium-lecturas -- "<ruta al epub>"`. Cada tarjeta de misterio ahora tiene un desplegable «Lectio (Vulgata)» con el texto latino y la referencia, y la pantalla cita la fuente.
+- **Qué pasajes**: salen de la lista de referencias del texto «Meditationes Rosarii» que pegó el usuario. Donde ese texto da un tramo larguísimo (toda la Pasión, Hch 1,13–2,42…) se tomó el pasaje principal del misterio; todos los recortes están marcados en `scripts/liturgia/rosarium-lecturas.ts`. **Revisar**: la Visitación (el texto da solo Lc 1,39; se extendió a 39-45) y los recortes de la Pasión. Para cambiar un pasaje basta tocar `PASAJES` y regenerar.
+- **Español**: no hay. Por D52 se muestra solo el latín (el epub no trae traducción) y la pantalla lo dice.
