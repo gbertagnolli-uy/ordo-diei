@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { detectarMaterial, esEnlace, esImprimible, pareceMarkdown, vistaMaterial } from "./material.ts";
+import { detectarMaterial, esEnlace, esImprimible, impresionesRestantes, pareceMarkdown, vistaMaterial } from "./material.ts";
 
 const YT = "dQw4w9WgXcQ";
 const DOC = "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789";
@@ -97,4 +97,13 @@ test("esImprimible: el texto siempre; el resto, solo si hay forma de imprimirlo"
   assert.equal(esImprimible({ tipo: "video", proveedor: "youtube", externoId: YT, url: "u" }), false);
   assert.equal(esImprimible({ tipo: "documento", proveedor: "gdocs", externoId: DOC, url: "u" }), true);
   assert.equal(esImprimible({ tipo: "web", proveedor: "web", externoId: null, url: "https://x.org" }), false);
+});
+
+test("impresionesRestantes: límite + extras − usadas, nunca negativo", () => {
+  assert.equal(impresionesRestantes(2, 0, 0), 2);
+  assert.equal(impresionesRestantes(2, 1, 0), 1);
+  assert.equal(impresionesRestantes(2, 2, 0), 0);
+  assert.equal(impresionesRestantes(2, 2, 1), 1);
+  assert.equal(impresionesRestantes(0, 0, 0), 0);
+  assert.equal(impresionesRestantes(1, 5, 0), 0);
 });

@@ -184,3 +184,11 @@ export function vistaMaterial(m: MaterialBase): VistaMaterial {
 export function esImprimible(m: MaterialBase): boolean {
   return m.tipo === "texto" || m.tipo === "markdown" || vistaMaterial(m).imprimirUrl !== null;
 }
+
+/** Impresiones que le quedan a un alumno de un material: el límite del padre, más las que le dio de más, menos las usadas. */
+export function impresionesRestantes(limite: number, usadas: number, extras: number): number {
+  return Math.max(0, limite + extras - usadas);
+}
+
+/** Cuánto vale una hoja impresa antes de caducar su enlace (minutos): alcanza para volver a mandarla si la impresora falla */
+export const MINUTOS_HOJA_IMPRESA = 15;

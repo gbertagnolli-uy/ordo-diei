@@ -7,7 +7,7 @@ import type { MaterialEstudio, Prisma } from "@prisma/client";
 import { NoAutorizadoError, NoEncontradoError, aClave } from "../../habitos/server.ts";
 import { esPadre } from "../../habitos/permisos.ts";
 import { DatoInvalidoError } from "./planes.ts";
-import { detectarMaterial, esImprimible, TIPOS_MATERIAL, vistaMaterial, type MaterialDetectado, type TipoMaterial, type VistaMaterial } from "../material.ts";
+import { detectarMaterial, esImprimible, impresionesRestantes, TIPOS_MATERIAL, vistaMaterial, type MaterialDetectado, type TipoMaterial, type VistaMaterial } from "../material.ts";
 import { obtenerTitulo } from "./titulos.ts";
 
 export type Actor = { id: number; rol: string };
@@ -26,6 +26,8 @@ export type MaterialVista = {
   imprimible: boolean;
   vista: VistaMaterial;
   hecho: boolean;
+  /** Impresiones que le quedan al alumno que lo mira (null: lo mira un padre o no se sabe) */
+  restantes: number | null;
   leccionId: number | null;
   diaLectivoId: number | null;
   alumnoId: number | null;
@@ -43,7 +45,9 @@ const exigirPadre = (a: Actor) => {
 
 const comoFecha = (clave: string) => new Date(`${clave}T00:00:00.000Z`);
 
-export function aVista(m: MaterialEstudio): MaterialVista {
+export type UsoImpresion = { usadas: number; extras: number };
+
+export function aVista(m: MaterialEstudio, uso?: UsoImpresion): MaterialVista {
   const base = { tipo: m.tipo as TipoMaterial, proveedor: (m.proveedor ?? null) as never, externoId: m.externoId, url: m.url };
   return {
     id: m.id,
@@ -59,11 +63,32 @@ export function aVista(m: MaterialEstudio): MaterialVista {
     imprimible: m.limiteImpresiones > 0 && esImprimible(base),
     vista: vistaMaterial(base),
     hecho: m.hechoEn !== null,
+    restantes: uso ? impresionesRestantes(m.limiteImpresiones, uso.usadas, uso.extras) : null,
     leccionId: m.leccionId,
     diaLectivoId: m.diaLectivoId,
     alumnoId: m.alumnoId,
     fecha: m.fecha ? aClave(m.fecha) : null,
   };
+}
+
+/** Impresiones usadas y extras de un alumno, por material (una sola consulta) */
+export async function usoDeImpresiones(alumnoId: number, materialIds: number[]): Promise<Map<number, UsoImpresion>> {
+  const mapa = new Map<number, UsoImpresion>();
+  if (materialIds.length === 0) return mapa;
+  const filas = await prisma.impresionMaterial.groupBy({ by: ["materialId", "tipo"], where: { alumnoId, materialId: { in: materialIds } }, _count: { _all: true } });
+  for (const f of filas) {
+    const u = mapa.get(f.materialId) ?? { usadas: 0, extras: 0 };
+    if (f.tipo === "extra") u.extras += f._count._all;
+    else u.usadas += f._count._all;
+    mapa.set(f.materialId, u);
+  }
+  return mapa;
+}
+
+/** Vistas de un alumno: con lo que le queda de impresión a cada una */
+export async function aVistasDeAlumno(filas: MaterialEstudio[], alumnoId: number): Promise<MaterialVista[]> {
+  const uso = await usoDeImpresiones(alumnoId, filas.map((f) => f.id));
+  return filas.map((f) => aVista(f, uso.get(f.id) ?? { usadas: 0, extras: 0 }));
 }
 
 // ---------- Permisos de lectura ----------
@@ -96,7 +121,7 @@ const dondeDestino = (d: Destino): Prisma.MaterialEstudioWhereInput =>
 export async function listarMateriales(a: Actor, d: Destino): Promise<MaterialVista[]> {
   if (!(await puedeVerDestino(a, d))) throw new NoAutorizadoError("No tenés acceso a este material");
   const filas = await prisma.materialEstudio.findMany({ where: dondeDestino(d), orderBy: [{ orden: "asc" }, { id: "asc" }] });
-  return filas.map(aVista);
+  return esPadre(a.rol) ? filas.map((f) => aVista(f)) : aVistasDeAlumno(filas, a.id);
 }
 
 export async function obtenerMaterial(a: Actor, id: number): Promise<MaterialVista> {
@@ -104,7 +129,7 @@ export async function obtenerMaterial(a: Actor, id: number): Promise<MaterialVis
   if (!m) throw new NoEncontradoError("Material no encontrado");
   const destino: Destino = m.diaLectivoId ? { diaLectivoId: m.diaLectivoId } : m.leccionId ? { leccionId: m.leccionId } : { alumnoId: m.alumnoId ?? 0, fecha: m.fecha ? aClave(m.fecha) : "" };
   if (!(await puedeVerDestino(a, destino))) throw new NoAutorizadoError("No tenés acceso a este material");
-  return aVista(m);
+  return esPadre(a.rol) ? aVista(m) : (await aVistasDeAlumno([m], a.id))[0];
 }
 
 /** Cantidad de materiales por día / lección (para las insignias del calendario y de las lecciones) */
@@ -223,5 +248,5 @@ export async function marcarMaterialHecho(a: Actor, id: number, hecho: boolean):
 /** Material suelto de un alumno en una fecha, para «Hoy» */
 export async function materialSueltoDeHoy(alumnoId: number, hoy: string): Promise<MaterialVista[]> {
   const filas = await prisma.materialEstudio.findMany({ where: { alumnoId, fecha: comoFecha(hoy) }, orderBy: [{ orden: "asc" }, { id: "asc" }] });
-  return filas.map(aVista);
+  return aVistasDeAlumno(filas, alumnoId);
 }

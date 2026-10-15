@@ -4,7 +4,7 @@ import prisma from "../../prisma.ts";
 import { aClave, hoyEnFamilia } from "../../habitos/server.ts";
 import { estaBloqueado, motivoLeccionBloqueada, rangoTexto } from "../dia.ts";
 import { sincronizarDias, TIPOS_CON_LECCIONES, unidadesVistas } from "./progreso.ts";
-import { aVista, materialSueltoDeHoy, type MaterialVista } from "./materiales.ts";
+import { aVista, materialSueltoDeHoy, usoDeImpresiones, type MaterialVista } from "./materiales.ts";
 
 export type LeccionHoy = {
   id: number;
@@ -79,6 +79,8 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
       where: { OR: [{ diaLectivoId: { in: elegidos.map((e) => e.dia.id) } }, { leccionId: { in: idsLeccion } }] },
       orderBy: [{ orden: "asc" }, { id: "asc" }],
     });
+    const uso = await usoDeImpresiones(alumnoId, materiales.map((m) => m.id));
+    const vistaDe = (m: (typeof materiales)[number]) => aVista(m, uso.get(m.id) ?? { usadas: 0, extras: 0 });
 
     const conLecciones = TIPOS_CON_LECCIONES.includes(recurso.tipo);
     const preguntas = conLecciones ? await prisma.preguntaLeccion.findMany({ where: { leccion: { recursoId: recurso.id } }, select: { leccionId: true, segundoVideo: true } }) : [];
@@ -102,7 +104,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
                 videoId: l.videoId,
                 quiz: preguntas.some((q) => q.leccionId === l.id && q.segundoVideo === null),
                 checkpoints: preguntas.filter((q) => q.leccionId === l.id && q.segundoVideo !== null).length,
-                materiales: materiales.filter((m) => m.leccionId === l.id).map(aVista),
+                materiales: materiales.filter((m) => m.leccionId === l.id).map(vistaDe),
                 completada: vistas?.conProgreso.has(l.orden) ?? false,
                 bloqueada: !!motivo,
                 motivo,
@@ -124,7 +126,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
         unidadHasta: dia.unidadHasta,
         progreso: recurso.totalUnidades > 0 ? Math.min(100, Math.round((totalHecho / recurso.totalUnidades) * 100)) : 0,
         lecciones,
-        materiales: materiales.filter((m) => m.diaLectivoId === dia.id).map(aVista),
+        materiales: materiales.filter((m) => m.diaLectivoId === dia.id).map(vistaDe),
       });
     }
   }

@@ -108,6 +108,7 @@ model Usuario {
   repasos             TarjetaRepaso[]         @relation("RepasosAlumno")
   materialesAlumno    MaterialEstudio[]       @relation("MaterialesAlumno")
   materialesCreados   MaterialEstudio[]       @relation("MaterialesCreados")
+  impresiones         ImpresionMaterial[]     @relation("ImpresionesAlumno")
   actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
   actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
   metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
@@ -1003,15 +1004,34 @@ model MaterialEstudio {
   createdAt         DateTime     @default(now()) @map("Created_At")
   updatedAt         DateTime     @updatedAt @map("Updated_At")
 
-  leccion    LeccionCurso? @relation(fields: [leccionId], references: [id], onDelete: Cascade)
-  diaLectivo DiaLectivo?   @relation(fields: [diaLectivoId], references: [id], onDelete: Cascade)
-  alumno     Usuario?      @relation("MaterialesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
-  creador    Usuario       @relation("MaterialesCreados", fields: [creadorId], references: [id])
+  leccion     LeccionCurso?       @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  diaLectivo  DiaLectivo?         @relation(fields: [diaLectivoId], references: [id], onDelete: Cascade)
+  alumno      Usuario?            @relation("MaterialesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  creador     Usuario             @relation("MaterialesCreados", fields: [creadorId], references: [id])
+  impresiones ImpresionMaterial[]
 
   @@index([leccionId, orden])
   @@index([diaLectivoId, orden])
   @@index([alumnoId, fecha])
   @@map("Homeschool_Materiales")
+}
+
+// Cada vez que un alumno abre la vista de impresión de un material queda una fila 'uso'; un padre puede dar impresiones de
+// más ('extra'). Permitidas = MaterialEstudio.limiteImpresiones + extras. El `token` abre la hoja de texto impresa (lane 168, P1).
+model ImpresionMaterial {
+  id            Int      @id @default(autoincrement())
+  materialId    Int      @map("Material_ID")
+  alumnoId      Int      @map("Alumno_ID")
+  tipo          String   @default("uso") @map("Tipo")
+  token         String?  @unique @map("Token")
+  otorgadaPorId Int?     @map("Otorgada_Por_ID")
+  createdAt     DateTime @default(now()) @map("Created_At")
+
+  material MaterialEstudio @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  alumno   Usuario         @relation("ImpresionesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@index([materialId, alumnoId])
+  @@map("Homeschool_Impresiones")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──

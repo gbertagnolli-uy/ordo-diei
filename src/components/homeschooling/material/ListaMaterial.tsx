@@ -14,6 +14,7 @@ import type { Destino, MaterialVista } from "@/lib/homeschooling/servidor/materi
 import { toast } from "@/lib/toast";
 import AgregarMaterial from "./AgregarMaterial";
 import IconoMaterial from "./IconoMaterial";
+import ImpresionesDelMaterial from "./ImpresionesDelMaterial";
 
 const consultaDestino = (d: Destino) => ("diaLectivoId" in d ? consulta({ diaId: d.diaLectivoId }) : "leccionId" in d ? consulta({ leccionId: d.leccionId }) : consulta({ alumnoId: d.alumnoId, fecha: d.fecha }));
 
@@ -118,6 +119,7 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
                 </NativeSelect>
                 {!m.imprimible && m.limiteImpresiones > 0 && <span>(este tipo no se imprime desde la app)</span>}
               </div>
+              {m.imprimible && <ImpresionesDelMaterial materialId={m.id} />}
             </li>
           ))}
         </ul>
