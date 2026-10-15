@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import { esArchivoVideo, urlEmbed } from "@/lib/homeschooling/video";
+import MaterialesDelDia from "@/components/homeschooling/material/MaterialesDelDia";
 import type { DiaHoy, LeccionHoy } from "@/lib/homeschooling/servidor/hoy";
 import { useModalStore } from "@/store/modalStore";
 import { toast } from "@/lib/toast";
@@ -158,6 +159,7 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                     </h2>
                     {actual.instrucciones && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{actual.instrucciones}</p>}
                   </div>
+                  <MaterialesDelDia materiales={actual.materiales} titulo="Material de esta lección" />
                   {haciendoQuiz && <QuizFinal leccionId={actual.id} onAprobado={quizAprobado} onRepasar={() => setHaciendoQuiz(false)} />}
                   {lecciones.length > 1 && <LeccionesDelDia lecciones={lecciones} completadas={completadas} activaId={activaId} onSelect={cambiar} />}
                 </>
@@ -174,6 +176,8 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                   <p className="text-sm text-muted-foreground">Cuando termines, tocá «Terminé».</p>
                 </div>
               )}
+
+              <MaterialesDelDia materiales={dia.materiales} titulo="Material del día" />
 
               <Button variant="outline" size="lg" className="w-full" onClick={() => setFoto(true)}>
                 <Camera /> Sacar una foto de mi trabajo
