@@ -8,12 +8,15 @@ import { Button } from "@/components/ui/button";
 import { ETIQUETA_TIPO } from "@/lib/homeschooling/material";
 import type { MaterialVista } from "@/lib/homeschooling/servidor/materiales";
 import IconoMaterial from "./IconoMaterial";
+import BotonImprimir from "./BotonImprimir";
 import VisorMaterial from "./VisorMaterial";
 
 const adelanto = (texto: string) => texto.replace(/[#>*_`|~-]/g, "").replace(/\s+/g, " ").trim().slice(0, 140);
 
 export default function MaterialesDelDia({ materiales, titulo = "Material" }: { materiales: MaterialVista[]; titulo?: string }) {
   const [abierto, setAbierto] = useState<number | null>(null);
+  // Impresiones que le quedan después de imprimir en esta sesión (el servidor ya las descontó)
+  const [usadas, setUsadas] = useState<Record<number, number | null>>({});
   if (materiales.length === 0) return null;
   return (
     <section aria-label={titulo || "Material"} className="space-y-2">
@@ -42,7 +45,13 @@ export default function MaterialesDelDia({ materiales, titulo = "Material" }: { 
           </li>
         ))}
       </ul>
-      <VisorMaterial lista={materiales} indice={abierto} onCambiar={setAbierto} onClose={() => setAbierto(null)} />
+      <VisorMaterial
+        lista={materiales}
+        indice={abierto}
+        onCambiar={setAbierto}
+        onClose={() => setAbierto(null)}
+        acciones={(m) => <BotonImprimir material={m} restantes={m.id in usadas ? usadas[m.id] : m.restantes} onUsada={(r) => setUsadas((x) => ({ ...x, [m.id]: r }))} />}
+      />
     </section>
   );
 }
