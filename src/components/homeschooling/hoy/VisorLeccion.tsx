@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/homeschooling/roost/services/http";
-import { urlEmbed } from "@/lib/homeschooling/video";
+import { esArchivoVideo, urlEmbed } from "@/lib/homeschooling/video";
 import type { DiaHoy, LeccionHoy } from "@/lib/homeschooling/servidor/hoy";
 import { useModalStore } from "@/store/modalStore";
 import { toast } from "@/lib/toast";
@@ -48,7 +48,8 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
   const actual = lecciones.find((l) => l.id === activaId);
   const indice = actual ? lecciones.indexOf(actual) : -1;
   const hechaActual = !!actual && (actual.completada || completadas.has(actual.id));
-  const embed = actual?.videoPlataforma && actual.videoId ? urlEmbed(actual.videoPlataforma, actual.videoId) : null;
+  // YouTube/Vimeo por su embed; un enlace a un archivo de video (.mp4, .webm…) lo reproduce el propio navegador
+  const embed = actual?.videoPlataforma && actual.videoId ? urlEmbed(actual.videoPlataforma, actual.videoId) : esArchivoVideo(actual?.url) ? (actual?.url ?? null) : null;
   const hechoElDia = dia?.estado === "hecha";
 
   // Después de completar una lección (con o sin quiz): seguir con la próxima o, si era la última, completar la Tarea del día

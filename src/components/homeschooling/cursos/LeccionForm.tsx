@@ -13,7 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { createRecording, updateRecording } from "@/lib/homeschooling/roost/services/group";
 import type { RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
-import { parsearEnlaceVideo, urlEmbed } from "@/lib/homeschooling/video";
+import { esArchivoVideo, parsearEnlaceVideo, urlEmbed } from "@/lib/homeschooling/video";
 import { toast } from "@/lib/toast";
 
 export default function LeccionForm({
@@ -71,9 +71,16 @@ export default function LeccionForm({
             <Label htmlFor="lec-url">Enlace (opcional)</Label>
             <Input id="lec-url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=… o https://vimeo.com/…" inputMode="url" aria-invalid={urlInvalida} />
             <p className="text-xs text-muted-foreground">
-              {urlInvalida ? "Tiene que empezar con http:// o https://" : "YouTube y Vimeo se reproducen en la lección; cualquier otro enlace queda como vínculo."}
+              {urlInvalida ? "Tiene que empezar con http:// o https://" : "YouTube, Vimeo y los archivos de video (.mp4, .webm) se reproducen en la lección; cualquier otro enlace queda como vínculo."}
             </p>
           </div>
+
+          {!video && esArchivoVideo(url) && (
+            <div className="space-y-1.5">
+              <Label>Vista previa</Label>
+              <video src={url.trim()} controls className="aspect-video w-full rounded-lg bg-muted" />
+            </div>
+          )}
 
           {video && (
             <div className="space-y-1.5">

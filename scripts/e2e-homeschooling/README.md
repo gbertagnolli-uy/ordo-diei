@@ -20,6 +20,8 @@ node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/li
 node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/fase_a.ts    # API: crea los datos y recorre las reglas
 node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/fase_b.ts    # 15 páginas × móvil/tablet/escritorio: errores, desbordes
 node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/fase_c.ts    # interacción: navegación, reordenar, planes, visor, foto…
+node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/fase_e.ts    # video real (.webm generado con ffmpeg) + checkpoint
+node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/fase_f.ts    # cámara en Pixel 7 emulado: capture, compresión, evidencia
 node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-homeschooling/limpiar.ts   # SIEMPRE al terminar
 ```
 Variables: `E2E_BASE` (por defecto `http://localhost:3100`), `E2E_SALIDA` (estado y capturas; por defecto `$TMPDIR/hs-e2e`), `CHROMIUM`.
@@ -33,3 +35,5 @@ Hay que correr `fase_a` antes que `b` y `c` (dejan los ids en `estado.json`) y l
 - **B:** sin errores de consola ni HTTP ≥ 400, sin redirección al login y sin desborde horizontal, para padre e hijo.
 - **C:** migas y botones de volver, botón «atrás» del navegador, pestañas, reordenar, pausar/reanudar/cambiar fin/quitar un plan,
   archivar y restaurar una materia, Primero/Después con reloj, historia social, cámara, visor, logro con modo relajado, cronómetro.
+- **E:** archivo de video directo: carga, reproduce, pausa en el checkpoint, «Volver 30 s», acierto, completar la Tarea (requiere `ffmpeg`).
+- **F:** teléfono emulado: `capture="environment"`, selector de «Cámara», foto de 2400×1800 comprimida, evidencia con 2 fotos, sin desborde.

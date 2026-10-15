@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parsearEnlaceVideo, urlEmbed } from "./video.ts";
+import { esArchivoVideo, parsearEnlaceVideo, urlEmbed } from "./video.ts";
 
 const ID = "dQw4w9WgXcQ";
 
@@ -39,4 +39,9 @@ test("rechaza basura e ids de largo incorrecto", () => {
 test("urlEmbed usa youtube-nocookie", () => {
   assert.equal(urlEmbed("youtube", ID), `https://www.youtube-nocookie.com/embed/${ID}?rel=0`);
   assert.equal(urlEmbed("vimeo", "1"), "https://player.vimeo.com/video/1");
+});
+
+test("esArchivoVideo: enlaces http(s) a archivos de video", () => {
+  for (const u of ["https://x.com/clase.mp4", "http://192.168.0.5:8080/v/clase.webm?token=1", "https://x.com/a/b.M4V", "https://x.com/lista.m3u8"]) assert.equal(esArchivoVideo(u), true, u);
+  for (const u of ["", null, undefined, "https://x.com/clase.pdf", "https://youtu.be/dQw4w9WgXcQ", "ftp://x.com/a.mp4", "clase.mp4", "https://x.com/mp4"]) assert.equal(esArchivoVideo(u as string), false, String(u));
 });

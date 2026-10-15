@@ -56,3 +56,16 @@ export function parsearEnlaceVideo(entrada: string): EnlaceVideo | null {
   }
   return null;
 }
+
+const EXTENSIONES_VIDEO = /\.(mp4|webm|ogv|ogg|mov|m4v|m3u8)$/i;
+
+/** Enlace http(s) a un archivo de video (lo reproduce el propio navegador, sin YouTube ni Vimeo) */
+export function esArchivoVideo(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url.trim());
+    return (u.protocol === "http:" || u.protocol === "https:") && EXTENSIONES_VIDEO.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
