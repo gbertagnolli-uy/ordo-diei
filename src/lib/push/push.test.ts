@@ -13,7 +13,7 @@ test("el recordatorio a los padres nombra a quién falta y se acorta con muchos"
   assert.equal(avisoRegistrarDia([]), null);
   assert.match(avisoRegistrarDia(["Ana", "Luis"])!.body, /^Ana, Luis:/);
   assert.match(avisoRegistrarDia(["A", "B", "C", "D", "E"])!.body, /^A, B, C y 2 más:/);
-  assert.equal(avisoRegistrarDia(["Ana"])!.url, "/dashboard/admin/comportamiento");
+  assert.equal(avisoRegistrarDia(["Ana"])!.url, "/dashboard/admin/conducta");
 });
 
 test("un dispositivo recibe como máximo un aviso por día de la familia", () => {

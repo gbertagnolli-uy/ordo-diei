@@ -26,7 +26,7 @@ export function avisoRegistrarDia(nombres: string[]): Aviso | null {
   return {
     title: "Falta registrar el día de tus hijos",
     body: `${lista}: el cofre de cada uno llega cuando registrás cómo se portó.`,
-    url: "/dashboard/admin/comportamiento",
+    url: "/dashboard/admin/conducta",
     tag: "registrar-dia",
   };
 }

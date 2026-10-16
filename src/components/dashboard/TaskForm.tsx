@@ -12,8 +12,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useThemeStore } from "@/store/themeStore";
-import SloshGauge from "@/components/SloshGauge";
+import { SelectorNivel } from "@/components/SelectorNivel";
 import Stepper, { Step } from "@/components/Stepper";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
 import { toast } from "@/lib/toast";
@@ -24,11 +23,7 @@ const COLORES_DIFICULTAD = {
   oscuro: ["#6AAF6A", "#85AD61", "#A0AB59", "#BBA950", "#CB9E4A", "#CE8947", "#D17543", "#D46040"],
 };
 const ALTO_GAUGE = 176;
-const TRAMO = 100 / DIFICULTADES.length;
-
-// El gauge es continuo (0–100): se arrastra libre y al soltar se acomoda en el centro del tramo.
-const nivelDe = (d: Dificultad) => (DIFICULTADES.indexOf(d) + 1) * TRAMO;
-const dificultadDe = (v: number): Dificultad => DIFICULTADES[Math.min(DIFICULTADES.length - 1, Math.max(0, Math.ceil(v / TRAMO) - 1))];
+const NIVELES_DIFICULTAD = DIFICULTADES.map((d) => ({ valor: d, etiqueta: DIFICULTAD_INFO[d].etiqueta }));
 
 // El Stepper toma los tokens de la app (cambian solos con la clase .dark), no sus temas propios.
 const tinta = (pct: number) => `color-mix(in srgb, var(--foreground) ${pct}%, transparent)`;
@@ -77,8 +72,6 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   );
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [dificultad, setDificultad] = useState<Dificultad>(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT);
-  const darkMode = useThemeStore((st) => st.darkMode);
-  const [nivel, setNivel] = useState(() => nivelDe(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT));
   const [minutos, setMinutos] = useState<string>(isEdit ? String(Math.floor(task.tiempoEjecucionEstimadoSeg / 60)) : "");
 
   const [titulo, setTitulo] = useState<string>(isEdit ? task.titulo : "");
@@ -367,34 +360,15 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
         <Field>
           <FieldLabel htmlFor={fid("dificultad")} className="flex items-center gap-2"><Trophy className="size-4 text-primary" /> Dificultad</FieldLabel>
-          <div
+          <SelectorNivel
             id={fid("dificultad")}
-            className="flex items-center gap-4"
-            onPointerUpCapture={() => setNivel(nivelDe(dificultad))}
-            onPointerCancelCapture={() => setNivel(nivelDe(dificultad))}
-          >
-            <SloshGauge
-              value={nivel}
-              onChange={(v) => { setNivel(v); setDificultad(dificultadDe(v)); }}
-              interactive
-              showValue={false}
-              liquidColor={COLORES_DIFICULTAD[darkMode ? "oscuro" : "claro"][DIFICULTADES.indexOf(dificultad)]}
-              glassColor="var(--muted)"
-              className="ring-1 ring-border"
-              width={64}
-              height={ALTO_GAUGE}
-              radius={16}
-              ticks={DIFICULTADES.length}
-              ariaLabel="Dificultad de la tarea"
-            />
-            <ul className="flex flex-col-reverse text-sm">
-              {DIFICULTADES.map((d) => (
-                <li key={d} style={{ height: ALTO_GAUGE / DIFICULTADES.length }} className={"flex items-center " + (d === dificultad ? "font-semibold text-foreground" : "text-muted-foreground")}>
-                  {DIFICULTAD_INFO[d].etiqueta}
-                </li>
-              ))}
-            </ul>
-          </div>
+            niveles={NIVELES_DIFICULTAD}
+            valor={dificultad}
+            onChange={setDificultad}
+            colores={COLORES_DIFICULTAD}
+            ariaLabel="Dificultad de la tarea"
+            alto={ALTO_GAUGE}
+          />
           <FieldDescription>
             {Number(minutos) > 0
               ? `Recompensa base: ${puntosBase(dificultad, Number(minutos) * 60)} pts (más bonos de racha, checklist y horario).`

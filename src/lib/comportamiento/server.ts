@@ -8,8 +8,9 @@ import { regalarCartaEnTx, type FragmentosOtorgados } from "../cartas/server.ts"
 import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
-import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
+import { cofreMerecido, contenidoCofre, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { haySancion, origenCofreDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
+import { hoyDia } from "../conducta/server.ts";
 import { avisoCofre } from "../push/avisos.ts";
 import { enviarAviso } from "../push/servidor.ts";
 import { AVISO_MITAD, errorBloqueo, premioConSancion, tieneCartas } from "./sancion.ts";
@@ -312,11 +313,12 @@ export async function otorgarCofreDelDia(usuarioId: number, ahora = new Date()):
     if (yaTiene > 0) return false;
     // Un día con sanción no da cofre, aunque haya más registros positivos que negativos
     if (await haySancion(tx, usuarioId, ahora)) return false;
-    const [positivos, negativos] = await Promise.all([
+    const [positivos, negativos, conducta] = await Promise.all([
       tx.comportamiento.count({ where: { usuarioId, tipo: "Positivo", createdAt: { gte: desde } } }),
       tx.comportamiento.count({ where: { usuarioId, tipo: "Negativo", createdAt: { gte: desde } } }),
+      tx.conductaDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha: new Date(`${hoyDia(ahora)}T00:00:00Z`) } }, select: { nivel: true } }),
     ]);
-    if (!diaEsBueno(positivos, negativos)) return false;
+    if (!cofreMerecido(positivos, negativos, conducta?.nivel ?? null)) return false;
 
     await crearCofre(tx, usuarioId, origen);
     return true;

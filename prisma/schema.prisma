@@ -87,6 +87,8 @@ model Usuario {
   recompensasEntregadas      Recompensa[]      @relation("RecompensasEntregadas")
   comportamientos            Comportamiento[]  @relation("ComportamientosHijo")
   comportamientosRegistrados Comportamiento[]  @relation("ComportamientosRegistrados")
+  conductaDias               ConductaDia[]     @relation("ConductaHijo")
+  conductaRegistrada         ConductaDia[]     @relation("ConductaRegistrada")
 
   incienso             Int                   @default(0) @map("Incienso")
   cartasCreadas        Carta[]               @relation("CartasCreadas")
@@ -458,6 +460,25 @@ model Comportamiento {
 
   @@index([usuarioId, createdAt])
   @@map("Comportamientos")
+}
+
+// Conducta diaria (vault/LANE_205_CONDUCTA_DIARIA.md): un nivel 1–5 por hijo y por día.
+model ConductaDia {
+  id              Int      @id @default(autoincrement())
+  usuarioId       Int      @map("Usuario_ID")
+  registradoPorId Int      @map("Registrado_Por_ID")
+  fecha           DateTime @db.Date @map("Fecha")
+  nivel           Int      @map("Nivel")
+  nota            String?  @map("Nota")
+  createdAt       DateTime @default(now()) @map("Created_At")
+  updatedAt       DateTime @updatedAt @map("Updated_At")
+
+  usuario       Usuario @relation("ConductaHijo", fields: [usuarioId], references: [id], onDelete: Cascade)
+  registradoPor Usuario @relation("ConductaRegistrada", fields: [registradoPorId], references: [id])
+
+  @@unique([usuarioId, fecha])
+  @@index([usuarioId, fecha])
+  @@map("Conducta_Dias")
 }
 
 // ==========================================
