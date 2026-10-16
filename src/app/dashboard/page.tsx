@@ -9,6 +9,8 @@ import { ParteDeHoy } from "@/components/engagement/ParteDeHoy";
 import { parteDeHoy } from "@/lib/engagement/servidor";
 import { MetaSemanal } from "@/components/engagement/MetaSemanal";
 import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
+import { CompaneroCard } from "@/components/engagement/CompaneroCard";
+import { companeroDe } from "@/lib/engagement/companeroServidor";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -64,6 +66,14 @@ export default async function DashboardPage() {
     return null;
   });
 
+  // Compañero que evoluciona: es de los chicos (los padres ya tienen «Tu parte de hoy»)
+  const companero = isCurrentUserAdmin
+    ? null
+    : await companeroDe(Number(session.user.id)).catch((e) => {
+        console.error("[Companero]", e);
+        return null;
+      });
+
   const myUser = allUsers.find((u) => u.id === session.user.id);
   const myTasks = myUser?.tareasAsignadas || [];
 
@@ -84,6 +94,11 @@ export default async function DashboardPage() {
       {parte && (
         <div className="px-4 sm:px-6 pt-3">
           <ParteDeHoy datos={parte} />
+        </div>
+      )}
+      {companero && (
+        <div className="px-4 sm:px-6 pt-3">
+          <CompaneroCard datos={companero} />
         </div>
       )}
       {meta && (meta.meta || meta.esPadre) && (
