@@ -58,3 +58,13 @@ Pendiente para las lanes siguientes: **202** meta semanal en familia, **203** co
 - La ven todos en el inicio; los chicos no ven nada hasta que exista una meta. Sin castigo si no se llega.
 - «Tu parte de hoy» se **compacta en una sola fila** cuando está completa, para no empujar el trabajo del día.
 - `GET/POST /api/meta-semanal`. Pruebas: 4 unitarias + 1 de integración con base local.
+
+### Lane 203 — hecha (2026-10-16)
+
+- **Tabla nueva `Companeros`** (`Companero`: nombre elegido + última etapa festejada). SQL **solo aditivo**, aplicado a la base.
+- **Evoluciona con los días de uso, no con la racha**: cada día distinto en que el niño entra (`ActividadDia`) suma. Etapas por días: **Huevito 0 · Pichón 3 · Palomita 10 · Angelito 30 · Ángel guardián 100**. Faltar no lo achica ni lo «mata».
+- **Regreso sin culpa**: si el niño vuelve tras faltar, el compañero «se despertó contento» (el mensaje no cuenta los días perdidos).
+- Al llegar a una etapa nueva, un aviso con «¡Genial!» (festejo con confeti) que se muestra hasta que el niño lo confirma; el nombre lo elige el niño y se estrena con él (nada que festejar antes de ponerle nombre).
+- **Arte con emoji** (🥚 🐣 🕊️ 👼 😇): no hay ilustraciones propias de mascotas (solo los escudos de nivel) y el emoji ya es parte de la voz de la app. Si más adelante se encarga arte propio, solo cambia `ETAPAS[].emoji` por una imagen.
+- Solo para los **hijos** en el inicio (los padres tienen «Tu parte de hoy»). `POST /api/companero` (`nombrar` | `festejar`). Pruebas: 6 unitarias + 1 de integración con base local; verificado en Chromium (teléfono).
+- Sin economía: el compañero no da puntos ni cartas, para no inflar lo que ya se gana con las tareas.

@@ -75,6 +75,7 @@ model Usuario {
 
   experienciaHabitos         Int              @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
+  companero                  Companero?
   metasSemanales             MetaSemanal[]    @relation("MetasSemanales")
   habitosCreados             Habito[]         @relation("HabitosCreados")
   habitosUsuario             HabitoUsuario[]
@@ -1511,4 +1512,19 @@ model MetaSemanal {
   creadaPor Usuario? @relation("MetasSemanales", fields: [creadaPorId], references: [id], onDelete: SetNull)
 
   @@map("Metas_Semanales")
+}
+
+// Compañero que evoluciona (vault/ENGAGEMENT_PLAN.md, lane 203): crece con los DÍAS DE USO (no con la racha),
+// así que faltar nunca lo achica. Solo guarda lo que elige el niño; la etapa se calcula con `ActividadDia`.
+model Companero {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int      @unique @map("Usuario_ID")
+  nombre     String   @map("Nombre")
+  etapaVista Int      @default(1) @map("Etapa_Vista") // última etapa que el niño ya festejó
+  createdAt  DateTime @default(now()) @map("Created_At")
+  updatedAt  DateTime @updatedAt @map("Updated_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("Companeros")
 }
