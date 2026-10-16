@@ -103,6 +103,9 @@ export function RegistroConducta({ hijos, hoy, recientes: inicial }: { hijos: Hi
                 onChange={setNivel}
                 colores={COLORES_CONDUCTA}
                 ariaLabel="Nivel de conducta"
+                alto={208}
+                llenarAlMontar
+                fluidez={{ viscosidad: 0.1, salpicadura: 0.55, inclinacion: 0.7 }}
               />
               {yaRegistrado && <FieldDescription>Ya había una conducta registrada ese día: al guardar se corrige.</FieldDescription>}
             </Field>

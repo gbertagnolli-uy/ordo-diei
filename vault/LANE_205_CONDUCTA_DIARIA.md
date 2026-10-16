@@ -17,3 +17,9 @@
 - El selector de nivel es el mismo `SloshGauge` de la dificultad de la tarea, extraído a `SelectorNivel` y usado por ambos (sin cambiar el comportamiento de `TaskForm`).
 - Páginas: `/dashboard/admin/conducta` (registrar, solo padres) y `/dashboard/admin/hijos` (resumen con una pestaña por hijo, solo padres).
 - Perfil: tarjeta «Conducta» con promedio, tira de los últimos 14 días y últimas notas (la ve el hijo y los padres).
+
+## Lane 209 — el selector de conducta tiene que verse líquido
+**Pedido (textual):** «ademas el componente de barra no tiene fluidez, ni viscosidad, ni animación, para completar el nivel de comportamiento del niño»
+
+- `SelectorNivel` gana `llenarAlMontar` (el líquido arranca vacío y se llena hasta el nivel al abrir) y `fluidez` (viscosidad, salpicadura, inclinación del `SloshGauge`). El registro de conducta los usa con más rebote (viscosidad 0.1, salpicadura 0.55, inclinación 0.7) y un gauge más alto; la dificultad de la tarea queda igual.
+- Si el sistema tiene «reducir movimiento» activado, el `SloshGauge` apaga el rebote y la inclinación por accesibilidad (no es un fallo).

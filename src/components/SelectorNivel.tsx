@@ -3,7 +3,7 @@
 // Selector de nivel con el SloshGauge y sus etiquetas al costado. Lo usan la dificultad de la tarea
 // y la conducta diaria. El gauge es continuo (0–100): se arrastra libre y al soltar se acomoda en el
 // centro del tramo.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SloshGauge from "@/components/SloshGauge";
 import { useThemeStore } from "@/store/themeStore";
 
@@ -19,16 +19,27 @@ export type SelectorNivelProps<T extends string | number> = {
   colores: { claro: readonly string[]; oscuro: readonly string[] };
   ariaLabel: string;
   alto?: number;
+  /** El líquido arranca vacío y se llena hasta el nivel al aparecer */
+  llenarAlMontar?: boolean;
+  /** Cuánto cuesta mover el líquido (0 = rígido) y cuánto rebota y se inclina */
+  fluidez?: { viscosidad?: number; salpicadura?: number; inclinacion?: number };
 };
 
-export function SelectorNivel<T extends string | number>({ id, niveles, valor, onChange, colores, ariaLabel, alto = ALTO_DEFAULT }: SelectorNivelProps<T>) {
+export function SelectorNivel<T extends string | number>({ id, niveles, valor, onChange, colores, ariaLabel, alto = ALTO_DEFAULT, llenarAlMontar = false, fluidez }: SelectorNivelProps<T>) {
   const darkMode = useThemeStore((st) => st.darkMode);
   const tramo = 100 / niveles.length;
   const indice = Math.max(0, niveles.findIndex((n) => n.valor === valor));
   const centro = (i: number) => (i + 1) * tramo;
   const indiceDe = (v: number) => Math.min(niveles.length - 1, Math.max(0, Math.ceil(v / tramo) - 1));
 
-  const [nivel, setNivel] = useState(() => centro(indice));
+  const [nivel, setNivel] = useState(() => (llenarAlMontar ? 0 : centro(indice)));
+  useEffect(() => {
+    if (!llenarAlMontar) return;
+    const id = requestAnimationFrame(() => setNivel(centro(indice)));
+    return () => cancelAnimationFrame(id);
+    // solo al montar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Si el valor cambia desde afuera (p. ej. al cargar lo registrado), el gauge lo sigue.
   const [valorPrevio, setValorPrevio] = useState(valor);
   if (valorPrevio !== valor) {
@@ -55,6 +66,9 @@ export function SelectorNivel<T extends string | number>({ id, niveles, valor, o
         height={alto}
         radius={16}
         ticks={niveles.length}
+        viscosity={fluidez?.viscosidad}
+        splash={fluidez?.salpicadura}
+        tilt={fluidez?.inclinacion}
         ariaLabel={ariaLabel}
       />
       <ul className="flex flex-col-reverse text-sm">
