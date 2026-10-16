@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   CalendarDays,
+  CheckCircle2,
   FilePen,
   Gift,
   HeartHandshake,
@@ -45,10 +46,16 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
       acciones: [
         { href: "/dashboard/tasks/new", titulo: "Nueva tarea", descripcion: "Asigná una tarea a uno o más miembros.", icon: ListPlus },
         {
-          href: "/dashboard/admin/agenda",
-          titulo: "Agenda master",
-          descripcion: "Todas las tareas de la familia y los hábitos que esperan tu aprobación.",
+          href: "/dashboard/admin/tareas",
+          titulo: "Tareas",
+          descripcion: "Creá, editá, mirá y eliminá las tareas de toda la familia.",
           icon: CalendarDays,
+        },
+        {
+          href: "/dashboard/admin/aprobaciones",
+          titulo: "Aprobaciones",
+          descripcion: "Tareas y hábitos que esperan tu aprobación.",
+          icon: CheckCircle2,
           pendientes: pendientes.solicitudesHabitos,
         },
       ],

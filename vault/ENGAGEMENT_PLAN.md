@@ -119,3 +119,13 @@ Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.e
 **Pedido (textual):** «"Revisá lo que esperan los chicos — 23 tareas esperan tu aprobación." al hacer click no lleva al panel de agenda master donde se aprueban tareas y habitos»
 
 - La misión «Revisá lo que esperan los chicos» de «Tu parte de hoy» apuntaba a `/dashboard`; ahora va a `/dashboard/admin/agenda`.
+
+### Lane 213 — separar Tareas y Aprobaciones en administración (2026-10-16)
+
+**Pedido (textual):** «/dashboard/admin/agenda no es una pantalla clara para gestionar tareas y aprobaciones. por eso quiero separarlas. Que en /dashboard/admin/ hayan dos pantallas reemplazando "Agenda Master", una llamada aprobaciones, otra llamada "Tareas". En la pantalla de tareas, quiero enfocarme en la creación, edición, visualización y eliminación de tareas. En la pantalla de aprobaciones, quiero usar lo que ya hay, sin modificarlo, con los mismos componentes, y solo para aprobaciones.»
+
+- En `/dashboard/admin/` se reemplaza «Agenda master» por dos tarjetas: **Tareas** (`/dashboard/admin/tareas`) y **Aprobaciones** (`/dashboard/admin/aprobaciones`).
+- `/dashboard/admin/aprobaciones` muestra únicamente las aprobaciones usando los componentes existentes sin modificar (`SolicitudesHabitos` y `ParentReviewPanel`).
+- `/dashboard/admin/tareas` se enfoca en la creación (modal «Nueva tarea» con `TaskForm`), edición, visualización (calendario y tabla) y eliminación de tareas.
+- `/dashboard/admin/agenda` redirige a `/dashboard/admin/aprobaciones` y la misión de aprobar en «Tu parte de hoy» apunta a `/dashboard/admin/aprobaciones`.
+
