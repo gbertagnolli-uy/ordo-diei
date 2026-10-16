@@ -7,6 +7,8 @@ import { puntosBase } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
 import { puedeCompletarTarea } from "@/lib/tareas/permisos";
 import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
+import { haySancion } from "@/lib/comportamiento/sancionServer";
+import { AVISO_MITAD, mitad } from "@/lib/comportamiento/sancion";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -174,7 +176,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     let wonSurprise = false;
     // 1 estrella cada 7 días de racha (vault/ECONOMIA_CARTAS.md §8): la racha solo sube al cambiar de día
-    const earnedStars = isNewStreak ? estrellasPorRacha(asignado?.streakDays ?? 0, newStreakDays) : 0;
+    let earnedStars = isNewStreak ? estrellasPorRacha(asignado?.streakDays ?? 0, newStreakDays) : 0;
+
+    // Día con sanción (vault/LANE_200_SANCION_Y_ENGAGEMENT.md): puntos y estrellas valen la mitad
+    if (await haySancion(prisma, task.asignadoId, now)) {
+      if (rewardPoints > 0 || earnedStars > 0) feedback += ` ${AVISO_MITAD}`;
+      rewardPoints = mitad(rewardPoints);
+      earnedStars = mitad(earnedStars);
+    }
     if (earnedStars > 0) {
       feedback += ` ¡Ganaste ${earnedStars} ${earnedStars === 1 ? "Estrella" : "Estrellas"} por tu racha de ${newStreakDays} días!`;
     }

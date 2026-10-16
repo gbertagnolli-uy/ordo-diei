@@ -4,6 +4,7 @@ import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { leerItems, textoItem } from "../comportamiento/premios.ts";
 import { cofreDeHoy } from "../comportamiento/cofreHorario.ts";
+import { haySancion } from "../comportamiento/sancionServer.ts";
 
 export type EstadoRecompensa = "disponible" | "reclamado" | "entregado";
 
@@ -65,7 +66,7 @@ const aVista = (r: Fila): RecompensaVista => ({
 
 /** Los premios propios y, para padres, los reclamos de la familia que esperan entrega */
 export async function getRecompensas(usuarioId: number, rol?: string) {
-  const [propias, porEntregar] = await Promise.all([
+  const [propias, porEntregar, sancionado] = await Promise.all([
     prisma.recompensa.findMany({
       where: { usuarioId },
       include: INCLUDE,
@@ -78,8 +79,10 @@ export async function getRecompensas(usuarioId: number, rol?: string) {
           orderBy: { reclamadaEn: "asc" },
         })
       : Promise.resolve([]),
+    // Día con sanción: «Mis premios» avisa que el cofre se perdió y que todo vale la mitad
+    haySancion(prisma, usuarioId),
   ]);
-  return { propias: propias.map(aVista), porEntregar: porEntregar.map(aVista) };
+  return { propias: propias.map(aVista), porEntregar: porEntregar.map(aVista), sancionado };
 }
 
 /** Insignia de la barra lateral: premios por reclamar y, para padres, reclamos por entregar */

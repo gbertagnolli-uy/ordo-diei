@@ -8,6 +8,7 @@ import { nivelDe, xpTotal } from "../niveles.ts";
 import { rachaEfectiva } from "../cartas/racha.ts";
 import { APP_TZ, esFiestaHoy } from "../cartas/eventos.ts";
 import { comprarSobre, descuentoDeUsuario, SELECT_ECONOMIA } from "../cartas/server.ts";
+import { exigirSinSancion } from "../comportamiento/sancionServer.ts";
 import { BONO_FIESTA_TIENDA } from "../cartas/economia.ts";
 import { MONEDAS, CLAVES_MONEDA, type Costo, type OpcionPrecio, type Saldos } from "./monedas.ts";
 import { faltantes } from "./precios.ts";
@@ -347,6 +348,9 @@ export async function comprarProducto(usuarioId: number, productoId: number, opc
       repetida: true,
     };
   }
+
+  // Día con sanción: la tienda está deshabilitada (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "tienda");
 
   const fila = await prisma.productoTienda.findUnique({ where: { id: productoId } });
   if (!fila) throw new NoEncontradoError("Producto no encontrado");

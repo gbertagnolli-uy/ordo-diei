@@ -6,6 +6,7 @@ import prisma from "../prisma.ts";
 import { DIAS_TODOS, pasosDe, type Categoria, type Marca } from "./catalogo.ts";
 import { reproducir } from "./engine.ts";
 import { calcularRecompensa, actualizarLibro, aClave, APP_TZ } from "./server.ts";
+import { haySancion } from "../comportamiento/sancionServer.ts";
 
 export type TipoSolicitud = "habito" | "adopcion" | "registro";
 export type ItemSolicitud = { tipo: TipoSolicitud; id: number };
@@ -109,7 +110,8 @@ async function aprobarRegistro(tx: Parameters<Parameters<typeof prisma.$transact
     }).eventos;
   }
 
-  const r = calcularRecompensa(null, "hecho", eventos, reg.habito.categoria as Categoria);
+  // Cuenta el día en que el niño hizo el hábito, no el día en que un padre lo aprueba
+  const r = calcularRecompensa(null, "hecho", eventos, reg.habito.categoria as Categoria, await haySancion(tx, reg.usuarioId, reg.createdAt));
   await tx.registroHabito.update({
     where: { id },
     data: { aprobado: true, puntos: r.nuevoPuntos, xp: r.nuevoXp },

@@ -4,7 +4,7 @@
 // 18:00 (UTC-03:00); desde esa hora se puede abrir. La barra empieza llena 24 h antes y se va vaciando.
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Clock, Gift, PackageOpen } from "lucide-react";
+import { Ban, Clock, Gift, PackageOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,12 +13,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { CoolMode } from "@/components/ui/cool-mode";
 import { cn } from "@/lib/utils";
 import { estadoCofre, formatearRestante } from "@/lib/comportamiento/cofreHorario";
+import { MENSAJE_BLOQUEO } from "@/lib/comportamiento/sancion";
 
 const CONFITES = { particle: "🎁", size: 14 };
 
 export function CofreDelDia({
   hayCofre,
   abiertoHoy,
+  sancionado,
   ocupado,
   abriendo,
   masPendientes,
@@ -28,6 +30,8 @@ export function CofreDelDia({
   hayCofre: boolean;
   /** Ya se abrió un cofre hoy */
   abiertoHoy: boolean;
+  /** Hoy hay una sanción: no hay cofre hasta mañana */
+  sancionado: boolean;
   ocupado: boolean;
   abriendo: boolean;
   /** Otros cofres sin abrir además del que se muestra */
@@ -43,7 +47,7 @@ export function CofreDelDia({
   }, []);
 
   const e = ahora === null ? null : estadoCofre(ahora, hayCofre);
-  const listo = e?.fase === "listo";
+  const listo = e?.fase === "listo" && !sancionado;
 
   return (
     <section className="space-y-4" aria-labelledby="cofre-del-dia">
@@ -65,14 +69,17 @@ export function CofreDelDia({
           />
         </div>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-3 p-4 text-left sm:p-5">
-          <Badge variant={listo ? "default" : "secondary"}>
-            {listo ? <Gift className="size-3" /> : <Clock className="size-3" />} {listo ? "Listo para abrir" : "Cofre del día"}
+          <Badge variant={sancionado ? "destructive" : listo ? "default" : "secondary"}>
+            {sancionado ? <Ban className="size-3" /> : listo ? <Gift className="size-3" /> : <Clock className="size-3" />}{" "}
+            {sancionado ? "Perdido por hoy" : listo ? "Listo para abrir" : "Cofre del día"}
           </Badge>
           <div className="space-y-0.5">
             <h3 className="font-heading text-lg leading-tight font-medium">Cofre sorpresa diario</h3>
             <p className="text-sm text-muted-foreground">
               {e === null
                 ? " "
+                : sancionado
+                ? MENSAJE_BLOQUEO.cofre.texto
                 : e.fase === "listo"
                 ? "¡Te lo ganaste por portarte bien! Ya lo podés abrir."
                 : e.fase === "cuenta"
@@ -84,7 +91,7 @@ export function CofreDelDia({
             </p>
           </div>
 
-          {e && e.fase !== "listo" && (
+          {e && e.fase !== "listo" && !sancionado && (
             <div className="w-full max-w-sm space-y-1.5">
               <Progress
                 value={e.progreso * 100}

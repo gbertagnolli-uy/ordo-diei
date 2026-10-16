@@ -21,6 +21,7 @@ import {
   type TipoSobre,
 } from "./economia.ts";
 import { xpTotal } from "../niveles.ts";
+import { exigirSinSancion, haySancion } from "../comportamiento/sancionServer.ts";
 import { rachaEfectiva } from "./racha.ts";
 import {
   aplicarFragmentos,
@@ -517,6 +518,8 @@ async function aplicarSobre(
  * El precio en puntos baja 1 % por día de racha (máx. 30 %); las estrellas y el XP mínimo no se descuentan.
  */
 export async function comprarSobre(usuarioId: number, tipoSobre: TipoSobre, rng?: RngFn) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   const config = SOBRES[tipoSobre];
   if (!config) throw new Error("Tipo de sobre no válido");
 
@@ -609,6 +612,8 @@ export async function comprarFragmentosDirectos(
   cantidad: number,
   moneda: "puntos" | "incienso" | "estrellas"
 ) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   if (cantidad <= 0 || !Number.isInteger(cantidad)) {
     throw new Error("La cantidad debe ser un número entero positivo");
   }
@@ -769,6 +774,8 @@ export async function comprarFragmentosDirectos(
  * entera (+100 %), ya reclamada. Una vez por (usuario, carta, año).
  */
 export async function reclamarFiesta(usuarioId: number, cartaId: number) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   const ahora = new Date();
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
@@ -854,6 +861,8 @@ export async function reclamarCumpleanos(
   cartaId?: number | null,
   rng?: RngFn
 ) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   const ahora = new Date();
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
@@ -942,6 +951,8 @@ export async function reclamarCumpleanos(
  * Una sola vez por usuario. Se prefieren Comunes que todavía no tenga.
  */
 export async function reclamarBienvenida(usuarioId: number, rng?: RngFn) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   return await prisma.$transaction(async (tx) => {
     const previo = await tx.reclamoCarta.findUnique({
       where: {
@@ -1004,6 +1015,8 @@ export async function reclamarBienvenida(usuarioId: number, rng?: RngFn) {
  * grados, se reclaman juntos. Idempotente ante doble clic.
  */
 export async function reclamarGrado(usuarioId: number, cartaId: number) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   return await prisma.$transaction(async (tx) => {
     const carta = await tx.carta.findUnique({ where: { id: cartaId }, select: { ...SELECT_OTORGABLE, activa: true } });
     if (!carta || !carta.activa) {
@@ -1071,6 +1084,8 @@ async function contarGradosPendientes(usuarioId: number): Promise<number> {
  */
 export async function eventosDeHoy(usuarioId: number) {
   const ahora = new Date();
+  // Día con sanción: no hay regalos ni reclamos pendientes que mostrar (están deshabilitados)
+  const bloqueado = await haySancion(prisma, usuarioId, ahora);
   const hoyMMdd = hoyMesDiaEnTz(ahora, APP_TZ);
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
@@ -1139,12 +1154,14 @@ export async function eventosDeHoy(usuarioId: number) {
       : [];
 
   const hayPendientes =
-    fiestas.some((f) => !f.reclamado) ||
-    (esCumple && !cumpleReclamado) ||
-    bienvenidaDisponible ||
-    gradosPendientes > 0;
+    !bloqueado &&
+    (fiestas.some((f) => !f.reclamado) ||
+      (esCumple && !cumpleReclamado) ||
+      bienvenidaDisponible ||
+      gradosPendientes > 0);
 
   return {
+    bloqueado,
     fechaHoy: hoyMMdd,
     periodo,
     esCumple,

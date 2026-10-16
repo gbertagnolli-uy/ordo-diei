@@ -394,3 +394,17 @@ test("decidirLibro: termina, reabre solo si el premio no se reclamó, y nunca de
   assert.equal(decidirLibro({ ...base, leidas: 90, terminado: true, premio: "entregado" }), null);
   assert.equal(decidirLibro({ ...base, leidas: 90, terminado: true, premio: "disponible", otroEnCurso: true }), null);
 });
+
+test("calcularRecompensa: en un día con sanción los puntos y la XP valen la mitad, y revertir devuelve lo guardado", () => {
+  const hecho = calcularRecompensa(null, "hecho", [], "orden", true);
+  assert.equal(hecho.nuevoPuntos, 2);
+  assert.equal(hecho.nuevoXp, 5);
+  // El bono de ascenso también se parte a la mitad
+  assert.equal(calcularRecompensa(null, "hecho", ["ascenso"], "orden", true).nuevoXp, 17);
+  // Deshacer el "hecho" resta exactamente lo que se había acreditado (la mitad)
+  const deshacer = calcularRecompensa({ puntos: hecho.nuevoPuntos, xp: hecho.nuevoXp }, null, [], "orden", true);
+  assert.equal(deshacer.deltaPuntos, -2);
+  assert.equal(deshacer.deltaXp, -5);
+  // Sin sanción nada cambia
+  assert.equal(calcularRecompensa(null, "hecho", [], "orden").nuevoPuntos, 5);
+});
