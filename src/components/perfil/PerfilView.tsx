@@ -20,6 +20,7 @@ import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { HabitoIcon } from "@/components/habitos/HabitoIcon";
 import { PerfilResumen } from "./PerfilResumen";
+import { AvisosPush } from "@/components/engagement/AvisosPush";
 import { GraficoAnimo, type RegistroAnimoItem } from "./GraficoAnimo";
 
 export interface PremioItem {
@@ -65,6 +66,8 @@ export function PerfilView({ usuario, habitos, premios, animo, esPropio }: Perfi
       <PerfilResumen usuario={usuario} habitos={habitos} puedeEditarFoto={esPropio} />
 
       <GraficoAnimo registros={animo} nombre={usuario.nombre} esPropio={esPropio} />
+
+      {esPropio && <AvisosPush modo="perfil" />}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Hábitos activos */}

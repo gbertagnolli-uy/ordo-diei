@@ -73,19 +73,20 @@ model Usuario {
   registrosAnimo    RegistroAnimo[]
   premiosEntregados PremioEntregado[]
 
-  experienciaHabitos         Int              @default(0) @map("Experiencia_Habitos")
+  experienciaHabitos         Int               @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
+  suscripcionesPush          SuscripcionPush[]
   companero                  Companero?
-  metasSemanales             MetaSemanal[]    @relation("MetasSemanales")
-  habitosCreados             Habito[]         @relation("HabitosCreados")
+  metasSemanales             MetaSemanal[]     @relation("MetasSemanales")
+  habitosCreados             Habito[]          @relation("HabitosCreados")
   habitosUsuario             HabitoUsuario[]
-  registrosHabito            RegistroHabito[] @relation("RegistrosHabito")
-  registrosHabitoHechos      RegistroHabito[] @relation("RegistrosHabitoHechos")
+  registrosHabito            RegistroHabito[]  @relation("RegistrosHabito")
+  registrosHabitoHechos      RegistroHabito[]  @relation("RegistrosHabitoHechos")
   libros                     Libro[]
-  recompensas                Recompensa[]     @relation("Recompensas")
-  recompensasEntregadas      Recompensa[]     @relation("RecompensasEntregadas")
-  comportamientos            Comportamiento[] @relation("ComportamientosHijo")
-  comportamientosRegistrados Comportamiento[] @relation("ComportamientosRegistrados")
+  recompensas                Recompensa[]      @relation("Recompensas")
+  recompensasEntregadas      Recompensa[]      @relation("RecompensasEntregadas")
+  comportamientos            Comportamiento[]  @relation("ComportamientosHijo")
+  comportamientosRegistrados Comportamiento[]  @relation("ComportamientosRegistrados")
 
   incienso             Int                   @default(0) @map("Incienso")
   cartasCreadas        Carta[]               @relation("CartasCreadas")
@@ -1527,4 +1528,22 @@ model Companero {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("Companeros")
+}
+
+// Avisos push en el celular (vault/ENGAGEMENT_PLAN.md, lane 204): un dispositivo suscripto por fila.
+// `ultimoAvisoEn` evita mandar dos avisos el mismo día al mismo dispositivo.
+model SuscripcionPush {
+  id            Int       @id @default(autoincrement())
+  usuarioId     Int       @map("Usuario_ID")
+  endpoint      String    @unique @map("Endpoint")
+  p256dh        String    @map("P256dh")
+  auth          String    @map("Auth")
+  agente        String?   @map("Agente")
+  ultimoAvisoEn DateTime? @map("Ultimo_Aviso_En")
+  createdAt     DateTime  @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("Suscripciones_Push")
 }

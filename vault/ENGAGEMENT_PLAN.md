@@ -68,3 +68,27 @@ Pendiente para las lanes siguientes: **202** meta semanal en familia, **203** co
 - **Arte con emoji** (🥚 🐣 🕊️ 👼 😇): no hay ilustraciones propias de mascotas (solo los escudos de nivel) y el emoji ya es parte de la voz de la app. Si más adelante se encarga arte propio, solo cambia `ETAPAS[].emoji` por una imagen.
 - Solo para los **hijos** en el inicio (los padres tienen «Tu parte de hoy»). `POST /api/companero` (`nombrar` | `festejar`). Pruebas: 6 unitarias + 1 de integración con base local; verificado en Chromium (teléfono).
 - Sin economía: el compañero no da puntos ni cartas, para no inflar lo que ya se gana con las tareas.
+
+### Lane 204 — hecha (2026-10-16): PWA + avisos push
+
+- **App instalable**: `src/app/manifest.ts` (`/manifest.webmanifest`), íconos en `public/icons/` (generados con `scripts/generar-iconos.mjs`: «OD» crema sobre marrón; uno `maskable`), `apple-touch-icon` y `theme-color` en el layout raíz.
+- **Service worker** `public/sw.js`: solo recibe y muestra avisos y abre la app al tocarlos. **No guarda nada en caché** a propósito (nunca queda una versión vieja). Lo registra `RegistrarServiceWorker` en el layout del dashboard.
+- **Tabla nueva `Suscripciones_Push`** (un dispositivo por fila; `ultimoAvisoEn`). SQL **solo aditivo**, aplicado a la base. La tablet compartida puede pasar de una persona a otra: la suscripción cambia de dueño.
+- **Librería**: `web-push` (npm) para firmar y enviar; las claves son **VAPID**.
+- **Avisos** (siempre **máximo uno por dispositivo por día**; los de prueba no cuentan):
+  1. **Al chico, «¡Te ganaste el cofre del día!»**: apenas un padre registra su buen comportamiento después de las 18:00 (`registrarComportamiento` entrega el cofre en el momento y avisa), y a las 18:00 por el cron para los que ya estaban registrados.
+  2. **A los padres, «Falta registrar el día de …»**: a las 18:00, nombrando a quién falta (de eso depende el cofre de cada uno).
+- **Cofre al instante**: antes el cofre solo se entregaba cuando el chico entraba a la app; ahora también se entrega al registrar el comportamiento si ya son las 18:00.
+- **UI**: `AvisosPush` en dos formas: una franja «Activá los avisos en este dispositivo» en el inicio (hasta que se active o se descarte con «Ahora no», que se recuerda en el navegador) y una tarjeta con interruptor y botón «Probar» en *Mi perfil*. En iPhone avisa que primero hay que agregar la app a la pantalla de inicio.
+- **Cron nuevo** `/api/cron/avisos` a las `0 21 * * *` UTC = 18:00 de la familia (`vercel.json`; con el de `daily` son 2 crons diarios). **Exige `CRON_SECRET`** (`Authorization: Bearer`), porque la ruta manda avisos y no puede ser pública.
+
+#### Lo que hay que configurar en Vercel (no está en el repo)
+
+Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.env` local, que no se versiona):
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (un `mailto:` o `https:` de contacto; hoy `mailto:avisos@example.com`, conviene poner uno real) y `CRON_SECRET`. Sin las claves la app funciona igual: la invitación a activar los avisos no aparece y el cron no envía nada. La clave pública se inyecta al compilar: hay que volver a desplegar después de cargarla.
+
+#### Qué se verificó y qué no
+
+- Verificado: manifest, íconos y `sw.js` (200, tipos correctos), el service worker se instala y activa en Chromium, la tarjeta de *Mi perfil* y la invitación del inicio se ven bien, el cron responde 401 sin secreto, y el envío completo (guardar dispositivo → un aviso por día → borrar suscripciones caducadas 404/410 → cambio de dueño) con un enviador falso en la prueba de integración.
+- **No se pudo verificar la suscripción real**: el Chromium sin interfaz de este entorno no puede registrarse en el servicio de push de Google (`Registration failed - permission denied`), y por eso nunca se mandó un aviso real. Falta probarlo en un celular o en Chrome de escritorio: activar el interruptor en *Mi perfil* y tocar «Probar».
+- Pruebas: 5 unitarias + 1 de integración con base local.

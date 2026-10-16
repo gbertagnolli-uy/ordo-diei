@@ -13,6 +13,7 @@ import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpr
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 import { registrarIngreso } from "@/lib/engagement/servidor";
+import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <SidebarProvider>
+      <RegistrarServiceWorker />
       <AppSidebar
         currentUser={currentUser}
         tasks={tasks}

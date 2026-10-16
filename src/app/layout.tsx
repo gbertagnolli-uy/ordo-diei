@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Newsreader, Noto_Serif, Geist_Mono, Geist, Parisienne } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -34,6 +34,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Ordo Diei",
   description: "Sancta rutina diei ad animam fovendam et Deum laudandum.",
+  // App instalable en la pantalla de inicio (lane 204)
+  appleWebApp: { capable: true, title: "Ordo Diei", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#502300",
 };
 
 export default function RootLayout({
