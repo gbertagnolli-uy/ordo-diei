@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { PageHeader } from "@/components/app/PageHeader";
 import { usuariosObjetivo } from "@/lib/habitos/permisos";
+import { hoyDia, resumenConducta } from "@/lib/conducta/server";
 import { getEstadoHabitos } from "@/lib/habitos/server";
 import { PerfilView, type PremioItem } from "@/components/perfil/PerfilView";
 
@@ -30,7 +31,7 @@ export default async function PerfilPage({
     targetUserId = permitidos[0];
   }
 
-  const [targetUser, estadoUsuario, premiosRaw, animoRaw] = await Promise.all([
+  const [targetUser, estadoUsuario, premiosRaw, animoRaw, conducta] = await Promise.all([
     prisma.usuario.findUnique({
       where: { id: targetUserId },
       omit: { pinSecretoHash: true },
@@ -54,6 +55,7 @@ export default async function PerfilPage({
       select: { creadoEn: true, puntaje: true },
       orderBy: { creadoEn: "asc" },
     }),
+    resumenConducta(targetUserId, 30),
   ]);
 
   if (!targetUser) notFound();
@@ -77,6 +79,8 @@ export default async function PerfilPage({
           habitos={estadoUsuario.habitos}
           premios={premios}
           animo={animoRaw.map((a) => ({ creadoEn: a.creadoEn.toISOString(), puntaje: a.puntaje }))}
+          conducta={conducta}
+          hoy={hoyDia()}
           esPropio={esPropio}
         />
       </main>

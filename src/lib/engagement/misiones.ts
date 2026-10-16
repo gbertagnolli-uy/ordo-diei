@@ -46,7 +46,7 @@ function candidatas(c: ContextoMisiones): Mision[] {
       actual: c.hijos.length - faltan.length,
       total: c.hijos.length,
       hecha: faltan.length === 0,
-      href: "/dashboard/admin/comportamiento",
+      href: "/dashboard/admin/conducta",
       puntos: PUNTOS_MISION,
     });
   }

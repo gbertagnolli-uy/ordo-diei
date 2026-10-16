@@ -9,6 +9,8 @@ import {
   FilePen,
   Gift,
   HeartHandshake,
+  PartyPopper,
+  UsersRound,
   Image as ImageIcon,
   KeyRound,
   Layers,
@@ -52,13 +54,25 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
       ],
     },
     {
-      titulo: "Comportamiento y premios",
+      titulo: "Hijos y conducta",
       acciones: [
         {
-          href: "/dashboard/admin/comportamiento",
-          titulo: "Comportamiento",
-          descripcion: "Bitácora moral y ética de tus hijos: registrá cómo se portan, con premios y penitencias.",
+          href: "/dashboard/admin/hijos",
+          titulo: "Resumen de los hijos",
+          descripcion: "Una pestaña por hijo: conducta, rendimiento, pendientes y tareas de un vistazo.",
+          icon: UsersRound,
+        },
+        {
+          href: "/dashboard/admin/conducta",
+          titulo: "Registrar conducta",
+          descripcion: "Marcá cómo se portó cada hijo hoy, de «Muy mal» a «Excelente».",
           icon: HeartHandshake,
+        },
+        {
+          href: "/dashboard/admin/comportamiento",
+          titulo: "Regalar premio",
+          descripcion: "Premios sorpresa y penitencias por algo que hizo un hijo y no está en la app.",
+          icon: PartyPopper,
         },
         { href: "/dashboard/premios", titulo: "Premios familiares", descripcion: "Premios sorpresa semanales y mensuales por tareas.", icon: Gift },
         {

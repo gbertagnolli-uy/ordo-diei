@@ -18,6 +18,13 @@ export const PESOS_RAREZA_COFRE: Record<RarezaCarta, number> = { Comun: 60, Buen
  */
 export const diaEsBueno = (positivos: number, negativos: number) => positivos > 0 && positivos > negativos;
 
+/**
+ * Si los padres marcaron la conducta del día (lane 205), esa marca decide: «Bien» o «Excelente» (4–5) da
+ * cofre y cualquier otro nivel no. Sin marca vale la regla de los registros positivos y negativos.
+ */
+export const cofreMerecido = (positivos: number, negativos: number, nivelConducta: number | null) =>
+  nivelConducta === null ? diaEsBueno(positivos, negativos) : nivelConducta >= 4;
+
 export function elegirRareza(azar: number = Math.random()): RarezaCarta {
   let acumulado = 0;
   for (const [rareza, peso] of Object.entries(PESOS_RAREZA_COFRE) as [RarezaCarta, number][]) {

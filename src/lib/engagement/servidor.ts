@@ -115,9 +115,10 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
   const { desde, hasta } = rangoDelDia(ahora);
   const hoyRango = { gte: desde, lt: hasta };
 
-  const [hijosDb, registros, materiales, comentarios, calificaciones, pendientes, aprobadasHoy, mensajes, publicaciones, fechas] = await Promise.all([
+  const [hijosDb, registros, conductas, materiales, comentarios, calificaciones, pendientes, aprobadasHoy, mensajes, publicaciones, fechas] = await Promise.all([
     prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true, nombre: true }, orderBy: { id: "asc" } }),
     prisma.comportamiento.findMany({ where: { createdAt: hoyRango }, select: { usuarioId: true }, distinct: ["usuarioId"] }),
+    prisma.conductaDia.findMany({ where: { fecha }, select: { usuarioId: true } }),
     prisma.materialEstudio.count({ where: { creadorId: usuario.id, createdAt: hoyRango } }),
     prisma.comentarioEstudio.count({ where: { autorId: usuario.id, createdAt: hoyRango } }),
     prisma.calificacion.count({ where: { calificadaPorId: usuario.id, createdAt: hoyRango } }),
@@ -128,7 +129,7 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     fechasDeIngreso(prisma, usuario.id, hoy),
   ]);
 
-  const conRegistro = new Set(registros.map((r) => r.usuarioId));
+  const conRegistro = new Set([...registros, ...conductas].map((r) => r.usuarioId));
   const contexto = {
     hijos: hijosDb.map((h) => ({ id: h.id, nombre: h.nombre, registradoHoy: conRegistro.has(h.id) })),
     estudioHoy: materiales + comentarios + calificaciones,

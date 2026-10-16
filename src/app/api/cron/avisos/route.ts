@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rangoDelDia } from "@/lib/comportamiento/sancionServer";
+import { hoyDia } from "@/lib/conducta/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { avisoCofre, avisoRegistrarDia } from "@/lib/push/avisos";
 import { enviarAviso, pushConfigurado } from "@/lib/push/servidor";
@@ -36,11 +37,12 @@ export async function GET(req: Request) {
 
   const padres = usuarios.filter((x) => x.rolFamiliar === "Padre" || x.rolFamiliar === "Madre");
   if (padres.length > 0) {
-    const [hijos, registros] = await Promise.all([
+    const [hijos, registros, conductas] = await Promise.all([
       prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true, nombre: true }, orderBy: { id: "asc" } }),
       prisma.comportamiento.findMany({ where: { createdAt: { gte: desde, lt: hasta } }, select: { usuarioId: true }, distinct: ["usuarioId"] }),
+      prisma.conductaDia.findMany({ where: { fecha: new Date(`${hoyDia(ahora)}T00:00:00Z`) }, select: { usuarioId: true } }),
     ]);
-    const registrados = new Set(registros.map((r) => r.usuarioId));
+    const registrados = new Set([...registros, ...conductas].map((r) => r.usuarioId));
     const aviso = avisoRegistrarDia(hijos.filter((h) => !registrados.has(h.id)).map((h) => h.nombre));
     if (aviso) for (const p of padres) recordatorios += await enviarAviso(p.id, aviso, { ahora });
   }
