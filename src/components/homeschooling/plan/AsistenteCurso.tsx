@@ -3,7 +3,7 @@
 // Propio de Ordo: asistente «Nuevo curso» / «Asignar a…» (la spec de H1b lo pide con el Stepper de Ordo; Roost no tiene
 // plan por alumno). Pasos: ① materia ② curso ③ alumnos, fechas y días ④ vista previa → crearPlan por alumno.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, BookOpen, Plus } from "lucide-react";
 import Stepper, { Step } from "@/components/Stepper";
@@ -54,9 +54,15 @@ export default function AsistenteCurso({ open, onClose, alumnos, materias, mater
   const [formMateria, setFormMateria] = useState(false);
   const [formCurso, setFormCurso] = useState(false);
 
+  // Props que el padre recrea en cada render (p. ej. `materias={[group]}`): se leen por ref para que
+  // el reinicio dependa solo de `open` y no pise lo que el usuario ya eligió.
+  const props = useRef({ materias, materiaFija, cursoFijo });
+  props.current = { materias, materiaFija, cursoFijo };
+
   // Cada vez que se abre vuelve al principio (o directo a «alumnos» si el curso ya está elegido)
   useEffect(() => {
     if (!open) return;
+    const { materias, materiaFija, cursoFijo } = props.current;
     setLista(materias);
     setMateria(materiaFija ?? null);
     setCurso(cursoFijo ?? null);
@@ -66,7 +72,7 @@ export default function AsistenteCurso({ open, onClose, alumnos, materias, mater
     setFin(finDeAnio());
     setDias([1, 2, 3, 4, 5]);
     setPrevias(null);
-  }, [open, materias, materiaFija, cursoFijo]);
+  }, [open]);
 
   const cargarCursos = useCallback(async (m: Group) => {
     try {
