@@ -12,7 +12,7 @@ import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
-import { registrarIngreso } from "@/lib/engagement/servidor";
+import { parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
@@ -29,6 +29,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e)),
     registrarIngreso(Number(session.user.id)).catch((e) => console.error("[Ingreso]", e)),
   ]);
+  // Los padres: se premian las misiones de «Tu parte de hoy» (y llega el cofre) donde sea que estén,
+  // no solo al abrir el panel de administración
+  await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
   const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos] = await Promise.all([
