@@ -92,3 +92,11 @@ Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.e
 - Verificado: manifest, íconos y `sw.js` (200, tipos correctos), el service worker se instala y activa en Chromium, la tarjeta de *Mi perfil* y la invitación del inicio se ven bien, el cron responde 401 sin secreto, y el envío completo (guardar dispositivo → un aviso por día → borrar suscripciones caducadas 404/410 → cambio de dueño) con un enviador falso en la prueba de integración.
 - **No se pudo verificar la suscripción real**: el Chromium sin interfaz de este entorno no puede registrarse en el servicio de push de Google (`Registration failed - permission denied`), y por eso nunca se mandó un aviso real. Falta probarlo en un celular o en Chrome de escritorio: activar el interruptor en *Mi perfil* y tocar «Probar».
 - Pruebas: 5 unitarias + 1 de integración con base local.
+
+### Lane 206 — «Tu parte de hoy» y meta semanal al panel de administración (2026-10-16)
+
+**Pedido (textual):** «para los padres, el cofre debe estar disponible como premio por haber completado las 3 tareas principales que tienen que hacer. Las notificaciones de los objetivos diarios, "Meta de la semana — Un objetivo entre todos los chicos con un premio para cada uno. A los chicos les encanta tener algo por lo que sumar juntos." y los otros que agregamos deben aparecer en panel de administración, no en historial.»
+
+- «Tu parte de hoy» y «Meta de la semana» salen del inicio de los padres y viven arriba del panel de administración (`/dashboard/admin`).
+- El premio de completar las tres misiones es un **cofre** («Cofre de tu parte de hoy») con 3D de cofre y botón «Abrir cofre» en «Mis premios». No espera a las 18:00 (el cofre diario de los chicos sí).
+- Los chicos conservan su meta y su compañero, pero solo en la vista principal del inicio, no en Historial ni en las demás secciones.

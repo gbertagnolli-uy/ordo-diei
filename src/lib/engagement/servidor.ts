@@ -161,7 +161,7 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
         data: {
           usuarioId: usuario.id,
           tipo: "comportamiento",
-          titulo: "Tu parte de hoy, completa",
+          titulo: "Cofre de tu parte de hoy",
           origen: `Tu parte de hoy · ${hoy}`,
           contenido: carta ? contenidoCofre(carta) : [{ tipo: "puntos", cantidad: 10 }],
         },

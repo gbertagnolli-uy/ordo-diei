@@ -52,6 +52,9 @@ const IMAGEN = { cofre: "/premios/cofre.webp", reconocimiento: "/premios/medalla
 const fecha = (iso: string) => format(new Date(iso), "d 'de' MMMM", { locale: es });
 const fechaCorta = (iso: string) => format(new Date(iso), "d MMM yyyy", { locale: es });
 
+// El premio de «Tu parte de hoy» es un cofre, pero se abre cuando se quiere (el cofre diario espera hasta las 18:00)
+const esCofreDeLaParte = (r: { tipo: string; origen: string | null }) => r.tipo === "comportamiento" && !!r.origen?.startsWith("Tu parte de hoy");
+
 export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: boolean }) {
   const router = useRouter();
   const [datos, setDatos] = useState(inicial);
@@ -100,7 +103,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
   };
 
   const abrirSorpresa = async (r: RecompensaVista) => {
-    const tipo: TipoSorpresa = r.tipo === "cofre" ? "cofre" : r.tipo === "reconocimiento" ? "reconocimiento" : "regalo";
+    const tipo: TipoSorpresa = r.tipo === "cofre" || esCofreDeLaParte(r) ? "cofre" : r.tipo === "reconocimiento" ? "reconocimiento" : "regalo";
     setSorpresa({ titulo: r.titulo, tipo, resultado: null, evaluacion: r.evaluacion });
     const res = await accion(r.id, { accion: "abrir" });
     if (res && typeof res === "object") setSorpresa({ titulo: r.titulo, tipo, resultado: res as ResultadoSorpresa, evaluacion: r.evaluacion });
@@ -185,7 +188,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
             <estado.icon className="size-3" /> {estado.label}
           </Badge>
           <div className="space-y-0.5">
-            <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : r.tipo === "reconocimiento" ? "Reconocimiento" : "Premio sorpresa") : r.titulo}</h3>
+            <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" || esCofreDeLaParte(r) ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : r.tipo === "reconocimiento" ? "Reconocimiento" : "Premio sorpresa") : r.titulo}</h3>
             {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa && r.tipo === "comportamiento" ? `Por: ${r.titulo}` : r.origen}</p>}
           </div>
           {r.contenido && r.contenido.length > 0 && (
@@ -210,7 +213,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
                   elegir(r);
                 }}
               >
-                {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" ? "Abrir cofre" : r.tipo === "reconocimiento" ? "Reclamar reconocimiento" : "Reclamar premio"}
+                {ocupadoId === r.id ? <Spinner /> : <Gift className="size-4" />} {r.tipo === "cofre" || esCofreDeLaParte(r) ? "Abrir cofre" : r.tipo === "reconocimiento" ? "Reclamar reconocimiento" : "Reclamar premio"}
               </Button>
             </CoolMode>
           )}
