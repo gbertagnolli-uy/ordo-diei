@@ -22,7 +22,6 @@ const COLORES_DIFICULTAD = {
   claro: ["#2D6A2E", "#557224", "#7C7A1A", "#A48210", "#B27809", "#A55C06", "#984103", "#8B2500"],
   oscuro: ["#6AAF6A", "#85AD61", "#A0AB59", "#BBA950", "#CB9E4A", "#CE8947", "#D17543", "#D46040"],
 };
-const ALTO_GAUGE = 176;
 const NIVELES_DIFICULTAD = DIFICULTADES.map((d) => ({ valor: d, etiqueta: DIFICULTAD_INFO[d].etiqueta }));
 
 // El Stepper toma los tokens de la app (cambian solos con la clase .dark), no sus temas propios.
@@ -367,7 +366,6 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
             onChange={setDificultad}
             colores={COLORES_DIFICULTAD}
             ariaLabel="Dificultad de la tarea"
-            alto={ALTO_GAUGE}
           />
           <FieldDescription>
             {Number(minutos) > 0
