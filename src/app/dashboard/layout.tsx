@@ -12,6 +12,7 @@ import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
+import { registrarIngreso } from "@/lib/engagement/servidor";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/");
 
   // Desde las 18:00 el cofre del día llega al entrar (si los padres evaluaron bien el día)
-  await otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e));
+  // y se anota el ingreso del día para la racha en la app (lane 201)
+  await Promise.all([
+    otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e)),
+    registrarIngreso(Number(session.user.id)).catch((e) => console.error("[Ingreso]", e)),
+  ]);
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
   const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos] = await Promise.all([

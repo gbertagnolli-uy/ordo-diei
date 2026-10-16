@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
+import { ParteDeHoy } from "@/components/engagement/ParteDeHoy";
+import { parteDeHoy } from "@/lib/engagement/servidor";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -46,6 +48,14 @@ export default async function DashboardPage() {
     return (b.puntosAcumulados || 0) - (a.puntosAcumulados || 0);
   });
 
+  // «Tu parte de hoy»: las misiones de los padres (los hijos no la ven)
+  const parte = isCurrentUserAdmin
+    ? await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => {
+        console.error("[ParteDeHoy]", e);
+        return null;
+      })
+    : null;
+
   const myUser = allUsers.find((u) => u.id === session.user.id);
   const myTasks = myUser?.tareasAsignadas || [];
 
@@ -63,6 +73,11 @@ export default async function DashboardPage() {
       <div className="px-4 sm:px-6 pt-3">
         <BannerEventosCartas />
       </div>
+      {parte && (
+        <div className="px-4 sm:px-6 pt-3">
+          <ParteDeHoy datos={parte} />
+        </div>
+      )}
       <TaskWorkspace
         tasks={myTasks}
         coResponsables={coResponsableMap}

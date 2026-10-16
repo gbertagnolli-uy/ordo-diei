@@ -74,6 +74,7 @@ model Usuario {
   premiosEntregados PremioEntregado[]
 
   experienciaHabitos         Int              @default(0) @map("Experiencia_Habitos")
+  actividadDias              ActividadDia[]
   habitosCreados             Habito[]         @relation("HabitosCreados")
   habitosUsuario             HabitoUsuario[]
   registrosHabito            RegistroHabito[] @relation("RegistrosHabito")
@@ -1474,4 +1475,23 @@ model FotoUnsplash {
   createdAt       DateTime @default(now()) @map("Created_At")
 
   @@map("Fotos_Unsplash")
+}
+
+// ==========================================
+// Ingreso diario y «Tu parte de hoy» (vault/ENGAGEMENT_PLAN.md, lane 201)
+// ==========================================
+
+// Un registro por persona y día de la familia en que entró a la app: de acá sale la racha de días en la app
+// y, para los padres, las misiones de «Tu parte de hoy» ya cumplidas (claves) para no premiarlas dos veces.
+model ActividadDia {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("Usuario_ID")
+  fecha     DateTime @map("Fecha") @db.Date
+  misiones  Json     @default("[]") @map("Misiones") // string[]: claves de misiones premiadas ese día (+ "completo")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, fecha])
+  @@map("Actividad_Diaria")
 }
