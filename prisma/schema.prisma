@@ -75,6 +75,7 @@ model Usuario {
 
   experienciaHabitos         Int              @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
+  metasSemanales             MetaSemanal[]    @relation("MetasSemanales")
   habitosCreados             Habito[]         @relation("HabitosCreados")
   habitosUsuario             HabitoUsuario[]
   registrosHabito            RegistroHabito[] @relation("RegistrosHabito")
@@ -1494,4 +1495,20 @@ model ActividadDia {
 
   @@unique([usuarioId, fecha])
   @@map("Actividad_Diaria")
+}
+
+// Meta semanal en familia (vault/ENGAGEMENT_PLAN.md, lane 202): un objetivo compartido de la semana (lunes a domingo).
+// El avance sale de lo que ya existe (tareas aprobadas y hábitos hechos de los hijos); al cumplirse, cada hijo recibe un vale.
+model MetaSemanal {
+  id          Int       @id @default(autoincrement())
+  semana      DateTime  @unique @map("Semana") @db.Date // el lunes de la semana
+  objetivo    Int       @map("Objetivo")
+  premio      String    @map("Premio") // texto del vale: «Vale por …»
+  creadaPorId Int?      @map("Creada_Por_ID")
+  cumplidaEn  DateTime? @map("Cumplida_En")
+  createdAt   DateTime  @default(now()) @map("Created_At")
+
+  creadaPor Usuario? @relation("MetasSemanales", fields: [creadaPorId], references: [id], onDelete: SetNull)
+
+  @@map("Metas_Semanales")
 }
