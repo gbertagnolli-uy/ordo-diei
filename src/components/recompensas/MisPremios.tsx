@@ -192,6 +192,9 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
             <h3 className="font-heading text-lg leading-tight font-medium">{r.sorpresa ? (r.tipo === "cofre" || esCofreDeLaParte(r) ? "Cofre sorpresa" : r.tipo === "vale" ? "Vale sorpresa" : r.tipo === "reconocimiento" ? "Reconocimiento" : "Premio sorpresa") : r.titulo}</h3>
             {r.origen && <p className="text-sm text-muted-foreground">{r.sorpresa && r.tipo === "comportamiento" ? `Por: ${r.titulo}` : r.origen}</p>}
           </div>
+          {!r.sorpresa && r.evaluacion && (
+            <p className="rounded-md border-l-2 border-primary/50 bg-muted/50 px-3 py-2 text-sm italic">«{r.evaluacion}»</p>
+          )}
           {r.contenido && r.contenido.length > 0 && (
             <ul className="list-inside list-disc text-sm">
               {r.contenido.map((c, i) => (

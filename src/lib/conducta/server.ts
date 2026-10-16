@@ -6,7 +6,7 @@ import prisma from "../prisma.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { APP_TZ } from "../cartas/eventos.ts";
-import { esFechaDia, esNivelConducta, MAX_NOTA_CONDUCTA, promedioConducta } from "./niveles.ts";
+import { esFechaDia, esNivelConducta, etiquetaConducta, MAX_NOTA_CONDUCTA, promedioConducta } from "./niveles.ts";
 
 export type DiaConducta = { fecha: string; nivel: number; nota: string | null };
 export type ResumenConducta = {
@@ -16,7 +16,11 @@ export type ResumenConducta = {
   dias: number;
   /** Del más viejo al más nuevo; los días sin registro no aparecen */
   registros: DiaConducta[];
+  /** Lo que escribieron los padres (notas del día, evaluaciones de premios y penitencias), lo más nuevo primero */
+  anotaciones: Anotacion[];
 };
+
+export type Anotacion = { clave: string; fecha: string; tipo: "nota" | "premio" | "penitencia"; titulo: string; texto: string };
 
 export const hoyDia = (ahora: Date = new Date()) => format(ahora, "yyyy-MM-dd", { in: tz(APP_TZ) });
 const aFecha = (dia: string) => new Date(`${dia}T00:00:00Z`);
@@ -54,8 +58,24 @@ export async function resumenConducta(usuarioId: number, dias = 30): Promise<Res
     orderBy: { fecha: "asc" },
     select: { fecha: true, nivel: true, nota: true },
   });
+  const desdeInstante = new Date(desde.getTime() - 3 * 3_600_000); // los comportamientos llevan hora
+  const comportamientos = await prisma.comportamiento.findMany({
+    where: { usuarioId, createdAt: { gte: desdeInstante } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, tipo: true, titulo: true, evaluacion: true, penitencia: true, createdAt: true },
+  });
+  const anotaciones: Anotacion[] = [
+    ...filas.filter((f) => f.nota).map((f) => ({ clave: `n${f.fecha.toISOString()}`, fecha: f.fecha.toISOString().slice(0, 10), tipo: "nota" as const, titulo: `Conducta: ${etiquetaConducta(f.nivel)}`, texto: f.nota! })),
+    ...comportamientos.flatMap((c) => {
+      const base = { fecha: format(c.createdAt, "yyyy-MM-dd", { in: tz(APP_TZ) }), titulo: c.titulo };
+      return [
+        ...(c.evaluacion ? [{ clave: `e${c.id}`, ...base, tipo: (c.tipo === "Negativo" ? "penitencia" : "premio") as Anotacion["tipo"], texto: c.evaluacion }] : []),
+        ...(c.penitencia ? [{ clave: `p${c.id}`, ...base, tipo: "penitencia" as const, texto: `Penitencia: ${c.penitencia}` }] : []),
+      ];
+    }),
+  ].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const registros = filas.map((f) => ({ fecha: f.fecha.toISOString().slice(0, 10), nivel: f.nivel, nota: f.nota }));
-  return { promedio: promedioConducta(registros.map((r) => r.nivel)), registrados: registros.length, dias, registros };
+  return { promedio: promedioConducta(registros.map((r) => r.nivel)), registrados: registros.length, dias, registros, anotaciones };
 }
 
 /** Lo registrado para un día de varios hijos (para precargar el selector). */

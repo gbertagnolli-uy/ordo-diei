@@ -12,7 +12,7 @@ import type { ResumenConducta } from "@/lib/conducta/server";
 import { TiraConducta } from "./TiraConducta";
 
 export function ConductaPerfil({ resumen, hoy, nombre, esPropio }: { resumen: ResumenConducta; hoy: string; nombre: string; esPropio: boolean }) {
-  const notas = resumen.registros.filter((r) => r.nota).slice(-3).reverse();
+  const notas = resumen.anotaciones.slice(0, 6);
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
@@ -27,7 +27,7 @@ export function ConductaPerfil({ resumen, hoy, nombre, esPropio }: { resumen: Re
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {resumen.registrados === 0 ? (
+        {resumen.registrados === 0 && notas.length === 0 ? (
           <Empty className="rounded-lg border py-8">
             <EmptyMedia variant="icon"><HeartHandshake className="size-4" /></EmptyMedia>
             <EmptyHeader>
@@ -37,13 +37,13 @@ export function ConductaPerfil({ resumen, hoy, nombre, esPropio }: { resumen: Re
           </Empty>
         ) : (
           <>
-            <TiraConducta registros={resumen.registros} hasta={hoy} />
+            {resumen.registrados > 0 && <TiraConducta registros={resumen.registros} hasta={hoy} />}
             {notas.length > 0 && (
               <ul className="space-y-2 text-sm">
                 {notas.map((n) => (
-                  <li key={n.fecha} className="rounded-lg border p-3">
-                    <p className="text-xs text-muted-foreground">{format(parseISO(n.fecha), "EEEE d 'de' MMMM", { locale: es })} · {etiquetaConducta(n.nivel)}</p>
-                    <p>{n.nota}</p>
+                  <li key={n.clave} className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">{format(parseISO(n.fecha), "EEEE d 'de' MMMM", { locale: es })} · {n.titulo}</p>
+                    <p>{n.texto}</p>
                   </li>
                 ))}
               </ul>

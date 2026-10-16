@@ -59,7 +59,8 @@ const aVista = (r: Fila): RecompensaVista => ({
       ? // En el reconocimiento la virtud ya es el título: acá solo lo que suma
         leerItems(r.contenido).filter((i) => i.tipo !== "reconocimiento").map(textoItem)
       : null,
-  evaluacion: esSorpresa(r.tipo) && r.estado === "disponible" ? (r.evaluacion ?? r.comportamiento?.evaluacion ?? null) : null,
+  // Se guarda también después de abrir: la tarjeta la muestra, y el modal la revela al abrir
+  evaluacion: esSorpresa(r.tipo) ? (r.evaluacion ?? r.comportamiento?.evaluacion ?? null) : null,
   usuario: r.usuario,
   entregadaPor: r.entregadaPor,
 });

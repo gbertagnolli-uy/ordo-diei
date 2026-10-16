@@ -31,7 +31,7 @@ function Dato({ icon: Icon, etiqueta, valor, alerta }: { icon: typeof Star; etiq
 
 function Hijo({ h, hoy }: { h: ResumenHijo; hoy: string }) {
   const c = h.conducta;
-  const ultimaNota = [...c.registros].reverse().find((r) => r.nota);
+  const ultimaNota = c.anotaciones[0];
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
@@ -47,7 +47,7 @@ function Hijo({ h, hoy }: { h: ResumenHijo; hoy: string }) {
           {ultimaNota && (
             <p className="rounded-lg border p-3 text-sm">
               <span className="block text-xs text-muted-foreground">{format(parseISO(ultimaNota.fecha), "EEEE d 'de' MMMM", { locale: es })}</span>
-              {ultimaNota.nota}
+              {ultimaNota.titulo}: {ultimaNota.texto}
             </p>
           )}
           <Button variant="outline" size="sm" asChild><Link href="/dashboard/admin/conducta">Registrar conducta</Link></Button>
