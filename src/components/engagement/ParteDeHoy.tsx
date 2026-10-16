@@ -24,7 +24,7 @@ export function ParteDeHoy({ datos }: { datos: Datos }) {
             <CheckCircle2 className="size-4 text-primary" /> Tu parte de hoy, completa
           </CardTitle>
           <CardDescription>
-            Hoy sumaste <span className="font-medium text-foreground">{puntosHoy} puntos</span> y un premio sorpresa.
+            Hoy sumaste <span className="font-medium text-foreground">{puntosHoy} puntos</span> y un cofre sorpresa en «Mis premios».
           </CardDescription>
           <CardAction className="flex items-center gap-1">
             <Badge>

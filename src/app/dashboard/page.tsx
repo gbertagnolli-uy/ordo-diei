@@ -5,8 +5,6 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
-import { ParteDeHoy } from "@/components/engagement/ParteDeHoy";
-import { parteDeHoy } from "@/lib/engagement/servidor";
 import { MetaSemanal } from "@/components/engagement/MetaSemanal";
 import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
 import { CompaneroCard } from "@/components/engagement/CompaneroCard";
@@ -15,11 +13,15 @@ import { AvisosPush } from "@/components/engagement/AvisosPush";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ s?: string; view?: string }> }) {
   const session = await getSession();
   if (!session?.user) redirect("/");
 
   const isCurrentUserAdmin = isParent(session.user.rolFamiliar);
+  const sp = await searchParams;
+  const vista = sp.s ?? sp.view;
+  // Las tarjetas de engagement de los chicos van solo en la vista principal, no en Historial ni en las demás
+  const enVistaPrincipal = !vista || vista === "todo";
 
   // Para no-admins, solo traer sus propias tareas (seguridad a nivel de query).
   const allUsersRaw = await prisma.usuario.findMany({
@@ -53,22 +55,16 @@ export default async function DashboardPage() {
     return (b.puntosAcumulados || 0) - (a.puntosAcumulados || 0);
   });
 
-  // «Tu parte de hoy»: las misiones de los padres (los hijos no la ven)
-  const parte = isCurrentUserAdmin
-    ? await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => {
-        console.error("[ParteDeHoy]", e);
+  // Meta semanal en familia (solo chicos acá; los padres la ven en el panel de administración)
+  const meta = isCurrentUserAdmin || !enVistaPrincipal
+    ? null
+    : await metaDeLaSemana({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => {
+        console.error("[MetaSemanal]", e);
         return null;
-      })
-    : null;
+      });
 
-  // Meta semanal en familia: la ven todos, la fijan los padres
-  const meta = await metaDeLaSemana({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => {
-    console.error("[MetaSemanal]", e);
-    return null;
-  });
-
-  // Compañero que evoluciona: es de los chicos (los padres ya tienen «Tu parte de hoy»)
-  const companero = isCurrentUserAdmin
+  // Compañero que evoluciona: es de los chicos
+  const companero = isCurrentUserAdmin || !enVistaPrincipal
     ? null
     : await companeroDe(Number(session.user.id)).catch((e) => {
         console.error("[Companero]", e);
@@ -95,17 +91,12 @@ export default async function DashboardPage() {
       <div className="px-4 sm:px-6 empty:hidden [&:has(*)]:pt-3">
         <AvisosPush modo="invitacion" />
       </div>
-      {parte && (
-        <div className="px-4 sm:px-6 pt-3">
-          <ParteDeHoy datos={parte} />
-        </div>
-      )}
       {companero && (
         <div className="px-4 sm:px-6 pt-3">
           <CompaneroCard datos={companero} />
         </div>
       )}
-      {meta && (meta.meta || meta.esPadre) && (
+      {meta?.meta && (
         <div className="px-4 sm:px-6 pt-3">
           <MetaSemanal datos={meta} />
         </div>
