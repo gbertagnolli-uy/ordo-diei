@@ -100,3 +100,10 @@ Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.e
 - «Tu parte de hoy» y «Meta de la semana» salen del inicio de los padres y viven arriba del panel de administración (`/dashboard/admin`).
 - El premio de completar las tres misiones es un **cofre** («Cofre de tu parte de hoy») con 3D de cofre y botón «Abrir cofre» en «Mis premios». No espera a las 18:00 (el cofre diario de los chicos sí).
 - Los chicos conservan su meta y su compañero, pero solo en la vista principal del inicio, no en Historial ni en las demás secciones.
+
+### Lane 207 — cofre de los padres en «Mis premios» (2026-10-16)
+
+**Pedido (textual):** «A mi no se me desbloquea el cofre (soy administrador) y el mensaje que aparece no corresponde "Hoy todavía no llegó: tus papás aún no registraron tu comportamiento. Si lo hacen, aparece acá."»
+
+- Causa 1: «Mis premios» mostraba a los padres el «Cofre del día» de los chicos (con su mensaje). Ahora los padres ven una tarjeta «Cofre de tu parte de hoy» que explica cómo se desbloquea (las 3 misiones) y enlaza al panel.
+- Causa 2: desde la lane 206 las misiones solo se evaluaban al abrir el panel de administración. Ahora se evalúan en el layout del dashboard para los padres, así el cofre llega donde estén.

@@ -4,9 +4,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Check, Gift, Hourglass, Medal, PackageCheck, User } from "lucide-react";
+import { Check, Gift, Hourglass, Medal, PackageCheck, PackageOpen, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -298,6 +299,22 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       {porReclamar.length > 0 && <div className="grid grid-cols-1 gap-4">{porReclamar.map(tarjeta)}</div>}
 
       {/* Entre lo que falta reclamar y lo ya reclamado: el cofre diario, siempre a la vista */}
+      {esPadre ? (
+        <Card className="flex-row items-center gap-4 p-4">
+          <PackageOpen className="size-8 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <h2 className="font-heading text-base font-medium">Cofre de tu parte de hoy</h2>
+            <p className="text-sm text-muted-foreground">
+              {porReclamar.some(esCofreDeLaParte)
+                ? "Ya lo ganaste: está arriba, listo para abrir."
+                : "Se desbloquea al completar las 3 misiones de «Tu parte de hoy», en el panel de administración."}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/admin">Ver misiones</Link>
+          </Button>
+        </Card>
+      ) : (
       <CofreDelDia
         hayCofre={cofresSinAbrir.length > 0}
         abiertoHoy={abiertoHoy}
@@ -307,6 +324,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         masPendientes={Math.max(0, cofresSinAbrir.length - 1)}
         onAbrir={() => cofresSinAbrir[0] && elegir(cofresSinAbrir[0])}
       />
+      )}
 
       {reclamados.length > 0 && (
         <section className="space-y-4" aria-labelledby="premios-reclamados">
