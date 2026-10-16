@@ -113,3 +113,9 @@ Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.e
 **Pedido (textual):** «"tu parte de hoy" y "meta de la semana" o cualquier otro aviso deben aparecer uno debajo del otro, en vez de en columnas»
 
 - En el panel de administración, los avisos de engagement van en una sola columna, uno debajo del otro.
+
+### Lane 211 — la misión de aprobar lleva a la Agenda master (2026-10-16)
+
+**Pedido (textual):** «"Revisá lo que esperan los chicos — 23 tareas esperan tu aprobación." al hacer click no lleva al panel de agenda master donde se aprueban tareas y habitos»
+
+- La misión «Revisá lo que esperan los chicos» de «Tu parte de hoy» apuntaba a `/dashboard`; ahora va a `/dashboard/admin/agenda`.

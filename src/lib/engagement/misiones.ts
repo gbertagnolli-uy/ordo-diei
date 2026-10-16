@@ -71,7 +71,7 @@ function candidatas(c: ContextoMisiones): Mision[] {
       actual: hecha ? 1 : 0,
       total: 1,
       hecha,
-      href: "/dashboard",
+      href: "/dashboard/admin/agenda",
       puntos: PUNTOS_MISION,
     });
   }
