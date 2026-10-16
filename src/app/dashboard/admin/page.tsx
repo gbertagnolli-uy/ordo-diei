@@ -38,7 +38,7 @@ export default async function AdminPage() {
       <PageHeader group="Administración" title="Panel de administración" />
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6 sm:px-6">
         {(parte || meta) && (
-          <div className="mb-8 grid gap-4 lg:grid-cols-2">
+          <div className="mb-8 flex flex-col gap-4">
             {parte && <ParteDeHoy datos={parte} />}
             {meta && <MetaSemanal datos={meta} />}
           </div>

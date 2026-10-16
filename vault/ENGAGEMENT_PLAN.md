@@ -107,3 +107,9 @@ Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.e
 
 - Causa 1: «Mis premios» mostraba a los padres el «Cofre del día» de los chicos (con su mensaje). Ahora los padres ven una tarjeta «Cofre de tu parte de hoy» que explica cómo se desbloquea (las 3 misiones) y enlaza al panel.
 - Causa 2: desde la lane 206 las misiones solo se evaluaban al abrir el panel de administración. Ahora se evalúan en el layout del dashboard para los padres, así el cofre llega donde estén.
+
+### Lane 208 — avisos apilados (2026-10-16)
+
+**Pedido (textual):** «"tu parte de hoy" y "meta de la semana" o cualquier otro aviso deben aparecer uno debajo del otro, en vez de en columnas»
+
+- En el panel de administración, los avisos de engagement van en una sola columna, uno debajo del otro.
