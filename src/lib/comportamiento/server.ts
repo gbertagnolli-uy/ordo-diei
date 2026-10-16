@@ -9,6 +9,8 @@ import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
 import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
+import { haySancion, origenCofreDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
+import { AVISO_MITAD, errorBloqueo, premioConSancion, tieneCartas } from "./sancion.ts";
 import { esAutomatico, leerItems, XP_RECONOCIMIENTO, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
 
 export type ComportamientoVista = {
@@ -169,6 +171,8 @@ export async function registrarComportamiento(
           puntosPenalizados: aplicados,
         },
       });
+      // La sanción le quita el cofre de hoy si ya le había llegado y todavía no lo abrió
+      await retirarCofreDeHoy(tx, usuarioId);
     }
   });
 }
@@ -202,20 +206,32 @@ export async function abrirPremioSorpresa(usuarioId: number, id: number): Promis
     if (!r || (r.tipo !== "comportamiento" && r.tipo !== "cofre" && r.tipo !== "vale" && r.tipo !== "reconocimiento")) throw new NoEncontradoError("Premio no encontrado");
     if (r.usuarioId !== usuarioId) throw new NoAutorizadoError("Solo podés abrir tus propios premios");
 
+    let items = leerItems(r.contenido);
+
+    // Día con sanción: sin cofre, sin cartas, y lo demás vale la mitad
+    const sancionado = await haySancion(tx, usuarioId);
+    if (sancionado) {
+      if (r.tipo === "cofre") throw new Error(errorBloqueo("cofre"));
+      if (tieneCartas(items)) throw new Error(errorBloqueo("cartas") + " Este premio trae cartas: abrilo mañana.");
+      items = premioConSancion(items);
+    }
+
     // El cofre solo se abre desde las 18:00 (UTC-03:00), aunque haya llegado antes
     const ahoraMs = Date.now();
     if (r.tipo === "cofre" && ahoraMs < cofreDeHoy(ahoraMs)) throw new Error("El cofre se abre desde las 18:00");
-
-    const items = leerItems(r.contenido);
 
     // Reclamo atómico: dos pestañas no pueden acreditar el mismo premio dos veces
     const pendienteEntrega = items.some((i) => !esAutomatico(i));
     const ahora = new Date();
     const reclamo = await tx.recompensa.updateMany({
       where: { id, estado: "disponible" },
-      data: pendienteEntrega
-        ? { estado: "reclamado", reclamadaEn: ahora }
-        : { estado: "entregado", reclamadaEn: ahora, entregadaEn: ahora },
+      data: {
+        ...(pendienteEntrega
+          ? { estado: "reclamado", reclamadaEn: ahora }
+          : { estado: "entregado", reclamadaEn: ahora, entregadaEn: ahora }),
+        // Se guarda lo que de verdad se acreditó, para que «Mis premios» y el resumen del día coincidan
+        ...(sancionado ? { contenido: items } : {}),
+      },
     });
     if (reclamo.count === 0) throw new Error("Este premio ya fue abierto");
 
@@ -247,7 +263,7 @@ export async function abrirPremioSorpresa(usuarioId: number, id: number): Promis
     }
 
     return {
-      lineas: items.map(textoItem),
+      lineas: sancionado ? [AVISO_MITAD, ...items.map(textoItem)] : items.map(textoItem),
       pendienteEntrega,
       cartasAfectadas,
       totalInciensoGanado: cartasAfectadas.reduce((n, c) => n + c.inciensoGanado, 0),
@@ -279,13 +295,15 @@ export async function crearCofre(cliente: Prisma.TransactionClient | typeof pris
 export async function otorgarCofreDelDia(usuarioId: number, ahora = new Date()): Promise<boolean> {
   if (horaEnFamilia(ahora) < HORA_COFRE) return false;
   const desde = inicioDelDiaEnTz(ahora, APP_TZ);
-  const origen = `Buen comportamiento · ${desde.toISOString().slice(0, 10)}`;
+  const origen = origenCofreDelDia(ahora);
 
   return prisma.$transaction(async (tx) => {
     // Un candado por usuario evita dos cofres si se abren dos pestañas a la vez
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${usuarioId}::bigint + 7000000)`;
     const yaTiene = await tx.recompensa.count({ where: { usuarioId, tipo: "cofre", origen } });
     if (yaTiene > 0) return false;
+    // Un día con sanción no da cofre, aunque haya más registros positivos que negativos
+    if (await haySancion(tx, usuarioId, ahora)) return false;
     const [positivos, negativos] = await Promise.all([
       tx.comportamiento.count({ where: { usuarioId, tipo: "Positivo", createdAt: { gte: desde } } }),
       tx.comportamiento.count({ where: { usuarioId, tipo: "Negativo", createdAt: { gte: desde } } }),

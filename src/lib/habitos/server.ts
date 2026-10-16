@@ -29,6 +29,8 @@ import {
   type Evento,
 } from "./engine.ts";
 import { puedeEditarHabito } from "./permisos.ts";
+import { haySancion } from "../comportamiento/sancionServer.ts";
+import { mitad } from "../comportamiento/sancion.ts";
 import { claveDeUrl } from "../archivos.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
@@ -674,7 +676,9 @@ export function calcularRecompensa(
   previo: { puntos: number; xp: number } | null,
   nuevaMarca: Marca | null,
   eventos: Evento[],
-  categoria: Categoria
+  categoria: Categoria,
+  /** Día con sanción (vault/LANE_200_SANCION_Y_ENGAGEMENT.md): puntos y XP valen la mitad */
+  conSancion = false
 ): { deltaPuntos: number; deltaXp: number; nuevoPuntos: number; nuevoXp: number } {
   const previoPuntos = previo?.puntos ?? 0;
   const previoXp = previo?.xp ?? 0;
@@ -691,6 +695,10 @@ export function calcularRecompensa(
     }
     nuevoXp = RECOMPENSA.xpDia + xpBono;
     nuevoPuntos = daPuntos(categoria) ? RECOMPENSA.puntosDia : 0;
+    if (conSancion) {
+      nuevoXp = mitad(nuevoXp);
+      nuevoPuntos = mitad(nuevoPuntos);
+    }
   }
 
   const deltaPuntos = nuevoPuntos - previoPuntos;
@@ -801,7 +809,8 @@ export async function registrar(input: {
         previo ? { puntos: previo.puntos, xp: previo.xp } : null,
         pendiente ? null : marca,
         eventos,
-        categoria
+        categoria,
+        marca === "hecho" && !pendiente && (await haySancion(tx, usuarioId))
       );
 
       // 4. Modificar registro (en "Leer un libro", las páginas van al libro en curso)

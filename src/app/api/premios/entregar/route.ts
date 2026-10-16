@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { haySancion } from "@/lib/comportamiento/sancionServer";
+import { mitad } from "@/lib/comportamiento/sancion";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +30,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
+    // Día con sanción: las estrellas valen la mitad
+    const estrellas = (await haySancion(prisma, session.user.id)) ? mitad(10) : 10;
+
     await prisma.$transaction([
       prisma.premioEntregado.update({
         where: { id: Number(entregaId) },
@@ -35,11 +40,11 @@ export async function POST(req: NextRequest) {
       }),
       prisma.usuario.update({
         where: { id: session.user.id },
-        data: { stars: { increment: 10 } }
+        data: { stars: { increment: estrellas } }
       })
     ]);
 
-    return NextResponse.json({ success: true, starsAdded: 10 });
+    return NextResponse.json({ success: true, starsAdded: estrellas });
   } catch (error) {
     console.error("Error delivering premio:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

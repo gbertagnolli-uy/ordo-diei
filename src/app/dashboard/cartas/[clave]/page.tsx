@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { Layers } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { obtenerDetalleCarta } from "@/lib/cartas/server";
+import prisma from "@/lib/prisma";
+import { haySancion } from "@/lib/comportamiento/sancionServer";
+import { BloqueoPorSancion } from "@/components/comportamiento/BloqueoPorSancion";
 import { DetalleCartaView } from "@/components/cartas/DetalleCartaView";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +31,8 @@ export default async function DetalleCartaPage({
 
   const { clave } = await params;
   const usuarioId = Number(session.user.id);
+  // Día con sanción: las cartas quedan deshabilitadas hasta mañana
+  if (await haySancion(prisma, usuarioId)) return <BloqueoPorSancion que="cartas" />;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const carta = (await obtenerDetalleCarta(usuarioId, clave)) as any;
