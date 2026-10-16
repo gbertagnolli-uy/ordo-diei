@@ -203,6 +203,10 @@ const SloshGauge: React.FC<SloshGaugeProps> = ({
     return () => {
       mq.removeEventListener('change', sync);
       cancelAnimationFrame(s.raf);
+      // Sin esto, el doble montaje de React (modo desarrollo, Strict Mode) deja un id ya cancelado y
+      // `wake` cree que la animación sigue corriendo: el líquido queda congelado.
+      s.raf = 0;
+      s.last = 0;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

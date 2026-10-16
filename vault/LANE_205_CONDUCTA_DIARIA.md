@@ -31,3 +31,9 @@
 - Ahora el servidor devuelve la evaluación también después de abrir el premio y la tarjeta de «Mis premios» la muestra entre comillas (mientras el premio está sin abrir sigue siendo sorpresa).
 - El panel «Conducta» del perfil (y la pestaña de cada hijo en el resumen) lista las **anotaciones** de los últimos 30 días: notas del día, evaluaciones de premios y penitencias, lo más nuevo primero (`ResumenConducta.anotaciones`).
 - Breadcrumb: «Administración» enlaza a `/dashboard/admin` en todas las páginas del grupo.
+
+## Lane 212 — selector de nivel global y arreglo del gauge congelado
+**Pedido (textual):** «Ese componente debería ser global, es decir, tener una configuración y estar replicado en donde se use. En el modal de creación de tarea no está funcionando tampoco.»
+
+- **Causa del «no funciona»:** en `SloshGauge`, el cleanup del montaje cancelaba el frame de animación pero dejaba `sim.raf` con el id viejo; con el doble montaje de React en desarrollo (Strict Mode) `wake()` creía que la animación ya corría y el líquido quedaba congelado (en la dificultad de la tarea y en la conducta). Ahora el cleanup reinicia `raf` y `last`.
+- **Configuración global:** `CONFIG_SELECTOR_NIVEL` (en `SelectorNivel.tsx`) fija alto, llenado al montar y fluidez (viscosidad, salpicadura, inclinación). La dificultad de la tarea y la conducta la heredan igual; se quitaron los ajustes propios de cada uso.
