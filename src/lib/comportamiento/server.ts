@@ -10,6 +10,8 @@ import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
 import { contenidoCofre, diaEsBueno, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { haySancion, origenCofreDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
+import { avisoCofre } from "../push/avisos.ts";
+import { enviarAviso } from "../push/servidor.ts";
 import { AVISO_MITAD, errorBloqueo, premioConSancion, tieneCartas } from "./sancion.ts";
 import { esAutomatico, leerItems, XP_RECONOCIMIENTO, textoItem, validarItems, MAX_CANTIDAD, MAX_TEXTO, type ItemPremio } from "./premios.ts";
 
@@ -142,6 +144,12 @@ export async function registrarComportamiento(
         }
       }
     });
+    // Si ya pasaron las 18:00, el cofre llega ahora y el chico se entera en el celular (sin esperar a que entre)
+    await Promise.allSettled(
+      usuarioIds.map(async (usuarioId) => {
+        if (await otorgarCofreDelDia(usuarioId)) await enviarAviso(usuarioId, avisoCofre());
+      })
+    );
     return;
   }
 

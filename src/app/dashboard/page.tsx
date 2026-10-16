@@ -11,6 +11,7 @@ import { MetaSemanal } from "@/components/engagement/MetaSemanal";
 import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
 import { CompaneroCard } from "@/components/engagement/CompaneroCard";
 import { companeroDe } from "@/lib/engagement/companeroServidor";
+import { AvisosPush } from "@/components/engagement/AvisosPush";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -90,6 +91,9 @@ export default async function DashboardPage() {
     <div className="flex flex-col w-full">
       <div className="px-4 sm:px-6 pt-3">
         <BannerEventosCartas />
+      </div>
+      <div className="px-4 sm:px-6 empty:hidden [&:has(*)]:pt-3">
+        <AvisosPush modo="invitacion" />
       </div>
       {parte && (
         <div className="px-4 sm:px-6 pt-3">
