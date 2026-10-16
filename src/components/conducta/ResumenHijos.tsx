@@ -115,7 +115,8 @@ function Hijo({ h, hoy }: { h: ResumenHijo; hoy: string }) {
             </ul>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" asChild><Link href="/dashboard/admin/agenda">Agenda master</Link></Button>
+            <Button variant="outline" size="sm" asChild><Link href="/dashboard/admin/tareas">Tareas</Link></Button>
+            <Button variant="outline" size="sm" asChild><Link href="/dashboard/admin/aprobaciones">Aprobaciones</Link></Button>
             <Button variant="outline" size="sm" asChild><Link href={`/dashboard/perfil?usuarioId=${h.id}`}>Ver perfil de {h.nombre}</Link></Button>
           </div>
         </CardContent>

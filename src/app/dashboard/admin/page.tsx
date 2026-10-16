@@ -19,8 +19,9 @@ export default async function AdminPage() {
   if (!esPadre(session.user.rolFamiliar)) redirect("/dashboard");
 
   const yo = { id: Number(session.user.id), rol: session.user.rolFamiliar };
-  const [solicitudes, premiosPorEntregar, comprasPorAprobar, parte, meta] = await Promise.all([
+  const [solicitudes, tareasPorAprobar, premiosPorEntregar, comprasPorAprobar, parte, meta] = await Promise.all([
     getSolicitudes(),
+    prisma.tarea.count({ where: { estado: "Esperando_Aprobacion" } }),
     prisma.recompensa.count({ where: { estado: "reclamado" } }),
     contarComprasPorAprobar(session.user.rolFamiliar),
     parteDeHoy(yo).catch((e) => {
@@ -43,7 +44,7 @@ export default async function AdminPage() {
             {meta && <MetaSemanal datos={meta} />}
           </div>
         )}
-        <PanelAdmin pendientes={{ solicitudesHabitos: solicitudes.total, premiosPorEntregar, comprasPorAprobar }} />
+        <PanelAdmin pendientes={{ solicitudesHabitos: solicitudes.total + tareasPorAprobar, premiosPorEntregar, comprasPorAprobar }} />
       </main>
     </div>
   );

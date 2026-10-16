@@ -5,9 +5,8 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/es';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Table as TableIcon, Calendar as CalendarIcon, Repeat, Clock, HelpCircle } from "lucide-react";
+import { Table as TableIcon, Calendar as CalendarIcon, Repeat, Clock, HelpCircle, Plus } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { ParentReviewPanel } from "@/components/dashboard/ParentReviewPanel";
 import TaskForm from "@/components/dashboard/TaskForm";
 import "@/components/tasks/mission-calendar.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +51,7 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
   const [calendarView, setCalendarView] = useState<"month"|"week"|"agenda">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [creatingTask, setCreatingTask] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const groupedTasks = groupTasksForTable(tasks);
@@ -140,15 +140,18 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
 
   return (
     <div className="flex flex-1 flex-col">
-      <ParentReviewPanel tasks={tasks} />
-
       <Card className="flex-1 gap-0 py-0">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-4">
-          <CardTitle className="text-base">Centro de Operaciones</CardTitle>
-          <ToggleGroup type="single" variant="outline" size="sm" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)} aria-label="Vista">
-            <ToggleGroupItem value="calendar" className="gap-1.5 px-2.5"><CalendarIcon /> <span className="hidden sm:inline">Calendario</span></ToggleGroupItem>
-            <ToggleGroupItem value="table" className="gap-1.5 px-2.5"><TableIcon /> <span className="hidden sm:inline">Tabla Detalles</span></ToggleGroupItem>
-          </ToggleGroup>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b py-4">
+          <CardTitle className="text-base">Tareas de la familia</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setCreatingTask(true)}>
+              <Plus /> Nueva tarea
+            </Button>
+            <ToggleGroup type="single" variant="outline" size="sm" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)} aria-label="Vista">
+              <ToggleGroupItem value="calendar" className="gap-1.5 px-2.5"><CalendarIcon /> <span className="hidden sm:inline">Calendario</span></ToggleGroupItem>
+              <ToggleGroupItem value="table" className="gap-1.5 px-2.5"><TableIcon /> <span className="hidden sm:inline">Tabla Detalles</span></ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </CardHeader>
 
         <CardContent className="relative flex-1 p-4 sm:p-6">
@@ -272,6 +275,17 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[], users: any[] 
             </div>
           )}
         </CardContent>
+
+        {/* CREATE TASK MODAL — uses unified TaskForm */}
+        {creatingTask && (
+          <Modal isOpen={creatingTask} onClose={() => setCreatingTask(false)} title="Nueva tarea">
+            <TaskForm
+              users={users}
+              isModal={true}
+              onSuccess={() => window.location.reload()}
+            />
+          </Modal>
+        )}
 
         {/* EDIT TASK MODAL — uses unified TaskForm */}
         {selectedTask && (
