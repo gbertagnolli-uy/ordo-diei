@@ -19,7 +19,7 @@ export default async function NewUserServerPage() {
 
   return (
     <>
-      <PageHeader group="Administración" title="Nuevo miembro" />
+      <PageHeader group="Administración" groupHref="/dashboard/admin" title="Nuevo miembro" />
       <ClientPage />
     </>
   );

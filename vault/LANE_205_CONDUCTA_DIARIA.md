@@ -23,3 +23,11 @@
 
 - `SelectorNivel` gana `llenarAlMontar` (el líquido arranca vacío y se llena hasta el nivel al abrir) y `fluidez` (viscosidad, salpicadura, inclinación del `SloshGauge`). El registro de conducta los usa con más rebote (viscosidad 0.1, salpicadura 0.55, inclinación 0.7) y un gauge más alto; la dificultad de la tarea queda igual.
 - Si el sistema tiene «reducir movimiento» activado, el `SloshGauge` apaga el rebote y la inclinación por accesibilidad (no es un fallo).
+
+## Lane 210 — notas y evaluaciones visibles para el niño; breadcrumb de Administración
+**Pedido (textual):** «ademas tanto las notas de registrar comportamiento como las evaluaciones de cuando se registra un comportamiento al regalar un premio, no se muestran al niño, no se muestran en ningun lado» y «En los breadcumbs del panel de administración, el principal "Administración" debería ser un enlace a /dashboard/admin»
+
+- Antes la evaluación de un premio solo se veía dentro del modal al abrirlo (y después se perdía), y las penitencias y las notas del día no se mostraban en ningún lado.
+- Ahora el servidor devuelve la evaluación también después de abrir el premio y la tarjeta de «Mis premios» la muestra entre comillas (mientras el premio está sin abrir sigue siendo sorpresa).
+- El panel «Conducta» del perfil (y la pestaña de cada hijo en el resumen) lista las **anotaciones** de los últimos 30 días: notas del día, evaluaciones de premios y penitencias, lo más nuevo primero (`ResumenConducta.anotaciones`).
+- Breadcrumb: «Administración» enlaza a `/dashboard/admin` en todas las páginas del grupo.

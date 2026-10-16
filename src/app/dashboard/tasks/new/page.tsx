@@ -31,7 +31,7 @@ export default async function NewTaskServerPage() {
 
   return (
     <>
-      <PageHeader group="Administración" title="Nueva tarea" />
+      <PageHeader group="Administración" groupHref="/dashboard/admin" title="Nueva tarea" />
       <ClientPage users={users} />
     </>
   );
