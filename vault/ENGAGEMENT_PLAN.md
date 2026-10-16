@@ -48,3 +48,13 @@
 - Pruebas: 14 unitarias + 2 de integración con base (`PERMITIR_TESTS_DB=1`, base local). Verificada en Chromium (teléfono y escritorio) con la base local.
 
 Pendiente para las lanes siguientes: **202** meta semanal en familia, **203** compañero, **204** PWA + push.
+
+### Lane 202 — hecha (2026-10-16)
+
+- **Tabla nueva `Metas_Semanales`** (`MetaSemanal`: lunes de la semana, objetivo, premio, `cumplidaEn`). SQL **solo aditivo**, aplicado a la base.
+- **Colectiva, no individual**: es distinta del «Premio familiar» que ya existía (ese lo gana cada hijo por separado según tareas requeridas). Acá el avance es la suma de **tareas aprobadas + hábitos hechos y aprobados de todos los hijos** de lunes a domingo (`logrosDeLaSemana`).
+- Los padres la fijan o corrigen desde el inicio (`FijarMeta`, con un objetivo sugerido ≈ +10 % de la semana pasada). Una vez cumplida ya no se cambia.
+- Al llegar al objetivo, **cada hijo recibe un vale** («Vale por …») en «Mis premios», una sola vez (reclamo atómico sobre `cumplidaEn`), evaluado al entrar, sin cron. Los padres no reciben vale.
+- La ven todos en el inicio; los chicos no ven nada hasta que exista una meta. Sin castigo si no se llega.
+- «Tu parte de hoy» se **compacta en una sola fila** cuando está completa, para no empujar el trabajo del día.
+- `GET/POST /api/meta-semanal`. Pruebas: 4 unitarias + 1 de integración con base local.

@@ -7,6 +7,8 @@ import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 import { ParteDeHoy } from "@/components/engagement/ParteDeHoy";
 import { parteDeHoy } from "@/lib/engagement/servidor";
+import { MetaSemanal } from "@/components/engagement/MetaSemanal";
+import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -56,6 +58,12 @@ export default async function DashboardPage() {
       })
     : null;
 
+  // Meta semanal en familia: la ven todos, la fijan los padres
+  const meta = await metaDeLaSemana({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => {
+    console.error("[MetaSemanal]", e);
+    return null;
+  });
+
   const myUser = allUsers.find((u) => u.id === session.user.id);
   const myTasks = myUser?.tareasAsignadas || [];
 
@@ -76,6 +84,11 @@ export default async function DashboardPage() {
       {parte && (
         <div className="px-4 sm:px-6 pt-3">
           <ParteDeHoy datos={parte} />
+        </div>
+      )}
+      {meta && (meta.meta || meta.esPadre) && (
+        <div className="px-4 sm:px-6 pt-3">
+          <MetaSemanal datos={meta} />
         </div>
       )}
       <TaskWorkspace

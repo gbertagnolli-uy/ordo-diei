@@ -15,6 +15,32 @@ export function ParteDeHoy({ datos }: { datos: Datos }) {
   const { racha, misiones, hechas, completa, puntosHoy, proximoHito } = datos;
   const total = misiones.length;
 
+  // Con todo cumplido ocupa una sola fila: lo que sigue es el trabajo del día
+  if (completa) {
+    return (
+      <Card aria-label="Tu parte de hoy" className="gap-0 py-3">
+        <CardHeader className="items-center">
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <CheckCircle2 className="size-4 text-primary" /> Tu parte de hoy, completa
+          </CardTitle>
+          <CardDescription>
+            Hoy sumaste <span className="font-medium text-foreground">{puntosHoy} puntos</span> y un premio sorpresa.
+          </CardDescription>
+          <CardAction className="flex items-center gap-1">
+            <Badge>
+              <Flame className="size-3" /> {dias(racha.dias)}
+            </Badge>
+            <Button asChild size="sm" variant="ghost">
+              <Link href="/dashboard/mis-premios">
+                <Gift className="size-4" /> Ver mi premio
+              </Link>
+            </Button>
+          </CardAction>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card aria-labelledby="parte-de-hoy" className="gap-3 py-4">
       <CardHeader>
@@ -22,13 +48,8 @@ export function ParteDeHoy({ datos }: { datos: Datos }) {
           Tu parte de hoy
         </CardTitle>
         <CardDescription>
-          {completa
-            ? "¡Completaste todo! Hoy sumaste "
-            : hechas === 0
-              ? "Tres cosas chicas que ayudan a toda la familia."
-              : `${hechas} de ${total} · hoy sumaste `}
-          {(completa || hechas > 0) && <span className="font-medium text-foreground">{puntosHoy} puntos</span>}
-          {completa && " y un premio sorpresa."}
+          {hechas === 0 ? "Tres cosas chicas que ayudan a toda la familia." : `${hechas} de ${total} · hoy sumaste `}
+          {hechas > 0 && <span className="font-medium text-foreground">{puntosHoy} puntos</span>}
         </CardDescription>
         <CardAction>
           <Badge variant={racha.dias > 0 ? "default" : "secondary"}>
@@ -70,13 +91,6 @@ export function ParteDeHoy({ datos }: { datos: Datos }) {
             : "Llegaste a todos los premios de racha."}{" "}
           Si un día no podés entrar, no pasa nada: perdonamos un día por semana.
         </span>
-        {completa && (
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/dashboard/mis-premios">
-              <Gift className="size-4" /> Ver mi premio
-            </Link>
-          </Button>
-        )}
       </CardFooter>
     </Card>
   );
