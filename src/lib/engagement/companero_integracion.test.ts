@@ -52,7 +52,7 @@ test("compañero: elegir, nombre sugerido, días juntos, regreso sin culpa y fes
     assert.match(c.regreso ?? "", /Luz/);
     assert.doesNotMatch(c.regreso ?? "", /\d/);
 
-    // Sube de nivel con la XP de siempre (400 XP = nivel 3): hay festejo hasta que lo confirma
+    // Sube de nivel con la XP de siempre (400 XP = nivel 3): hay festejo hasta que lo confirma y regala 200 pts por nivel subido (1 -> 3 = 400 pts)
     await prisma.usuario.update({ where: { id: u.id }, data: { experienciaHabitos: 400 } });
     const d = await companeroDe(u.id);
     assert.equal(d.nivel.numero, 3);
@@ -60,7 +60,9 @@ test("compañero: elegir, nombre sugerido, días juntos, regreso sin culpa y fes
     assert.equal(d.pose, "felicitando");
     assert.equal(d.situacion, "festejo");
     await festejarNivel(u.id);
-    assert.equal((await companeroDe(u.id)).nivelNuevo, false);
+    const despuesFestejo = await companeroDe(u.id);
+    assert.equal(despuesFestejo.nivelNuevo, false);
+    assert.equal(despuesFestejo.saldos.puntos, 400);
   } finally {
     await prisma.usuario.delete({ where: { id: u.id } });
   }

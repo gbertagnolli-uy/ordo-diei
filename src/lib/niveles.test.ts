@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { nivelDe, xpTotal, tituloDeNivel, TITULOS } from "./niveles.ts";
+import { nivelDe, xpTotal, tituloDeNivel, TITULOS, badgeDeNivel, PUNTOS_SUBIR_NIVEL, NIVELES_CON_BADGE } from "./niveles.ts";
 
 test("curva de niveles: umbrales estándar y porcentaje de progreso", () => {
   // Nivel 1: 0 a 99 XP
@@ -103,3 +103,15 @@ test("xpTotal suma correctamente puntosAcumulados y experienciaHabitos de forma 
   assert.equal(xpTotal({ puntosAcumulados: -20, experienciaHabitos: 50 }), 50);
   assert.equal(xpTotal({ puntosAcumulados: 50, experienciaHabitos: -10 }), 50);
 });
+
+test("badgeDeNivel devuelve la imagen del nivel entre 1 y 12, y PUNTOS_SUBIR_NIVEL es 200", () => {
+  assert.equal(PUNTOS_SUBIR_NIVEL, 200);
+  assert.equal(NIVELES_CON_BADGE, 12);
+  assert.equal(badgeDeNivel(0), "/niveles/1.webp");
+  assert.equal(badgeDeNivel(1), "/niveles/1.webp");
+  assert.equal(badgeDeNivel(4), "/niveles/4.webp");
+  assert.equal(badgeDeNivel(12), "/niveles/12.webp");
+  assert.equal(badgeDeNivel(15), "/niveles/12.webp");
+  assert.equal(badgeDeNivel(30), "/niveles/12.webp");
+});
+

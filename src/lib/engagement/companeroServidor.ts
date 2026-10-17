@@ -10,6 +10,7 @@ import { aClave, aFecha } from "../habitos/server.ts";
 import { exigirSinSancion } from "../comportamiento/sancionServer.ts";
 import { MONEDAS, type Saldos } from "../tienda/monedas.ts";
 import { nivelDe, xpTotal } from "../niveles.ts";
+import { reclamarSubidaNivel } from "../nivelesServidor.ts";
 import { registrarIngreso, rachaDe } from "./servidor.ts";
 import {
   datosDePersonaje,
@@ -143,10 +144,9 @@ export async function nombrarCompanero(usuarioId: number, entrada: unknown) {
   if (r.count === 0) throw new Error("Primero elegí quién te acompaña");
 }
 
-/** Festejó el nivel nuevo: no se vuelve a mostrar */
+/** Festejó el nivel nuevo: regala los puntos de subida de nivel (si aún no se reclamaron) y marca el nivel como visto */
 export async function festejarNivel(usuarioId: number) {
-  const nivel = await nivelActual(usuarioId);
-  await prisma.companero.updateMany({ where: { usuarioId }, data: { nivelVisto: nivel } });
+  await reclamarSubidaNivel(usuarioId);
 }
 
 /**

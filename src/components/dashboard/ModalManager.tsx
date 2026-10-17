@@ -12,6 +12,7 @@ import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
+import { badgeDeNivel, PUNTOS_SUBIR_NIVEL, tituloDeNivel } from "@/lib/niveles";
 
 
 // Único confeti de la app (MagicUI). Los popups lo disparan vía contexto.
@@ -69,29 +70,44 @@ export function ModalManager() {
         </Modal>
       )}
 
-      {type === "LEVEL_UP" && (
-        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
-          <div className="flex flex-col items-center text-center py-6">
-            <img
-              src="/winners-animate.svg"
-              alt="¡Subiste de Nivel!"
-              className="w-48 h-48 mb-6 drop-shadow-xl animate-bounce"
-            />
-            <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
-              ¡Nivel {data?.level}!
-            </h3>
-            <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
-              Nuevo Rango: <span className="text-[var(--primary)]">{data?.title}</span>
-            </p>
-            <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
-              ¡Tu esfuerzo está dando frutos! Sigue completando tareas para alcanzar el siguiente rango.
-            </p>
-            <Button size="lg" onClick={closeModal} className="w-full">
-              ¡A seguir subiendo!
-            </Button>
-          </div>
-        </Modal>
-      )}
+      {type === "LEVEL_UP" && (() => {
+        const lvl = Number(data?.level ?? data?.newLevel ?? 1);
+        const badgeSrc = data?.badgeUrl ?? badgeDeNivel(lvl);
+        const titulo = data?.title ?? tituloDeNivel(lvl);
+        const puntosRegalo = Number(data?.puntosRegalo ?? PUNTOS_SUBIR_NIVEL);
+        return (
+          <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
+            <div className="flex flex-col items-center text-center py-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={badgeSrc}
+                alt={`Insignia del nivel ${lvl}`}
+                className="size-36 mb-4 object-contain drop-shadow-xl"
+              />
+              <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
+                Nuevo Rango: <span className="text-[var(--primary)]">{titulo}</span>
+              </p>
+              <div className="bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] border border-[color-mix(in_srgb,var(--warning)_20%,transparent)] rounded-md px-6 py-3 flex items-center gap-3 mb-5">
+                <span className="text-3xl" aria-hidden>⭐</span>
+                <div className="text-left">
+                  <div className="text-[var(--warning)] font-headline font-bold text-2xl tabular-nums">
+                    +{puntosRegalo} Puntos
+                  </div>
+                  <div className="text-[var(--warning)] opacity-80 text-xs font-title font-bold uppercase tracking-wider">
+                    Regalo por subir de nivel
+                  </div>
+                </div>
+              </div>
+              <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
+                ¡Tu esfuerzo está dando frutos! Seguí completando tareas y hábitos para alcanzar el siguiente rango.
+              </p>
+              <Button size="lg" onClick={closeModal} className="w-full">
+                ¡A seguir subiendo!
+              </Button>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {(type === "ORACION" || type === "HABITO") && (() => {
         const popup = HABITO_POPUP(data?.habito || "este hábito")[data?.tipo as "ascenso" | "completo" | "regreso" | "libro"] ?? {

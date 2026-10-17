@@ -20,14 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
+import { nivelDe, xpTotal, TITULOS, badgeDeNivel } from "@/lib/niveles";
 import { evaluarLogros, type CategoriaLogro } from "@/lib/logros";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { LogroIcon } from "./LogroIcon";
 import { subirImagen } from "@/lib/subirImagen";
 
-// Badges disponibles en public/niveles/1.webp … 12.webp
-const NIVELES_CON_BADGE = 12;
 
 interface PerfilResumenProps {
   usuario: {
@@ -209,7 +207,7 @@ export function PerfilResumen({
           <div className="flex w-full max-w-48 flex-col items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`/niveles/${Math.min(Math.max(infoNivel.level, 1), NIVELES_CON_BADGE)}.webp`}
+              src={badgeDeNivel(infoNivel.level)}
               alt={`Badge del nivel ${infoNivel.level}`}
               className="size-28 object-contain"
             />
