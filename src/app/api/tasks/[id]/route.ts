@@ -208,19 +208,19 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
     const searchParams = req.nextUrl.searchParams;
     const grupoTareaId = searchParams.get("grupoTareaId");
 
-    if (grupoTareaId) {
-      await prisma.tarea.deleteMany({
-        where: { grupoTareaId: grupoTareaId }
-      });
-    } else {
-      await prisma.tarea.delete({
-        where: { id: parseInt(id) }
-      });
-    }
+    // HistorialAccion.tareaId no tiene cascade: sin borrar antes el historial, Postgres rechaza (FK) eliminar
+    // cualquier tarea que ya se empezó, completó o revisó. Checklist cae por cascade y DiaLectivo/clones por SetNull.
+    await prisma.$transaction(async (tx) => {
+      const filtro = grupoTareaId ? { grupoTareaId } : { id: parseInt(id) };
+      const ids = (await tx.tarea.findMany({ where: filtro, select: { id: true } })).map((t) => t.id);
+      if (ids.length === 0) return;
+      await tx.historialAccion.deleteMany({ where: { tareaId: { in: ids } } });
+      await tx.tarea.deleteMany({ where: { id: { in: ids } } });
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("DELETE Task Error:", error);
-    return NextResponse.json({ error: "Error de servidor al eliminar la tarea" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? `No se pudo eliminar la tarea: ${error.message.split("\n").pop()}` : "Error de servidor al eliminar la tarea" }, { status: 500 });
   }
 }

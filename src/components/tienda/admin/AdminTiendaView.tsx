@@ -3,7 +3,8 @@
 // Administración de la Tienda para padres (SPEC §10): productos y compras
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, EyeOff, Package, Pencil, Plus, Trash2, Undo2, X } from "lucide-react";
+import { Check, Copy, EyeOff, Package, Plus, Undo2, X } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -48,11 +49,6 @@ export function AdminTiendaView({ productos, compras, opciones }: { productos: P
     }
   }
 
-  const eliminar = (p: ProductoAdminVista) => {
-    if (!confirm(p.ventas > 0 ? `«${p.titulo}» ya tiene compras: se va a ocultar, no borrar. ¿Seguir?` : `¿Eliminar «${p.titulo}»?`)) return;
-    accion(p.id, () => llamar(`/api/admin/tienda/productos/${p.id}`, "DELETE"), p.ventas > 0 ? "Producto oculto" : "Producto eliminado");
-  };
-
   return (
     <div className="flex flex-col">
       <PageHeader group="Administración" groupHref="/dashboard/admin" title="Tienda">
@@ -70,7 +66,20 @@ export function AdminTiendaView({ productos, compras, opciones }: { productos: P
               <Empty><EmptyHeader><EmptyMedia variant="icon"><Package /></EmptyMedia><EmptyTitle>Sin productos</EmptyTitle><EmptyDescription>Creá el primero con «Nuevo producto».</EmptyDescription></EmptyHeader></Empty>
             )}
             {productos.map((p) => (
-              <article key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3">
+              <AdminItem
+                key={p.id}
+                enabled
+                nombre={`«${p.titulo}»`}
+                className="rounded-xl border"
+                onEdit={() => setEditando({ producto: p, copia: false })}
+                onDelete={p.origen === "sistema" ? undefined : async () => {
+                  await llamar(`/api/admin/tienda/productos/${p.id}`, "DELETE");
+                  toast.success(p.ventas > 0 ? "Producto oculto" : "Producto eliminado");
+                  refrescar();
+                }}
+                aviso={p.ventas > 0 ? "Ya tiene compras: se va a ocultar de la Tienda, no se borra." : undefined}
+              >
+              <article className="flex flex-wrap items-center gap-3 bg-card p-3">
                 <div className="size-16 shrink-0 overflow-hidden rounded-lg">
                   <div className={p.activo ? "size-full" : "size-full grayscale"}>
                     <ArteProducto p={{ tipo: p.tipo as never, sistemaClave: p.sistemaClave, imagenUrl: p.imagenUrl, titulo: p.titulo }} />
@@ -94,15 +103,12 @@ export function AdminTiendaView({ productos, compras, opciones }: { productos: P
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Switch checked={p.activo} disabled={ocupado === p.id} aria-label={`${p.titulo} visible`} onCheckedChange={(v) => accion(p.id, () => llamar(`/api/admin/tienda/productos/${p.id}`, "PATCH", p.origen === "sistema" ? { activo: v } : { ...cuerpoDe(p), activo: v }), v ? "Ahora se ve en la Tienda" : "Ocultado de la Tienda")} />
-                  <Button variant="ghost" size="icon-sm" aria-label="Editar" onClick={() => setEditando({ producto: p, copia: false })}><Pencil /></Button>
                   {p.origen !== "sistema" && (
-                    <>
-                      <Button variant="ghost" size="icon-sm" aria-label="Duplicar" onClick={() => setEditando({ producto: p, copia: true })}><Copy /></Button>
-                      <Button variant="ghost" size="icon-sm" aria-label="Eliminar" disabled={ocupado === p.id} onClick={() => eliminar(p)}><Trash2 /></Button>
-                    </>
+                    <Button variant="ghost" size="icon-sm" aria-label="Duplicar" onClick={() => setEditando({ producto: p, copia: true })}><Copy /></Button>
                   )}
                 </div>
               </article>
+              </AdminItem>
             ))}
           </TabsContent>
 
