@@ -1,29 +1,57 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import {
-  CLAVES_PERSONAJE, marcoDeNivel, mensajeDeRegreso, poseDelMomento, posesDesbloqueadas, proximaPose, proximaRanura, ranurasDeObjetos, relacionDe, situacionDe, validarNombre, POSES,
+  CLAVES_PERSONAJE, esElegible, MAX_NOMBRE, personajeGuardado, PERSONAJES, PERSONAJES_ELEGIBLES, marcoDeNivel, mensajeDeRegreso, poseDelMomento, posesDesbloqueadas, proximaPose, proximaRanura, ranurasDeObjetos, relacionDe, situacionDe, validarNombre, POSES,
 } from "./companero.ts";
 import { ACCESORIOS, cambiarEquipado, clavesDeRegalo, EQUIPADOS_INICIALES, leerEquipados, motivoNoCompra, tieneAccesorio, accesorioDe } from "./accesorios.ts";
 import { FRASES, fraseDe } from "./companeroFrases.ts";
 
-test("hay 6 personajes y cada uno tiene todas las frases", () => {
-  assert.deepEqual([...CLAVES_PERSONAJE].sort(), ["hombre", "monja", "mujer", "nina", "nino", "sacerdote"]);
-  for (const p of CLAVES_PERSONAJE) {
+test("los 26 héroes de las carpetas de arte están en el catálogo, con su voz y todas las frases", () => {
+  assert.equal(CLAVES_PERSONAJE.length, 26);
+  assert.equal(new Set(CLAVES_PERSONAJE).size, 26);
+  for (const p of PERSONAJES) {
+    assert.match(p.clave, /^[a-z-]+$/, p.clave);
+    assert.ok(p.nombre.length <= MAX_NOMBRE, `${p.nombre} no entra como nombre del compañero`);
     for (const tipo of ["manana", "tarde", "noche", "regreso", "festejo", "carta", "toque"] as const) {
-      assert.ok(FRASES[p][tipo].filter(Boolean).length >= 2, `${p}/${tipo}`);
+      assert.ok(FRASES[p.voz][tipo].filter(Boolean).length >= 2, `${p.clave}/${tipo}`);
     }
   }
 });
 
+test("el catálogo dice la verdad sobre las imágenes de public/companeros", () => {
+  for (const p of PERSONAJES) {
+    const carpeta = `public/companeros/${p.clave}`;
+    const poses = POSES.filter((x) => existsSync(`${carpeta}/${x.clave}.webp`));
+    if (p.arte === "pendiente") assert.equal(poses.length, 0, `${p.clave} ya tiene imágenes: pasalo a «parcial» o «completo»`);
+    if (p.arte === "parcial") assert.ok(poses.some((x) => x.clave === "neutral") && poses.length < POSES.length, `${p.clave}: parcial = tiene la neutral y le faltan poses`);
+    if (p.arte === "completo") assert.equal(poses.length, POSES.length, `${p.clave}: completo = las ${POSES.length} poses`);
+  }
+});
+
+test("solo se pueden elegir los héroes con imágenes, y los 6 genéricos de antes pasan a un héroe", () => {
+  assert.equal(PERSONAJES_ELEGIBLES.length, 22);
+  assert.ok(esElegible("pedro"));
+  assert.ok(!esElegible("mariana"));
+  assert.ok(!esElegible("monja"));
+  assert.equal(personajeGuardado("monja"), "madre-isabel");
+  assert.equal(personajeGuardado("sacerdote"), "padre-santiago");
+  assert.equal(personajeGuardado("nina"), "laura");
+  assert.equal(personajeGuardado("teresa"), "teresa");
+  assert.equal(personajeGuardado("dragon"), null);
+  assert.equal(personajeGuardado(null), null);
+  for (const viejo of ["monja", "sacerdote", "hombre", "mujer", "nino", "nina"]) assert.ok(esElegible(personajeGuardado(viejo)), viejo);
+});
+
 test("las frases usan el primer nombre y no dejan marcas sin reemplazar", () => {
   for (const p of CLAVES_PERSONAJE) {
-    for (const tipo of Object.keys(FRASES[p]) as (keyof (typeof FRASES)["monja"])[]) {
+    for (const tipo of Object.keys(FRASES.monja) as (keyof (typeof FRASES)["monja"])[]) {
       for (let i = 0; i < 3; i++) assert.doesNotMatch(fraseDe(p, tipo, "Ana María", i), /\{n\}/);
     }
   }
-  assert.match(fraseDe("nino", "regreso", "Ana María", 0), /Ana/);
-  assert.doesNotMatch(fraseDe("nino", "regreso", "Ana María", 0), /María/);
-  assert.match(fraseDe("nino", "regreso", "  ", 0), /amigo/);
+  assert.match(fraseDe("felipe", "regreso", "Ana María", 0), /Ana/);
+  assert.doesNotMatch(fraseDe("felipe", "regreso", "Ana María", 0), /María/);
+  assert.match(fraseDe("felipe", "regreso", "  ", 0), /amigo/);
 });
 
 test("situación y pose del momento: prioridad festejo > regreso > cartas > hora", () => {

@@ -11,6 +11,7 @@
     "postinstall": "prisma generate",
     "imagenes": "node scripts/convertir-imagenes.mjs",
     "companeros": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/preparar-companeros.ts",
+    "heroes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/importar-heroes.ts",
     "reposo:fuentes": "bash scripts/reposo/descargar-fuentes.sh",
     "reposo:catecismo-pdf": "bash scripts/reposo/catecismo-pdf.sh",
     "reposo:vulgata-epub": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reposo/verificar-vulgata-epub.ts",

@@ -25,20 +25,22 @@ test("compañero: elegir, nombre sugerido, días juntos, regreso sin culpa y fes
 
     // Personaje inexistente y nombre en blanco se rechazan; sin personaje no se puede nombrar
     await assert.rejects(elegirPersonaje(u.id, "dragon"), /no existe/);
+    // Un héroe sin ilustraciones todavía no se puede elegir
+    await assert.rejects(elegirPersonaje(u.id, "mariana"), /no existe/);
     await assert.rejects(nombrarCompanero(u.id, "Luz"), /Primero elegí/);
-    await assert.rejects(elegirPersonaje(u.id, "nina", "x".repeat(21)), /20/);
+    await assert.rejects(elegirPersonaje(u.id, "laura", "x".repeat(21)), /20/);
 
-    // Se estrena con el nombre sugerido y el nivel actual ya cuenta como visto
-    await elegirPersonaje(u.id, "nina");
+    // Se estrena con su propio nombre y el nivel actual ya cuenta como visto
+    await elegirPersonaje(u.id, "laura");
     const b = await companeroDe(u.id);
-    assert.equal(b.personaje, "nina");
-    assert.equal(b.nombre, "Sofi");
+    assert.equal(b.personaje, "laura");
+    assert.equal(b.nombre, "Laura");
     assert.equal(b.nivelNuevo, false);
     assert.deepEqual(b.equipados, { fondo: "capilla", objetos: ["veladora"] });
     await nombrarCompanero(u.id, "  Luz  ");
     assert.equal((await companeroDe(u.id)).nombre, "Luz");
     // Cambiar de personaje conserva el nombre
-    await elegirPersonaje(u.id, "monja");
+    await elegirPersonaje(u.id, "madre-isabel");
     assert.equal((await companeroDe(u.id)).nombre, "Luz");
 
     // Pasaron los días: entró hace 9 y 8 días (y hoy) → 3 días juntos y abrazo por haber faltado

@@ -13,7 +13,8 @@ import { nivelDe, xpTotal } from "../niveles.ts";
 import { registrarIngreso, rachaDe } from "./servidor.ts";
 import {
   datosDePersonaje,
-  esPersonaje,
+  esElegible,
+  personajeGuardado,
   mensajeDeRegreso,
   NOMBRE_POR_DEFECTO,
   poseDelMomento,
@@ -81,7 +82,7 @@ export async function companeroDe(usuarioId: number, ahora: Date = new Date(), o
   const xp = xpTotal(usuario);
   const info = nivelDe(xp);
   const inicioDelNivel = (info.level - 1) ** 2 * 100;
-  const personaje = fila && esPersonaje(fila.personaje) ? fila.personaje : null;
+  const personaje = personajeGuardado(fila?.personaje);
   const nombre = fila?.nombre ?? NOMBRE_POR_DEFECTO;
   const clavesCompradas = comprados.map((c) => c.clave);
   const desdeLaUltimaVez = previa ? differenceInCalendarDays(parseISO(hoy), parseISO(aClave(previa.fecha))) : null;
@@ -123,11 +124,11 @@ async function nivelActual(usuarioId: number) {
 
 /** Elige (o cambia) quién lo acompaña. La primera vez se estrena con un nombre sugerido y el nivel actual ya cuenta como visto. */
 export async function elegirPersonaje(usuarioId: number, personaje: unknown, nombre?: unknown) {
-  if (!esPersonaje(personaje)) throw new Error("Ese compañero no existe");
+  if (!esElegible(personaje)) throw new Error("Ese compañero no existe");
   const nivel = await nivelActual(usuarioId);
   const actual = await prisma.companero.findUnique({ where: { usuarioId }, select: { nombre: true } });
   // Si ya tenía nombre, se queda; si no, el que propone el personaje o el que escribió
-  const elegido = nombre === undefined || nombre === "" ? (actual?.nombre ?? datosDePersonaje(personaje).nombreSugerido) : validarNombre(nombre);
+  const elegido = nombre === undefined || nombre === "" ? (actual?.nombre ?? datosDePersonaje(personaje).nombre) : validarNombre(nombre);
   await prisma.companero.upsert({
     where: { usuarioId },
     create: { usuarioId, personaje, nombre: elegido, nivelVisto: nivel, equipados: EQUIPADOS_INICIALES },

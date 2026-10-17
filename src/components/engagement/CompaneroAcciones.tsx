@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ImagenConRespaldo } from "@/components/engagement/ImagenConRespaldo";
 import { rutaDePose } from "@/components/engagement/EscenaCompanero";
-import { MAX_NOMBRE, PERSONAJES, type Personaje } from "@/lib/engagement/companero";
+import { MAX_NOMBRE, PERSONAJES_ELEGIBLES, personajeGuardado, type Personaje } from "@/lib/engagement/companero";
 import { toast } from "@/lib/toast";
 
 export async function enviarCompanero(cuerpo: Record<string, unknown>) {
@@ -24,18 +24,18 @@ export async function enviarCompanero(cuerpo: Record<string, unknown>) {
 
 const CONFITES = { particle: "✨", size: 14 };
 
-/** «¿Quién te va a acompañar?»: los 6 personajes y el nombre */
+/** «¿Quién te va a acompañar?»: los héroes y el nombre */
 export function ElegirCompanero({ actual, nombreActual, etiqueta }: { actual: Personaje | null; nombreActual?: string; etiqueta: string }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [elegido, setElegido] = useState<Personaje | null>(actual);
+  const [elegido, setElegido] = useState<Personaje | null>(personajeGuardado(actual));
   const [nombre, setNombre] = useState(actual ? (nombreActual ?? "") : "");
   const [ocupado, setOcupado] = useState(false);
 
-  function elegir(p: (typeof PERSONAJES)[number]) {
+  function elegir(p: (typeof PERSONAJES_ELEGIBLES)[number]) {
     setElegido(p.clave);
     // El nombre sugerido acompaña al personaje mientras no escriba uno propio
-    if (!nombre || PERSONAJES.some((x) => x.nombreSugerido === nombre)) setNombre(p.nombreSugerido);
+    if (!nombre || PERSONAJES_ELEGIBLES.some((x) => x.nombre === nombre)) setNombre(p.nombre);
   }
 
   async function guardar() {
@@ -65,7 +65,7 @@ export function ElegirCompanero({ actual, nombreActual, etiqueta }: { actual: Pe
           <DialogDescription>Tu compañero te recibe cada día, celebra tus logros y crece con tu nivel. Podés cambiarlo cuando quieras.</DialogDescription>
         </DialogHeader>
         <div role="radiogroup" aria-label="Compañero" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {PERSONAJES.map((p) => (
+          {PERSONAJES_ELEGIBLES.map((p) => (
             <button
               key={p.clave}
               type="button"
@@ -85,7 +85,8 @@ export function ElegirCompanero({ actual, nombreActual, etiqueta }: { actual: Pe
                   respaldo={<span aria-hidden className="self-center text-5xl">{p.emoji}</span>}
                 />
               </span>
-              <span className="font-medium">{p.titulo}</span>
+              <span className="font-medium">{p.nombre}</span>
+              <span className="text-xs">{p.titulo}</span>
               <span className="text-xs text-muted-foreground">{p.descripcion}</span>
             </button>
           ))}

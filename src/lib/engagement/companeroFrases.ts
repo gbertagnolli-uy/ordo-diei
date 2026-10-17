@@ -1,13 +1,14 @@
 // Voz de cada compañero (vault/COMPANERO_HEROE.md, lane 220): misma mecánica, distinta personalidad.
 // `{n}` es el nombre de quien lo cuida. Sin géneros para el usuario («me alegra verte», no «contento»).
 // Siempre cálidas: ni culpa por faltar ni cuentas de días perdidos.
-import type { Personaje, Situacion } from "./companero.ts";
+import { datosDePersonaje, esPersonaje, type Personaje, type Situacion, type Voz } from "./companero.ts";
 
 export type TipoDeFrase = Situacion | "toque";
 
 type Frases = Record<TipoDeFrase, readonly [string, string, string?]>;
 
-export const FRASES: Record<Personaje, Frases> = {
+// Cada héroe habla con una de estas voces (`voz` en PERSONAJES)
+export const FRASES: Record<Voz, Frases> = {
   monja: {
     manana: ["Buen día, {n}. Que Dios te bendiga y te acompañe hoy.", "Qué linda mañana para empezar con una oración, {n}."],
     tarde: ["Acá estoy, {n}. Un día a la vez, con calma.", "Cada cosa bien hecha es una oración, {n}."],
@@ -71,7 +72,8 @@ export const primerNombre = (nombre: string) => nombre.trim().split(/\s+/)[0] ||
  * Elige una frase según una semilla (el día y la persona, para que el saludo del día sea siempre el mismo
  * al volver a entrar, pero cambie de un día a otro). Con una semilla aleatoria sirve para los toques.
  */
-export function fraseDe(personaje: Personaje, tipo: TipoDeFrase, nombre: string, semilla: number): string {
-  const opciones = FRASES[personaje][tipo].filter((f): f is string => !!f);
+export function fraseDe(personaje: Personaje | Voz, tipo: TipoDeFrase, nombre: string, semilla: number): string {
+  const voz = esPersonaje(personaje) ? datosDePersonaje(personaje).voz : personaje;
+  const opciones = FRASES[voz][tipo].filter((f): f is string => !!f);
   return opciones[Math.abs(Math.floor(semilla)) % opciones.length].replaceAll("{n}", primerNombre(nombre));
 }
