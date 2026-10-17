@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Calendar, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2 } from "lucide-react";
+import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,38 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SelectorNivel } from "@/components/SelectorNivel";
+import Stepper, { Step } from "@/components/Stepper";
+import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
+import { toast } from "@/lib/toast";
+
+// Rampa verde → ámbar → rojo, derivada de los tokens success/warning/destructive de cada tema.
+const COLORES_DIFICULTAD = {
+  claro: ["#2D6A2E", "#557224", "#7C7A1A", "#A48210", "#B27809", "#A55C06", "#984103", "#8B2500"],
+  oscuro: ["#6AAF6A", "#85AD61", "#A0AB59", "#BBA950", "#CB9E4A", "#CE8947", "#D17543", "#D46040"],
+};
+const NIVELES_DIFICULTAD = DIFICULTADES.map((d) => ({ valor: d, etiqueta: DIFICULTAD_INFO[d].etiqueta }));
+
+// El Stepper toma los tokens de la app (cambian solos con la clase .dark), no sus temas propios.
+const tinta = (pct: number) => `color-mix(in srgb, var(--foreground) ${pct}%, transparent)`;
+const STEPPER_VARS = {
+  "--stepper-ink": "var(--foreground)",
+  "--stepper-muted": tinta(60),
+  "--stepper-faint": tinta(25),
+  "--stepper-ring": tinta(30),
+  "--stepper-well": "var(--muted)",
+  "--stepper-track": tinta(12),
+  "--stepper-tile": "var(--card)",
+  "--stepper-tile-edge": "var(--border)",
+  "--stepper-tile-highlight": "transparent",
+  "--stepper-tile-shadow": `0 1px 3px ${tinta(22)}`,
+  "--stepper-solid": "var(--primary)",
+  "--stepper-solid-ink": "var(--primary-foreground)",
+  "--stepper-hover": "brightness(0.95)",
+  "--stepper-hover-fill": tinta(5),
+  "--stepper-solid-hover": "brightness(0.9)",
+  "--stepper-press": "brightness(0.85)",
+} as React.CSSProperties;
 
 interface TaskFormProps {
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[];
@@ -25,9 +57,11 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   const isEdit = !!task;
   const [loading, setLoading] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>(
-    isEdit ? [task.asignadoId] : []
+    isEdit ? (task.asignadoIds ?? [task.asignadoId]) : []
   );
   const [isGlobal, setIsGlobal] = useState(false);
+  const [intervalo, setIntervalo] = useState<string>(String(isEdit ? (task.intervalo ?? 1) : 1));
+  const [anclajeCompletado, setAnclajeCompletado] = useState<boolean>(isEdit ? Boolean(task.anclaCompletado) : false);
   const [tipoRecurrencia, setTipoRecurrencia] = useState(
     isEdit ? (task.tipoRecurrencia || "Unica") : "Unica"
   );
@@ -36,6 +70,22 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
     isEdit && task.checklistItems ? task.checklistItems.map((ci: any) => ci.texto) : []
   );
   const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [dificultad, setDificultad] = useState<Dificultad>(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT);
+  const [minutos, setMinutos] = useState<string>(isEdit ? String(Math.floor(task.tiempoEjecucionEstimadoSeg / 60)) : "");
+
+  const [titulo, setTitulo] = useState<string>(isEdit ? task.titulo : "");
+  const [descripcion, setDescripcion] = useState<string>(isEdit ? (task.descripcion || "") : "");
+  const [fecha, setFecha] = useState<string>(isEdit && task.fechaVencimiento ? new Date(task.fechaVencimiento).toISOString().split("T")[0] : "");
+  const [hora, setHora] = useState<string>(() => {
+    if (!isEdit || !task.horaEjecucion) return "";
+    const d = new Date(task.horaEjecucion);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  });
+  const [diaSemana, setDiaSemana] = useState<string>(String(isEdit ? (task.diaDeLaSemana ?? 1) : 1));
+  const [diaMes, setDiaMes] = useState<string>(String(isEdit ? (task.diaDelMes ?? 1) : 1));
+  const [ordinal, setOrdinal] = useState<string>(String(isEdit ? (task.ordinalSemana ?? 1) : 1));
+  const [sorpresa, setSorpresa] = useState<boolean>(isEdit ? Boolean(task.isSurpriseEligible) : false);
+  const [paso, setPaso] = useState(1);
 
   const toggleUser = (id: number) => {
     setSelectedUserIds(prev =>
@@ -43,121 +93,105 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!isEdit && !isGlobal && selectedUserIds.length === 0) {
-      alert("Selecciona al menos un usuario o activa la tarea global.");
-      return;
+  /** Devuelve el mensaje de error del paso, o null si está completo. */
+  const validar = (n: number): string | null => {
+    if (n === 1 && !titulo.trim()) return "Ponele un título a la tarea.";
+    if (n === 2 && !isGlobal && selectedUserIds.length === 0) return "Selecciona al menos un usuario o activa la tarea global.";
+    if (n === 3) {
+      if (tipoRecurrencia === "Unica" && !fecha) return "Elegí la fecha límite.";
+      if (!hora) return "Elegí la hora límite.";
     }
+    if (n === 4 && !(Number(minutos) > 0)) return "Ingresá el tiempo estimado en minutos.";
+    return null;
+  };
+
+  const enviar = async () => {
     setLoading(true);
+    const comun = {
+      titulo,
+      descripcion,
+      tiempoMinutos: minutos,
+      fecha: tipoRecurrencia === "Unica" ? fecha : null,
+      hora,
+      tipoRecurrencia,
+      diaDelMes: tipoRecurrencia === "Mensual_Fecha" ? diaMes : null,
+      ordinalSemana: tipoRecurrencia === "Mensual_Ordinal" ? ordinal : null,
+      diaDeLaSemana: tipoRecurrencia === "Semanal" || tipoRecurrencia === "Mensual_Ordinal" ? diaSemana : null,
+      intervalo,
+      anclaCompletado: anclajeCompletado,
+      generaRecompensa: true,
+      dificultad,
+      isSurpriseEligible: sorpresa,
+      checklistItems: isChecklist ? checklistItems.filter(i => i.trim()) : [],
+    };
 
-    const formData = new FormData(e.currentTarget);
-    
-    if (isEdit) {
-      // EDIT mode
-      const body: any = {
-        titulo: formData.get("titulo"),
-        descripcion: formData.get("descripcion"),
-        asignadoId: formData.get("asignadoId") || task.asignadoId,
-        tiempoMinutos: formData.get("tiempoMinutos"),
-        fecha: formData.get("fecha"),
-        hora: formData.get("hora"),
-        tipoRecurrencia: tipoRecurrencia,
-        diaDelMes: formData.get("diaDelMes"),
-        ordinalSemana: formData.get("ordinalSemana"),
-        diaDeLaSemana: formData.get("diaDeLaSemana"),
-        generaRecompensa: true,
-        isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
-      };
-
-      try {
+    try {
+      if (isEdit) {
         const res = await fetch(`/api/tasks/${task.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ ...comun, asignadoIds: selectedUserIds }),
         });
-
         if (res.ok) {
           if (onSuccess) onSuccess();
           else window.location.reload();
         } else {
-          alert("Error al actualizar la tarea");
+          toast.error("Error al actualizar la tarea");
         }
-      } catch {
-        alert("Error de conexión");
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // CREATE mode
-      const body = {
-        titulo: formData.get("titulo"),
-        descripcion: formData.get("descripcion"),
-        asignadoIds: isGlobal ? [] : selectedUserIds,
-        tiempoMinutos: formData.get("tiempoMinutos"),
-        fecha: formData.get("fecha"),
-        hora: formData.get("hora"),
-        tipoRecurrencia: tipoRecurrencia,
-        diaDelMes: formData.get("diaDelMes"),
-        ordinalSemana: formData.get("ordinalSemana"),
-        diaDeLaSemana: formData.get("diaDeLaSemana"),
-        generaRecompensa: true,
-        isSurpriseEligible: formData.get("isSurpriseEligible") === "on",
-        esGlobal: isGlobal,
-        isChecklist: isChecklist,
-        checklistItems: isChecklist ? checklistItems.filter(i => i.trim()) : [],
-      };
-
-      try {
+      } else {
         const res = await fetch("/api/tasks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ ...comun, asignadoIds: isGlobal ? [] : selectedUserIds, esGlobal: isGlobal, isChecklist }),
         });
-
         if (res.ok) {
           if (onSuccess) onSuccess();
           else if (!isModal) router.push("/dashboard");
           else window.location.reload();
         } else {
           const error = await res.json();
-          alert(error.error || "Error al crear la tarea");
+          toast.error(error.error || "Error al crear la tarea");
         }
-      } catch {
-        alert("Hubo un error de conexión");
-      } finally {
-        setLoading(false);
+      }
+    } catch {
+      toast.error(isEdit ? "Error de conexión" : "Hubo un error de conexión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Edición: formulario de una sola página. Alta: pasos del Stepper.
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    for (let n = 1; n <= 4; n++) {
+      const error = validar(n);
+      if (error) {
+        toast.error(error);
+        return;
       }
     }
+    void enviar();
   };
 
   const fid = (name: string) => `task-${name}-${isEdit ? "edit" : "new"}`;
 
-  return (
-    <form onSubmit={handleSubmit} className={isModal ? "max-h-[70vh] overflow-y-auto px-1" : ""}>
-      <FieldGroup>
+  const seccionQue = (
+    <FieldGroup>
         <Field>
           <FieldLabel htmlFor={fid("titulo")}>Título de la Tarea *</FieldLabel>
-          <Input id={fid("titulo")} required name="titulo" type="text" defaultValue={isEdit ? task.titulo : ""} placeholder="Ej: Recoger los juguetes" />
+          <Input id={fid("titulo")} required name="titulo" type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Recoger los juguetes" />
         </Field>
 
         <Field>
           <FieldLabel htmlFor={fid("descripcion")}>Descripción (Opcional)</FieldLabel>
-          <Textarea id={fid("descripcion")} name="descripcion" rows={3} defaultValue={isEdit ? (task.descripcion || "") : ""} placeholder="Asegúrate de dejar la caja ordenada..." />
+          <Textarea id={fid("descripcion")} name="descripcion" rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Asegúrate de dejar la caja ordenada..." />
         </Field>
 
-        {/* EDIT: Single user selector */}
-        {isEdit && (
-          <Field>
-            <FieldLabel htmlFor={fid("asignado")}>Asignado a</FieldLabel>
-            <NativeSelect id={fid("asignado")} required name="asignadoId" defaultValue={task.asignadoId} className="w-full">
-              {users.map((u) => (
-                <NativeSelectOption key={u.id} value={u.id}>{u.nombre} ({u.rolFamiliar.replace("_", " ")})</NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-        )}
+    </FieldGroup>
+  );
 
+  const seccionQuien = (
+    <FieldGroup>
         {/* CREATE: Global toggle */}
         {!isEdit && (
           <Field orientation="horizontal" className="rounded-lg border bg-muted/40 p-4">
@@ -170,8 +204,8 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           </Field>
         )}
 
-        {/* CREATE: Multi-select users */}
-        {!isEdit && !isGlobal && (
+        {/* Multi-select users (crear y editar) */}
+        {!isGlobal && (
           <FieldSet>
             <FieldLegend variant="label" className="flex items-center gap-2">
               <Users className="size-4 text-primary" /> Asignar a (selecciona uno o más) *
@@ -208,6 +242,11 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           </FieldSet>
         )}
 
+    </FieldGroup>
+  );
+
+  const seccionCuando = (
+    <FieldGroup>
         {/* Recurrence */}
         <Field className="rounded-lg border bg-muted/40 p-4">
           <FieldLabel htmlFor={fid("recurrencia")} className="flex items-center gap-2"><RefreshCw className="size-4 text-primary" /> Recurrencia (Auto-Regeneración)</FieldLabel>
@@ -228,7 +267,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           {tipoRecurrencia === "Semanal" && (
             <Field className="mt-2">
               <FieldLabel htmlFor={fid("dia-semana")}>Día de la semana</FieldLabel>
-              <NativeSelect id={fid("dia-semana")} name="diaDeLaSemana" defaultValue={isEdit ? (task.diaDeLaSemana ?? 1) : 1} className="w-full">
+              <NativeSelect id={fid("dia-semana")} name="diaDeLaSemana" value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)} className="w-full">
                     <NativeSelectOption value="1">Lunes</NativeSelectOption>
                     <NativeSelectOption value="2">Martes</NativeSelectOption>
                     <NativeSelectOption value="3">Miércoles</NativeSelectOption>
@@ -243,7 +282,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
           {tipoRecurrencia === "Mensual_Fecha" && (
             <Field className="mt-2">
               <FieldLabel htmlFor={fid("dia-mes")}>Día del mes (1-31)</FieldLabel>
-              <Input id={fid("dia-mes")} name="diaDelMes" type="number" min="1" max="31" defaultValue={isEdit ? (task.diaDelMes ?? 1) : 1} />
+              <Input id={fid("dia-mes")} name="diaDelMes" type="number" min="1" max="31" value={diaMes} onChange={(e) => setDiaMes(e.target.value)} />
             </Field>
           )}
 
@@ -251,7 +290,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
             <div className="mt-2 grid grid-cols-2 gap-3">
               <Field>
                 <FieldLabel htmlFor={fid("ordinal")}>Orden</FieldLabel>
-                <NativeSelect id={fid("ordinal")} name="ordinalSemana" defaultValue={isEdit ? (task.ordinalSemana ?? 1) : 1} className="w-full">
+                <NativeSelect id={fid("ordinal")} name="ordinalSemana" value={ordinal} onChange={(e) => setOrdinal(e.target.value)} className="w-full">
                   <NativeSelectOption value="1">Primer</NativeSelectOption>
                   <NativeSelectOption value="2">Segundo</NativeSelectOption>
                   <NativeSelectOption value="3">Tercer</NativeSelectOption>
@@ -261,7 +300,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
               </Field>
               <Field>
                 <FieldLabel htmlFor={fid("ordinal-dia")}>Día</FieldLabel>
-                <NativeSelect id={fid("ordinal-dia")} name="diaDeLaSemana" defaultValue={isEdit ? (task.diaDeLaSemana ?? 1) : 1} className="w-full">
+                <NativeSelect id={fid("ordinal-dia")} name="diaDeLaSemana" value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)} className="w-full">
                     <NativeSelectOption value="1">Lunes</NativeSelectOption>
                     <NativeSelectOption value="2">Martes</NativeSelectOption>
                     <NativeSelectOption value="3">Miércoles</NativeSelectOption>
@@ -273,28 +312,72 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
               </Field>
             </div>
           )}
+
+          {tipoRecurrencia !== "Unica" && (
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <Field>
+                <FieldLabel htmlFor={fid("intervalo")}>Repetir cada</FieldLabel>
+                <Input id={fid("intervalo")} type="number" min="1" max="365" value={intervalo} onChange={(e) => setIntervalo(e.target.value)} />
+                <FieldDescription>{tipoRecurrencia === "Diaria" ? "días" : tipoRecurrencia === "Semanal" ? "semanas" : "meses"}</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={fid("ancla")}>Contar desde</FieldLabel>
+                <NativeSelect id={fid("ancla")} value={anclajeCompletado ? "completado" : "calendario"} onChange={(e) => setAnclajeCompletado(e.target.value === "completado")} className="w-full">
+                  <NativeSelectOption value="calendario">El calendario</NativeSelectOption>
+                  <NativeSelectOption value="completado">Cuando la completo</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+            </div>
+          )}
         </Field>
 
-        {/* Time and Limits Row */}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {tipoRecurrencia === 'Unica' && (
             <Field>
               <FieldLabel htmlFor={fid("fecha")} className="flex items-center gap-2"><Calendar className="size-4 text-primary" /> Fecha Límite</FieldLabel>
-              <Input id={fid("fecha")} required name="fecha" type="date" defaultValue={isEdit && task.fechaVencimiento ? new Date(task.fechaVencimiento).toISOString().split('T')[0] : ""} />
+              <Input id={fid("fecha")} required name="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
             </Field>
           )}
 
           <Field>
             <FieldLabel htmlFor={fid("hora")} className="flex items-center gap-2"><Clock className="size-4 text-primary" /> Hora Límite</FieldLabel>
-            <Input id={fid("hora")} required name="hora" type="time" defaultValue={isEdit && task.horaEjecucion ? (() => { const d = new Date(task.horaEjecucion); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })() : ""} />
+            <Input id={fid("hora")} required name="hora" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
           </Field>
 
-          <Field className={tipoRecurrencia === 'Unica' ? "sm:col-span-2" : ""}>
-            <FieldLabel htmlFor={fid("tiempo")} className="flex items-center gap-2"><Clock className="size-4 text-primary" /> Tiempo Estimado (Minutos) *</FieldLabel>
-            <Input id={fid("tiempo")} required name="tiempoMinutos" type="number" min="1" defaultValue={isEdit ? Math.floor(task.tiempoEjecucionEstimadoSeg / 60) : ""} placeholder="Ej: 15" />
-          </Field>
         </div>
 
+    </FieldGroup>
+  );
+
+  const seccionEsfuerzo = (
+    <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor={fid("tiempo")} className="flex items-center gap-2"><Clock className="size-4 text-primary" /> Tiempo Estimado (Minutos) *</FieldLabel>
+          <Input id={fid("tiempo")} required name="tiempoMinutos" type="number" min="1" value={minutos} onChange={(e) => setMinutos(e.target.value)} placeholder="Ej: 15" />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor={fid("dificultad")} className="flex items-center gap-2"><Trophy className="size-4 text-primary" /> Dificultad</FieldLabel>
+          <SelectorNivel
+            id={fid("dificultad")}
+            niveles={NIVELES_DIFICULTAD}
+            valor={dificultad}
+            onChange={setDificultad}
+            colores={COLORES_DIFICULTAD}
+            ariaLabel="Dificultad de la tarea"
+          />
+          <FieldDescription>
+            {Number(minutos) > 0
+              ? `Recompensa base: ${puntosBase(dificultad, Number(minutos) * 60)} pts (más bonos de racha, checklist y horario).`
+              : "Ingresá el tiempo estimado para ver la recompensa base."}
+          </FieldDescription>
+        </Field>
+    </FieldGroup>
+  );
+
+  const seccionExtras = (
+    <FieldGroup>
         {/* Checklist */}
         <div className="rounded-lg border bg-muted/40 p-4">
           <Field orientation="horizontal">
@@ -352,16 +435,63 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
         {/* Surprise toggle */}
         <Field orientation="horizontal" className="rounded-lg border bg-muted/40 p-4">
-          <Checkbox name="isSurpriseEligible" id={`recompensa_${isEdit ? 'edit' : 'new'}`} defaultChecked={isEdit ? task.isSurpriseEligible : false} />
+          <Checkbox name="isSurpriseEligible" id={`recompensa_${isEdit ? 'edit' : 'new'}`} checked={sorpresa} onCheckedChange={(v) => setSorpresa(v === true)} />
           <FieldLabel htmlFor={`recompensa_${isEdit ? 'edit' : 'new'}`} className="flex items-center gap-2 text-secondary">
             <Gift className="size-4" /> ¿Genera recompensas sorpresa al completarse?
           </FieldLabel>
         </Field>
 
-        <Button disabled={loading} type="submit" size="lg" className="w-full">
-          {loading ? (isEdit ? "Guardando..." : "Creando...") : (isEdit ? "Guardar Cambios" : "Registrar Tarea")}
-        </Button>
-      </FieldGroup>
-    </form>
+    </FieldGroup>
+  );
+
+  if (isEdit) {
+    return (
+      <form onSubmit={handleSubmit} className={isModal ? "max-h-[70vh] overflow-y-auto px-1" : ""}>
+        <FieldGroup>
+          {seccionQue}
+          {seccionQuien}
+          {seccionCuando}
+          {seccionEsfuerzo}
+          {seccionExtras}
+          <Button disabled={loading} type="submit" size="lg" className="w-full">
+            {loading ? "Guardando..." : "Guardar Cambios"}
+          </Button>
+        </FieldGroup>
+      </form>
+    );
+  }
+
+  const PASOS = 5;
+  return (
+    <Stepper
+      step={paso}
+      onStepChange={setPaso}
+      linear
+      frame={false}
+      width="100%"
+      style={STEPPER_VARS}
+      backButtonText="Atrás"
+      nextButtonText="Siguiente"
+      completeButtonText={loading ? "Creando..." : "Registrar Tarea"}
+      nextButtonProps={{
+        disabled: loading,
+        onClick: (e) => {
+          const error = validar(paso);
+          if (error) {
+            e.preventDefault();
+            toast.error(error);
+          } else if (paso === PASOS) {
+            e.preventDefault();
+            void enviar();
+          }
+        },
+      }}
+    >
+      <Step title="Qué">{seccionQue}</Step>
+      <Step title="Quién">{seccionQuien}</Step>
+      <Step title="Cuándo">{seccionCuando}</Step>
+      <Step title="Esfuerzo">{seccionEsfuerzo}</Step>
+      <Step title="Extras">{seccionExtras}</Step>
+    </Stepper>
   );
 }

@@ -20,7 +20,7 @@ export default async function PinesServerPage() {
 
   return (
     <>
-      <PageHeader group="Administración" title="Restablecer PIN" />
+      <PageHeader group="Administración" groupHref="/dashboard/admin" title="Restablecer PIN" />
       <ClientPage users={usuarios} />
     </>
   );

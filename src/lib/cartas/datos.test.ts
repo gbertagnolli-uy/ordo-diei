@@ -98,7 +98,7 @@ test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos re
   // Test 1: Compra con puntos insuficientes es rechazada
   await assert.rejects(
     async () => {
-      await comprarSobre(usuarioA.id, "meditacion"); // Meditación cuesta 40, usuarioA tiene 20
+      await comprarSobre(usuarioA.id, "meditacion"); // Meditación cuesta 120, usuarioA tiene 20
     },
     { message: /Puntos insuficientes/ }
   );
@@ -106,12 +106,12 @@ test("Lane 31: Datos, transacciones atómicas, D13 y eventos en base de datos re
   // Test 2: Compra válida con puntos descuenta saldo y asigna fragmentos atómicamente
   await prisma.usuario.update({
     where: { id: usuarioA.id },
-    data: { availablePoints: 200 },
+    data: { availablePoints: 300 },
   });
 
   const resSobre = await comprarSobre(usuarioA.id, "meditacion");
-  assert.equal(resSobre.puntosGastados, 40);
-  assert.equal(resSobre.nuevoSaldoPuntos, 160);
+  assert.equal(resSobre.puntosGastados, 120);
+  assert.equal(resSobre.nuevoSaldoPuntos, 180);
   assert.ok(resSobre.cartasAfectadas.length >= 1);
 
   // Verificar movimiento en el libro mayor

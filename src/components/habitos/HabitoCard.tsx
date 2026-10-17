@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, MoreHorizontal, Undo2, X, AlertCircle } from "lucide-react";
+import { Check, ChevronDown, Clock, MoreHorizontal, Undo2, X, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
@@ -54,14 +54,14 @@ export function HabitoCard({
     marca: Marca | null,
     nota?: string,
     paginas?: number
-  ) => Promise<{ puntos: number; xp: number } | void>;
+  ) => Promise<{ puntos: number; xp: number; pendiente?: boolean } | void>;
   onAjustar?: (habito: EstadoHabito) => void;
   onDejarDePracticar?: (habitoId: number) => void;
   onEditar?: (habito: EstadoHabito) => void;
   onArchivar?: (habitoId: number) => void;
   onCargarLibro?: (habitoId: number, datos: DatosLibro) => Promise<boolean>;
 }) {
-  const [recompensaFlotante, setRecompensaFlotante] = useState<{ puntos: number; xp: number } | null>(null);
+  const [recompensaFlotante, setRecompensaFlotante] = useState<{ puntos: number; xp: number; pendiente?: boolean } | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [motivoSeleccionado, setMotivoSeleccionado] = useState<"justificado" | "no" | null>(null);
   const [motivoTexto, setMotivoTexto] = useState("");
@@ -87,7 +87,9 @@ export function HabitoCard({
     setMotivoSeleccionado(tipo);
     setMotivoTexto(texto);
     setNotaOpcional("");
-    setPopoverOpen(true);
+    // Esperar a que el menú termine de cerrarse; si no, su cierre (foco/click
+    // afuera) cierra el popover en el mismo instante.
+    setTimeout(() => setPopoverOpen(true), 150);
   };
 
   const confirmarConNota = () => {
@@ -108,7 +110,9 @@ export function HabitoCard({
       {/* Toast flotante de recompensas */}
       {recompensaFlotante && (
         <div className="animate-in fade-in slide-in-from-top-2 absolute -top-3 right-4 z-10 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-md">
-          {h.categoria === "oracion"
+          {recompensaFlotante.pendiente
+            ? "Esperando aprobación"
+            : h.categoria === "oracion"
             ? `+${recompensaFlotante.xp} XP`
             : `+${recompensaFlotante.puntos} pts · +${recompensaFlotante.xp} XP`}
         </div>
@@ -132,7 +136,9 @@ export function HabitoCard({
         </div>
 
         <CardAction className="flex items-center gap-1.5">
-          {!h.programadoHoy ? (
+          {!h.aprobado ? (
+            <Badge variant="outline" className="text-muted-foreground">Esperando aprobación</Badge>
+          ) : !h.programadoHoy ? (
             <Badge variant="outline" className="text-muted-foreground">Hoy libre</Badge>
           ) : (
             <Badge variant={h.etapa === "retomando" ? "outline" : "secondary"}>
@@ -226,7 +232,11 @@ export function HabitoCard({
       </CardContent>
 
       <CardFooter className="gap-2 pt-0">
-        {h.hoy ? (
+        {!h.aprobado ? (
+          <span className="flex flex-1 items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="size-4" /> Un padre tiene que aprobar que empieces este hábito.
+          </span>
+        ) : h.hoy ? (
           <>
             <span
               className={cn(
@@ -243,6 +253,7 @@ export function HabitoCard({
                 ? esLibro && h.paginasHoy
                   ? `Hecho hoy · ${h.paginasHoy} ${h.paginasHoy === 1 ? "página" : "páginas"}`
                   : "Hecho hoy"
+                + (h.hoyPendiente ? " · esperando aprobación" : "")
                 : justificado
                 ? "Omitido hoy"
                 : "No realizado"}
@@ -280,7 +291,11 @@ export function HabitoCard({
                   No pude <ChevronDown className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent
+                align="end"
+                className="w-52"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
                 <DropdownMenuLabel>Omitir (justificado)</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => abrirNotaPopover("justificado", "Enfermedad")}>
                   Enfermedad
@@ -299,20 +314,17 @@ export function HabitoCard({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Popover para nota opcional */}
-            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-              <PopoverTrigger asChild>
-                <span className="sr-only">Agregar nota</span>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 space-y-3" align="end">
-                <div className="space-y-1">
-                  <h4 className="font-medium text-sm">
+            {/* Modal centrado para nota opcional */}
+            <Dialog open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <DialogContent className="sm:max-w-sm space-y-3" showCloseButton={false}>
+                <DialogHeader>
+                  <DialogTitle className="text-sm">
                     {motivoSeleccionado === "justificado" ? "Omitir día" : "Marcar como no realizado"}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
+                  </DialogTitle>
+                  <DialogDescription className="text-xs">
                     Motivo: <span className="font-semibold">{motivoTexto}</span>. Podés sumar una nota opcional:
-                  </p>
-                </div>
+                  </DialogDescription>
+                </DialogHeader>
                 <Textarea
                   placeholder="Nota u observación (opcional)..."
                   value={notaOpcional}
@@ -328,8 +340,8 @@ export function HabitoCard({
                     Confirmar
                   </Button>
                 </div>
-              </PopoverContent>
-            </Popover>
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </CardFooter>

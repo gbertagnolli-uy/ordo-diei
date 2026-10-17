@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import { Newsreader, Noto_Serif, Geist_Mono, Geist } from "next/font/google";
-import Script from "next/script";
+import type { Metadata, Viewport } from "next";
+import { Newsreader, Noto_Serif, Geist_Mono, Geist, Parisienne } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/Toaster";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -19,6 +19,13 @@ const notoSerif = Noto_Serif({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+// Letra manuscrita de la evaluación en el pergamino del premio sorpresa
+const parisienne = Parisienne({
+  variable: "--font-parisienne",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -27,6 +34,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Ordo Diei",
   description: "Sancta rutina diei ad animam fovendam et Deum laudandum.",
+  // App instalable en la pantalla de inicio (lane 204)
+  appleWebApp: { capable: true, title: "Ordo Diei", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#502300",
 };
 
 export default function RootLayout({
@@ -37,24 +51,18 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={cn("h-full", "antialiased", newsreader.variable, notoSerif.variable, geistMono.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", newsreader.variable, notoSerif.variable, parisienne.variable, geistMono.variable, "font-sans", geist.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <Script id="ordo-diei-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `
-          (function(){
-            try {
-              var s = JSON.parse(localStorage.getItem('ordo-diei-theme') || '{}');
-              if (s && s.state && s.state.darkMode === true) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
-            } catch(e) { document.documentElement.classList.remove('dark'); }
-          })();
-        `}} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=JSON.parse(localStorage.getItem('ordo-diei-theme')||'{}');if(s&&s.state&&s.state.darkMode===true){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){document.documentElement.classList.remove('dark')}})();`,
+          }}
+        />
         <ThemeProvider>
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

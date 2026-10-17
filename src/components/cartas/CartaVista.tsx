@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, type ReactNode } from "react";
 import HoloCard from "@/components/HoloCard";
 import { Lock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,10 +30,12 @@ export interface CartaVistaProps {
   onClick?: () => void;
   prioridad?: boolean;
   mostrarTitulo?: boolean; // solo modo holo: nombre y grado bajo la carta
+  blancoYNegro?: boolean; // solo modo holo: carta sin consagrar (arte B/N y candado, el foil sigue)
+  reverso?: ReactNode; // solo modo holo: contenido del dorso; con él, un click o tap voltea la carta
 }
 
 // Holo igual para todas las cartas (lane 49)
-const INTENSIDAD_HOLO = 0.5;
+const INTENSIDAD_HOLO = 0.34;
 const GLARE_HOLO = 0.5;
 
 // Colores de marco y brillo por rareza
@@ -97,7 +99,10 @@ export function CartaVista({
   className,
   onClick,
   mostrarTitulo = true,
+  blancoYNegro = false,
+  reverso,
 }: CartaVistaProps) {
+  const [volteada, setVolteada] = useState(false);
   const estilo = ESTILOS_RAREZA[carta.rareza];
   const imagenActual = urlArte(imagenDeGrado(carta, modo === "bloqueada" ? 0 : grado));
   const esGloriosa = grado === 4;
@@ -149,7 +154,7 @@ export function CartaVista({
   if (modo === "holo") {
     return (
       <div
-        role="img"
+        role={reverso ? "group" : "img"}
         aria-label={`${carta.nombre} · ${TEXTOS_CARTAS.grados[grado]}`}
         onClick={onClick}
         className={cn(
@@ -167,7 +172,7 @@ export function CartaVista({
         )}
 
         {/* Componente HoloCard oficial */}
-        <div className="relative">
+        <div className="relative max-w-full">
           <HoloCard
             image={imagenActual}
             alt={carta.nombre}
@@ -176,12 +181,24 @@ export function CartaVista({
             glare={GLARE_HOLO}
             width={ancho}
             foilColor={estilo.foilColor}
+            grayscale={blancoYNegro}
             frame={4}
             radius={12}
-            className="shadow-2xl"
+            back={reverso}
+            onFlipChange={setVolteada}
           />
 
+          {/* Candado e insignias son del frente: se ocultan con la carta de espaldas */}
+          {blancoYNegro && !volteada && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="rounded-full bg-black/50 p-3 text-stone-100 shadow-lg">
+                <Lock className="size-6" />
+              </div>
+            </div>
+          )}
+
           {/* Insignia de Grado */}
+          {!blancoYNegro && !volteada && (
           <div className="absolute top-3 left-3 pointer-events-none">
             <span
               className={cn(
@@ -197,7 +214,9 @@ export function CartaVista({
               {TEXTOS_CARTAS.gradosRomanos[grado]}
             </span>
           </div>
+          )}
 
+          {!volteada && (
           <div className="absolute top-3 right-3 pointer-events-none">
             <span
               className={cn(
@@ -209,6 +228,7 @@ export function CartaVista({
               {TEXTOS_CARTAS.rarezas[carta.rareza]}
             </span>
           </div>
+          )}
         </div>
 
         {/* Título y etiqueta de Grado */}

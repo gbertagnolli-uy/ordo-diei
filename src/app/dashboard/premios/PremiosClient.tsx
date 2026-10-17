@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Gift, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Plus, Gift, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,9 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empt
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/lib/toast";
+import { AdminItem } from "@/components/AdminItem";
+import { ValesAdmin } from "@/components/recompensas/ValesAdmin";
 
 interface Premio {
   id: number;
@@ -22,6 +24,7 @@ interface Premio {
   diaDelMes: number | null;
   tareasRequeridasIds: string;
   activo: boolean;
+  esVale: boolean;
   createdAt: string | null;
   updatedAt: string | null;
   entregas: Entrega[];
@@ -51,6 +54,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
     diaEntregaSemana: 1,
     diaDelMes: 1,
     tareasRequeridasIds: [] as number[],
+    esVale: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -71,27 +75,17 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || "Error al guardar");
+        toast.error(data.error || "Error al guardar");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar este premio? Los premios entregados no se pueden eliminar.")) return;
-    
-    try {
-      const res = await fetch(`/api/premios/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Error al eliminar");
-      }
-    } catch {
-      alert("Error de conexión");
-    }
+  const eliminarPremio = async (id: number) => {
+    const res = await fetch(`/api/premios/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al eliminar");
+    window.location.reload();
   };
 
   const openEditModal = (premio: Premio) => {
@@ -103,6 +97,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
       diaEntregaSemana: premio.diaEntregaSemana || 1,
       diaDelMes: premio.diaDelMes || 1,
       tareasRequeridasIds: JSON.parse(premio.tareasRequeridasIds || "[]"),
+      esVale: premio.esVale,
     });
     setShowModal(true);
   };
@@ -146,38 +141,34 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-4">
           <CardTitle className="text-base">{premios.length} {premios.length === 1 ? "premio" : "premios"}</CardTitle>
           <Button
-            onClick={() => { setEditingPremio(null); setFormData({ titulo: "", cantidad: 0, tipoFrecuencia: "Semanal", diaEntregaSemana: 1, diaDelMes: 1, tareasRequeridasIds: [] }); setShowModal(true); }}
+            onClick={() => { setEditingPremio(null); setFormData({ titulo: "", cantidad: 0, tipoFrecuencia: "Semanal", diaEntregaSemana: 1, diaDelMes: 1, tareasRequeridasIds: [], esVale: false }); setShowModal(true); }}
           >
             <Plus /> Nuevo Premio
           </Button>
         </CardHeader>
 
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="pl-6">Premio</TableHead>
-              <TableHead>Frecuencia</TableHead>
-              <TableHead>Tareas Requeridas</TableHead>
-              <TableHead>Entregas</TableHead>
-              <TableHead className="pr-6 text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {premios.map(premio => (
-              <TableRow key={premio.id}>
-                <TableCell className="pl-6">
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Gift className="size-4" />
-                    </span>
-                    <div>
-                      <div className="font-medium">{premio.titulo}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">x{premio.cantidad}</div>
-                    </div>
+        <div className="divide-y">
+          {premios.map(premio => (
+            <AdminItem
+              key={premio.id}
+              enabled
+              nombre={`el premio «${premio.titulo}»`}
+              aviso="Los premios ya entregados no se pueden eliminar."
+              onEdit={() => openEditModal(premio)}
+              onDelete={() => eliminarPremio(premio.id)}
+            >
+              <div className="grid items-start gap-3 px-6 py-3 md:grid-cols-[minmax(0,1.4fr)_1fr_1fr_1fr]">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Gift className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{premio.esVale ? `Vale por ${premio.titulo}` : premio.titulo}</div>
+                    <div className="text-xs text-muted-foreground tabular-nums">{premio.esVale ? "Vale" : `x${premio.cantidad}`}</div>
                   </div>
-                </TableCell>
-                <TableCell className="text-sm">{getFrecuenciaLabel(premio.tipoFrecuencia,premio.diaEntregaSemana,premio.diaDelMes)}</TableCell>
-                <TableCell>
+                </div>
+                <div className="text-sm">{getFrecuenciaLabel(premio.tipoFrecuencia,premio.diaEntregaSemana,premio.diaDelMes)}</div>
+                <div>
                   <div className="flex flex-wrap gap-1">
                     {getTareasRequeridas(premio.tareasRequeridasIds).length > 0 ? (
                       getTareasRequeridas(premio.tareasRequeridasIds).slice(0, 2).map((t, i) => (
@@ -190,8 +181,8 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                       <Badge variant="secondary">+{getTareasRequeridas(premio.tareasRequeridasIds).length - 2}</Badge>
                     )}
                   </div>
-                </TableCell>
-                <TableCell>
+                </div>
+                <div>
                   <div className="flex flex-col gap-1">
                     {premio.entregas.length > 0 ? (
                       premio.entregas.slice(0, 3).map(e => (
@@ -207,21 +198,11 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                       <span className="text-xs font-medium text-primary">+{premio.entregas.length - 3} más</span>
                     )}
                   </div>
-                </TableCell>
-                <TableCell className="pr-6 text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(premio)} aria-label="Editar">
-                      <Edit2 />
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(premio.id)} aria-label="Eliminar" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                      <Trash2 />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+            </AdminItem>
+          ))}
+        </div>
         {premios.length === 0 && (
           <Empty className="py-16">
             <EmptyHeader>
@@ -232,7 +213,9 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
         )}
       </Card>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingPremio ? "Editar Premio" : "Nuevo Premio"} width="md">
+      <ValesAdmin />
+
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingPremio ? "Editar Premio" : "Nuevo Premio"} ayuda={<p>Un premio se entrega cuando se cumplen las tareas requeridas en la frecuencia elegida. Un «vale» es un premio que se canjea por algo concreto (por ejemplo, una salida).</p>} width="md">
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
@@ -242,9 +225,18 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                 type="text"
                 value={formData.titulo}
                 onChange={e => setFormData({ ...formData, titulo: e.target.value })}
-                placeholder="ej. Monedas de Oro"
+                placeholder={formData.esVale ? "ej. un helado en la heladería" : "ej. Monedas de Oro"}
                 required
               />
+            </Field>
+
+            <Field orientation="horizontal">
+              <Checkbox
+                id="premio-es-vale"
+                checked={formData.esVale}
+                onCheckedChange={checked => setFormData({ ...formData, esVale: checked === true, cantidad: checked === true ? 1 : formData.cantidad })}
+              />
+              <FieldLabel htmlFor="premio-es-vale" className="font-normal">Es un vale (voucher canjeable: el título sigue a «Vale por…»)</FieldLabel>
             </Field>
 
             <Field>

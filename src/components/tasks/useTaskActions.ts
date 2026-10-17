@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useEffect, useRef, useState } from "react";
 import { useModalStore } from "@/store/modalStore";
 
@@ -79,10 +80,10 @@ export function useTaskActions(task: any) {
       }
       const errData = await res.json().catch(() => ({}));
       console.error("Error al completar:", res.status, errData);
-      alert(errData.error || "Error al completar la tarea. Revisa tu conexión o intenta nuevamente.");
+      toast.error(errData.error || "Error al completar la tarea. Revisa tu conexión o intenta nuevamente.");
     } catch (e: any) {
       console.error("Error de conexión:", e);
-      alert("Error de conexión: " + e.message);
+      toast.error("Error de conexión: " + e.message);
     } finally {
       setLoading(false);
     }
@@ -104,10 +105,10 @@ export function useTaskActions(task: any) {
       }
       const errData = await res.json().catch(() => ({}));
       console.error("Error:", res.status, errData);
-      alert(errData.error || "Error al marcar como no realizada. Intenta nuevamente.");
+      toast.error(errData.error || "Error al marcar como no realizada. Intenta nuevamente.");
     } catch (e: any) {
       console.error("Error de conexión:", e);
-      alert("Error de conexión: " + e.message);
+      toast.error("Error de conexión: " + e.message);
     } finally {
       setLoading(false);
     }

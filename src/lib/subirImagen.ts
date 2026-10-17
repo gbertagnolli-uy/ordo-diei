@@ -21,6 +21,14 @@ export async function comprimirImagen(file: File, perfil: PerfilImagen = "genera
 }
 
 export type ImagenSubida = { url: string; bytes: number; ancho: number; alto: number };
+export type ArchivoEstudioSubido = {
+  url: string;
+  bytes: number;
+  ancho: number | null;
+  alto: number | null;
+  categoria: "imagen" | "pdf" | "epub" | "documento";
+  nombre: string;
+};
 
 /** Comprime y sube una imagen; devuelve la respuesta JSON del endpoint o lanza un error con su mensaje */
 export async function subirImagen<T = ImagenSubida>(
@@ -35,4 +43,16 @@ export async function subirImagen<T = ImagenSubida>(
   const json = await res.json().catch(() => null);
   if (!res.ok) throw new Error(json?.error ?? "No se pudo subir la imagen");
   return json as T;
+}
+
+/** Sube una imagen o un documento de estudio (PDF, ePub, Word, etc.) al servidor */
+export async function subirArchivoEstudio(file: File): Promise<ArchivoEstudioSubido> {
+  const fd = new FormData();
+  const procesado = file.type.startsWith("image/") ? await comprimirImagen(file, "general") : file;
+  fd.append("file", procesado, file.name);
+  fd.append("modo", "estudio");
+  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.error ?? "No se pudo subir el archivo");
+  return json as ArchivoEstudioSubido;
 }

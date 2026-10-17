@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -14,10 +14,11 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ETAPAS } from "@/lib/habitos/catalogo";
 import type { EstadoUsuario, HabitoVista } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
+import JellyRadio, { type JellyRadioItem } from "@/components/JellyRadio";
+import { toast } from "@/lib/toast";
 
 export interface Miembro {
   id: number;
@@ -55,6 +56,16 @@ export function FamiliaHabitos({
   const [fecha, setFecha] = useState(hoy);
   const [presentes, setPresentes] = useState<number[]>(miembros.map((m) => m.id));
 
+  const itemsJelly = useMemo<JellyRadioItem[]>(
+    () =>
+      oracionesJuntas.map((h) => ({
+        value: String(h.id),
+        label: h.nombre,
+        icon: <HabitoIcon name={h.icono} className="size-4 shrink-0" />,
+      })),
+    [oracionesJuntas]
+  );
+
   const togglePresente = (id: number) => {
     setPresentes((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -79,9 +90,10 @@ export function FamiliaHabitos({
         const json = await res.json().catch(() => ({}));
         throw new Error(json.error || "Error al registrar en familia");
       }
+      toast.success("Hábito colectivo registrado correctamente");
       router.refresh();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Error de conexión");
+      toast.error(e instanceof Error ? e.message : "Error de conexión");
     } finally {
       setOcupado(false);
     }
@@ -112,19 +124,25 @@ export function FamiliaHabitos({
           <FieldGroup>
             <Field>
               <FieldLabel>¿Qué rezamos o hicimos juntos?</FieldLabel>
-              <ToggleGroup
-                type="single"
-                value={String(habitoSeleccionadoId)}
-                onValueChange={(val) => val && setHabitoSeleccionadoId(Number(val))}
-                className="flex-wrap justify-start gap-1.5"
-              >
-                {oracionesJuntas.map((h) => (
-                  <ToggleGroupItem key={h.id} value={String(h.id)} size="sm" className="gap-1.5">
-                    <HabitoIcon name={h.icono} className="size-3.5" />
-                    <span>{h.nombre}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
+              {oracionesJuntas.length > 0 ? (
+                <div className="w-full overflow-x-auto py-2 -my-2">
+                  <JellyRadio
+                    items={itemsJelly}
+                    value={String(habitoSeleccionadoId)}
+                    onChange={(val) => setHabitoSeleccionadoId(Number(val))}
+                    size="md"
+                    chipColor="var(--surface-container)"
+                    activeColor="var(--primary)"
+                    textColor="var(--on-surface)"
+                    activeTextColor="var(--on-primary)"
+                    ariaLabel="Oraciones colectivas"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No hay hábitos de oración colectivos disponibles en el catálogo.
+                </p>
+              )}
             </Field>
 
             <Field>
@@ -165,7 +183,7 @@ export function FamiliaHabitos({
             Registra como hecho en la fecha seleccionada para los presentes.
           </div>
           <Button
-            disabled={ocupado || presentes.length === 0}
+            disabled={ocupado || presentes.length === 0 || !habitoSeleccionadoId}
             onClick={handleRegistrarJuntos}
           >
             {ocupado ? <Spinner /> : <Users className="size-4" />} Registrar para todos

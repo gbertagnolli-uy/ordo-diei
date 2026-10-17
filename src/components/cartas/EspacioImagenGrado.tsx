@@ -30,7 +30,6 @@ export function EspacioImagenGrado({
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
   const [avisoPeso, setAvisoPeso] = useState<string | null>(null);
   const [infoOptimizada, setInfoOptimizada] = useState<string | null>(null);
-  const [avisoRatio, setAvisoRatio] = useState<string | null>(null);
   const [modoUrlManual, setModoUrlManual] = useState<boolean>(false);
   const [urlInput, setUrlInput] = useState<string>(urlActual || "");
 
@@ -44,7 +43,6 @@ export function EspacioImagenGrado({
     setErrorValidacion(null);
     setAvisoPeso(null);
     setInfoOptimizada(null);
-    setAvisoRatio(null);
 
     // 1. Validar tipo (.webp, .png, .jpg, .avif)
     const extension = file.name.split(".").pop()?.toLowerCase();
@@ -57,40 +55,28 @@ export function EspacioImagenGrado({
     // 2. El peso no se valida acá: la imagen se optimiza al subir (perfil "carta": 1200 px, ≤ 300 KB)
     const pesoOriginalKb = Math.round(file.size / 1024);
 
-    // 3. Validar proporción retrato 63:88 (~0.716)
-    const objectUrl = URL.createObjectURL(file);
-    const img = new window.Image();
-    img.src = objectUrl;
-    img.onload = async () => {
-      URL.revokeObjectURL(objectUrl);
-      const ratio = img.width / img.height;
-      const ratioEsperado = 63 / 88; // ~0.7159
-      if (Math.abs(ratio - ratioEsperado) > 0.08) {
-        setAvisoRatio(`Proporción ${img.width}×${img.height} difiere del formato retrato 63:88.`);
-      }
-
-      // 4. Subir vía /api/upload
-      try {
-        setSubiendo(true);
-        const data = await subirImagen(file, "/api/upload", "carta");
-        if (data.url) {
-          onImagenCambiada(data.url);
-          setUrlInput(data.url);
-          const finalKb = Math.round(data.bytes / 1024);
-          // Aviso solo si aun optimizada supera los 300 KB; si no, informa cuánto se achicó
-          if (finalKb > 300) {
-            setAvisoPeso(`Aun optimizada pesa ${finalKb} KB (supera los 300 KB recomendados).`);
-          } else {
-            setInfoOptimizada(`Optimizada: ${pesoOriginalKb} KB → ${finalKb} KB (${data.ancho}×${data.alto}).`);
-          }
+    // 3. La proporción retrato 63:88 no se valida: el servidor recorta la imagen al subirla
+    // 4. Subir vía /api/upload
+    try {
+      setSubiendo(true);
+      const data = await subirImagen(file, "/api/upload", "carta");
+      if (data.url) {
+        onImagenCambiada(data.url);
+        setUrlInput(data.url);
+        const finalKb = Math.round(data.bytes / 1024);
+        // Aviso solo si aun optimizada supera los 300 KB; si no, informa cuánto se achicó
+        if (finalKb > 300) {
+          setAvisoPeso(`Aun optimizada pesa ${finalKb} KB (supera los 300 KB recomendados).`);
+        } else {
+          setInfoOptimizada(`Optimizada: ${pesoOriginalKb} KB → ${finalKb} KB (${data.ancho}×${data.alto}).`);
         }
-      } catch (err) {
-        console.error("Error al subir imagen:", err);
-        setErrorValidacion("Error al subir la imagen al servidor.");
-      } finally {
-        setSubiendo(false);
       }
-    };
+    } catch (err) {
+      console.error("Error al subir imagen:", err);
+      setErrorValidacion("Error al subir la imagen al servidor.");
+    } finally {
+      setSubiendo(false);
+    }
   };
 
   const aplicarUrlManual = () => {
@@ -107,7 +93,6 @@ export function EspacioImagenGrado({
     setErrorValidacion(null);
     setAvisoPeso(null);
     setInfoOptimizada(null);
-    setAvisoRatio(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -265,13 +250,6 @@ export function EspacioImagenGrado({
             <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <AlertTriangle className="h-3 w-3 shrink-0" />
               {avisoPeso}
-            </p>
-          )}
-
-          {avisoRatio && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3 shrink-0" />
-              {avisoRatio}
             </p>
           )}
         </div>

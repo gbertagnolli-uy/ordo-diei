@@ -1,5 +1,6 @@
 "use client";
 
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Check, ChevronRight, ChevronLeft } from "lucide-react";
@@ -39,6 +40,7 @@ import {
 import type { EstadoHabito, HabitoVista } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
 import { subirImagen } from "@/lib/subirImagen";
+import { toast } from "@/lib/toast";
 
 const ANCLAS_SUGERIDAS: Record<Franja, string[]> = {
   manana: ["Al levantarme", "Antes del desayuno", "Después de desayunar", "Antes de salir"],
@@ -318,8 +320,11 @@ export function HabitoDialog({
 
       onClose();
       router.refresh();
+      if (!esPadre && !habitoAEditar) {
+        toast.success("¡Listo! Un padre tiene que aprobar que empieces este hábito. Cuando lo haga, ya vas a poder marcarlo.");
+      }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al procesar solicitud");
+      toast.error(err instanceof Error ? err.message : "Error al procesar solicitud");
     } finally {
       setGuardando(false);
     }
@@ -400,7 +405,7 @@ export function HabitoDialog({
                   try {
                     setNuevaImagen((await subirImagen(file)).url);
                   } catch (err) {
-                    alert(err instanceof Error ? err.message : "No se pudo subir la imagen");
+                    toast.error(err instanceof Error ? err.message : "No se pudo subir la imagen");
                   } finally {
                     setSubiendoImagen(false);
                   }
@@ -699,12 +704,21 @@ export function HabitoDialog({
     </div>
   );
 
+  const tituloAyuda = habitoAEditar ? "Editar el hábito" : paso === 1 ? "Paso 1: elegir hábitos" : "Paso 2: la receta";
+  const textoAyuda = habitoAEditar ? (
+    <p>Cambiá el nombre, el ancla o la imagen. Los cambios los ve toda la familia.</p>
+  ) : paso === 1 ? (
+    <p>Elegí hasta dos hábitos para empezar o creá uno nuevo; los que crees quedan disponibles para toda la familia. Empezar con pocos ayuda a sostenerlos.</p>
+  ) : (
+    <p>Definí cuándo se hace: el «ancla» es lo que ya hacés y dispara el hábito (por ejemplo, «al levantarme»), y los días son los de la semana en que corresponde.</p>
+  );
+
   if (isDesktop) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">{dialogTitle}</DialogTitle>
+            <DialogTitle className="flex items-center gap-1.5 font-heading">{dialogTitle} <AyudaIcono titulo={tituloAyuda}>{textoAyuda}</AyudaIcono></DialogTitle>
             <DialogDescription>{dialogDesc}</DialogDescription>
           </DialogHeader>
 
@@ -723,7 +737,7 @@ export function HabitoDialog({
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[92dvh] overflow-hidden px-4">
         <DrawerHeader className="text-left">
-          <DrawerTitle className="font-heading">{dialogTitle}</DrawerTitle>
+          <DrawerTitle className="flex items-center gap-1.5 font-heading">{dialogTitle} <AyudaIcono titulo={tituloAyuda}>{textoAyuda}</AyudaIcono></DrawerTitle>
           <DrawerDescription>{dialogDesc}</DrawerDescription>
         </DrawerHeader>
 

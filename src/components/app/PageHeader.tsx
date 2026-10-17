@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -11,11 +12,14 @@ import {
 // Cabecera de cada página dentro del SidebarInset: trigger, ruta y acciones a la derecha.
 export function PageHeader({
   group,
+  groupHref,
   title,
   subtitle,
   children,
 }: {
   group?: string;
+  /** Si se da, el grupo del breadcrumb es un enlace. */
+  groupHref?: string;
   title: string;
   subtitle?: string;
   children?: React.ReactNode;
@@ -28,7 +32,9 @@ export function PageHeader({
         <BreadcrumbList className="flex-nowrap">
           {group && (
             <>
-              <BreadcrumbItem className="hidden md:block">{group}</BreadcrumbItem>
+              <BreadcrumbItem className="hidden md:block">
+                {groupHref ? <Link href={groupHref} className="transition-colors hover:text-foreground">{group}</Link> : group}
+              </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
             </>
           )}

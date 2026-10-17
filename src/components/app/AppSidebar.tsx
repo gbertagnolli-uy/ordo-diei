@@ -1,18 +1,25 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   AlarmClock,
   CalendarCheck,
+  CalendarClock,
   CheckCircle2,
+  Church,
   Gift,
+  GraduationCap,
   History,
   Hourglass,
   Layers,
   ListTodo,
   Network,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
   Sprout,
   Timer,
 } from "lucide-react";
@@ -34,7 +41,7 @@ import { isDueToday, isLate, taskGroup } from "@/components/tasks/taskUtils";
 
 export type SectionId = "todo" | "progress" | "review" | "done" | "today" | "late" | "history" | "family";
 
-export const NAV: { heading: string; items: { id: SectionId; label: string; icon: React.ElementType }[] }[] = [
+export const NAV: { heading: string; items: { id: SectionId; label: string; icon: LucideIcon }[] }[] = [
   {
     heading: "Mis tareas",
     items: [
@@ -75,6 +82,7 @@ export function AppSidebar({
   habitosPendientes,
   premiosPendientes,
   hayEventosCartas,
+  companeroPendiente,
 }: {
   currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
   tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
@@ -84,10 +92,14 @@ export function AppSidebar({
   premiosPendientes?: number | null;
   /** Cartas por reclamar: fiesta, cumpleaños, bienvenida o un grado alcanzado */
   hayEventosCartas?: boolean;
+  /** Todavía no eligió compañero o subió de nivel y no lo festejó */
+  companeroPendiente?: boolean;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const active = pathname === "/dashboard" ? sectionFromParams(params) : null;
+  const esPadre = currentUser?.rolFamiliar === "Padre" || currentUser?.rolFamiliar === "Madre";
+  const enAdmin = !!pathname && ["/dashboard/admin", "/dashboard/tasks/new", "/dashboard/users", "/dashboard/premios", "/dashboard/cartas/admin", "/dashboard/admin/tienda"].some((r) => pathname.startsWith(r));
 
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = { todo: 0, progress: 0, review: 0, done: 0, today: 0, late: 0 };
@@ -126,6 +138,18 @@ export function AppSidebar({
           <SidebarGroupLabel>Rutina</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/dashboard/horarios" || pathname === "/dashboard/rutina"}
+                tooltip="Horarios y Rutina"
+              >
+                <Link href="/dashboard/horarios">
+                  <CalendarClock />
+                  <span>Horarios</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/habitos"} tooltip="Mis hábitos">
                 <Link href="/dashboard/habitos">
                   <Sprout />
@@ -135,6 +159,14 @@ export function AppSidebar({
               {!!habitosPendientes && <SidebarMenuBadge className="tabular-nums">{habitosPendientes}</SidebarMenuBadge>}
             </SidebarMenuItem>
             <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/homeschooling")} tooltip="Estudio">
+                <Link href="/dashboard/homeschooling">
+                  <GraduationCap />
+                  <span>Estudio</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/mis-premios"} tooltip="Mis premios">
                 <Link href="/dashboard/mis-premios">
                   <Gift />
@@ -142,6 +174,19 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
               {!!premiosPendientes && <SidebarMenuBadge className="tabular-nums">{premiosPendientes}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Liturgia</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/liturgia")} tooltip="Liturgia">
+                <Link href="/dashboard/liturgia">
+                  <Church />
+                  <span>Liturgia</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
@@ -159,8 +204,42 @@ export function AppSidebar({
                 <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Cartas para reclamar" />
               )}
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/companero")} tooltip="Compañero">
+                <Link href="/dashboard/companero">
+                  <Sparkles />
+                  <span>Compañero</span>
+                </Link>
+              </SidebarMenuButton>
+              {companeroPendiente && (
+                <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Tu compañero te espera" />
+              )}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/tienda")} tooltip="Tienda">
+                <Link href="/dashboard/tienda">
+                  <ShoppingCart />
+                  <span>Tienda</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+        {esPadre && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administración</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={enAdmin} tooltip="Panel de administración">
+                  <Link href="/dashboard/admin">
+                    <ShieldCheck />
+                    <span>Panel de administración</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
         {NAV.map((group) => (
           <SidebarGroup key={group.heading}>
             <SidebarGroupLabel>{group.heading}</SidebarGroupLabel>
@@ -201,5 +280,5 @@ function Clock() {
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
-  return <span className="truncate font-mono text-xs text-sidebar-foreground/60 tabular-nums">{time}</span>;
+  return <span className="truncate font-mono text-xs text-sidebar-foreground/80 tabular-nums">{time}</span>;
 }

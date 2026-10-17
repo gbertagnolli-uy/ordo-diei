@@ -6,16 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, X, Clock, User, AlertCircle } from "lucide-react";
+import { toast } from "@/lib/toast";
+import { SwipeRow } from "@/components/SwipeRow";
 
 export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
-  const [loadingId, setLoadingId] = useState<number | null>(null);
-  const waitingTasks = tasks.filter(t => t.estado === "Esperando_Aprobacion");
+  const router = useRouter();
+  // Tareas ya resueltas: desaparecen al instante, sin esperar a que la página se actualice
+  const [resolved, setResolved] = useState<Set<number>>(new Set());
+  const waitingTasks = tasks.filter(t => t.estado === "Esperando_Aprobacion" && !resolved.has(t.id));
 
   if (waitingTasks.length === 0) return null;
 
   const handleAction = async (taskId: number, action: "approve" | "reject") => {
-    setLoadingId(taskId);
+    const setHidden = (hidden: boolean) =>
+      setResolved(prev => {
+        const next = new Set(prev);
+        if (hidden) next.add(taskId); else next.delete(taskId);
+        return next;
+      });
+
+    setHidden(true);
     try {
       const res = await fetch(`/api/tasks/${taskId}/${action}`, {
         method: "POST",
@@ -24,20 +36,19 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
       if (res.ok) {
         const data = await res.json();
         if (data.leveledUp) {
-          // Store level up info in sessionStorage so it survives reload
           sessionStorage.setItem("levelUpNotification", JSON.stringify({
             userName: data.userName,
             newLevel: data.newLevel
           }));
         }
-        window.location.reload();
+        router.refresh();
       } else {
-        alert(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
+        setHidden(false);
+        toast.error(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la tarea`);
       }
     } catch {
-      alert("Error de conexión");
-    } finally {
-      setLoadingId(null);
+      setHidden(false);
+      toast.error("Error de conexión");
     }
   };
 
@@ -51,7 +62,11 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
       </CardHeader>
       <ItemGroup className="gap-0 divide-y">
         {waitingTasks.map((task) => (
-          <div key={task.id}>
+          <SwipeRow
+            key={task.id}
+            left={{ label: "Aprobar", icon: <Check className="size-5" />, color: "var(--success)", onColor: "var(--on-success)", onCommit: () => handleAction(task.id, "approve") }}
+            right={{ label: "Rechazar", icon: <X className="size-5" />, color: "var(--destructive)", onColor: "#fff", onCommit: () => handleAction(task.id, "reject") }}
+          >
             <Item className="flex-col items-start rounded-none px-6 py-3 sm:flex-row sm:items-center">
               <ItemMedia>
                 <Avatar className="size-10 rounded-lg">
@@ -73,15 +88,15 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
                 )}
               </ItemContent>
               <ItemActions className="self-end sm:self-center">
-                <Button variant="ghost" disabled={loadingId !== null} onClick={() => handleAction(task.id, "reject")} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                  <X /> {loadingId === task.id ? "..." : "Rechazar"}
+                <Button variant="ghost" onClick={() => handleAction(task.id, "reject")} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <X /> Rechazar
                 </Button>
-                <Button disabled={loadingId !== null} onClick={() => handleAction(task.id, "approve")} className="bg-[var(--success)] text-[var(--on-success)] hover:bg-[var(--success-container)]">
-                  <Check /> {loadingId === task.id ? "..." : "Aprobar"}
+                <Button onClick={() => handleAction(task.id, "approve")} className="bg-[var(--success)] text-[var(--on-success)] hover:bg-[var(--success-container)]">
+                  <Check /> Aprobar
                 </Button>
               </ItemActions>
             </Item>
-          </div>
+          </SwipeRow>
         ))}
       </ItemGroup>
     </Card>

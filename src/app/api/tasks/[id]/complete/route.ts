@@ -3,6 +3,12 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { puntosBase } from "@/lib/recompensaTarea";
+import { estrellasPorRacha } from "@/lib/cartas/racha";
+import { puedeCompletarTarea } from "@/lib/tareas/permisos";
+import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
+import { haySancion } from "@/lib/comportamiento/sancionServer";
+import { AVISO_MITAD, mitad } from "@/lib/comportamiento/sancion";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -25,10 +31,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     }
 
+    if (!puedeCompletarTarea({ id: Number(session.user.id), rolFamiliar: session.user.rolFamiliar }, task)) {
+      return NextResponse.json({ error: "Solo quien tiene asignada la tarea (o un padre) puede completarla" }, { status: 403 });
+    }
+
     if (task.estado === "Completada" || task.estado === "Aprobada" || task.estado === "Esperando_Aprobacion") {
       console.warn(`[API/Complete] Tarea ${taskId} ya estaba en estado ${task.estado}`);
       return NextResponse.json({ error: "La tarea ya fue completada o está en revisión" }, { status: 400 });
     }
+
+    // Homeschooling: la Tarea de un día lectivo exige haber hecho sus lecciones
+    const motivoHs = await motivoBloqueoTarea(taskId);
+    if (motivoHs) return NextResponse.json({ error: motivoHs }, { status: 400 });
 
     // Business Rule: Checklist completion is COMPUTED (100% required)
     if (task.isChecklist && task.checklistItems.length > 0) {
@@ -82,7 +96,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
     let isNewStreak = false;
     let newStreakDays = asignado?.streakDays || 0;
-    const awardedStar = false;
 
     const todayDate = new Date();
     todayDate.setUTCHours(0, 0, 0, 0);
@@ -124,7 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let timeBonus = 0;
 
     if (task.generaPuntosYRecompensa) {
-      actualBasePoints = Math.max(10, Math.floor((task.tiempoEjecucionEstimadoSeg || 0) / 60));
+      actualBasePoints = puntosBase(task.dificultad, task.tiempoEjecucionEstimadoSeg);
 
       // Streak bonus: +2 points per streak day, max +20 points
       actualStreakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
@@ -156,16 +169,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
       }
 
-      if (awardedStar) {
-        feedback += " ¡Ganaste 1 Estrella por tu racha de 7 días!";
-      }
     } else {
       feedback = "Tarea marcada como realizada. No genera puntos.";
     }
 
 
     let wonSurprise = false;
-    let earnedStars = 0;
+    // 1 estrella cada 7 días de racha (vault/ECONOMIA_CARTAS.md §8): la racha solo sube al cambiar de día
+    let earnedStars = isNewStreak ? estrellasPorRacha(asignado?.streakDays ?? 0, newStreakDays) : 0;
+
+    // Día con sanción (vault/LANE_200_SANCION_Y_ENGAGEMENT.md): puntos y estrellas valen la mitad
+    if (await haySancion(prisma, task.asignadoId, now)) {
+      if (rewardPoints > 0 || earnedStars > 0) feedback += ` ${AVISO_MITAD}`;
+      rewardPoints = mitad(rewardPoints);
+      earnedStars = mitad(earnedStars);
+    }
+    if (earnedStars > 0) {
+      feedback += ` ¡Ganaste ${earnedStars} ${earnedStars === 1 ? "Estrella" : "Estrellas"} por tu racha de ${newStreakDays} días!`;
+    }
 
     // Transacción: actualizamos la tarea y los puntos bloqueados del usuario
     await prisma.$transaction([
@@ -189,6 +210,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             increment: rewardPoints
           },
           streakDays: newStreakDays,
+          stars: { increment: earnedStars },
           lastTaskCompletedDate: now,
           surprises: {
             increment: wonSurprise ? 1 : 0
@@ -197,6 +219,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }),
       registrarAccion(prisma, { tareaId: taskId, actorId: session.user.id, estadoAnterior: task.estado, estadoNuevo: "Esperando_Aprobacion", duracionSesionSeg: cleanElapsed })
     ]);
+
+    // Anclaje al completado: la regla de la serie cuenta desde esta acción del usuario
+    const reglaId = task.parentTaskId ?? task.id;
+    await prisma.tarea.updateMany({ where: { id: reglaId, anclaCompletado: true }, data: { anclaFecha: now } });
 
     // Recalcular porcentaje de éxito del usuario
     await updateUserCompletionPercentage(task.asignadoId);
@@ -212,6 +238,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
+      earnedStars,
       isHappyHour
     });
   } catch (error) {

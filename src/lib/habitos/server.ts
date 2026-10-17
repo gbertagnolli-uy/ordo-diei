@@ -7,6 +7,7 @@ import {
   CATALOGO,
   CLAVE_LIBRO,
   DIAS_TODOS,
+  LIMITES_HIJOS,
   MAX_PAGINAS_DIA,
   MAX_PAGINAS_LIBRO,
   RECOMPENSA,
@@ -28,6 +29,8 @@ import {
   type Evento,
 } from "./engine.ts";
 import { puedeEditarHabito } from "./permisos.ts";
+import { haySancion } from "../comportamiento/sancionServer.ts";
+import { mitad } from "../comportamiento/sancion.ts";
 import { claveDeUrl } from "../archivos.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
@@ -114,6 +117,8 @@ export type HabitoVista = {
   creador: { id: number; nombre: string } | null;
   puedeEditar: boolean;
   recomendado: boolean;
+  /** Creado por un hijo y esperando aprobación: solo lo ve su creador */
+  pendiente: boolean;
 };
 
 export type LibroVista = {
@@ -137,6 +142,10 @@ export type EstadoHabito = EstadoMotor & {
   creadorId: number | null;
   imagen: string | null;
   activo: boolean;
+  /** false = empezar este hábito espera aprobación de un padre */
+  aprobado: boolean;
+  /** El "hecho" de hoy espera aprobación: todavía no suma puntos ni XP */
+  hoyPendiente: boolean;
   /** Solo en "Leer un libro": libro en curso, último terminado y páginas registradas hoy */
   libro: LibroVista | null;
   libroTerminado: { titulo: string } | null;
@@ -161,7 +170,8 @@ const ORDEN_FRANJAS: Record<Franja, number> = {
 export async function getCatalogo(usuarioId: number): Promise<HabitoVista[]> {
   await asegurarCatalogo();
   const habitos = await prisma.habito.findMany({
-    where: { archivado: false },
+    // Los hábitos que esperan aprobación solo los ve su creador
+    where: { archivado: false, OR: [{ aprobado: true }, { creadorId: usuarioId }] },
     include: {
       creador: { select: { id: true, nombre: true } },
     },
@@ -186,6 +196,7 @@ export async function getCatalogo(usuarioId: number): Promise<HabitoVista[]> {
       creador: h.creador,
       puedeEditar: puedeEditarHabito(h, usuarioId),
       recomendado: def?.recomendado ?? false,
+      pendiente: !h.aprobado,
     };
   });
 }
@@ -220,6 +231,7 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
         marca: true,
         paginas: true,
         libroId: true,
+        aprobado: true,
       },
     }),
     prisma.libro.findMany({
@@ -280,6 +292,8 @@ export async function getEstadosHabitos(usuarioIds: number[]): Promise<EstadoUsu
         creadorId: adopcion.habito.creadorId,
         imagen: adopcion.habito.imagen,
         activo: adopcion.activo,
+        aprobado: adopcion.aprobado,
+        hoyPendiente: regHabito.some((r) => aClave(r.fecha) === hoy && r.marca === "hecho" && !r.aprobado),
         libro: enCurso
           ? { id: enCurso.id, titulo: enCurso.titulo, paginas: enCurso.paginas, leidas, pct: progresoLibro(leidas, enCurso.paginas).pct }
           : null,
@@ -324,7 +338,9 @@ export async function crearHabito(
     icono?: string;
     imagen?: string | null;
     adoptar?: { dias?: number; ancla?: string };
-  }
+  },
+  /** Los hijos crean hábitos que esperan aprobación de un padre */
+  esPadre = false
 ) {
   const nombre = datos.nombre?.trim();
   const ancla = datos.ancla?.trim();
@@ -339,6 +355,13 @@ export async function crearHabito(
   if (!["oracion", "orden", "cuidado"].includes(datos.categoria)) throw new Error("Categoría no válida");
   if (!["manana", "tarde", "noche"].includes(datos.franja)) throw new Error("Franja no válida");
 
+  if (!esPadre) {
+    const pendientes = await prisma.habito.count({ where: { creadorId, aprobado: false, archivado: false } });
+    if (pendientes >= LIMITES_HIJOS.creacionesPendientes) {
+      throw new Error("Ya tenés un hábito esperando aprobación. Esperá a que lo revise un padre.");
+    }
+  }
+
   const habito = await prisma.habito.create({
     data: {
       clave: null,
@@ -352,6 +375,7 @@ export async function crearHabito(
       imagen,
       creadorId,
       archivado: false,
+      aprobado: esPadre,
     },
   });
 
@@ -365,6 +389,7 @@ export async function crearHabito(
         dias: datos.adoptar.dias ?? DIAS_TODOS,
         ancla: datos.adoptar.ancla?.trim() || null,
         activo: true,
+        aprobado: esPadre,
       },
     });
   }
@@ -383,11 +408,12 @@ export async function editarHabito(
     minimo: string | null;
     icono: string;
     imagen: string | null;
-  }>
+  }>,
+  esAdmin = false
 ) {
   const habito = await prisma.habito.findUnique({ where: { id } });
   if (!habito) throw new NoEncontradoError("Hábito no encontrado");
-  if (!puedeEditarHabito(habito, actorId)) throw new NoAutorizadoError("No tenés permiso para editar este hábito");
+  if (!puedeEditarHabito(habito, actorId, esAdmin)) throw new NoAutorizadoError("No tenés permiso para editar este hábito");
 
   const data: Record<string, unknown> = {};
   if (datos.nombre !== undefined) {
@@ -428,10 +454,10 @@ export async function editarHabito(
   });
 }
 
-export async function archivarHabito(actorId: number, id: number) {
+export async function archivarHabito(actorId: number, id: number, esAdmin = false) {
   const habito = await prisma.habito.findUnique({ where: { id } });
   if (!habito) throw new NoEncontradoError("Hábito no encontrado");
-  if (!puedeEditarHabito(habito, actorId)) throw new NoAutorizadoError("No tenés permiso para archivar este hábito");
+  if (!puedeEditarHabito(habito, actorId, esAdmin)) throw new NoAutorizadoError("No tenés permiso para archivar este hábito");
 
   await prisma.habito.update({
     where: { id },
@@ -455,15 +481,44 @@ export function validarLibro(datos: unknown): DatosLibro {
   return { titulo, paginas };
 }
 
+/**
+ * Empieza hábitos. Si quien pide no es padre, cada hábito que se empieza (o se retoma) queda
+ * esperando aprobación y no se puede superar el límite de hábitos a la vez.
+ */
 export async function adoptar(
   usuarioIds: number[],
-  items: { habitoId: number; dias?: number; ancla?: string; libro?: DatosLibro }[]
+  items: { habitoId: number; dias?: number; ancla?: string; libro?: DatosLibro }[],
+  esPadre = false
 ) {
   const hoy = hoyEnFamilia();
   const fechaHoy = aFecha(hoy);
 
   await prisma.$transaction(async (tx) => {
+    const habitos = await tx.habito.findMany({ where: { id: { in: items.map((i) => i.habitoId) } } });
+
     for (const usuarioId of usuarioIds) {
+      for (const item of items) {
+        const habito = habitos.find((h) => h.id === item.habitoId);
+        if (!habito || habito.archivado) throw new Error("El hábito no existe o está archivado");
+        if (!habito.aprobado && habito.creadorId !== usuarioId) {
+          throw new Error("Ese hábito todavía no fue aprobado");
+        }
+      }
+
+      if (!esPadre) {
+        const activos = await tx.habitoUsuario.findMany({
+          where: { usuarioId, activo: true, habito: { archivado: false } },
+          select: { habitoId: true },
+        });
+        const nuevos = new Set(items.map((i) => i.habitoId));
+        activos.forEach((a) => nuevos.add(a.habitoId));
+        if (nuevos.size > LIMITES_HIJOS.habitosActivos) {
+          throw new Error(
+            `Podés tener hasta ${LIMITES_HIJOS.habitosActivos} hábitos a la vez. Dejá de practicar alguno antes de sumar otro.`
+          );
+        }
+      }
+
       for (const item of items) {
         if (item.libro) {
           const enCurso = await tx.libro.findFirst({
@@ -490,6 +545,8 @@ export async function adoptar(
             where: { id: existente.id },
             data: {
               activo: true,
+              // Retomar un hábito que se había dejado también necesita aprobación
+              aprobado: existente.activo ? existente.aprobado : esPadre,
               dias: item.dias ?? existente.dias,
               ancla: item.ancla !== undefined ? item.ancla.trim() || null : existente.ancla,
             },
@@ -503,6 +560,7 @@ export async function adoptar(
               dias: item.dias ?? DIAS_TODOS,
               ancla: item.ancla?.trim() || null,
               activo: true,
+              aprobado: esPadre,
             },
           });
         }
@@ -514,12 +572,21 @@ export async function adoptar(
 export async function ajustarAdopcion(
   usuarioIds: number[],
   habitoId: number,
-  cambios: { dias?: number; ancla?: string | null; activo?: boolean }
+  cambios: { dias?: number; ancla?: string | null; activo?: boolean },
+  esPadre = false
 ) {
   const data: Record<string, unknown> = {};
   if (cambios.dias !== undefined) data.dias = cambios.dias;
   if (cambios.ancla !== undefined) data.ancla = cambios.ancla?.trim() || null;
   if (cambios.activo !== undefined) data.activo = cambios.activo;
+
+  // Retomar un hábito dejado necesita aprobación, igual que empezarlo
+  if (cambios.activo === true && !esPadre) {
+    await prisma.habitoUsuario.updateMany({
+      where: { usuarioId: { in: usuarioIds }, habitoId, activo: false },
+      data: { aprobado: false },
+    });
+  }
 
   await prisma.habitoUsuario.updateMany({
     where: {
@@ -537,10 +604,10 @@ export async function ajustarAdopcion(
  * "Un libro nuevo", o lo reabre si se deshizo lo que lo terminó (vault/HABITO_LIBRO.md D6).
  * Devuelve el título si el libro quedó terminado en esta llamada.
  */
-async function actualizarLibro(tx: Prisma.TransactionClient, libroId: number): Promise<string | null> {
+export async function actualizarLibro(tx: Prisma.TransactionClient, libroId: number): Promise<string | null> {
   const libro = await tx.libro.findUnique({ where: { id: libroId }, include: { recompensa: true } });
   if (!libro) return null;
-  const suma = await tx.registroHabito.aggregate({ where: { libroId }, _sum: { paginas: true } });
+  const suma = await tx.registroHabito.aggregate({ where: { libroId, aprobado: true }, _sum: { paginas: true } });
   const otroEnCurso = await tx.libro.count({
     where: { usuarioId: libro.usuarioId, habitoId: libro.habitoId, terminadoEn: null, id: { not: libroId } },
   });
@@ -610,7 +677,9 @@ export function calcularRecompensa(
   previo: { puntos: number; xp: number } | null,
   nuevaMarca: Marca | null,
   eventos: Evento[],
-  categoria: Categoria
+  categoria: Categoria,
+  /** Día con sanción (vault/LANE_200_SANCION_Y_ENGAGEMENT.md): puntos y XP valen la mitad */
+  conSancion = false
 ): { deltaPuntos: number; deltaXp: number; nuevoPuntos: number; nuevoXp: number } {
   const previoPuntos = previo?.puntos ?? 0;
   const previoXp = previo?.xp ?? 0;
@@ -627,6 +696,10 @@ export function calcularRecompensa(
     }
     nuevoXp = RECOMPENSA.xpDia + xpBono;
     nuevoPuntos = daPuntos(categoria) ? RECOMPENSA.puntosDia : 0;
+    if (conSancion) {
+      nuevoXp = mitad(nuevoXp);
+      nuevoPuntos = mitad(nuevoPuntos);
+    }
   }
 
   const deltaPuntos = nuevoPuntos - previoPuntos;
@@ -643,8 +716,11 @@ export async function registrar(input: {
   marca: Marca | null;
   nota?: string | null;
   paginas?: number | null;
-}): Promise<{ usuarioId: number; puntos: number; xp: number; libroTerminado: string | null }[]> {
-  const { actorId, usuarioIds, habitoId, fecha, marca, nota } = input;
+  /** Los "hecho" de quien no es padre esperan aprobación y no dan puntos ni XP hasta entonces */
+  esPadre?: boolean;
+}): Promise<{ usuarioId: number; puntos: number; xp: number; libroTerminado: string | null; pendiente: boolean }[]> {
+  const { actorId, usuarioIds, habitoId, fecha, marca, nota, esPadre = false } = input;
+  const pendiente = !esPadre && marca === "hecho";
   const fechaDb = aFecha(fecha);
   const hoy = hoyEnFamilia();
 
@@ -667,9 +743,16 @@ export async function registrar(input: {
   }
 
   return prisma.$transaction(async (tx) => {
-    const resultados: { usuarioId: number; puntos: number; xp: number; libroTerminado: string | null }[] = [];
+    const resultados: { usuarioId: number; puntos: number; xp: number; libroTerminado: string | null; pendiente: boolean }[] = [];
 
     for (const usuarioId of usuarioIds) {
+      const adopcionActual = await tx.habitoUsuario.findUnique({
+        where: { usuarioId_habitoId: { usuarioId, habitoId } },
+      });
+      if (adopcionActual && !adopcionActual.aprobado) {
+        throw new Error("Este hábito todavía espera aprobación para empezar");
+      }
+
       // 1. Obtener registro previo
       const previo = await tx.registroHabito.findUnique({
         where: {
@@ -681,9 +764,15 @@ export async function registrar(input: {
         },
       });
 
+      // Un "hecho" ya aprobado no vuelve a pedir aprobación al repetirse
+      if (pendiente && previo?.marca === "hecho" && previo.aprobado) {
+        resultados.push({ usuarioId, puntos: previo.puntos, xp: previo.xp, libroTerminado: null, pendiente: false });
+        continue;
+      }
+
       // 2. Si marca es 'hecho' y la fecha es hoy, simular reproducción para detectar ascenso/completo
       let eventos: Evento[] = [];
-      if (marca === "hecho" && fecha === hoy) {
+      if (marca === "hecho" && !pendiente && fecha === hoy) {
         const registrosUsuario = await tx.registroHabito.findMany({
           where: { usuarioId, habitoId },
           select: { fecha: true, marca: true },
@@ -719,9 +808,10 @@ export async function registrar(input: {
       // 3. Calcular recompensas
       const recompensa = calcularRecompensa(
         previo ? { puntos: previo.puntos, xp: previo.xp } : null,
-        marca,
+        pendiente ? null : marca,
         eventos,
-        categoria
+        categoria,
+        marca === "hecho" && !pendiente && (await haySancion(tx, usuarioId))
       );
 
       // 4. Modificar registro (en "Leer un libro", las páginas van al libro en curso)
@@ -763,6 +853,7 @@ export async function registrar(input: {
             registradoPorId: actorId,
             paginas,
             libroId,
+            aprobado: !pendiente,
           },
           update: {
             marca: marca,
@@ -772,6 +863,7 @@ export async function registrar(input: {
             registradoPorId: actorId,
             paginas,
             libroId,
+            aprobado: !pendiente,
           },
         });
       }
@@ -817,9 +909,11 @@ export async function registrar(input: {
         puntos: recompensa.nuevoPuntos,
         xp: recompensa.nuevoXp,
         libroTerminado,
+        pendiente,
       });
     }
 
     return resultados;
-  });
+    // Un hábito en familia hace varias consultas por persona contra una base remota: 5 s (el default) no alcanza
+  }, { maxWait: 10_000, timeout: 30_000 });
 }

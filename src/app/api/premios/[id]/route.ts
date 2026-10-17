@@ -77,6 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       diaDelMes,
       tareasRequeridasIds,
       activo,
+      esVale,
     } = body;
 
     const updateData: any = {};
@@ -87,6 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (diaDelMes !== undefined) updateData.diaDelMes = diaDelMes ? Number(diaDelMes) : null;
     if (tareasRequeridasIds !== undefined) updateData.tareasRequeridasIds = JSON.stringify(tareasRequeridasIds);
     if (activo !== undefined) updateData.activo = activo;
+    if (esVale !== undefined) updateData.esVale = esVale === true;
 
     const premio = await prisma.premio.update({
       where: { id: premioId },

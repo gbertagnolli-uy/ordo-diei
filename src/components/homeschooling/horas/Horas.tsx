@@ -1,0 +1,171 @@
+"use client";
+
+// Propio de Ordo: lista del mes de actividades fuera de pantalla (la página «Calendar» de Roost sin el calendario: el
+// calendario del plan de H1b ya muestra estas actividades).
+
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, Compass, FileBarChart, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { deleteEvent } from "@/lib/homeschooling/roost/services/event";
+import type { EventWithDetails } from "@/lib/homeschooling/roost/tipos";
+import { toast } from "@/lib/toast";
+import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader";
+import ActividadCard from "./ActividadCard";
+import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
+import { filtrar } from "@/lib/homeschooling/buscarTexto";
+import { AdminItem } from "@/components/AdminItem";
+import ActividadDetalle from "./ActividadDetalle";
+import ActividadForm from "./ActividadForm";
+import Cronometro from "./Cronometro";
+
+export default function Horas({
+  actividades,
+  mes,
+  mesAnterior,
+  mesSiguiente,
+  esPadre,
+  materias,
+  alumnos,
+}: {
+  actividades: EventWithDetails[];
+  mes: string;
+  mesAnterior: string;
+  mesSiguiente: string;
+  esPadre: boolean;
+  materias: { id: number; name: string }[];
+  alumnos: AlumnoLite[];
+}) {
+  const router = useRouter();
+  const [abierta, setAbierta] = useState<EventWithDetails | null>(null);
+  const [q, setQ] = useState("");
+  const visibles = filtrar(actividades, q, (a) => [a.title, a.description, a.location, a.materia_name, ...a.participantes.map((p) => p.nombre)]);
+  const [form, setForm] = useState<{ open: boolean; editing: EventWithDetails | null }>({ open: false, editing: null });
+  const [borrar, setBorrar] = useState<EventWithDetails | null>(null);
+  const [medida, setMedida] = useState<{ inicio: Date; fin: Date } | null>(null);
+  const titulo = new Date(`${mes}-01T12:00:00`).toLocaleDateString("es", { month: "long", year: "numeric" });
+
+  const confirmarBorrado = async () => {
+    if (!borrar) return;
+    try {
+      await deleteEvent(borrar.id);
+      setBorrar(null);
+      setAbierta(null);
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo borrar");
+    }
+  };
+
+  return (
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-foreground">Actividades</h1>
+        <div className="flex flex-wrap gap-2">
+          {esPadre && materias.length > 0 && alumnos.length > 0 && (
+            <Cronometro
+              onParar={(inicio, fin) => {
+                setMedida({ inicio, fin });
+                setForm({ open: true, editing: null });
+              }}
+            />
+          )}
+          <Button asChild variant="outline">
+            <Link href="/dashboard/homeschooling/reportes">
+              <FileBarChart /> Reportes
+            </Link>
+          </Button>
+          {esPadre && (
+            <Button onClick={() => {
+                setMedida(null);
+                setForm({ open: true, editing: null });
+              }}
+              disabled={materias.length === 0 || alumnos.length === 0}>
+              <Plus /> Nueva actividad
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="icon" aria-label="Mes anterior">
+          <Link href={`?mes=${mesAnterior}`}>
+            <ChevronLeft />
+          </Link>
+        </Button>
+        <p className="font-semibold capitalize text-foreground">{titulo}</p>
+        <Button asChild variant="ghost" size="icon" aria-label="Mes siguiente">
+          <Link href={`?mes=${mesSiguiente}`}>
+            <ChevronRight />
+          </Link>
+        </Button>
+      </div>
+
+      {actividades.length > 0 && <CampoBusqueda valor={q} onChange={setQ} placeholder="Buscar una actividad…" cantidad={visibles.length} />}
+
+      {actividades.length === 0 ? (
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Compass />
+            </EmptyMedia>
+            <EmptyTitle>No hay actividades este mes</EmptyTitle>
+            <EmptyDescription>Salidas, museos y experimentos suman horas a cada hijo que participó.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <div className="space-y-3">
+          {visibles.map((a) => (
+            <AdminItem
+              key={a.id}
+              enabled={esPadre}
+              nombre={`la actividad «${a.title}»`}
+              className="rounded-xl"
+              confirmar={false}
+              onEdit={() => setForm({ open: true, editing: a })}
+              onDelete={() => setBorrar(a)}
+            >
+              <ActividadCard actividad={a} onClick={setAbierta} />
+            </AdminItem>
+          ))}
+        </div>
+      )}
+
+      <ActividadDetalle
+        actividad={abierta}
+        onClose={() => setAbierta(null)}
+      />
+      <ActividadForm
+        open={form.open}
+        editing={form.editing}
+        inicial={medida}
+        materias={materias}
+        alumnos={alumnos}
+        onClose={() => setForm({ open: false, editing: null })}
+        onSuccess={() => {
+          setForm({ open: false, editing: null });
+          router.refresh();
+        }}
+      />
+      <Dialog open={!!borrar} onOpenChange={(o) => !o && setBorrar(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Borrar la actividad?</DialogTitle>
+            <DialogDescription>«{borrar?.title}» deja de sumar horas a quienes participaron.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBorrar(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmarBorrado}>
+              Borrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

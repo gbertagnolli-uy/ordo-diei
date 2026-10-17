@@ -5,14 +5,25 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
+import { MetaSemanal } from "@/components/engagement/MetaSemanal";
+import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
+import { CompaneroCard } from "@/components/engagement/CompaneroCard";
+import { companeroDe } from "@/lib/engagement/companeroServidor";
+import { eventosDeHoy } from "@/lib/cartas/server";
+import { haySancion } from "@/lib/comportamiento/sancionServer";
+import { AvisosPush } from "@/components/engagement/AvisosPush";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ s?: string; view?: string }> }) {
   const session = await getSession();
   if (!session?.user) redirect("/");
 
   const isCurrentUserAdmin = isParent(session.user.rolFamiliar);
+  const sp = await searchParams;
+  const vista = sp.s ?? sp.view;
+  // Las tarjetas de engagement de los chicos van solo en la vista principal, no en Historial ni en las demás
+  const enVistaPrincipal = !vista || vista === "todo";
 
   // Para no-admins, solo traer sus propias tareas (seguridad a nivel de query).
   const allUsersRaw = await prisma.usuario.findMany({
@@ -46,6 +57,26 @@ export default async function DashboardPage() {
     return (b.puntosAcumulados || 0) - (a.puntosAcumulados || 0);
   });
 
+  // Meta semanal en familia (solo chicos acá; los padres la ven en el panel de administración)
+  const meta = isCurrentUserAdmin || !enVistaPrincipal
+    ? null
+    : await metaDeLaSemana({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => {
+        console.error("[MetaSemanal]", e);
+        return null;
+      });
+
+  // Compañero «héroe»: es de todos (hijos y padres). Si hay cartas por reclamar, las señala
+  const companero = !enVistaPrincipal
+    ? null
+    : await (async () => {
+        const id = Number(session.user.id);
+        const [cartas, sancionado] = await Promise.all([eventosDeHoy(id).catch(() => null), haySancion(prisma, id)]);
+        return companeroDe(id, new Date(), { cartasNuevas: !!cartas?.hayPendientes, sancionado });
+      })().catch((e) => {
+        console.error("[Companero]", e);
+        return null;
+      });
+
   const myUser = allUsers.find((u) => u.id === session.user.id);
   const myTasks = myUser?.tareasAsignadas || [];
 
@@ -63,6 +94,19 @@ export default async function DashboardPage() {
       <div className="px-4 sm:px-6 pt-3">
         <BannerEventosCartas />
       </div>
+      <div className="px-4 sm:px-6 empty:hidden [&:has(*)]:pt-3">
+        <AvisosPush modo="invitacion" />
+      </div>
+      {companero && (
+        <div className="px-4 sm:px-6 pt-3">
+          <CompaneroCard datos={companero} />
+        </div>
+      )}
+      {meta?.meta && (
+        <div className="px-4 sm:px-6 pt-3">
+          <MetaSemanal datos={meta} />
+        </div>
+      )}
       <TaskWorkspace
         tasks={myTasks}
         coResponsables={coResponsableMap}

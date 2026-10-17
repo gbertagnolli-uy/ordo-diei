@@ -26,6 +26,17 @@ enum EstadoTarea {
   No_Realizada
 }
 
+enum DificultadTarea {
+  Trivial
+  MuyFacil
+  Facil
+  Media
+  Exigente
+  Dificil
+  MuyDificil
+  Ardua
+}
+
 enum TipoRecurrencia {
   Unica
   Diaria
@@ -62,20 +73,66 @@ model Usuario {
   registrosAnimo    RegistroAnimo[]
   premiosEntregados PremioEntregado[]
 
-  experienciaHabitos    Int              @default(0) @map("Experiencia_Habitos")
-  habitosCreados        Habito[]         @relation("HabitosCreados")
-  habitosUsuario        HabitoUsuario[]
-  registrosHabito       RegistroHabito[] @relation("RegistrosHabito")
-  registrosHabitoHechos RegistroHabito[] @relation("RegistrosHabitoHechos")
-  libros                Libro[]
-  recompensas           Recompensa[]     @relation("Recompensas")
-  recompensasEntregadas Recompensa[]     @relation("RecompensasEntregadas")
+  experienciaHabitos         Int                  @default(0) @map("Experiencia_Habitos")
+  actividadDias              ActividadDia[]
+  suscripcionesPush          SuscripcionPush[]
+  companero                  Companero?
+  companeroAccesorios        CompaneroAccesorio[]
+  metasSemanales             MetaSemanal[]        @relation("MetasSemanales")
+  habitosCreados             Habito[]             @relation("HabitosCreados")
+  habitosUsuario             HabitoUsuario[]
+  registrosHabito            RegistroHabito[]     @relation("RegistrosHabito")
+  registrosHabitoHechos      RegistroHabito[]     @relation("RegistrosHabitoHechos")
+  libros                     Libro[]
+  recompensas                Recompensa[]         @relation("Recompensas")
+  recompensasEntregadas      Recompensa[]         @relation("RecompensasEntregadas")
+  comportamientos            Comportamiento[]     @relation("ComportamientosHijo")
+  comportamientosRegistrados Comportamiento[]     @relation("ComportamientosRegistrados")
+  conductaDias               ConductaDia[]        @relation("ConductaHijo")
+  conductaRegistrada         ConductaDia[]        @relation("ConductaRegistrada")
 
   incienso             Int                   @default(0) @map("Incienso")
   cartasCreadas        Carta[]               @relation("CartasCreadas")
   cartasUsuario        CartaUsuario[]
   movimientosFragmento MovimientoFragmento[]
   reclamosCarta        ReclamoCarta[]
+
+  // Tienda (vault/nuevas-features/marketplace/SPEC.md)
+  comprasTienda     CompraTienda[]
+  desbloqueosTienda DesbloqueoProducto[]
+  metaTienda        MetaTienda?
+
+  // Homeschooling (vault/nuevas-features/homeschooling/ARQUITECTURA_DETALLADA.md §3)
+  materiasCreadas     Materia[]               @relation("MateriasCreadas")
+  recursosCreados     RecursoCurso[]          @relation("RecursosCreados")
+  leccionesCreadas    LeccionCurso[]          @relation("LeccionesCreadas")
+  planesAlumno        PlanCurso[]             @relation("PlanesAlumno")
+  diasNoLectivos      DiaNoLectivo[]          @relation("DiasNoLectivosAlumno")
+  progresoLecciones   ProgresoLeccion[]       @relation("ProgresoAlumno")
+  evidenciasHs        EvidenciaAprendizaje[]  @relation("EvidenciasAlumno")
+  evidenciasRevisadas EvidenciaAprendizaje[]  @relation("EvidenciasRevisadas")
+  intentosQuiz        IntentoQuiz[]           @relation("IntentosQuizAlumno")
+  repasos             TarjetaRepaso[]         @relation("RepasosAlumno")
+  materialesAlumno    MaterialEstudio[]       @relation("MaterialesAlumno")
+  materialesCreados   MaterialEstudio[]       @relation("MaterialesCreados")
+  impresiones         ImpresionMaterial[]     @relation("ImpresionesAlumno")
+  calificaciones      Calificacion[]          @relation("CalificacionesAlumno")
+  calificacionesDadas Calificacion[]          @relation("CalificacionesDadas")
+  comentariosEstudio  ComentarioEstudio[]     @relation("ComentariosEstudioAutor")
+  reaccionesEstudio   ReaccionEstudio[]       @relation("ReaccionesEstudioUsuario")
+  avisosEstudio       AvisoEstudio[]          @relation("AvisosEstudioUsuario")
+  lecturas            LecturaLibro[]          @relation("LecturasAlumno")
+  memorizaciones      Memorizacion[]          @relation("MemorizacionesAlumno")
+  impresionesHoja     ImpresionDia[]          @relation("ImpresionesDiaAlumno")
+  boletines           BoletinAlumno[]         @relation("BoletinesAlumno")
+  publicacionesAutor  PublicacionFamilia[]    @relation("PublicacionesAutor")
+  publicacionesSobre  PublicacionFamilia[]    @relation("PublicacionesSobre")
+  mensajesEnviados    MensajeFamilia[]        @relation("MensajesDe")
+  mensajesRecibidos   MensajeFamilia[]        @relation("MensajesPara")
+  actividadesCreadas  ActividadOffline[]      @relation("ActividadesCreadas")
+  actividadesAlumno   ParticipanteActividad[] @relation("ActividadesAlumno")
+  metasHoras          MetaHoras[]             @relation("MetasHorasAlumno")
+  preferenciaHs       PreferenciaAlumno?      @relation("PreferenciaAlumno")
 
   @@map("Usuarios")
 }
@@ -89,6 +146,7 @@ model Tarea {
   tiempoEjecucionEstimadoSeg Int             @map("Tiempo_Ejecucion_Estimado_Segundos")
   tiempoConsumidoTotalSeg    Int             @default(0) @map("Tiempo_Consumido_Total_Segundos")
   generaPuntosYRecompensa    Boolean         @default(false) @map("Genera_Puntos_Y_Recompensa")
+  dificultad                 DificultadTarea @default(Media) @map("Dificultad")
   tipoRecurrencia            TipoRecurrencia @default(Unica) @map("Tipo_Recurrencia")
   fechaVencimiento           DateTime?       @map("Fecha_Vencimiento")
   horaEjecucion              DateTime?       @map("Hora_Ejecucion")
@@ -98,6 +156,11 @@ model Tarea {
   diaDelMes     Int? @map("Dia_Del_Mes")
   ordinalSemana Int? @map("Ordinal_Semana")
   diaDeLaSemana Int? @map("Dia_De_La_Semana")
+
+  // Cadencia: cada N días/semanas/meses; el ancla solo la mueve el usuario al completar
+  intervalo       Int       @default(1) @map("Intervalo")
+  anclaCompletado Boolean   @default(false) @map("Ancla_Completado")
+  anclaFecha      DateTime? @map("Ancla_Fecha")
 
   // Seguimiento de clones
   parentTaskId Int?    @map("Parent_Task_ID")
@@ -116,6 +179,9 @@ model Tarea {
 
   isChecklist    Boolean         @default(false) @map("Is_Checklist")
   checklistItems ChecklistItem[]
+
+  // Homeschooling: día lectivo que esta tarea materializa
+  diaLectivo DiaLectivo? @relation("DiaLectivoTarea")
 
   // Cronómetro persistente
   timerStartedAt       DateTime? @map("Timer_Started_At")
@@ -204,6 +270,7 @@ model Premio {
   diaDelMes           Int?           @map("Dia_Del_Mes")
   tareasRequeridasIds String         @map("Tareas_Requeridas_Ids")
   activo              Boolean        @default(true) @map("Activo")
+  esVale              Boolean        @default(false) @map("Es_Vale") // el premio es un vale canjeable (lane 86)
   createdAt           DateTime       @default(now()) @map("Created_At")
   updatedAt           DateTime       @updatedAt @map("Updated_At")
 
@@ -258,6 +325,8 @@ model Habito {
   imagen      String?         @map("Imagen")
   creadorId   Int?            @map("Creador_ID")
   archivado   Boolean         @default(false) @map("Archivado")
+  // false = creado por un hijo y esperando aprobación de un padre (vault/APROBACION_HABITOS.md)
+  aprobado    Boolean         @default(true) @map("Aprobado")
   createdAt   DateTime        @default(now()) @map("Created_At")
   updatedAt   DateTime        @updatedAt @map("Updated_At")
 
@@ -277,6 +346,8 @@ model HabitoUsuario {
   dias      Int      @default(127) @map("Dias")
   ancla     String?  @map("Ancla")
   activo    Boolean  @default(true) @map("Activo")
+  // false = empezar este hábito espera aprobación de un padre
+  aprobado  Boolean  @default(true) @map("Aprobado")
   createdAt DateTime @default(now()) @map("Created_At")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -298,6 +369,8 @@ model RegistroHabito {
   registradoPorId Int         @map("Registrado_Por_ID")
   paginas         Int?        @map("Paginas")
   libroId         Int?        @map("Libro_ID")
+  // false = "hecho" esperando aprobación de un padre; hasta entonces no da puntos ni XP
+  aprobado        Boolean     @default(true) @map("Aprobado")
   createdAt       DateTime    @default(now()) @map("Created_At")
 
   usuario       Usuario @relation("RegistrosHabito", fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -325,10 +398,11 @@ model Libro {
   iniciadoEn  DateTime  @default(now()) @map("Iniciado_En")
   terminadoEn DateTime? @map("Terminado_En")
 
-  usuario    Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  habito     Habito           @relation(fields: [habitoId], references: [id], onDelete: Cascade)
-  registros  RegistroHabito[]
-  recompensa Recompensa?
+  usuario       Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito        Habito           @relation(fields: [habitoId], references: [id], onDelete: Cascade)
+  registros     RegistroHabito[]
+  recompensa    Recompensa?
+  recursosCurso RecursoCurso[]   @relation("RecursoLibro")
 
   @@index([usuarioId, habitoId])
   @@map("Libros")
@@ -347,13 +421,65 @@ model Recompensa {
   reclamadaEn    DateTime?        @map("Reclamada_En")
   entregadaEn    DateTime?        @map("Entregada_En")
   entregadaPorId Int?             @map("Entregada_Por_ID")
+  usadoEn        DateTime?        @map("Usado_En") // vales: cuándo se arrancó el ticket; null = sin usar
 
-  usuario      Usuario  @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
-  entregadaPor Usuario? @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
-  libro        Libro?   @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  // Premio sorpresa de la bitácora de comportamiento (vault/LANE_80_PANEL_ADMIN_COMPORTAMIENTO.md)
+  comportamientoId Int?    @unique @map("Comportamiento_ID")
+  contenido        Json?   @map("Contenido") // ItemPremio[]; oculto al niño hasta que lo abre
+  evaluacion       String? @map("Evaluacion") // texto que los padres escribieron al registrar el comportamiento; se lee antes de abrir el premio
+
+  usuario        Usuario         @relation("Recompensas", fields: [usuarioId], references: [id], onDelete: Cascade)
+  entregadaPor   Usuario?        @relation("RecompensasEntregadas", fields: [entregadaPorId], references: [id])
+  libro          Libro?          @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  comportamiento Comportamiento? @relation(fields: [comportamientoId], references: [id], onDelete: SetNull)
 
   @@index([usuarioId, estado])
   @@map("Recompensas")
+}
+
+// Bitácora de comportamiento: lo que los padres registran de la conducta moral y ética de cada hijo.
+enum TipoComportamiento {
+  Positivo
+  Negativo
+}
+
+model Comportamiento {
+  id                Int                @id @default(autoincrement())
+  usuarioId         Int                @map("Usuario_ID")
+  registradoPorId   Int                @map("Registrado_Por_ID")
+  tipo              TipoComportamiento @default(Positivo) @map("Tipo")
+  titulo            String             @map("Titulo")
+  evaluacion        String?            @map("Evaluacion")
+  premios           Json?              @map("Premios") // ItemPremio[] (solo Positivo)
+  penitencia        String?            @map("Penitencia") // texto de la penitencia (solo Negativo)
+  puntosPenalizados Int                @default(0) @map("Puntos_Penalizados")
+  createdAt         DateTime           @default(now()) @map("Created_At")
+
+  usuario       Usuario     @relation("ComportamientosHijo", fields: [usuarioId], references: [id], onDelete: Cascade)
+  registradoPor Usuario     @relation("ComportamientosRegistrados", fields: [registradoPorId], references: [id])
+  recompensa    Recompensa?
+
+  @@index([usuarioId, createdAt])
+  @@map("Comportamientos")
+}
+
+// Conducta diaria (vault/LANE_205_CONDUCTA_DIARIA.md): un nivel 1–5 por hijo y por día.
+model ConductaDia {
+  id              Int      @id @default(autoincrement())
+  usuarioId       Int      @map("Usuario_ID")
+  registradoPorId Int      @map("Registrado_Por_ID")
+  fecha           DateTime @map("Fecha") @db.Date
+  nivel           Int      @map("Nivel")
+  nota            String?  @map("Nota")
+  createdAt       DateTime @default(now()) @map("Created_At")
+  updatedAt       DateTime @updatedAt @map("Updated_At")
+
+  usuario       Usuario @relation("ConductaHijo", fields: [usuarioId], references: [id], onDelete: Cascade)
+  registradoPor Usuario @relation("ConductaRegistrada", fields: [registradoPorId], references: [id])
+
+  @@unique([usuarioId, fecha])
+  @@index([usuarioId, fecha])
+  @@map("Conducta_Dias")
 }
 
 // ==========================================
@@ -493,4 +619,970 @@ model Archivo {
   createdAt    DateTime @default(now()) @map("Created_At")
 
   @@map("Archivos")
+}
+
+// ─── Tienda / Marketplace (vault/nuevas-features/marketplace/SPEC.md) ─────────────────────────────
+enum TipoProducto {
+  sobre
+  fragmentos
+  fisico
+  vale
+}
+
+enum PeriodoLimite {
+  siempre
+  dia
+  semana
+  mes
+}
+
+enum EstadoCompra {
+  completada
+  pendiente_aprobacion
+  rechazada
+  cancelada
+}
+
+model ProductoTienda {
+  id                 Int           @id @default(autoincrement())
+  tipo               TipoProducto  @map("Tipo")
+  origen             String        @default("manual") @map("Origen") // "sistema" | "manual"
+  sistemaClave       String?       @unique @map("Sistema_Clave") // p. ej. "sobre:gloria"
+  titulo             String        @map("Titulo")
+  descripcion        String?       @map("Descripcion")
+  imagenClave        String?       @map("Imagen_Clave") // Archivo.clave
+  categoria          String        @default("premios") @map("Categoria")
+  precios            Json          @map("Precios") // [{ costos: [{ moneda, monto }] }]
+  requisitos         Json          @default("[]") @map("Requisitos")
+  config             Json          @default("{}") @map("Config")
+  stockTotal         Int?          @map("Stock_Total")
+  stockRestante      Int?          @map("Stock_Restante")
+  limiteUsuario      Int?          @map("Limite_Usuario")
+  periodoLimite      PeriodoLimite @default(siempre) @map("Periodo_Limite")
+  disponibleDesde    DateTime?     @map("Disponible_Desde")
+  disponibleHasta    DateTime?     @map("Disponible_Hasta")
+  destinatarios      Json?         @map("Destinatarios") // [usuarioId]; null = todos
+  requiereAprobacion Boolean       @default(false) @map("Requiere_Aprobacion")
+  descuentoRacha     Boolean       @default(false) @map("Descuento_Racha")
+  destacado          Boolean       @default(false) @map("Destacado")
+  activo             Boolean       @default(true) @map("Activo")
+  orden              Int           @default(0) @map("Orden")
+  creadoPorId        Int?          @map("Creado_Por_ID")
+  createdAt          DateTime      @default(now()) @map("Created_At")
+  updatedAt          DateTime      @updatedAt @map("Updated_At")
+
+  compras     CompraTienda[]
+  desbloqueos DesbloqueoProducto[]
+
+  @@map("Productos_Tienda")
+}
+
+model CompraTienda {
+  id                Int          @id @default(autoincrement())
+  productoId        Int          @map("Producto_ID")
+  usuarioId         Int          @map("Usuario_ID")
+  estado            EstadoCompra @default(completada) @map("Estado")
+  opcionPago        Int          @map("Opcion_Pago")
+  costos            Json         @map("Costos") // lo realmente pagado: [{ moneda, monto }]
+  productoSnapshot  Json         @map("Producto_Snapshot")
+  recompensaId      Int?         @unique @map("Recompensa_ID")
+  claveIdempotencia String       @map("Clave_Idempotencia")
+  resueltaPorId     Int?         @map("Resuelta_Por_ID")
+  resueltaEn        DateTime?    @map("Resuelta_En")
+  motivo            String?      @map("Motivo")
+  createdAt         DateTime     @default(now()) @map("Created_At")
+
+  producto ProductoTienda @relation(fields: [productoId], references: [id])
+  usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, claveIdempotencia])
+  @@index([usuarioId, productoId, createdAt])
+  @@index([estado])
+  @@map("Compras_Tienda")
+}
+
+// Desbloqueo manual de un producto para una persona (requisito «lo habilita un padre»)
+model DesbloqueoProducto {
+  productoId Int      @map("Producto_ID")
+  usuarioId  Int      @map("Usuario_ID")
+  porId      Int      @map("Por_ID")
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  producto ProductoTienda @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([productoId, usuarioId])
+  @@map("Desbloqueos_Producto")
+}
+
+// Meta de ahorro: el producto que la persona quiere conseguir
+model MetaTienda {
+  usuarioId  Int @id @map("Usuario_ID")
+  productoId Int @map("Producto_ID")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("Metas_Tienda")
+}
+
+// ─── Homeschooling (lane H1a) ───────────────────────────────────────────────
+
+enum TipoRecurso {
+  libro
+  curso_videos
+  pdf
+  enlaces
+  libre
+}
+
+enum UnidadContenido {
+  pagina
+  capitulo
+  leccion
+  unidad
+}
+
+enum EstadoPlan {
+  activo
+  pausado
+  finalizado
+}
+
+enum EstadoDiaLectivo {
+  pendiente
+  hecha
+  movida
+  omitida
+}
+
+enum PlataformaVideo {
+  youtube
+  vimeo
+}
+
+// ← groups de Roost
+model Materia {
+  id          Int             @id @default(autoincrement())
+  nombre      String          @map("Nombre")
+  descripcion String?         @map("Descripcion")
+  portadaUrl  String?         @map("Portada_URL")
+  icono       String?         @map("Icono")
+  color       String?         @map("Color")
+  dificultad  DificultadTarea @default(Media) @map("Dificultad")
+  orden       Int             @default(0) @map("Orden")
+  activa      Boolean         @default(true) @map("Activa")
+  creadorId   Int             @map("Creador_ID")
+  createdAt   DateTime        @default(now()) @map("Created_At")
+
+  creador        Usuario            @relation("MateriasCreadas", fields: [creadorId], references: [id])
+  recursos       RecursoCurso[]
+  actividades    ActividadOffline[]
+  metas          MetaHoras[]
+  calificaciones Calificacion[]
+
+  @@index([activa, orden])
+  @@map("Homeschool_Materias")
+}
+
+// ← modules de Roost + campos de pacing
+model RecursoCurso {
+  id               Int             @id @default(autoincrement())
+  materiaId        Int             @map("Materia_ID")
+  titulo           String          @map("Titulo")
+  descripcion      String?         @map("Descripcion")
+  portadaUrl       String?         @map("Portada_URL")
+  orden            Int             @default(0) @map("Orden")
+  creadorId        Int             @map("Creador_ID")
+  tipo             TipoRecurso     @map("Tipo")
+  unidadTipo       UnidadContenido @map("Unidad_Tipo")
+  totalUnidades    Int             @map("Total_Unidades")
+  url              String?         @map("URL")
+  libroId          Int?            @map("Libro_ID")
+  minutosPorUnidad Int             @default(20) @map("Minutos_Por_Unidad")
+  umbralAprobacion Int             @default(70) @map("Umbral_Aprobacion")
+  navegacionLibre  Boolean         @default(false) @map("Navegacion_Libre")
+  createdAt        DateTime        @default(now()) @map("Created_At")
+  updatedAt        DateTime        @updatedAt @map("Updated_At")
+
+  materia   Materia           @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador   Usuario           @relation("RecursosCreados", fields: [creadorId], references: [id])
+  libro     Libro?            @relation("RecursoLibro", fields: [libroId], references: [id], onDelete: SetNull)
+  planes    PlanCurso[]
+  lecciones LeccionCurso[]
+  progresos ProgresoLeccion[]
+
+  @@index([materiaId, orden])
+  @@map("Homeschool_Recursos")
+}
+
+// ← recordings de Roost
+model LeccionCurso {
+  id              Int              @id @default(autoincrement())
+  recursoId       Int              @map("Recurso_ID")
+  orden           Int              @map("Orden")
+  titulo          String           @map("Titulo")
+  instrucciones   String?          @map("Instrucciones")
+  url             String?          @map("URL")
+  videoPlataforma PlataformaVideo? @map("Video_Plataforma")
+  videoId         String?          @map("Video_ID")
+  miniaturaUrl    String?          @map("Miniatura_URL")
+  creadorId       Int              @map("Creador_ID")
+  createdAt       DateTime         @default(now()) @map("Created_At")
+
+  recurso     RecursoCurso        @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  creador     Usuario             @relation("LeccionesCreadas", fields: [creadorId], references: [id])
+  progresos   ProgresoLeccion[]
+  preguntas   PreguntaLeccion[]
+  intentos    IntentoQuiz[]
+  repasos     TarjetaRepaso[]
+  materiales  MaterialEstudio[]
+  comentarios ComentarioEstudio[]
+
+  @@unique([recursoId, orden])
+  @@map("Homeschool_Lecciones")
+}
+
+model PlanCurso {
+  id         Int        @id @default(autoincrement())
+  recursoId  Int        @map("Recurso_ID")
+  alumnoId   Int        @map("Alumno_ID")
+  inicio     DateTime   @map("Inicio") @db.Date
+  fin        DateTime   @map("Fin") @db.Date
+  diasSemana Int[]      @map("Dias_Semana")
+  estado     EstadoPlan @default(activo) @map("Estado")
+  createdAt  DateTime   @default(now()) @map("Created_At")
+
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  alumno  Usuario      @relation("PlanesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  dias    DiaLectivo[]
+
+  @@unique([recursoId, alumnoId])
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Planes")
+}
+
+model DiaLectivo {
+  id          Int              @id @default(autoincrement())
+  planId      Int              @map("Plan_ID")
+  fecha       DateTime         @map("Fecha") @db.Date
+  unidadDesde Int              @map("Unidad_Desde")
+  unidadHasta Int              @map("Unidad_Hasta")
+  estado      EstadoDiaLectivo @default(pendiente) @map("Estado")
+  tareaId     Int?             @unique @map("Tarea_ID")
+  createdAt   DateTime         @default(now()) @map("Created_At")
+
+  plan          PlanCurso              @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tarea         Tarea?                 @relation("DiaLectivoTarea", fields: [tareaId], references: [id], onDelete: SetNull)
+  evidencias    EvidenciaAprendizaje[]
+  materiales    MaterialEstudio[]
+  calificacion  Calificacion?
+  impresionDias ImpresionDia[]
+
+  @@unique([planId, fecha])
+  @@index([fecha, estado])
+  @@map("Homeschool_Dias_Lectivos")
+}
+
+model DiaNoLectivo {
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int      @map("Alumno_ID")
+  fecha     DateTime @map("Fecha") @db.Date
+  motivo    String   @map("Motivo")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  alumno Usuario @relation("DiasNoLectivosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, fecha])
+  @@map("Homeschool_Dias_No_Lectivos")
+}
+
+// ← lesson_completions de Roost: la fila existe = lección completada por ese alumno
+model ProgresoLeccion {
+  id           Int      @id @default(autoincrement())
+  alumnoId     Int      @map("Alumno_ID")
+  leccionId    Int      @map("Leccion_ID")
+  recursoId    Int      @map("Recurso_ID")
+  completadaEn DateTime @default(now()) @map("Completada_En")
+
+  alumno  Usuario      @relation("ProgresoAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  recurso RecursoCurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, leccionId])
+  @@index([alumnoId, recursoId])
+  @@map("Homeschool_Progreso")
+}
+
+enum EstadoEvidencia {
+  pendiente
+  aprobada
+  ajustar
+}
+
+// ← showcases de Roost (sin votos, reseñas ni URL pública): la foto de un trabajo, que el padre revisa
+model EvidenciaAprendizaje {
+  id              Int             @id @default(autoincrement())
+  alumnoId        Int             @map("Alumno_ID")
+  diaLectivoId    Int?            @map("Dia_Lectivo_ID")
+  titulo          String?         @map("Titulo")
+  nota            String?         @map("Nota")
+  estado          EstadoEvidencia @default(pendiente) @map("Estado")
+  comentarioPadre String?         @map("Comentario_Padre")
+  revisadaPorId   Int?            @map("Revisada_Por_ID")
+  revisadaEn      DateTime?       @map("Revisada_En")
+  estrellas       Int?            @map("Estrellas")
+  destacada       Boolean         @default(false) @map("Destacada")
+  destacadaEn     DateTime?       @map("Destacada_En")
+  createdAt       DateTime        @default(now()) @map("Created_At")
+
+  alumno      Usuario             @relation("EvidenciasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  revisadaPor Usuario?            @relation("EvidenciasRevisadas", fields: [revisadaPorId], references: [id], onDelete: SetNull)
+  diaLectivo  DiaLectivo?         @relation(fields: [diaLectivoId], references: [id], onDelete: SetNull)
+  imagenes    EvidenciaImagen[]
+  comentarios ComentarioEstudio[]
+  reacciones  ReaccionEstudio[]
+
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Evidencias")
+}
+
+// ← showcase_images de Roost
+model EvidenciaImagen {
+  id          Int      @id @default(autoincrement())
+  evidenciaId Int      @map("Evidencia_ID")
+  archivoUrl  String   @map("Archivo_URL")
+  orden       Int      @default(0) @map("Orden")
+  pie         String?  @map("Pie")
+  createdAt   DateTime @default(now()) @map("Created_At")
+
+  evidencia EvidenciaAprendizaje @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+
+  @@index([archivoUrl])
+  @@map("Homeschool_Evidencia_Imagenes")
+}
+
+// Pregunta de una lección: checkpoint dentro del video (segundoVideo) o del quiz final (null). `correcta` nunca viaja al cliente.
+model PreguntaLeccion {
+  id           Int     @id @default(autoincrement())
+  leccionId    Int     @map("Leccion_ID")
+  orden        Int     @map("Orden")
+  segundoVideo Int?    @map("Segundo_Video")
+  enunciado    String  @map("Enunciado")
+  opciones     Json    @map("Opciones")
+  correcta     Int     @map("Correcta")
+  explicacion  String? @map("Explicacion")
+
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@unique([leccionId, orden])
+  @@map("Homeschool_Preguntas")
+}
+
+model IntentoQuiz {
+  id         Int      @id @default(autoincrement())
+  alumnoId   Int      @map("Alumno_ID")
+  leccionId  Int      @map("Leccion_ID")
+  nota       Int      @map("Nota")
+  aprobado   Boolean  @map("Aprobado")
+  respuestas Json     @map("Respuestas")
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  alumno  Usuario      @relation("IntentosQuizAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@index([alumnoId, leccionId, createdAt])
+  @@map("Homeschool_Intentos_Quiz")
+}
+
+// Repaso espaciado (ts-fsrs): `tarjeta` guarda la Card tal cual más `_aciertos` (aciertos seguidos)
+model TarjetaRepaso {
+  id        Int      @id @default(autoincrement())
+  alumnoId  Int      @map("Alumno_ID")
+  leccionId Int      @map("Leccion_ID")
+  tarjeta   Json     @map("Tarjeta")
+  proximo   DateTime @map("Proximo")
+  resuelta  Boolean  @default(false) @map("Resuelta")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  alumno  Usuario      @relation("RepasosAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  leccion LeccionCurso @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, leccionId])
+  @@index([alumnoId, proximo, resuelta])
+  @@map("Homeschool_Repasos")
+}
+
+// ─── Material de estudio (lane 166, M1) ─────────────────────────────────────
+// Lo que el padre le deja al hijo para un día o una lección, en el formato que sea. Vive FUERA de la base (YouTube, Drive,
+// Docs, enlaces); solo el texto y el markdown se guardan acá. Se cuelga de una lección, de un día lectivo o, suelto, de un
+// alumno y una fecha (tarea del día sin curso).
+enum TipoMaterial {
+  texto
+  markdown
+  video
+  pdf
+  documento
+  epub
+  web
+  archivo
+}
+
+model MaterialEstudio {
+  id                Int          @id @default(autoincrement())
+  titulo            String       @map("Titulo")
+  tipo              TipoMaterial @map("Tipo")
+  proveedor         String?      @map("Proveedor")
+  externoId         String?      @map("Externo_ID")
+  url               String?      @map("URL")
+  contenido         String?      @map("Contenido")
+  miniaturaUrl      String?      @map("Miniatura_URL")
+  orden             Int          @default(0) @map("Orden")
+  // Cuántas veces el hijo puede abrir la vista de impresión (lane P1); 0 = no se puede imprimir
+  limiteImpresiones Int          @default(2) @map("Limite_Impresiones")
+  // Clave de respuestas y material solo para padres: el hijo no lo ve, no lo imprime ni sale en sus hojas (lane 183)
+  soloPadres        Boolean      @default(false) @map("Solo_Padres")
+  leccionId         Int?         @map("Leccion_ID")
+  diaLectivoId      Int?         @map("Dia_Lectivo_ID")
+  // Material suelto: para un alumno en una fecha, sin curso
+  alumnoId          Int?         @map("Alumno_ID")
+  fecha             DateTime?    @map("Fecha") @db.Date
+  hechoEn           DateTime?    @map("Hecho_En")
+  creadorId         Int          @map("Creador_ID")
+  createdAt         DateTime     @default(now()) @map("Created_At")
+  updatedAt         DateTime     @updatedAt @map("Updated_At")
+
+  leccion     LeccionCurso?       @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  diaLectivo  DiaLectivo?         @relation(fields: [diaLectivoId], references: [id], onDelete: Cascade)
+  alumno      Usuario?            @relation("MaterialesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  creador     Usuario             @relation("MaterialesCreados", fields: [creadorId], references: [id])
+  impresiones ImpresionMaterial[]
+  comentarios ComentarioEstudio[]
+
+  @@index([leccionId, orden])
+  @@index([diaLectivoId, orden])
+  @@index([alumnoId, fecha])
+  @@map("Homeschool_Materiales")
+}
+
+// Cada vez que un alumno abre la vista de impresión de un material queda una fila 'uso'; un padre puede dar impresiones de
+// más ('extra'). Permitidas = MaterialEstudio.limiteImpresiones + extras. El `token` abre la hoja de texto impresa (lane 168, P1).
+model ImpresionMaterial {
+  id            Int      @id @default(autoincrement())
+  materialId    Int      @map("Material_ID")
+  alumnoId      Int      @map("Alumno_ID")
+  tipo          String   @default("uso") @map("Tipo")
+  token         String?  @unique @map("Token")
+  otorgadaPorId Int?     @map("Otorgada_Por_ID")
+  createdAt     DateTime @default(now()) @map("Created_At")
+
+  material MaterialEstudio @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  alumno   Usuario         @relation("ImpresionesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@index([materialId, alumnoId])
+  @@map("Homeschool_Impresiones")
+}
+
+// ─── Libreta de calificaciones (lane 172, K1) ───────────────────────────────
+// Lo que el padre corrige: la nota de un día de clase (una por día) o de un examen/proyecto suelto. 0–100; la letra y el
+// promedio se calculan al mostrar. Solo la escriben los padres.
+enum TipoCalificacion {
+  tarea
+  examen
+  proyecto
+  lectura
+  oral
+}
+
+model Calificacion {
+  id              Int              @id @default(autoincrement())
+  alumnoId        Int              @map("Alumno_ID")
+  materiaId       Int              @map("Materia_ID")
+  diaLectivoId    Int?             @unique @map("Dia_Lectivo_ID")
+  titulo          String           @map("Titulo")
+  tipo            TipoCalificacion @default(tarea) @map("Tipo")
+  puntaje         Int              @map("Puntaje")
+  comentario      String?          @map("Comentario")
+  fecha           DateTime         @map("Fecha") @db.Date
+  calificadaPorId Int              @map("Calificada_Por_ID")
+  createdAt       DateTime         @default(now()) @map("Created_At")
+  updatedAt       DateTime         @updatedAt @map("Updated_At")
+
+  alumno        Usuario     @relation("CalificacionesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  calificadaPor Usuario     @relation("CalificacionesDadas", fields: [calificadaPorId], references: [id])
+  materia       Materia     @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  diaLectivo    DiaLectivo? @relation(fields: [diaLectivoId], references: [id], onDelete: SetNull)
+
+  @@index([alumnoId, materiaId, fecha])
+  @@map("Homeschool_Calificaciones")
+}
+
+// ─── Comunidad de la familia (lane 174, Q1) ─────────────────────────────────
+// Comentarios y reacciones entre los integrantes de UNA familia: padres e hijos, sobre una lección, un material o una evidencia.
+// Cuelga de exactamente uno de leccionId / materialId / evidenciaId. Reacciones: 👍 ❤️ 🙏 sobre un comentario o una evidencia.
+model ComentarioEstudio {
+  id            Int       @id @default(autoincrement())
+  autorId       Int       @map("Autor_ID")
+  leccionId     Int?      @map("Leccion_ID")
+  materialId    Int?      @map("Material_ID")
+  evidenciaId   Int?      @map("Evidencia_ID")
+  publicacionId Int?      @map("Publicacion_ID")
+  texto         String    @map("Texto")
+  createdAt     DateTime  @default(now()) @map("Created_At")
+  editadoEn     DateTime? @map("Editado_En")
+
+  autor       Usuario               @relation("ComentariosEstudioAutor", fields: [autorId], references: [id], onDelete: Cascade)
+  leccion     LeccionCurso?         @relation(fields: [leccionId], references: [id], onDelete: Cascade)
+  material    MaterialEstudio?      @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  evidencia   EvidenciaAprendizaje? @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+  publicacion PublicacionFamilia?   @relation(fields: [publicacionId], references: [id], onDelete: Cascade)
+  reacciones  ReaccionEstudio[]
+
+  @@index([publicacionId, createdAt])
+  @@index([leccionId, createdAt])
+  @@index([materialId, createdAt])
+  @@index([evidenciaId, createdAt])
+  @@map("Homeschool_Comentarios")
+}
+
+model ReaccionEstudio {
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int      @map("Usuario_ID")
+  comentarioId  Int?     @map("Comentario_ID")
+  evidenciaId   Int?     @map("Evidencia_ID")
+  publicacionId Int?     @map("Publicacion_ID")
+  emoji         String   @map("Emoji")
+  createdAt     DateTime @default(now()) @map("Created_At")
+
+  usuario     Usuario               @relation("ReaccionesEstudioUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  comentario  ComentarioEstudio?    @relation(fields: [comentarioId], references: [id], onDelete: Cascade)
+  evidencia   EvidenciaAprendizaje? @relation(fields: [evidenciaId], references: [id], onDelete: Cascade)
+  publicacion PublicacionFamilia?   @relation(fields: [publicacionId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, comentarioId, emoji])
+  @@unique([usuarioId, evidenciaId, emoji])
+  @@unique([usuarioId, publicacionId, emoji])
+  @@map("Homeschool_Reacciones")
+}
+
+// Avisos dentro de la app (lane 174, Q3): «Leo comentó en…», «Mamá dejó un comentario». Sin correo ni push (BLOQUEOS B-7).
+model AvisoEstudio {
+  id        Int       @id @default(autoincrement())
+  usuarioId Int       @map("Usuario_ID")
+  tipo      String    @map("Tipo")
+  titulo    String    @map("Titulo")
+  cuerpo    String?   @map("Cuerpo")
+  href      String?   @map("Href")
+  leidoEn   DateTime? @map("Leido_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  usuario Usuario @relation("AvisosEstudioUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, leidoEn, createdAt])
+  @@map("Homeschool_Avisos")
+}
+
+// ─── Lectura real (lane 175, L1) ────────────────────────────────────────────
+// La lista de lectura de cada hijo: libros por leer, leyendo y leídos, con las páginas, la valoración y la narración (lo que el
+// chico contó con sus palabras, anotado por un padre). Los libros son físicos: acá solo se lleva la cuenta.
+enum EstadoLectura {
+  por_leer
+  leyendo
+  leido
+}
+
+model LecturaLibro {
+  id            Int           @id @default(autoincrement())
+  alumnoId      Int           @map("Alumno_ID")
+  titulo        String        @map("Titulo")
+  autor         String?       @map("Autor")
+  portadaUrl    String?       @map("Portada_URL")
+  estado        EstadoLectura @default(por_leer) @map("Estado")
+  paginasTotal  Int?          @map("Paginas_Total")
+  paginaActual  Int           @default(0) @map("Pagina_Actual")
+  empezadoEn    DateTime?     @map("Empezado_En") @db.Date
+  terminadoEn   DateTime?     @map("Terminado_En") @db.Date
+  estrellas     Int?          @map("Estrellas")
+  narracion     String?       @map("Narracion")
+  asignadoPorId Int?          @map("Asignado_Por_ID")
+  createdAt     DateTime      @default(now()) @map("Created_At")
+  updatedAt     DateTime      @updatedAt @map("Updated_At")
+
+  alumno   Usuario         @relation("LecturasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  sesiones SesionLectura[]
+
+  @@index([alumnoId, estado])
+  @@map("Homeschool_Lecturas")
+}
+
+// Cada vez que se registra lectura: cuántas páginas y minutos, para la semana y la racha
+model SesionLectura {
+  id        Int      @id @default(autoincrement())
+  libroId   Int      @map("Libro_ID")
+  alumnoId  Int      @map("Alumno_ID")
+  fecha     DateTime @map("Fecha") @db.Date
+  paginas   Int      @map("Paginas")
+  minutos   Int?     @map("Minutos")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  libro LecturaLibro @relation(fields: [libroId], references: [id], onDelete: Cascade)
+
+  @@index([alumnoId, fecha])
+  @@map("Homeschool_Sesiones_Lectura")
+}
+
+// ─── Memoria (lane 176, L2) ─────────────────────────────────────────────────
+// Oraciones, listas y textos que un hijo aprende de memoria. Se recita en voz alta frente a un padre, que lo califica; la
+// repetición espaciada (ts-fsrs, en `tarjeta`) decide cuándo toca repasarlo. `clave` es la del catálogo católico de la casa.
+model Memorizacion {
+  id        Int       @id @default(autoincrement())
+  alumnoId  Int       @map("Alumno_ID")
+  clave     String?   @map("Clave")
+  titulo    String    @map("Titulo")
+  texto     String    @map("Texto")
+  tarjeta   Json      @map("Tarjeta")
+  proximo   DateTime  @map("Proximo")
+  repasos   Int       @default(0) @map("Repasos")
+  dominada  Boolean   @default(false) @map("Dominada")
+  ultimoEn  DateTime? @map("Ultimo_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  alumno Usuario @relation("MemorizacionesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, clave])
+  @@index([alumnoId, dominada, proximo])
+  @@map("Homeschool_Memoria")
+}
+
+// Cada vez que un alumno abre la hoja imprimible del día queda una fila 'uso'; un padre puede dar de más ('extra'). Permitidas = 2 +
+// extras (lane 178, P3). El `token` abre la hoja y vale 15 minutos.
+model ImpresionDia {
+  id            Int      @id @default(autoincrement())
+  diaLectivoId  Int      @map("Dia_Lectivo_ID")
+  alumnoId      Int      @map("Alumno_ID")
+  tipo          String   @default("uso") @map("Tipo")
+  token         String?  @unique @map("Token")
+  otorgadaPorId Int?     @map("Otorgada_Por_ID")
+  createdAt     DateTime @default(now()) @map("Created_At")
+
+  diaLectivo DiaLectivo @relation(fields: [diaLectivoId], references: [id], onDelete: Cascade)
+  alumno     Usuario    @relation("ImpresionesDiaAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@index([diaLectivoId, alumnoId])
+  @@map("Homeschool_Impresiones_Dia")
+}
+
+// ─── Boletín (lane 182, K2) ─────────────────────────────────────────────────
+// Los períodos de calificación de la casa (trimestres u otro corte) y el comentario del padre en el boletín de cada hijo.
+// Las notas, las horas, la asistencia y la lectura se calculan al armar el boletín; acá solo lo que se escribe a mano.
+model PeriodoCalificacion {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @map("Nombre")
+  inicio    DateTime @map("Inicio") @db.Date
+  fin       DateTime @map("Fin") @db.Date
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  boletines BoletinAlumno[]
+
+  @@index([inicio])
+  @@map("Homeschool_Periodos")
+}
+
+model BoletinAlumno {
+  id         Int      @id @default(autoincrement())
+  periodoId  Int      @map("Periodo_ID")
+  alumnoId   Int      @map("Alumno_ID")
+  comentario String?  @map("Comentario")
+  updatedAt  DateTime @updatedAt @map("Updated_At")
+
+  periodo PeriodoCalificacion @relation(fields: [periodoId], references: [id], onDelete: Cascade)
+  alumno  Usuario             @relation("BoletinesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([periodoId, alumnoId])
+  @@map("Homeschool_Boletines")
+}
+
+// ─── Muro de la familia (lane 184, Q2) ──────────────────────────────────────
+// Lo que se cuenta en casa: avisos de los padres («mañana vamos a la plaza») y logros que la app anota sola (un libro terminado,
+// una oración aprendida, un trabajo destacado). Lo ve toda la familia; se comenta y se reacciona como en cualquier otro lugar.
+model PublicacionFamilia {
+  id        Int      @id @default(autoincrement())
+  autorId   Int?     @map("Autor_ID")
+  alumnoId  Int?     @map("Alumno_ID")
+  tipo      String   @map("Tipo")
+  titulo    String   @map("Titulo")
+  cuerpo    String?  @map("Cuerpo")
+  href      String?  @map("Href")
+  fijada    Boolean  @default(false) @map("Fijada")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  autor       Usuario?            @relation("PublicacionesAutor", fields: [autorId], references: [id], onDelete: SetNull)
+  alumno      Usuario?            @relation("PublicacionesSobre", fields: [alumnoId], references: [id], onDelete: Cascade)
+  comentarios ComentarioEstudio[]
+  reacciones  ReaccionEstudio[]
+
+  @@index([fijada, createdAt])
+  @@map("Homeschool_Muro")
+}
+
+// ─── Mensajes entre los integrantes de la familia (lane 191, G7) ────────────
+// Mensajes directos 1 a 1 dentro de la casa (el «DM» de Roost, sin adjuntos ni grupos). Solo los dos participantes los leen.
+model MensajeFamilia {
+  id        Int       @id @default(autoincrement())
+  deId      Int       @map("De_ID")
+  paraId    Int       @map("Para_ID")
+  texto     String    @map("Texto")
+  leidoEn   DateTime? @map("Leido_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  de   Usuario @relation("MensajesDe", fields: [deId], references: [id], onDelete: Cascade)
+  para Usuario @relation("MensajesPara", fields: [paraId], references: [id], onDelete: Cascade)
+
+  @@index([paraId, leidoEn])
+  @@index([deId, paraId, createdAt])
+  @@map("Homeschool_Mensajes")
+}
+
+// ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
+
+model DiaLiturgico {
+  version   String   @map("Version") // "1906" | "1888" | "1570"
+  fecha     DateTime @map("Fecha") @db.Date
+  titulo    String   @map("Titulo") // "S. Callisti Papæ et Martyris"
+  tituloEs  String?  @map("Titulo_Es") // "S. Calixto, Papa y Mártir" (si DO lo trae)
+  rango     String   @map("Rango") // "Duplex"
+  lineas    Json     @map("Lineas") // ["Tempora: Feria Quarta infra …", "Commemoratio: …"]
+  color     String   @map("Color") // blanco | rojo | verde | morado | negro
+  tiempo    String   @map("Tiempo") // adviento | navidad | epifania | septuagesima | cuaresma | pasion | pascua | pentecostes
+  dominical Boolean  @map("Dominical")
+
+  @@id([version, fecha])
+  @@map("Dias_Liturgicos")
+}
+
+model BloqueLiturgico {
+  hash  String @id @map("Hash")
+  datos Json   @map("Datos") // Bloque (src/lib/liturgia/tipos.ts)
+
+  @@map("Bloques_Liturgicos")
+}
+
+model DocumentoLiturgico {
+  version   String    @map("Version")
+  tipo      String    @map("Tipo") // "hora" | "missa" | "martyrologium" | "libro"
+  clave     String    @map("Clave") // "2026-10-14/Laudes" · "2026-10-14" · "Sancti/10-14" · "Psalterium/92"
+  fecha     DateTime? @map("Fecha") @db.Date
+  titulo    Json      @map("Titulo")
+  secciones Json      @map("Secciones") // Seccion[]
+
+  @@id([version, tipo, clave])
+  @@index([version, tipo, fecha])
+  @@map("Documentos_Liturgicos")
+}
+
+model GeneracionLiturgica {
+  id         Int      @id @default(autoincrement())
+  doCommit   String   @map("DO_Commit")
+  versiones  String   @map("Versiones")
+  desde      DateTime @map("Desde") @db.Date
+  hasta      DateTime @map("Hasta") @db.Date
+  documentos Int      @map("Documentos")
+  bloques    Int      @map("Bloques_Nuevos")
+  createdAt  DateTime @default(now()) @map("Created_At")
+
+  @@map("Generaciones_Liturgicas")
+}
+
+// ← events de Roost: una actividad fuera de pantalla (salida, museo, experimento); suma horas a cada participante
+model ActividadOffline {
+  id          Int      @id @default(autoincrement())
+  materiaId   Int      @map("Materia_ID")
+  titulo      String   @map("Titulo")
+  descripcion String?  @map("Descripcion")
+  inicio      DateTime @map("Inicio")
+  fin         DateTime @map("Fin")
+  lugar       String?  @map("Lugar")
+  creadorId   Int      @map("Creador_ID")
+  createdAt   DateTime @default(now()) @map("Created_At")
+  updatedAt   DateTime @updatedAt @map("Updated_At")
+
+  materia       Materia                 @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  creador       Usuario                 @relation("ActividadesCreadas", fields: [creadorId], references: [id])
+  participantes ParticipanteActividad[]
+
+  @@index([inicio])
+  @@map("Homeschool_Actividades")
+}
+
+// ← event_attendees de Roost, sin RSVP: quién participó
+model ParticipanteActividad {
+  id          Int      @id @default(autoincrement())
+  actividadId Int      @map("Actividad_ID")
+  alumnoId    Int      @map("Alumno_ID")
+  createdAt   DateTime @default(now()) @map("Created_At")
+
+  actividad ActividadOffline @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  alumno    Usuario          @relation("ActividadesAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadId, alumnoId])
+  @@map("Homeschool_Participantes")
+}
+
+// Meta de horas que fija el padre por alumno y materia (sin cifras precargadas)
+model MetaHoras {
+  id        Int @id @default(autoincrement())
+  alumnoId  Int @map("Alumno_ID")
+  materiaId Int @map("Materia_ID")
+  horas     Int @map("Horas")
+
+  alumno  Usuario @relation("MetasHorasAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, materiaId])
+  @@map("Homeschool_Metas_Horas")
+}
+
+// Preferencias de un alumno con TDAH/TEA/dislexia: modo relajado y vista Primero/Después
+model PreferenciaAlumno {
+  alumnoId          Int     @id @map("Alumno_ID")
+  modoRelajado      Boolean @default(false) @map("Modo_Relajado")
+  primeroDespues    Boolean @default(false) @map("Primero_Despues")
+  recompensaDespues String? @map("Recompensa_Despues")
+
+  alumno Usuario @relation("PreferenciaAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+
+  @@map("Homeschool_Preferencias")
+}
+
+// Historia social: de 3 a 5 pasos cortos con ícono. `alumnoId` null = plantilla/biblioteca del padre; «Mostrar hoy» crea una
+// copia para el alumno con `mostrarEl` y se oculta cuando él la ve (`vistaEn`). (`mostrarEl` y `vistaEn` se agregaron a la spec.)
+model HistoriaSocial {
+  id        Int       @id @default(autoincrement())
+  alumnoId  Int?      @map("Alumno_ID")
+  titulo    String    @map("Titulo")
+  pasos     Json      @map("Pasos")
+  mostrarEl DateTime? @map("Mostrar_El") @db.Date
+  vistaEn   DateTime? @map("Vista_En")
+  createdAt DateTime  @default(now()) @map("Created_At")
+
+  @@index([alumnoId, mostrarEl])
+  @@map("Homeschool_Historias")
+}
+
+// ← Reposo v2 (R2): configuración única de la pantalla de reposo (fila id = 1)
+model ConfigReposo {
+  id                  Int       @id @default(1)
+  segundosLogin       Int       @default(15) @map("Segundos_Login")
+  segundosSesion      Int       @default(60) @map("Segundos_Sesion")
+  unsplashTema        String    @default("6sMVjTLSkeQ") @map("Unsplash_Tema") // tema oficial Nature
+  unsplashConsulta    String?   @map("Unsplash_Consulta") // si está, reemplaza al tema
+  tamPool             Int       @default(150) @map("Tam_Pool")
+  mostrarRefCatecismo Boolean   @default(true) @map("Mostrar_Ref_Catecismo")
+  ultimaSincronia     DateTime? @map("Ultima_Sincronia")
+
+  @@map("Config_Reposo")
+}
+
+// ← Reposo v2 (R2): pool de fotos de Unsplash (se refresca en el cron diario)
+model FotoUnsplash {
+  id              String   @id @map("Unsplash_ID")
+  urlRaw          String   @map("Url_Raw")
+  ancho           Int      @map("Ancho")
+  alto            Int      @map("Alto")
+  color           String?  @map("Color") // placeholder mientras carga
+  blurHash        String?  @map("Blur_Hash")
+  autorNombre     String   @map("Autor_Nombre")
+  autorUsuario    String   @map("Autor_Usuario")
+  urlFoto         String   @map("Url_Foto") // links.html
+  orientacion     String   @map("Orientacion") // "horizontal" | "vertical"
+  activa          Boolean  @default(true) @map("Activa")
+  oculta          Boolean  @default(false) @map("Oculta") // un padre la quitó; no vuelve a entrar
+  descargaAvisada Boolean  @default(false) @map("Descarga_Avisada")
+  createdAt       DateTime @default(now()) @map("Created_At")
+
+  @@map("Fotos_Unsplash")
+}
+
+// ==========================================
+// Ingreso diario y «Tu parte de hoy» (vault/ENGAGEMENT_PLAN.md, lane 201)
+// ==========================================
+
+// Un registro por persona y día de la familia en que entró a la app: de acá sale la racha de días en la app
+// y, para los padres, las misiones de «Tu parte de hoy» ya cumplidas (claves) para no premiarlas dos veces.
+model ActividadDia {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("Usuario_ID")
+  fecha     DateTime @map("Fecha") @db.Date
+  misiones  Json     @default("[]") @map("Misiones") // string[]: claves de misiones premiadas ese día (+ "completo")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, fecha])
+  @@map("Actividad_Diaria")
+}
+
+// Meta semanal en familia (vault/ENGAGEMENT_PLAN.md, lane 202): un objetivo compartido de la semana (lunes a domingo).
+// El avance sale de lo que ya existe (tareas aprobadas y hábitos hechos de los hijos); al cumplirse, cada hijo recibe un vale.
+model MetaSemanal {
+  id          Int       @id @default(autoincrement())
+  semana      DateTime  @unique @map("Semana") @db.Date // el lunes de la semana
+  objetivo    Int       @map("Objetivo")
+  premio      String    @map("Premio") // texto del vale: «Vale por …»
+  creadaPorId Int?      @map("Creada_Por_ID")
+  cumplidaEn  DateTime? @map("Cumplida_En")
+  createdAt   DateTime  @default(now()) @map("Created_At")
+
+  creadaPor Usuario? @relation("MetasSemanales", fields: [creadaPorId], references: [id], onDelete: SetNull)
+
+  @@map("Metas_Semanales")
+}
+
+// Compañero que evoluciona (vault/ENGAGEMENT_PLAN.md, lane 203): crece con los DÍAS DE USO (no con la racha),
+// así que faltar nunca lo achica. Solo guarda lo que elige el niño; la etapa se calcula con `ActividadDia`.
+model Companero {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int      @unique @map("Usuario_ID")
+  nombre     String   @map("Nombre")
+  etapaVista Int      @default(1) @map("Etapa_Vista") // en desuso desde la lane 220 (héroe): reemplazado por nivelVisto
+  // Héroe (lane 220, vault/COMPANERO_HEROE.md): quién lo acompaña, qué nivel ya festejó y qué tiene puesto
+  personaje  String?  @map("Personaje") // monja | sacerdote | hombre | mujer | nino | nina; null = todavía no eligió
+  nivelVisto Int      @default(0) @map("Nivel_Visto") // último nivel que ya festejó
+  equipados  Json     @default("{\"fondo\": \"capilla\", \"objetos\": [\"veladora\"]}") @map("Equipados") // { fondo, objetos[] }
+  createdAt  DateTime @default(now()) @map("Created_At")
+  updatedAt  DateTime @updatedAt @map("Updated_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("Companeros")
+}
+
+// Accesorios que el usuario ya compró para su compañero (los de regalo no tienen fila).
+model CompaneroAccesorio {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("Usuario_ID")
+  clave     String   @map("Clave") // catálogo en src/lib/engagement/accesorios.ts
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, clave])
+  @@map("Companero_Accesorios")
+}
+
+// Avisos push en el celular (vault/ENGAGEMENT_PLAN.md, lane 204): un dispositivo suscripto por fila.
+// `ultimoAvisoEn` evita mandar dos avisos el mismo día al mismo dispositivo.
+model SuscripcionPush {
+  id            Int       @id @default(autoincrement())
+  usuarioId     Int       @map("Usuario_ID")
+  endpoint      String    @unique @map("Endpoint")
+  p256dh        String    @map("P256dh")
+  auth          String    @map("Auth")
+  agente        String?   @map("Agente")
+  ultimoAvisoEn DateTime? @map("Ultimo_Aviso_En")
+  createdAt     DateTime  @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("Suscripciones_Push")
 }

@@ -20,7 +20,10 @@ import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { HabitoIcon } from "@/components/habitos/HabitoIcon";
 import { PerfilResumen } from "./PerfilResumen";
+import { AvisosPush } from "@/components/engagement/AvisosPush";
 import { GraficoAnimo, type RegistroAnimoItem } from "./GraficoAnimo";
+import { ConductaPerfil } from "@/components/conducta/ConductaPerfil";
+import type { ResumenConducta } from "@/lib/conducta/server";
 
 export interface PremioItem {
   id: number;
@@ -52,10 +55,12 @@ interface PerfilViewProps {
   habitos: EstadoHabito[];
   premios: PremioItem[];
   animo: RegistroAnimoItem[];
+  conducta: ResumenConducta;
+  hoy: string;
   esPropio: boolean;
 }
 
-export function PerfilView({ usuario, habitos, premios, animo, esPropio }: PerfilViewProps) {
+export function PerfilView({ usuario, habitos, premios, animo, conducta, hoy, esPropio }: PerfilViewProps) {
   const totalXp = xpTotal(usuario);
   const infoNivel = nivelDe(totalXp);
 
@@ -65,6 +70,10 @@ export function PerfilView({ usuario, habitos, premios, animo, esPropio }: Perfi
       <PerfilResumen usuario={usuario} habitos={habitos} puedeEditarFoto={esPropio} />
 
       <GraficoAnimo registros={animo} nombre={usuario.nombre} esPropio={esPropio} />
+
+      <ConductaPerfil resumen={conducta} hoy={hoy} nombre={usuario.nombre} esPropio={esPropio} />
+
+      {esPropio && <AvisosPush modo="perfil" />}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Hábitos activos */}

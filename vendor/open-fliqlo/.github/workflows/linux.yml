@@ -1,0 +1,83 @@
+name: Linux build
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: linux-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    name: Build Linux x64
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/open_fliqlo
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libglib2.0-bin zip
+
+      - name: Install nfpm
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          NFPM_VERSION="2.47.0"
+          curl -sSfL \
+            "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz" \
+            | tar -xz -C /tmp nfpm
+          sudo install -m755 /tmp/nfpm /usr/local/bin/nfpm
+          nfpm --version
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Build release
+        run: flutter build linux --release
+
+      - name: Package deb + rpm + zip
+        id: package
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          REF_NAME="${GITHUB_REF_NAME:-manual}"
+          SHA_SHORT="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          # Deb/rpm-friendly version (must start with a digit).
+          SAFE_REF="$(echo "${REF_NAME}" | tr -c 'A-Za-z0-9._-' '-' | sed 's/^-*//;s/-*$//')"
+          VERSION="0.0.0+${SAFE_REF}-${SHA_SHORT}"
+          ARTIFACT_BASE="OpenFliqlo-linux-x64-${SAFE_REF}-${SHA_SHORT}"
+          BUNDLE="apps/open_fliqlo/build/linux/x64/release/bundle"
+          ./packaging/linux/package.sh \
+            --bundle="${BUNDLE}" \
+            --version="${VERSION}" \
+            --artifact-base="${ARTIFACT_BASE}" \
+            --out=artifacts
+          echo "artifact_base=${ARTIFACT_BASE}" >> "$GITHUB_OUTPUT"
+          ls -la artifacts/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.artifact_base }}
+          path: |
+            artifacts/*.deb
+            artifacts/*.rpm
+            artifacts/*.zip
+          if-no-files-found: error
+          retention-days: 30

@@ -6,9 +6,16 @@ import { AppSidebar } from "@/components/app/AppSidebar";
 import { MainDock } from "@/components/dashboard/MainDock";
 import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
+import { ActualizarPremios } from "@/components/dashboard/ActualizarPremios";
+import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
-import { contarRecompensasPendientes } from "@/lib/recompensas/server";
+import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
+import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
+import { nivelDe, xpTotal } from "@/lib/niveles";
+import { parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
+import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
+import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +24,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getSession();
   if (!session?.user) redirect("/");
 
+  // Desde las 18:00 el cofre del día llega al entrar (si los padres evaluaron bien el día)
+  // y se anota el ingreso del día para la racha en la app (lane 201)
+  await Promise.all([
+    otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e)),
+    registrarIngreso(Number(session.user.id)).catch((e) => console.error("[Ingreso]", e)),
+  ]);
+  // Los padres: se premian las misiones de «Tu parte de hoy» (y llega el cofre) donde sea que estén,
+  // no solo al abrir el panel de administración
+  await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
+
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas] = await Promise.all([
+  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -28,10 +45,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getEstadoHabitos(Number(session.user.id)),
     contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
     eventosDeHoy(Number(session.user.id)).catch(() => null),
+    contarSorpresasSinAbrir(Number(session.user.id)),
+    contarReconocimientosSinAbrir(Number(session.user.id)),
   ]);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
+  const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
+  // El compañero llama la atención hasta que se lo elige y cada vez que sube de nivel
+  const fichaCompanero = await prisma.companero.findUnique({ where: { usuarioId: Number(session.user.id) }, select: { personaje: true, nivelVisto: true } }).catch(() => null);
+  const companeroPendiente = !fichaCompanero?.personaje || nivelDe(xpTotal(currentUser)).level > fichaCompanero.nivelVisto;
   const tasks = myTasks.map((t) => ({
     ...t,
     timerStartedAt: t.timerStartedAt?.toISOString() ?? null,
@@ -41,17 +64,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <SidebarProvider>
+      <RegistrarServiceWorker />
       <AppSidebar
         currentUser={currentUser}
         tasks={tasks}
         habitosPendientes={habitosPendientes}
         premiosPendientes={premiosPendientes}
         hayEventosCartas={hayEventosCartas}
+        companeroPendiente={companeroPendiente}
       />
       <SidebarInset className="min-w-0">
+        <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />
         <NoticeBar />
         <div className="flex flex-1 flex-col pb-24">{children}</div>
       </SidebarInset>
+      <ModoRelajado activo={modoRelajado} />
+      <ActualizarPremios />
       <ModalManager />
       <MainDock currentUser={currentUser} allUsers={users} />
     </SidebarProvider>

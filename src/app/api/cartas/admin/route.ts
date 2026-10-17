@@ -5,6 +5,7 @@ import {
   adminCrearCarta,
   adminActualizarCarta,
   adminArchivarCarta,
+  adminEliminarCarta,
   adminRestaurarCarta,
 } from "@/lib/cartas/server";
 
@@ -87,7 +88,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/cartas/admin — Archivar carta (soft delete, preserva progreso de usuarios)
+// DELETE /api/cartas/admin — Eliminar carta definitivamente (borra también el progreso de los usuarios)
 export async function DELETE(request: NextRequest) {
   try {
     const auth = await verificarPermisoAdmin();
@@ -111,11 +112,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "El ID de la carta es requerido" }, { status: 400 });
     }
 
-    const cartaArchivada = await adminArchivarCarta(id);
-    return NextResponse.json({ ok: true, mensaje: "Carta archivada correctamente", carta: cartaArchivada });
+    await adminEliminarCarta(id);
+    return NextResponse.json({ ok: true, mensaje: "Carta eliminada correctamente" });
   } catch (error: unknown) {
     console.error("[API/Cartas/Admin] DELETE:", error);
-    const mensaje = error instanceof Error ? error.message : "Error al archivar la carta";
+    const mensaje = error instanceof Error ? error.message : "Error al eliminar la carta";
     return NextResponse.json({ error: mensaje }, { status: 400 });
   }
 }

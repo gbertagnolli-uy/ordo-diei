@@ -14,8 +14,11 @@ import {
   Quote,
   Scroll,
   Table as TableIcon,
-  ShoppingBag,
+  ShoppingCart,
+  GalleryHorizontalEnd,
+  IdCard,
 } from "lucide-react";
+import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,12 +28,15 @@ import {
   TableCell,
   TableRow,
 } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CarruselVersionesCarta } from "@/components/cartas/CarruselVersionesCarta";
 import { CartaVista } from "@/components/cartas/CartaVista";
 import { BordeReclamable } from "@/components/cartas/BordeReclamable";
 import { useReclamoCarta } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import type { ContenidoCartaVisible } from "@/lib/cartas/revelado";
 import type { GradoCarta } from "@/lib/cartas/economia";
+import type { VersionCarta } from "@/lib/cartas/versiones";
 
 interface DetalleCartaDTO extends ContenidoCartaVisible {
   fiestaHoy: boolean;
@@ -38,6 +44,7 @@ interface DetalleCartaDTO extends ContenidoCartaVisible {
   siguienteGrado: number | null;
   fragmentosParaSiguienteGrado: number;
   inciensoGanado: number;
+  versiones: VersionCarta[] | null; // null: todos los grados comparten arte, sin carrusel
   diasHastaCelebracion: number | null;
   textoCelebracion: string | null;
   navegacion: {
@@ -59,6 +66,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
       : carta.id && carta.reclamable
         ? ({ tipo: "grado", cartaId: carta.id } as const)
         : null;
+  const [vista, setVista] = React.useState<"carta" | "versiones">("carta");
   const gradoRomano = TEXTOS_CARTAS.gradosRomanos[carta.grado] || "I";
   const gradoTexto = TEXTOS_CARTAS.grados[carta.grado];
 
@@ -67,6 +75,8 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
   const pctBarra = Math.min(100, Math.round((carta.porcentaje / maxBarra) * 100));
 
   return (
+    <div className="flex flex-col">
+      <PageHeader group="Colección" title={carta.nombre} />
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
       {/* Navegación Superior */}
       <div className="flex items-center justify-between gap-4 border-b pb-4">
@@ -112,6 +122,28 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Columna Izquierda: Carta Holo y Créditos (5 cols) */}
         <div className="lg:col-span-5 flex flex-col items-center gap-4">
+          {carta.versiones && (
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={vista}
+              onValueChange={(v) => v && setVista(v as "carta" | "versiones")}
+              aria-label="Cómo ver la carta"
+            >
+              <ToggleGroupItem value="carta" className="gap-1.5 text-xs">
+                <IdCard className="size-3.5" />
+                Carta
+              </ToggleGroupItem>
+              <ToggleGroupItem value="versiones" className="gap-1.5 text-xs">
+                <GalleryHorizontalEnd className="size-3.5" />
+                Versiones
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
+          {carta.versiones && vista === "versiones" ? (
+            <CarruselVersionesCarta carta={{ ...carta, versiones: carta.versiones }} />
+          ) : (
           <BordeReclamable activo={reclamo !== null} radio={16} className="w-full max-w-[340px]">
             {/* La holo no se recorta (tilt 3D); la bloqueada llena la caja 63:88 */}
             <div
@@ -133,6 +165,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
               />
             </div>
           </BordeReclamable>
+          )}
 
           {carta.creditoImagen && (
             <p className="text-[11px] text-muted-foreground text-center italic max-w-xs">
@@ -162,9 +195,9 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
               <p className="text-[11px] text-center text-muted-foreground">{TEXTOS_CARTAS.eventos.fiestaDetalle}</p>
             )}
             <Button asChild variant="outline" className="w-full gap-2">
-              <Link href="/dashboard/cartas?tab=tienda">
-                <ShoppingBag className="size-4" />
-                <span>Ir a la Tienda de Cartas</span>
+              <Link href="/dashboard/tienda">
+                <ShoppingCart className="size-4" />
+                <span>Ir a la Tienda</span>
               </Link>
             </Button>
           </div>
@@ -453,6 +486,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
         </div>
       </div>
       {modal}
+    </div>
     </div>
   );
 }

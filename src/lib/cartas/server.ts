@@ -6,15 +6,23 @@ import prisma from "../prisma.ts";
 import {
   CARTAS_BIENVENIDA,
   RAREZAS_CUMPLE,
-  SOBRE_MEDITACION,
-  SOBRE_REVELACION,
+  FRAGMENTOS_POR_ESTRELLA,
+  RAREZAS_COMPRA_PUNTOS,
+  SOBRES,
   TOPE_DIARIO_FRAGMENTOS_PUNTOS,
+  XP_MINIMO_RAREZA,
+  costoConDescuento,
+  descuentoPorRacha,
   precioFragmentoEnPuntos,
   precioFragmentoEnIncienso,
   type CategoriaCarta,
   type GradoCarta,
   type RarezaCarta,
+  type TipoSobre,
 } from "./economia.ts";
+import { xpTotal } from "../niveles.ts";
+import { exigirSinSancion, haySancion } from "../comportamiento/sancionServer.ts";
+import { rachaEfectiva } from "./racha.ts";
 import {
   aplicarFragmentos,
   gradoDe,
@@ -29,7 +37,7 @@ import {
 } from "./revelado.ts";
 import {
   sortearBienvenida,
-  sortearSobreMeditacion,
+  sortearSobre,
   sortearSobreRevelacion,
   type FragmentoOtorgado,
   type RngFn,
@@ -49,11 +57,39 @@ import {
 import { esquemaCartaAdmin, generarClaveSlug } from "./esquema.ts";
 import { ordenarPorCelebracion } from "./orden.ts";
 import { TEXTOS_CARTAS } from "./textos.ts";
+import { listarVersiones, tieneVersionesDistintas } from "./versiones.ts";
+
+/** Lo que hace falta del usuario para cobrar, descontar y pedir requisitos (vault/ECONOMIA_CARTAS.md §8) */
+export const SELECT_ECONOMIA = {
+  availablePoints: true,
+  incienso: true,
+  stars: true,
+  puntosAcumulados: true,
+  experienciaHabitos: true,
+  streakDays: true,
+  lastTaskCompletedDate: true,
+} as const;
+
+/** Descuento (%) en sobres según la racha efectiva del usuario */
+export function descuentoDeUsuario(
+  u: { streakDays: number; lastTaskCompletedDate: Date | null } | null | undefined,
+  ahora: Date = new Date()
+): number {
+  return u ? descuentoPorRacha(rachaEfectiva(u.streakDays, u.lastTaskCompletedDate, ahora)) : 0;
+}
+
+/** Falla si el usuario no llega al XP que pide la rareza */
+function exigirXpParaRareza(xp: number, rareza: RarezaCarta, accion: string) {
+  const minimo = XP_MINIMO_RAREZA[rareza];
+  if (xp < minimo) {
+    throw new Error(`Necesitás ${minimo} XP para ${accion} cartas ${TEXTOS_CARTAS.rarezas[rareza]} y tenés ${xp}.`);
+  }
+}
 
 /** Período del reclamo de bienvenida (D23): uno solo por usuario, para siempre */
 const PERIODO_BIENVENIDA = "inicio";
 
-type TipoMovimiento = "Sobre" | "Compra" | "CompraIncienso" | "Fiesta" | "Cumpleanos" | "Bienvenida";
+type TipoMovimiento = "Sobre" | "Compra" | "CompraIncienso" | "Fiesta" | "Cumpleanos" | "Bienvenida" | "Ajuste";
 
 /** Lo que hace falta de una carta para sumarle fragmentos */
 const SELECT_OTORGABLE = {
@@ -162,7 +198,7 @@ export async function listarCartasUsuario(usuarioId: number) {
     }),
     prisma.usuario.findUnique({
       where: { id: usuarioId },
-      select: { availablePoints: true, incienso: true },
+      select: SELECT_ECONOMIA,
     }),
     prisma.reclamoCarta.findMany({
       where: { usuarioId, tipo: "Fiesta", periodo: hoyAnioEnTz(new Date(), APP_TZ) },
@@ -191,6 +227,9 @@ export async function listarCartasUsuario(usuarioId: number) {
     usuario: {
       availablePoints: usuario?.availablePoints ?? 0,
       incienso: usuario?.incienso ?? 0,
+      stars: usuario?.stars ?? 0,
+      xp: xpTotal(usuario),
+      descuentoPct: descuentoDeUsuario(usuario),
     },
   };
 }
@@ -313,6 +352,8 @@ export async function obtenerDetalleCarta(
       anterior,
       siguiente,
     },
+    // Carrusel de versiones (lane 58): null si todos los grados comparten arte
+    versiones: tieneVersionesDistintas(adaptada) ? listarVersiones(clave, visible.grado) : null,
   };
 
   if (opciones?.esAdmin) {
@@ -408,6 +449,32 @@ async function otorgarFragmentos(
   };
 }
 
+/**
+ * Regalo de un padre (bitácora de comportamiento): fragmentos sueltos o la carta completa (los que
+ * faltan para el Grado I, ya reclamado). Corre dentro de la transacción del llamador.
+ */
+export async function regalarCartaEnTx(
+  tx: Prisma.TransactionClient,
+  usuarioId: number,
+  cartaId: number,
+  modo: { tipo: "completa" } | { tipo: "fragmentos"; cantidad: number },
+  detalle: string
+): Promise<FragmentosOtorgados> {
+  const carta = await tx.carta.findUnique({ where: { id: cartaId } });
+  if (!carta) throw new Error("La carta del premio ya no existe");
+  let cantidad: number;
+  if (modo.tipo === "completa") {
+    const actual = await tx.cartaUsuario.findUnique({
+      where: { usuarioId_cartaId: { usuarioId, cartaId } },
+      select: { fragmentos: true },
+    });
+    cantidad = Math.max(1, carta.fragmentosRequeridos - (actual?.fragmentos ?? 0));
+  } else {
+    cantidad = modo.cantidad;
+  }
+  return otorgarFragmentos(tx, usuarioId, carta, cantidad, { tipo: "Ajuste", detalle }, modo.tipo === "completa");
+}
+
 /** Aplica los fragmentos de un sobre ya sorteado. Los grados quedan pendientes de reclamar (D20). */
 async function aplicarSobre(
   tx: Prisma.TransactionClient,
@@ -447,29 +514,40 @@ async function aplicarSobre(
 }
 
 /**
- * 3. Comprar sobre de cartas (Meditación o Revelación) en transacción atómica.
+ * 3. Comprar sobre de cartas (Meditación, Devoción, Revelación o Gloria) en transacción atómica.
+ * El precio en puntos baja 1 % por día de racha (máx. 30 %); las estrellas y el XP mínimo no se descuentan.
  */
-export async function comprarSobre(
-  usuarioId: number,
-  tipoSobre: "meditacion" | "revelacion",
-  rng?: RngFn
-) {
-  const config = tipoSobre === "meditacion" ? SOBRE_MEDITACION : SOBRE_REVELACION;
-  const costo = config.costoPuntos;
+export async function comprarSobre(usuarioId: number, tipoSobre: TipoSobre, rng?: RngFn) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
+  const config = SOBRES[tipoSobre];
+  if (!config) throw new Error("Tipo de sobre no válido");
 
   return await prisma.$transaction(async (tx) => {
-    // 1. Verificar y bloquear saldo del usuario
+    // 1. Verificar requisitos y saldo del usuario
     const usuario = await tx.usuario.findUnique({
       where: { id: usuarioId },
-      select: { id: true, availablePoints: true, incienso: true },
+      select: { id: true, ...SELECT_ECONOMIA },
     });
 
     if (!usuario) {
       throw new Error("Usuario no encontrado");
     }
 
+    const xp = xpTotal(usuario);
+    if (xp < config.xpMinimo) {
+      throw new Error(`Necesitás ${config.xpMinimo} XP para abrir el ${config.nombre} y tenés ${xp}.`);
+    }
+
+    const descuentoPct = descuentoDeUsuario(usuario);
+    const costo = costoConDescuento(config.costoPuntos, descuentoPct);
+    const costoEstrellas = config.costoEstrellas;
+
     if (usuario.availablePoints < costo) {
       throw new Error(`Puntos insuficientes. Necesitás ${costo} puntos y tenés ${usuario.availablePoints}.`);
+    }
+    if (usuario.stars < costoEstrellas) {
+      throw new Error(`Estrellas insuficientes. Necesitás ${costoEstrellas} y tenés ${usuario.stars}.`);
     }
 
     // 2. Obtener pool de cartas activas para el sorteo
@@ -483,18 +561,15 @@ export async function comprarSobre(
     }
 
     // 3. Ejecutar sorteo puro
-    const resultadoSobre =
-      tipoSobre === "meditacion"
-        ? sortearSobreMeditacion(cartasPoolDb, rng)
-        : sortearSobreRevelacion(cartasPoolDb, rng);
+    const resultadoSobre = sortearSobre(config, cartasPoolDb, rng);
 
-    // 4. Descontar puntos solo si todavía alcanzan (dos compras simultáneas no dejan el saldo en negativo)
+    // 4. Descontar solo si todavía alcanza (dos compras simultáneas no dejan el saldo en negativo)
     const descuento = await tx.usuario.updateMany({
-      where: { id: usuarioId, availablePoints: { gte: costo } },
-      data: { availablePoints: { decrement: costo } },
+      where: { id: usuarioId, availablePoints: { gte: costo }, stars: { gte: costoEstrellas } },
+      data: { availablePoints: { decrement: costo }, stars: { decrement: costoEstrellas } },
     });
     if (descuento.count === 0) {
-      throw new Error(`Puntos insuficientes. Necesitás ${costo} puntos.`);
+      throw new Error(`Puntos o estrellas insuficientes. Necesitás ${costo} puntos y ${costoEstrellas} estrellas.`);
     }
 
     // 5. Aplicar cada fragmento otorgado
@@ -509,13 +584,17 @@ export async function comprarSobre(
 
     const usuarioActualizado = await tx.usuario.findUnique({
       where: { id: usuarioId },
-      select: { availablePoints: true, incienso: true },
+      select: { availablePoints: true, incienso: true, stars: true },
     });
 
     return {
       tipoSobre,
       nombreSobre: config.nombre,
       puntosGastados: costo,
+      costoLista: config.costoPuntos,
+      descuentoPct,
+      estrellasGastadas: costoEstrellas,
+      nuevoSaldoEstrellas: usuarioActualizado?.stars ?? 0,
       nuevoSaldoPuntos: usuarioActualizado?.availablePoints ?? 0,
       nuevoSaldoIncienso: usuarioActualizado?.incienso ?? 0,
       totalInciensoGanado: cartasAfectadas.reduce((s, c) => s + c.inciensoGanado, 0),
@@ -531,8 +610,10 @@ export async function comprarFragmentosDirectos(
   usuarioId: number,
   cartaId: number,
   cantidad: number,
-  moneda: "puntos" | "incienso"
+  moneda: "puntos" | "incienso" | "estrellas"
 ) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   if (cantidad <= 0 || !Number.isInteger(cantidad)) {
     throw new Error("La cantidad debe ser un número entero positivo");
   }
@@ -548,12 +629,14 @@ export async function comprarFragmentosDirectos(
 
     const usuario = await tx.usuario.findUnique({
       where: { id: usuarioId },
-      select: { id: true, availablePoints: true, incienso: true },
+      select: { id: true, ...SELECT_ECONOMIA },
     });
 
     if (!usuario) {
       throw new Error("Usuario no encontrado");
     }
+
+    exigirXpParaRareza(xpTotal(usuario), carta.rareza, "comprar fragmentos de");
 
     const ahora = new Date();
     const hoyInicio = inicioDelDiaEnTz(ahora, APP_TZ);
@@ -561,6 +644,11 @@ export async function comprarFragmentosDirectos(
     let costoTotal = 0;
 
     if (moneda === "puntos") {
+      if (!RAREZAS_COMPRA_PUNTOS.includes(carta.rareza)) {
+        throw new Error(
+          `Las cartas ${TEXTOS_CARTAS.rarezas[carta.rareza]} no se compran con puntos: usá estrellas o Granos de Incienso.`
+        );
+      }
       // D2: Tope de 10 fragmentos por carta y día pagando con puntos. Se cuenta lo comprado
       // (puntos gastados / precio), no lo recibido: el bono de fiesta no consume el tope.
       const comprasHoy = await tx.movimientoFragmento.aggregate({
@@ -595,6 +683,22 @@ export async function comprarFragmentosDirectos(
       if (descuento.count === 0) {
         throw new Error(`Puntos insuficientes. Necesitás ${costoTotal} puntos.`);
       }
+    } else if (moneda === "estrellas") {
+      // 1 estrella = 5 fragmentos Celestiales; sin tope diario porque las estrellas son escasas
+      if (carta.rareza !== "Celestial") {
+        throw new Error("Las estrellas solo compran fragmentos de cartas Celestiales");
+      }
+      if (cantidad % FRAGMENTOS_POR_ESTRELLA !== 0) {
+        throw new Error(`Con estrellas se compran de a ${FRAGMENTOS_POR_ESTRELLA} fragmentos (1 estrella cada ${FRAGMENTOS_POR_ESTRELLA}).`);
+      }
+      costoTotal = cantidad / FRAGMENTOS_POR_ESTRELLA;
+      const descuento = await tx.usuario.updateMany({
+        where: { id: usuarioId, stars: { gte: costoTotal } },
+        data: { stars: { decrement: costoTotal } },
+      });
+      if (descuento.count === 0) {
+        throw new Error(`Estrellas insuficientes. Necesitás ${costoTotal} y tenés ${usuario.stars}.`);
+      }
     } else {
       // moneda === "incienso"
       costoTotal = cantidad * precioFragmentoEnIncienso(carta.rareza);
@@ -625,7 +729,7 @@ export async function comprarFragmentosDirectos(
       carta,
       cantidadFinal,
       {
-        tipo: moneda === "puntos" ? "Compra" : "CompraIncienso",
+        tipo: moneda === "incienso" ? "CompraIncienso" : "Compra",
         detalle: `Compra directa (${moneda})${esFiesta ? " · Bono fiesta ×1,5" : ""}`,
         puntosGastados: moneda === "puntos" ? costoTotal : 0,
         inciensoGastado: moneda === "incienso" ? costoTotal : 0,
@@ -637,7 +741,7 @@ export async function comprarFragmentosDirectos(
 
     const usuarioFinal = await tx.usuario.findUnique({
       where: { id: usuarioId },
-      select: { availablePoints: true, incienso: true },
+      select: { availablePoints: true, incienso: true, stars: true },
     });
 
     return {
@@ -660,6 +764,7 @@ export async function comprarFragmentosDirectos(
       inciensoGanado: otorgado.inciensoGanado,
       nuevoSaldoPuntos: usuarioFinal?.availablePoints ?? 0,
       nuevoSaldoIncienso: usuarioFinal?.incienso ?? 0,
+      nuevoSaldoEstrellas: usuarioFinal?.stars ?? 0,
     };
   });
 }
@@ -669,6 +774,8 @@ export async function comprarFragmentosDirectos(
  * entera (+100 %), ya reclamada. Una vez por (usuario, carta, año).
  */
 export async function reclamarFiesta(usuarioId: number, cartaId: number) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   const ahora = new Date();
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
@@ -684,6 +791,12 @@ export async function reclamarFiesta(usuarioId: number, cartaId: number) {
     if (!esFiestaHoy(carta.celebracion, ahora, APP_TZ)) {
       throw new Error("Hoy no se celebra la festividad de esta carta");
     }
+
+    const usuarioXp = await tx.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { puntosAcumulados: true, experienciaHabitos: true },
+    });
+    exigirXpParaRareza(xpTotal(usuarioXp), carta.rareza, "recibir el regalo de fiesta de");
 
     const reclamoPrevio = await tx.reclamoCarta.findUnique({
       where: {
@@ -704,7 +817,7 @@ export async function reclamarFiesta(usuarioId: number, cartaId: number) {
       tx,
       usuarioId,
       carta,
-      regaloFiesta(carta.fragmentosRequeridos),
+      regaloFiesta(carta.fragmentosRequeridos, carta.rareza),
       { tipo: "Fiesta", detalle: `Regalo de la fiesta litúrgica (${periodo})` },
       true
     );
@@ -748,6 +861,8 @@ export async function reclamarCumpleanos(
   cartaId?: number | null,
   rng?: RngFn
 ) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   const ahora = new Date();
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
@@ -836,6 +951,8 @@ export async function reclamarCumpleanos(
  * Una sola vez por usuario. Se prefieren Comunes que todavía no tenga.
  */
 export async function reclamarBienvenida(usuarioId: number, rng?: RngFn) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   return await prisma.$transaction(async (tx) => {
     const previo = await tx.reclamoCarta.findUnique({
       where: {
@@ -898,6 +1015,8 @@ export async function reclamarBienvenida(usuarioId: number, rng?: RngFn) {
  * grados, se reclaman juntos. Idempotente ante doble clic.
  */
 export async function reclamarGrado(usuarioId: number, cartaId: number) {
+  // Día con sanción: las cartas están deshabilitadas (vault/LANE_200_SANCION_Y_ENGAGEMENT.md)
+  await exigirSinSancion(prisma, usuarioId, "cartas");
   return await prisma.$transaction(async (tx) => {
     const carta = await tx.carta.findUnique({ where: { id: cartaId }, select: { ...SELECT_OTORGABLE, activa: true } });
     if (!carta || !carta.activa) {
@@ -965,13 +1084,15 @@ async function contarGradosPendientes(usuarioId: number): Promise<number> {
  */
 export async function eventosDeHoy(usuarioId: number) {
   const ahora = new Date();
+  // Día con sanción: no hay regalos ni reclamos pendientes que mostrar (están deshabilitados)
+  const bloqueado = await haySancion(prisma, usuarioId, ahora);
   const hoyMMdd = hoyMesDiaEnTz(ahora, APP_TZ);
   const periodo = hoyAnioEnTz(ahora, APP_TZ);
 
   const [usuario, cartasFiesta, reclamosUsuario, gradosPendientes] = await Promise.all([
     prisma.usuario.findUnique({
       where: { id: usuarioId },
-      select: { id: true, nombre: true, fechaNacimiento: true },
+      select: { id: true, nombre: true, fechaNacimiento: true, puntosAcumulados: true, experienciaHabitos: true },
     }),
     prisma.carta.findMany({
       where: { celebracion: hoyMMdd, activa: true },
@@ -1011,7 +1132,9 @@ export async function eventosDeHoy(usuarioId: number) {
     subtitulo: c.subtitulo,
     rareza: c.rareza,
     imagenUrl: c.imagenUrl,
-    regaloFragmentos: regaloFiesta(c.fragmentosRequeridos),
+    regaloFragmentos: regaloFiesta(c.fragmentosRequeridos, c.rareza),
+    xpMinimo: XP_MINIMO_RAREZA[c.rareza],
+    xpInsuficiente: xpTotal(usuario) < XP_MINIMO_RAREZA[c.rareza],
     yaLaTiene: (c.cartasUsuario[0]?.gradoReclamado ?? 0) >= 1,
     reclamado: reclamosFiestaSet.has(c.id),
   }));
@@ -1031,12 +1154,14 @@ export async function eventosDeHoy(usuarioId: number) {
       : [];
 
   const hayPendientes =
-    fiestas.some((f) => !f.reclamado) ||
-    (esCumple && !cumpleReclamado) ||
-    bienvenidaDisponible ||
-    gradosPendientes > 0;
+    !bloqueado &&
+    (fiestas.some((f) => !f.reclamado) ||
+      (esCumple && !cumpleReclamado) ||
+      bienvenidaDisponible ||
+      gradosPendientes > 0);
 
   return {
+    bloqueado,
     fechaHoy: hoyMMdd,
     periodo,
     esCumple,
@@ -1223,6 +1348,19 @@ export async function adminArchivarCarta(id: number) {
     where: { id },
     data: { activa: false },
   });
+}
+
+/**
+ * Borrado definitivo. A diferencia de archivar, también se pierde el progreso de todos
+ * los usuarios en esa carta (CartaUsuario en cascada); los movimientos quedan sin carta.
+ */
+export async function adminEliminarCarta(id: number) {
+  const existente = await prisma.carta.findUnique({ where: { id } });
+  if (!existente) {
+    throw new Error(`Carta con ID ${id} no encontrada`);
+  }
+
+  return await prisma.carta.delete({ where: { id } });
 }
 
 export async function adminRestaurarCarta(id: number) {

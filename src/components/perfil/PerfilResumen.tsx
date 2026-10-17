@@ -20,12 +20,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import { nivelDe, xpTotal, TITULOS } from "@/lib/niveles";
 import { evaluarLogros, type CategoriaLogro } from "@/lib/logros";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { LogroIcon } from "./LogroIcon";
 import { subirImagen } from "@/lib/subirImagen";
+
+// Badges disponibles en public/niveles/1.webp … 12.webp
+const NIVELES_CON_BADGE = 12;
 
 interface PerfilResumenProps {
   usuario: {
@@ -203,26 +205,16 @@ export function PerfilResumen({
             </div>
           </div>
 
-          {/* Anillo de progreso de nivel */}
-          <div className="flex flex-col items-center gap-1">
-            <div className="relative flex items-center justify-center">
-              <AnimatedCircularProgressBar
-                max={100}
-                min={0}
-                value={infoNivel.progressPercentage}
-                gaugePrimaryColor="var(--primary)"
-                gaugeSecondaryColor="color-mix(in srgb, var(--primary) 15%, transparent)"
-                className="size-24 text-sm"
-              />
-              <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Nivel
-                </span>
-                <span className="font-heading text-xl font-bold leading-none">
-                  {infoNivel.level}
-                </span>
-              </div>
-            </div>
+          {/* Badge del nivel, barra de progreso y XP */}
+          <div className="flex w-full max-w-48 flex-col items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/niveles/${Math.min(Math.max(infoNivel.level, 1), NIVELES_CON_BADGE)}.webp`}
+              alt={`Badge del nivel ${infoNivel.level}`}
+              className="size-28 object-contain"
+            />
+            <Progress value={infoNivel.progressPercentage} className="h-2 w-full" />
+            <span className="text-sm font-semibold tabular-nums">{totalXp} XP</span>
             <span className="text-[11px] text-muted-foreground tabular-nums">
               {infoNivel.progressPercentage}% al Nivel {infoNivel.level + 1}
             </span>

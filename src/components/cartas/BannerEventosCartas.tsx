@@ -30,6 +30,8 @@ interface FiestaLiturgicaInfo {
   rareza: string;
   imagenUrl: string;
   regaloFragmentos: number;
+  xpMinimo: number;
+  xpInsuficiente: boolean;
   yaLaTiene: boolean;
   reclamado: boolean;
 }
@@ -221,11 +223,13 @@ export function BannerEventosCartas({ className = "", onReclamoExitoso }: Banner
                   type="button"
                   size="sm"
                   onClick={() => reclamar({ tipo: "fiesta", cartaId: fiesta.cartaId })}
-                  disabled={reclamando === clave}
+                  disabled={reclamando === clave || fiesta.xpInsuficiente}
                   className="gap-1.5 text-xs h-8 shadow-xs"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  {reclamando === clave
+                  {fiesta.xpInsuficiente
+                    ? `Requiere ${fiesta.xpMinimo} XP`
+                    : reclamando === clave
                     ? "Reclamando..."
                     : fiesta.yaLaTiene
                       ? TEXTOS_CARTAS.eventos.fiestaPremioRepetida

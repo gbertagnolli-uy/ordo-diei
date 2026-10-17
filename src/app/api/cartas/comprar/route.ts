@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { comprarSobre, comprarFragmentosDirectos } from "@/lib/cartas/server";
+import { TIPOS_SOBRE, type TipoSobre } from "@/lib/cartas/economia";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,14 @@ export async function POST(req: NextRequest) {
 
     if (tipo === "sobre") {
       const { sobre } = body;
-      if (sobre !== "meditacion" && sobre !== "revelacion") {
+      if (!TIPOS_SOBRE.includes(sobre)) {
         return NextResponse.json(
-          { error: "Tipo de sobre no válido. Debe ser 'meditacion' o 'revelacion'." },
+          { error: `Tipo de sobre no válido. Debe ser uno de: ${TIPOS_SOBRE.join(", ")}.` },
           { status: 400 }
         );
       }
 
-      const resultado = await comprarSobre(usuarioId, sobre);
+      const resultado = await comprarSobre(usuarioId, sobre as TipoSobre);
       return NextResponse.json(resultado);
     }
 
@@ -40,9 +41,9 @@ export async function POST(req: NextRequest) {
       if (!numCantidad || isNaN(numCantidad) || numCantidad <= 0) {
         return NextResponse.json({ error: "La cantidad debe ser mayor a 0" }, { status: 400 });
       }
-      if (moneda !== "puntos" && moneda !== "incienso") {
+      if (moneda !== "puntos" && moneda !== "incienso" && moneda !== "estrellas") {
         return NextResponse.json(
-          { error: "Moneda no válida. Debe ser 'puntos' o 'incienso'." },
+          { error: "Moneda no válida. Debe ser 'puntos', 'incienso' o 'estrellas'." },
           { status: 400 }
         );
       }

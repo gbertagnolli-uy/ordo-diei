@@ -4,20 +4,28 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { urlArte } from "@/lib/cartas/arte";
 import Link from "next/link";
+import { toast } from "@/lib/toast";
 import {
   Search,
   Plus,
   Pencil,
   Archive,
+  Trash2,
   RefreshCw,
   ArrowLeft,
   ShieldCheck,
   Calendar,
-  CheckCircle2,
-  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -52,7 +60,7 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
   const [estadoFiltro, setEstadoFiltro] = useState<string>("Todas");
 
   const [cargandoAccion, setCargandoAccion] = useState<number | null>(null);
-  const [notificacion, setNotificacion] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null);
+  const [cartaAEliminar, setCartaAEliminar] = useState<CartaAdminItem | null>(null);
 
   const cartasFiltradas = useMemo(() => {
     return cartas.filter((c) => {
@@ -92,14 +100,12 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
   const abrirCreacion = () => {
     setCartaSeleccionada(null);
     setModoFormulario(true);
-    setNotificacion(null);
   };
 
   // Manejar apertura de formulario para editar
   const abrirEdicion = (c: CartaAdminItem) => {
     setCartaSeleccionada(c);
     setModoFormulario(true);
-    setNotificacion(null);
   };
 
   // Manejar guardado exitoso
@@ -115,17 +121,13 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
     });
     setModoFormulario(false);
     setCartaSeleccionada(null);
-    setNotificacion({
-      tipo: "exito",
-      texto: `Carta "${cartaGuardada.nombre}" guardada con éxito. Ya está visible en el álbum de todos.`,
-    });
+    toast.success(`Carta "${cartaGuardada.nombre}" guardada con éxito. Ya está visible en el álbum de todos.`);
   };
 
   // Archivar o restaurar carta
   const alternarEstadoCarta = async (c: CartaAdminItem) => {
     try {
       setCargandoAccion(c.id);
-      setNotificacion(null);
 
       const nuevoEstado = !c.activa;
       const res = await fetch("/api/cartas/admin", {
@@ -146,18 +148,36 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
         prev.map((item) => (item.id === c.id ? { ...item, activa: nuevoEstado } : item))
       );
 
-      setNotificacion({
-        tipo: "exito",
-        texto: nuevoEstado
-          ? `Carta "${c.nombre}" restaurada y visible en el álbum.`
-          : `Carta "${c.nombre}" archivada (se conserva el progreso existente).`,
-      });
+      toast.success(nuevoEstado ? `Carta "${c.nombre}" restaurada y visible en el álbum.` : `Carta "${c.nombre}" archivada (se conserva el progreso existente).`);
     } catch (err: unknown) {
       console.error("Error al archivar/restaurar:", err);
       const msg = err instanceof Error ? err.message : "Error inesperado";
-      setNotificacion({ tipo: "error", texto: msg });
+      toast.error(msg);
     } finally {
       setCargandoAccion(null);
+    }
+  };
+
+  // Eliminar carta definitivamente
+  const eliminarCarta = async (c: CartaAdminItem) => {
+    try {
+      setCargandoAccion(c.id);
+
+      const res = await fetch(`/api/cartas/admin?id=${c.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Error al eliminar la carta");
+      }
+
+      setCartas((prev) => prev.filter((item) => item.id !== c.id));
+      toast.success(`Carta "${c.nombre}" eliminada definitivamente.`);
+    } catch (err: unknown) {
+      console.error("Error al eliminar:", err);
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      toast.error(msg);
+    } finally {
+      setCargandoAccion(null);
+      setCartaAEliminar(null);
     }
   };
 
@@ -188,33 +208,6 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
           </Button>
         )}
       </div>
-
-      {/* Alertas y avisos */}
-      {notificacion && (
-        <div
-          className={`rounded-xl p-3.5 text-xs flex items-center justify-between gap-2 border ${
-            notificacion.tipo === "exito"
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
-              : "bg-destructive/10 border-destructive/30 text-destructive"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {notificacion.tipo === "exito" ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-            ) : (
-              <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
-            )}
-            <span>{notificacion.texto}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNotificacion(null)}
-            className="text-xs opacity-70 hover:opacity-100"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Si estamos en modo formulario, mostrar Formulario */}
       {modoFormulario ? (
@@ -314,7 +307,7 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
                   <TableHead className="w-[100px] text-center">Req.</TableHead>
                   <TableHead className="w-[110px] text-center">Origen</TableHead>
                   <TableHead className="w-[100px] text-center">Estado</TableHead>
-                  <TableHead className="w-[130px] text-right">Acciones</TableHead>
+                  <TableHead className="w-[160px] text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -464,6 +457,18 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
                               <RefreshCw className="h-3.5 w-3.5" />
                             )}
                           </Button>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={cargandoAccion === c.id}
+                            onClick={() => setCartaAEliminar(c)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            title="Eliminar carta"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -474,6 +479,30 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!cartaAEliminar} onOpenChange={(abierto) => !abierto && setCartaAEliminar(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar &quot;{cartaAEliminar?.nombre}&quot;?</DialogTitle>
+            <DialogDescription>
+              Se borra definitivamente y se pierde el progreso de todos los usuarios en esta carta.
+              Esto no se puede deshacer. Si solo querés ocultarla, usá Archivar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCartaAEliminar(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={cargandoAccion !== null}
+              onClick={() => cartaAEliminar && eliminarCarta(cartaAEliminar)}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   hoyEnFamilia,
   registrar,
 } from "@/lib/habitos/server";
-import { usuariosObjetivo } from "@/lib/habitos/permisos";
+import { esPadre, usuariosObjetivo } from "@/lib/habitos/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +51,7 @@ export async function PUT(req: NextRequest) {
         marca,
         nota,
         paginas: body.paginas,
+        esPadre: esPadre(session.user.rolFamiliar),
       });
 
       const estados = await getEstadosHabitos(ids);
