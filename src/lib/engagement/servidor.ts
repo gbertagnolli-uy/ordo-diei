@@ -104,6 +104,50 @@ export type ParteDeHoy = {
 
 const leerClaves = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
+/** Hijos de la familia y si ya tienen un registro de comportamiento hoy, lo haya cargado el padre que sea */
+async function hijosConRegistroHoy(ahora: Date) {
+  const { desde, hasta } = rangoDelDia(ahora);
+  const fecha = aFecha(diaDeFamilia(ahora));
+  const [hijosDb, registros, conductas] = await Promise.all([
+    prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true, nombre: true }, orderBy: { id: "asc" } }),
+    prisma.comportamiento.findMany({ where: { createdAt: { gte: desde, lt: hasta } }, select: { usuarioId: true }, distinct: ["usuarioId"] }),
+    prisma.conductaDia.findMany({ where: { fecha }, select: { usuarioId: true } }),
+  ]);
+  const conRegistro = new Set([...registros, ...conductas].map((r) => r.usuarioId));
+  return hijosDb.map((h) => ({ id: h.id, nombre: h.nombre, registradoHoy: conRegistro.has(h.id) }));
+}
+
+/** Deja el cofre de «Tu parte de hoy» en «Mis premios» si todavía no está (idempotente). @returns true si lo creó. */
+async function darCofreDeLaParte(tx: Cliente, usuarioId: number, hoy: string): Promise<boolean> {
+  const origen = `Tu parte de hoy · ${hoy}`;
+  if ((await tx.recompensa.count({ where: { usuarioId, tipo: "comportamiento", origen } })) > 0) return false;
+  const carta = await cartaAlAzar(tx);
+  await tx.recompensa.create({
+    data: { usuarioId, tipo: "comportamiento", titulo: "Cofre de tu parte de hoy", origen, contenido: carta ? contenidoCofre(carta) : [{ tipo: "puntos", cantidad: 10 }] },
+  });
+  return true;
+}
+
+/**
+ * Cuando ya están registrados todos los hijos de hoy, por el padre que sea, desbloquea el cofre de TODOS los
+ * administradores sin esperar a que entren a la app. Se llama al registrar comportamiento o conducta.
+ * @returns ids de los padres que recibieron el cofre ahora.
+ */
+export async function desbloquearCofresDePadres(ahora: Date = new Date()): Promise<number[]> {
+  const hijos = await hijosConRegistroHoy(ahora);
+  if (hijos.length === 0 || hijos.some((h) => !h.registradoHoy)) return [];
+  const hoy = diaDeFamilia(ahora);
+  const padres = await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Padre", "Madre"] } }, select: { id: true } });
+  const nuevos: number[] = [];
+  for (const p of padres) {
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${p.id}::bigint + 8000000)`;
+      if (await darCofreDeLaParte(tx, p.id, hoy)) nuevos.push(p.id);
+    });
+  }
+  return nuevos;
+}
+
 /**
  * Evalúa las misiones de hoy, premia las que se cumplieron (puntos) y, cuando están todas, deja un premio
  * sorpresa. Se puede llamar las veces que haga falta: cada misión se premia una sola vez por día.
@@ -117,10 +161,8 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
   const { desde, hasta } = rangoDelDia(ahora);
   const hoyRango = { gte: desde, lt: hasta };
 
-  const [hijosDb, registros, conductas, materiales, comentarios, calificaciones, pendientes, aprobadasHoy, mensajes, publicaciones, fechas] = await Promise.all([
-    prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true, nombre: true }, orderBy: { id: "asc" } }),
-    prisma.comportamiento.findMany({ where: { createdAt: hoyRango }, select: { usuarioId: true }, distinct: ["usuarioId"] }),
-    prisma.conductaDia.findMany({ where: { fecha }, select: { usuarioId: true } }),
+  const [hijos, materiales, comentarios, calificaciones, pendientes, aprobadasHoy, mensajes, publicaciones, fechas] = await Promise.all([
+    hijosConRegistroHoy(ahora),
     prisma.materialEstudio.count({ where: { creadorId: usuario.id, createdAt: hoyRango } }),
     prisma.comentarioEstudio.count({ where: { autorId: usuario.id, createdAt: hoyRango } }),
     prisma.calificacion.count({ where: { calificadaPorId: usuario.id, createdAt: hoyRango } }),
@@ -131,9 +173,8 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     fechasDeIngreso(prisma, usuario.id, hoy),
   ]);
 
-  const conRegistro = new Set([...registros, ...conductas].map((r) => r.usuarioId));
   const contexto = {
-    hijos: hijosDb.map((h) => ({ id: h.id, nombre: h.nombre, registradoHoy: conRegistro.has(h.id) })),
+    hijos,
     estudioHoy: materiales + comentarios + calificaciones,
     pendientes,
     aprobadasHoy,
@@ -156,18 +197,8 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     if (puntos > 0) {
       await tx.usuario.update({ where: { id: usuario.id }, data: { availablePoints: { increment: puntos }, puntosAcumulados: { increment: puntos } } });
     }
-    if (premioFinal) {
-      const carta = await cartaAlAzar(tx);
-      await tx.recompensa.create({
-        data: {
-          usuarioId: usuario.id,
-          tipo: "comportamiento",
-          titulo: "Cofre de tu parte de hoy",
-          origen: `Tu parte de hoy · ${hoy}`,
-          contenido: carta ? contenidoCofre(carta) : [{ tipo: "puntos", cantidad: 10 }],
-        },
-      });
-    }
+    // Puede que otro administrador ya haya desbloqueado el cofre al registrar a los hijos: no se duplica
+    if (premioFinal) await darCofreDeLaParte(tx, usuario.id, hoy);
     if (claves.length !== premiadas.length) {
       await tx.actividadDia.update({ where: { id: fila.id }, data: { misiones: claves } });
     }
