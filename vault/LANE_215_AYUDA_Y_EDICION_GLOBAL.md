@@ -25,9 +25,10 @@ Contexto previo (lane 214): al asignar un curso el asistente se reiniciaba solo;
 | 215 | Base (`AyudaIcono`, `AdminItem`, `SwipeRow.collapse`) + ayuda en `AsistenteCurso` + fix DELETE de tareas con historial (FK `Historial_Acciones`) + AdminItem en productos de la tienda | integrada |
 | 216 | `AdminItem` en materias (panel), cursos (grilla) y lecciones (sidebar). `AdminItem` gana `confirmar` y `forma="tarjeta"`. Tareas: la vista admin es tabla/calendario/kanban con drag; ya editan (clic) y eliminan (botón); swipe diferido, ver decisión abajo | integrada al terminar |
 | 217 | Hábitos y hábitos comunitarios: el admin (Padre/Madre) edita y archiva cualquier hábito creado por la familia (antes solo el creador): `puedeEditarHabito(…, esAdmin)` + rutas PATCH/DELETE; swipe en tarjetas de hábito y en comunitarios. «Eliminar» = archivar (conserva el progreso). `AdminItem` gana `menu` | integrada al terminar |
-| 218 | Premios, tienda, cartas, vales | pendiente |
-| 219 | Rutina y horarios | pendiente |
-| 220 | Homeschooling restante (planes, días sin clase, períodos, materiales, lectura, memoria, muro, actividades) + ayuda en demás asistentes | pendiente |
+| 218 | (la tomó otro agente: tareas, filtros y acciones en masa; no tocar tareas desde acá) | de otro agente |
+| 219 | Premios (`PremiosClient`): tabla → lista con `AdminItem`. Vales = instancias ganadas, no se «crean»: sin cambios. Tienda ya hecha en 215 | integrada al terminar |
+| 220 | Rutina y horarios | pendiente |
+| 221 | Homeschooling restante (planes, días sin clase, períodos, materiales, lectura, memoria, muro, actividades) + ayuda en demás asistentes | pendiente |
 
 Auditoría por lane: listar los creables, ver si ya hay PATCH/DELETE y UI; si falta el endpoint, agregarlo con chequeo de admin.
 
