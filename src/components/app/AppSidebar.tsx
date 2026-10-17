@@ -19,6 +19,7 @@ import {
   Network,
   ShieldCheck,
   ShoppingCart,
+  Sparkles,
   Sprout,
   Timer,
 } from "lucide-react";
@@ -81,6 +82,7 @@ export function AppSidebar({
   habitosPendientes,
   premiosPendientes,
   hayEventosCartas,
+  companeroPendiente,
 }: {
   currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
   tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
@@ -90,6 +92,8 @@ export function AppSidebar({
   premiosPendientes?: number | null;
   /** Cartas por reclamar: fiesta, cumpleaños, bienvenida o un grado alcanzado */
   hayEventosCartas?: boolean;
+  /** Todavía no eligió compañero o subió de nivel y no lo festejó */
+  companeroPendiente?: boolean;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -198,6 +202,17 @@ export function AppSidebar({
               </SidebarMenuButton>
               {hayEventosCartas && (
                 <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Cartas para reclamar" />
+              )}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/companero")} tooltip="Compañero">
+                <Link href="/dashboard/companero">
+                  <Sparkles />
+                  <span>Compañero</span>
+                </Link>
+              </SidebarMenuButton>
+              {companeroPendiente && (
+                <SidebarMenuBadge className="size-2 p-0 rounded-full bg-amber-500 animate-pulse" title="Tu compañero te espera" />
               )}
             </SidebarMenuItem>
             <SidebarMenuItem>
