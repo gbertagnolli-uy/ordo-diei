@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import confetti from "canvas-confetti";
+import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Flame,
@@ -89,6 +90,7 @@ export function ModalAperturaSobre({
 }: ModalAperturaSobreProps) {
   const [etapa, setEtapa] = useState<"anticipacion" | "revelacion" | "confirmacion">("anticipacion");
   const [indiceActual, setIndiceActual] = useState<number>(0);
+  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
 
   const cartas = useMemo(() => resultado?.cartasAfectadas ?? [], [resultado]);
@@ -440,6 +442,7 @@ export function ModalAperturaSobre({
                 onClick={() => {
                   handleCerrar(false); // vuelve a la etapa inicial para la próxima apertura
                   if (onVerColeccion) onVerColeccion();
+                  else router.push("/dashboard/cartas");
                 }}
                 className="flex-1 text-xs"
               >
