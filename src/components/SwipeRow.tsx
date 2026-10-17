@@ -19,6 +19,8 @@ export interface SwipeSide {
   /** Color del texto/icono sobre el fondo. */
   onColor: string;
   onCommit: () => void;
+  /** false: la fila vuelve a su lugar y luego se llama onCommit (editar, abrir confirmación). Por defecto colapsa. */
+  collapse?: boolean;
 }
 
 interface Props {
@@ -61,6 +63,11 @@ export function SwipeRow({
   const commit = (dir: -1 | 1, v: number) => {
     const side = dir < 0 ? leftActive.current : rightActive.current;
     if (!side) return;
+    if (side.collapse === false) {
+      if (reduce) x.set(0); else animate(x, 0, { ...SPRING, velocity: v });
+      side.onCommit();
+      return;
+    }
     setDone(true);
     setHeight(root.current?.offsetHeight ?? "auto");
     const finish = () => {
