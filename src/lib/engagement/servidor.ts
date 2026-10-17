@@ -8,6 +8,7 @@ import { APP_TZ } from "../cartas/eventos.ts";
 import { aClave, aFecha } from "../habitos/server.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { contenidoCofre, elegirRareza } from "../comportamiento/cofre.ts";
+import { otorgarCofreDelDia } from "../comportamiento/server.ts";
 import { rangoDelDia } from "../comportamiento/sancionServer.ts";
 import type { ItemPremio } from "../comportamiento/premios.ts";
 import { calcularRachaApp, type RachaApp } from "./racha.ts";
@@ -135,6 +136,9 @@ async function darCofreDeLaParte(tx: Cliente, usuarioId: number, hoy: string): P
  */
 export async function desbloquearCofresDePadres(ahora: Date = new Date()): Promise<number[]> {
   const hijos = await hijosConRegistroHoy(ahora);
+  await Promise.allSettled(
+    hijos.filter((h) => h.registradoHoy).map((h) => otorgarCofreDelDia(h.id, ahora))
+  );
   if (hijos.length === 0 || hijos.some((h) => !h.registradoHoy)) return [];
   const hoy = diaDeFamilia(ahora);
   const padres = await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Padre", "Madre"] } }, select: { id: true } });
@@ -172,6 +176,9 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     prisma.publicacionFamilia.count({ where: { autorId: usuario.id, createdAt: hoyRango } }),
     fechasDeIngreso(prisma, usuario.id, hoy),
   ]);
+  await Promise.allSettled(
+    hijos.filter((h) => h.registradoHoy).map((h) => otorgarCofreDelDia(h.id, ahora))
+  );
 
   const contexto = {
     hijos,

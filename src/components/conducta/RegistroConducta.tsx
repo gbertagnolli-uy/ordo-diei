@@ -3,6 +3,7 @@
 // Registrar la conducta del día de un hijo (solo padres): selector de hijo, de día y nivel con el mismo
 // selector que la dificultad de las tareas.
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { HeartHandshake } from "lucide-react";
@@ -23,6 +24,7 @@ import { TiraConducta } from "./TiraConducta";
 export type HijoConducta = { id: number; nombre: string };
 
 export function RegistroConducta({ hijos, hoy, recientes: inicial }: { hijos: HijoConducta[]; hoy: string; recientes: Record<number, DiaConducta[]> }) {
+  const router = useRouter();
   const [hijoId, setHijoId] = useState<number>(hijos[0]?.id ?? 0);
   const [fecha, setFecha] = useState(hoy);
   const [nivel, setNivel] = useState<number>(NIVEL_CONDUCTA_DEFAULT);
@@ -61,7 +63,9 @@ export function RegistroConducta({ hijos, hoy, recientes: inicial }: { hijos: Hi
       setRecientes((prev) => ({ ...prev, [hijoId]: [...(prev[hijoId] ?? []).filter((r) => r.fecha !== dia.fecha), dia].sort((a, b) => a.fecha.localeCompare(b.fecha)) }));
       setYaRegistrado(true);
       const nombre = hijos.find((h) => h.id === hijoId)?.nombre ?? "";
-      toast.success(`Conducta de ${nombre} guardada: ${etiquetaConducta(dia.nivel)}`);
+      const cofreTexto = dia.fecha === hoy && dia.nivel >= 4 ? " · Cofre diario desbloqueado" : "";
+      toast.success(`Conducta de ${nombre} guardada: ${etiquetaConducta(dia.nivel)}${cofreTexto}`);
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
