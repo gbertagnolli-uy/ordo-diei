@@ -1,5 +1,6 @@
 // Conducta diaria (vault/LANE_205_CONDUCTA_DIARIA.md): los padres marcan un nivel por hijo y por día;
 // el hijo y los padres lo ven en el perfil y en el resumen de los hijos.
+import { desbloquearCofresDePadres } from "../engagement/servidor.ts";
 import { format } from "date-fns";
 import { tz } from "@date-fns/tz";
 import prisma from "../prisma.ts";
@@ -47,6 +48,7 @@ export async function registrarConducta(
     create: { usuarioId, registradoPorId: actor.id, fecha: aFecha(dia), nivel: datos.nivel, nota: nota || null },
     update: { registradoPorId: actor.id, nivel: datos.nivel, nota: nota || null },
   });
+  if (dia === hoyDia()) await desbloquearCofresDePadres().catch((e) => console.error("[CofresPadres]", e));
   return { fecha: dia, nivel: fila.nivel, nota: fila.nota };
 }
 

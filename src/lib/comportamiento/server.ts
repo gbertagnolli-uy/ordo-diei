@@ -8,6 +8,7 @@ import { regalarCartaEnTx, type FragmentosOtorgados } from "../cartas/server.ts"
 import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
+import { desbloquearCofresDePadres } from "../engagement/servidor.ts";
 import { cofreMerecido, contenidoCofre, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { haySancion, origenCofreDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
 import { hoyDia } from "../conducta/server.ts";
@@ -151,6 +152,8 @@ export async function registrarComportamiento(
         if (await otorgarCofreDelDia(usuarioId)) await enviarAviso(usuarioId, avisoCofre());
       })
     );
+    // Si con esto ya están registrados todos los hijos, los cofres de los administradores se desbloquean ya
+    await desbloquearCofresDePadres().catch((e) => console.error("[CofresPadres]", e));
     return;
   }
 
