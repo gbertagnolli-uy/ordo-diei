@@ -11,6 +11,7 @@ import { Check, X, Clock, User, AlertCircle } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { SwipeRow } from "@/components/SwipeRow";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
   const router = useRouter();
   // Tareas ya resueltas: desaparecen al instante, sin esperar a que la página se actualice
@@ -34,13 +35,6 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.leveledUp) {
-          sessionStorage.setItem("levelUpNotification", JSON.stringify({
-            userName: data.userName,
-            newLevel: data.newLevel
-          }));
-        }
         router.refresh();
       } else {
         setHidden(false);

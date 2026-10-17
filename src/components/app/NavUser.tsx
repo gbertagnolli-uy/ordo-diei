@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronsUpDown, Flame, Gift, Smile, Star, UserRound } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useModalStore } from "@/store/modalStore";
-import { nivelDe, xpTotal } from "@/lib/niveles";
+import { nivelDe, xpTotal, badgeDeNivel, PUNTOS_SUBIR_NIVEL } from "@/lib/niveles";
 import { taskGroup } from "@/components/tasks/taskUtils";
 
 const ROLE_LABEL: Record<string, string> = { Padre: "Padre", Madre: "Madre", Hijo: "Hijo", Hija: "Hija" };
@@ -26,8 +27,35 @@ const ROLE_LABEL: Record<string, string> = { Padre: "Padre", Madre: "Madre", Hij
 export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
   const { isMobile } = useSidebar();
   const { openModal } = useModalStore();
+  const router = useRouter();
   const level = nivelDe(xpTotal(user));
   const prevLevelRef = useRef(0);
+  const notificadoRef = useRef(0);
+
+  const notificarSubida = (nivelPrevio: number, currentLevel: number, currentTitle: string) => {
+    if (notificadoRef.current >= currentLevel) return;
+    notificadoRef.current = currentLevel;
+    const nivelesSubidos = Math.max(1, currentLevel - Math.max(1, nivelPrevio));
+    const puntosPorDefecto = nivelesSubidos * PUNTOS_SUBIR_NIVEL;
+    openModal("LEVEL_UP", {
+      level: currentLevel,
+      title: currentTitle,
+      badgeUrl: badgeDeNivel(currentLevel),
+      puntosRegalo: puntosPorDefecto,
+    });
+    fetch("/api/users/subir-nivel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nivelPrevio }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res?.reclamado) {
+          router.refresh();
+        }
+      })
+      .catch(() => {});
+  };
 
   // Subida de nivel desde la última visita (lógica original del Header)
   useEffect(() => {
@@ -36,9 +64,10 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
     const currentLevel = current.level;
     const lastSeenLevel = localStorage.getItem(`lastSeenLevel_${user.id}`);
     if (lastSeenLevel) {
-      if (currentLevel > parseInt(lastSeenLevel)) {
-        openModal("LEVEL_UP", { level: currentLevel, title: current.title });
+      const prev = parseInt(lastSeenLevel, 10);
+      if (currentLevel > prev) {
         localStorage.setItem(`lastSeenLevel_${user.id}`, currentLevel.toString());
+        notificarSubida(prev, currentLevel, current.title);
       }
     } else {
       localStorage.setItem(`lastSeenLevel_${user.id}`, currentLevel.toString());
@@ -51,9 +80,12 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
     const current = nivelDe(xpTotal(user));
     const currentLevel = current.level;
     if (prevLevelRef.current !== 0 && currentLevel > prevLevelRef.current) {
-      openModal("LEVEL_UP", { level: currentLevel, title: current.title });
+      const prev = prevLevelRef.current;
+      localStorage.setItem(`lastSeenLevel_${user.id}`, currentLevel.toString());
+      notificarSubida(prev, currentLevel, current.title);
     }
     prevLevelRef.current = currentLevel;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, openModal]);
 
   // Progreso diario (MyTasksBoard original): entregadas / total, 100 % si no hay tareas
