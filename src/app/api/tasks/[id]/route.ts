@@ -64,7 +64,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         fechaVencimiento,
         horaEjecucion,
         tipoRecurrencia: body.tipoRecurrencia,
-        generaPuntosYRecompensa: true, // Points are ALWAYS generated
+        generaPuntosYRecompensa: body.generaRecompensa !== undefined ? Boolean(body.generaRecompensa) : currentTask.generaPuntosYRecompensa,
         dificultad: esDificultad(body.dificultad) ? body.dificultad : currentTask.dificultad,
         isSurpriseEligible: body.isSurpriseEligible !== undefined ? Boolean(body.isSurpriseEligible) : currentTask.isSurpriseEligible,
         diaDelMes: body.diaDelMes !== undefined ? (body.diaDelMes ? Number(body.diaDelMes) : null) : currentTask.diaDelMes,
