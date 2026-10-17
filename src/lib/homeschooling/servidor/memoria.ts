@@ -100,6 +100,16 @@ export async function quitarDeMemoria(a: Actor, id: number): Promise<void> {
   if (count === 0) throw new NoEncontradoError("Texto no encontrado");
 }
 
+export async function editarMemoria(a: Actor, id: number, d: { titulo: string; texto: string }): Promise<void> {
+  exigirPadre(a);
+  const titulo = d.titulo.trim();
+  const texto = d.texto.trim();
+  if (!titulo || titulo.length > 150) throw new DatoInvalidoError("El título debe tener entre 1 y 150 caracteres");
+  if (texto.length < 5 || texto.length > 5000) throw new DatoInvalidoError("El texto debe tener entre 5 y 5000 caracteres");
+  const { count } = await prisma.memorizacion.updateMany({ where: { id }, data: { titulo, texto } });
+  if (count === 0) throw new NoEncontradoError("Texto no encontrado");
+}
+
 export const catalogoCompleto = () => CATALOGO_MEMORIA;
 
 /** Cuántos textos le toca recitar hoy (para la pantalla «Hoy» del hijo) */

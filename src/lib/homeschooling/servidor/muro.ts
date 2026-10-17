@@ -85,6 +85,15 @@ export async function fijarPublicacion(a: Actor, id: number, fijada: boolean): P
   }
 }
 
+/** Corrige el título y el texto de un aviso de los padres (los logros los escribe la app: no se editan) */
+export async function editarPublicacion(a: Actor, id: number, d: { titulo: unknown; cuerpo?: unknown }): Promise<void> {
+  exigirPadre(a);
+  const v = validarAviso(d.titulo, d.cuerpo);
+  if (!v.ok) throw new DatoInvalidoError(v.error);
+  const { count } = await prisma.publicacionFamilia.updateMany({ where: { id, tipo: "aviso" }, data: { titulo: v.titulo, cuerpo: v.cuerpo } });
+  if (count === 0) throw new NoEncontradoError("Aviso no encontrado (los logros no se editan)");
+}
+
 export async function borrarPublicacion(a: Actor, id: number): Promise<void> {
   exigirPadre(a);
   const { count } = await prisma.publicacionFamilia.deleteMany({ where: { id } });
