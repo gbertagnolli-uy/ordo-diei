@@ -5,6 +5,11 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/api/cartas/arte": ["./arte-cartas/**/*"],
     "/api/cartas/\\[clave\\]/imagen": ["./arte-cartas/**/*"],
+    // sharp: el trazado no copia la libvips nativa y en Vercel falla con ERR_DLOPEN_FAILED (libvips-cpp.so)
+    "/*": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
   },
 };
 
