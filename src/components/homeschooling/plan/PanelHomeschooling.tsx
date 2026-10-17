@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArchiveRestore, CalendarCheck, CheckCircle2, Circle, ClipboardCheck, GraduationCap, History, Plus } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
@@ -50,6 +51,7 @@ export default function PanelHomeschooling({
 }) {
   const router = useRouter();
   const [materiaForm, setMateriaForm] = useState(false);
+  const [materiaEditando, setMateriaEditando] = useState<Group | null>(null);
   const [asistente, setAsistente] = useState(false);
   const [alDia, setAlDia] = useState<{ id: number; nombre: string } | null>(null);
 
@@ -184,7 +186,25 @@ export default function PanelHomeschooling({
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {panel.map((m) => (
-              <div key={m.id} className="overflow-hidden rounded-xl border bg-card">
+              <AdminItem
+                key={m.id}
+                enabled
+                forma="tarjeta"
+                nombre={`la materia «${m.nombre}»`}
+                className="rounded-xl border"
+                aviso="Se borra la materia con sus cursos, lecciones y planes. No se puede deshacer."
+                onEdit={() => {
+                  const g = materias.find((x) => x.id === m.id);
+                  if (g) setMateriaEditando(g);
+                }}
+                onDelete={async () => {
+                  const res = await fetch(`/api/homeschooling/materias/${m.id}`, { method: "DELETE" });
+                  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "No se pudo eliminar la materia");
+                  toast.success("Materia eliminada");
+                  router.refresh();
+                }}
+              >
+              <div className="overflow-hidden bg-card">
                 <Link href={`/dashboard/homeschooling/materias/${m.id}`} className="flex items-center gap-3 border-b p-4 transition-colors hover:bg-muted">
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-lg text-primary-foreground" style={{ backgroundColor: colorCss(m.color) }}>
                     <IconoMateria nombre={m.icono} className="size-6" />
@@ -218,6 +238,7 @@ export default function PanelHomeschooling({
                   </ul>
                 )}
               </div>
+              </AdminItem>
             ))}
           </div>
         )}
@@ -250,6 +271,15 @@ export default function PanelHomeschooling({
         </section>
       )}
 
+      <MateriaForm
+        open={!!materiaEditando}
+        editing={materiaEditando}
+        onClose={() => setMateriaEditando(null)}
+        onSuccess={() => {
+          setMateriaEditando(null);
+          router.refresh();
+        }}
+      />
       <MateriaForm
         open={materiaForm}
         onClose={() => setMateriaForm(false)}

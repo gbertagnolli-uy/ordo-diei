@@ -21,13 +21,17 @@ interface Props {
   /** Texto extra de la confirmación (p. ej. qué se pierde junto con el item). */
   aviso?: string;
   className?: string;
+  /** false: el padre ya pide su propia confirmación; onDelete se llama directo. */
+  confirmar?: boolean;
+  /** «tarjeta»: el menú «⋯» flota arriba a la derecha (grillas); «fila»: va al costado. */
+  forma?: "fila" | "tarjeta";
 }
 
 /**
  * Editar / eliminar para cualquier item creable: swipe a la derecha = editar, a la izquierda = eliminar
  * (mismo SwipeRow que aprobar/rechazar tareas) y un menú «⋯» equivalente para quien no usa gestos.
  */
-export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, className }: Props) {
+export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, className, confirmar: pedirConfirmacion = true, forma = "fila" }: Props) {
   const [confirmar, setConfirmar] = useState(false);
   const [borrando, setBorrando] = useState(false);
 
@@ -45,18 +49,21 @@ export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, 
     }
   };
 
+  const pedirEliminar = () => (pedirConfirmacion ? setConfirmar(true) : void onDelete?.());
+  const flota = forma === "tarjeta";
+
   return (
     <>
       <SwipeRow
         className={className}
         right={onEdit ? { label: "Editar", icon: <Pencil className="size-5" />, color: "var(--primary)", onColor: "var(--primary-foreground)", collapse: false, onCommit: onEdit } : undefined}
-        left={onDelete ? { label: "Eliminar", icon: <Trash2 className="size-5" />, color: "var(--destructive)", onColor: "#fff", collapse: false, onCommit: () => setConfirmar(true) } : undefined}
+        left={onDelete ? { label: "Eliminar", icon: <Trash2 className="size-5" />, color: "var(--destructive)", onColor: "#fff", collapse: false, onCommit: pedirEliminar } : undefined}
       >
-        <div className="flex items-center">
+        <div className={flota ? "relative" : "flex items-center"}>
           <div className="min-w-0 flex-1">{children}</div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2 shrink-0" aria-label={`Acciones de ${nombre}`}>
+              <Button variant="ghost" size="icon" className={flota ? "absolute top-2 right-2 bg-card/80 backdrop-blur" : "mr-2 shrink-0"} aria-label={`Acciones de ${nombre}`}>
                 <MoreVertical />
               </Button>
             </DropdownMenuTrigger>
@@ -67,7 +74,7 @@ export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, 
                 </DropdownMenuItem>
               )}
               {onDelete && (
-                <DropdownMenuItem variant="destructive" onSelect={() => setConfirmar(true)}>
+                <DropdownMenuItem variant="destructive" onSelect={pedirEliminar}>
                   <Trash2 /> Eliminar
                 </DropdownMenuItem>
               )}
