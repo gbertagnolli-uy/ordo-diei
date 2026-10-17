@@ -623,6 +623,7 @@ function RutinaContenido({ currentUser }: RutinaClientPageProps) {
             completadasIds={completadasIds}
             onToggleCompletada={handleToggleCompletada}
             onEditarEtapa={abrirEditor}
+            onEliminarEtapa={handleEliminarEtapa}
             onCrearEtapa={() => abrirEditor(null)}
             esPadre={esPadre}
           />
