@@ -1,19 +1,42 @@
 "use client";
 
-// Portado de vendor/roost/src/components/groups/learn/ModuleDetail.tsx (msrbuilds/roost@492af47).
-// Cambios: sin pestaña de assets (los PDF van como enlace en la lección), lecciones que ya vienen del layout
-// (una sola consulta), fecha y miniaturas con las utilidades de HS0, plan de cada alumno y «Asignar a…», ui/ y tokens.
+// Portado de vendor/roost/src/components/groups/learn/ModuleDetail.tsx (msrbuilds/roost@492af47; ampliado en lane 230).
+// Cambios: constructor de curso y clases paso a paso (estilo Circle / Thinkific enfocado en tareas) — cada clase muestra
+// accesos directos para cargar materiales (texto, imagen, video, archivos), armar su Quiz/Evaluación (Assessment)
+// e imprimir la hoja de evaluación o la clase en A4.
 
 import { useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, CheckCircle2, Copy, Download, EllipsisVertical, Circle, Edit2, FileText, ListPlus, Paperclip, Play, Plus, Trash2, Video } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  CalendarDays,
+  CheckCircle2,
+  Circle,
+  ClipboardCheck,
+  Copy,
+  Download,
+  Edit2,
+  EllipsisVertical,
+  FileText,
+  Image as ImageIcon,
+  Layers,
+  ListPlus,
+  Paperclip,
+  Play,
+  Plus,
+  Printer,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ListaMaterial from "@/components/homeschooling/material/ListaMaterial";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import type { ModuleWithProgress } from "@/lib/homeschooling/roost/tipos";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import type { ModuleWithProgress, RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
 import { hasPermission, type GroupRole } from "@/lib/homeschooling/roost/permisos";
 import { esArchivoVideo, miniaturaVideo } from "@/lib/homeschooling/video";
 
@@ -39,6 +62,8 @@ export default function CursoDetalle({
   materiaNombre,
   onAddRecording,
   onAddVarias,
+  onEditRecording,
+  onQuizRecording,
   onDuplicar,
   onEditModule,
   onDeleteModule,
@@ -55,6 +80,8 @@ export default function CursoDetalle({
   materiaNombre: string;
   onAddRecording: () => void;
   onAddVarias: () => void;
+  onEditRecording?: (rec: RecordingWithCompletion) => void;
+  onQuizRecording?: (rec: RecordingWithCompletion) => void;
   onDuplicar: () => void;
   onEditModule: () => void;
   onDeleteModule: () => void;
@@ -66,7 +93,7 @@ export default function CursoDetalle({
   const canManage = hasPermission(userRole, "editar_curso");
   const recordings = module.recordings ?? [];
   const conLecciones = module.tipo === "curso_videos" || module.tipo === "enlaces";
-  // Material de una lección (lane 166)
+  // Material de una lección (lane 166 / lane 230)
   const [materialDe, setMaterialDe] = useState<{ id: number; title: string } | null>(null);
 
   return (
@@ -80,7 +107,9 @@ export default function CursoDetalle({
           {module.description && <p className="mt-1 text-sm text-muted-foreground">{module.description}</p>}
           <div className="mt-3 max-w-xs space-y-1">
             <Progress value={module.progress_percentage} aria-label={`Avance de ${module.title}`} />
-            <p className="text-xs text-muted-foreground">{module.progress_percentage}%</p>
+            <p className="text-xs text-muted-foreground">
+              {module.progress_percentage}% completado · Aprobación de quizzes: {module.umbral_aprobacion}%
+            </p>
           </div>
         </div>
         {canManage && (
@@ -131,7 +160,7 @@ export default function CursoDetalle({
           </label>
           {planes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {module.total_unidades < 1 ? "Cargá lecciones para poder asignar el curso." : "Nadie tiene este curso asignado todavía."}
+              {module.total_unidades < 1 ? "Cargá clases para poder asignar el curso al plan de un alumno." : "Nadie tiene este curso asignado todavía."}
             </p>
           ) : (
             <ul className="divide-y text-sm">
@@ -167,45 +196,70 @@ export default function CursoDetalle({
         </div>
       )}
 
-      {conLecciones && (
-        <>
-          <div className="flex items-center gap-2 border-b pb-2">
-            <span className="flex items-center gap-2 text-sm font-medium text-primary">
-              <Video className="size-4" /> Lecciones ({recordings.length})
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5">
+          <div>
+            <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <Layers className="size-4" /> Constructor de clases y evaluaciones ({recordings.length})
             </span>
-            {canManage && (
-              <div className="ml-auto flex items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              Ordená las clases paso a paso. Cada clase puede tener tarea/texto, imagen, video embebido, documentos descargables y quiz/assessment imprimible.
+            </p>
+          </div>
+          {canManage && (
+            <div className="flex flex-wrap items-center gap-2">
+              {conLecciones && (
                 <Button size="sm" variant="outline" onClick={onAddVarias}>
                   <ListPlus /> Agregar varias
                 </Button>
-                <Button size="sm" onClick={onAddRecording}>
-                  <Plus /> Agregar lección
-                </Button>
-              </div>
-            )}
-          </div>
+              )}
+              <Button size="sm" onClick={onAddRecording}>
+                <Plus /> Nueva clase / evaluación
+              </Button>
+            </div>
+          )}
+        </div>
 
-          {recordings.length === 0 ? (
-            <Empty className="border border-dashed">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Video />
-                </EmptyMedia>
-                <EmptyTitle>Sin lecciones</EmptyTitle>
-                <EmptyDescription>Todavía no hay lecciones en este curso.</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <div className="divide-y rounded-xl border bg-card">
-              {recordings.map((recording, indice) => {
-                const miniatura =
-                  recording.thumbnail_url ??
-                  (recording.video_platform && recording.video_id ? miniaturaVideo(recording.video_platform, recording.video_id) : null);
-                return (
-                  <div key={recording.id} className="flex items-center hover:bg-muted">
+        {recordings.length === 0 ? (
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Layers />
+              </EmptyMedia>
+              <EmptyTitle>Todavía no armaste clases en este curso</EmptyTitle>
+              <EmptyDescription>
+                Creá la primera clase con tarea escrita, imagen, video embebido, documentos descargables o un quiz/assessment imprimible.
+              </EmptyDescription>
+            </EmptyHeader>
+            {canManage && (
+              <EmptyContent>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button onClick={onAddRecording}>
+                    <Plus /> Crear primera clase
+                  </Button>
+                  {conLecciones && (
+                    <Button variant="outline" onClick={onAddVarias}>
+                      <ListPlus /> Cargar varias en lote
+                    </Button>
+                  )}
+                </div>
+              </EmptyContent>
+            )}
+          </Empty>
+        ) : (
+          <div className="divide-y rounded-xl border bg-card">
+            {recordings.map((recording, indice) => {
+              const miniatura =
+                recording.thumbnail_url ??
+                (recording.video_platform && recording.video_id ? miniaturaVideo(recording.video_platform, recording.video_id) : null);
+              const tieneVideo = Boolean(recording.video_id || esArchivoVideo(recording.video_url));
+              const tieneImagenPropia = Boolean(recording.thumbnail_url && !recording.thumbnail_url.includes("ytimg.com"));
+
+              return (
+                <div key={recording.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-muted/50 sm:flex-nowrap">
                   <button
                     onClick={() => onLessonClick(recording.id)}
-                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors"
+                    className="flex min-w-0 flex-1 items-center gap-3 py-1 text-left"
                   >
                     {recording.is_completed ? (
                       <CheckCircle2 className="size-5 shrink-0 text-success" />
@@ -213,7 +267,7 @@ export default function CursoDetalle({
                       <Circle className="size-5 shrink-0 text-muted-foreground/60" />
                     )}
 
-                    <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded bg-muted">
+                    <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg border bg-muted">
                       {miniatura && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -225,49 +279,113 @@ export default function CursoDetalle({
                           }}
                         />
                       )}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        {recording.video_id || esArchivoVideo(recording.video_url) ? <Play className="size-5 text-foreground/80" fill="currentColor" /> : <FileText className="size-5 text-muted-foreground" />}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                        {tieneVideo ? (
+                          <Play className="size-5 text-foreground/90" fill="currentColor" />
+                        ) : tieneImagenPropia ? (
+                          <ImageIcon className="size-5 text-foreground/80" />
+                        ) : (
+                          <FileText className="size-5 text-muted-foreground" />
+                        )}
                       </div>
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h4 className="line-clamp-1 text-sm font-medium text-foreground">
+                      <h4 className="line-clamp-1 text-sm font-semibold text-foreground">
                         {recording.display_order}. {recording.title}
                       </h4>
-                      {recording.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{recording.description}</p>}
+                      {recording.description ? (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{recording.description}</p>
+                      ) : (
+                        <p className="mt-0.5 text-xs text-muted-foreground">Clic para abrir la clase, ver materiales o responder el quiz</p>
+                      )}
                     </div>
                   </button>
+
                   {canManage && (
-                    <Button variant="ghost" size="icon-sm" aria-label={`Material de «${recording.title}»`} title="Material de la lección" onClick={() => setMaterialDe({ id: recording.id, title: recording.title })}>
-                      <Paperclip />
-                    </Button>
-                  )}
-                  {canManage && recordings.length > 1 && (
-                    <div className="flex shrink-0 flex-col pr-2">
-                      <Button variant="ghost" size="icon-xs" aria-label={`Subir «${recording.title}»`} disabled={indice === 0} onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice - 1))}>
-                        <ArrowUp />
+                    <div className="flex shrink-0 flex-wrap items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        aria-label={`Material de «${recording.title}»`}
+                        title="Agregar textos, imágenes, videos o archivos descargables"
+                        onClick={() => setMaterialDe({ id: recording.id, title: recording.title })}
+                      >
+                        <Paperclip className="size-3.5" /> Materiales
                       </Button>
-                      <Button variant="ghost" size="icon-xs" aria-label={`Bajar «${recording.title}»`} disabled={indice === recordings.length - 1} onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice + 1))}>
-                        <ArrowDown />
+                      {onQuizRecording && (
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          aria-label={`Quiz de «${recording.title}»`}
+                          title="Crear o editar Quiz / Evaluación"
+                          onClick={() => onQuizRecording(recording)}
+                        >
+                          <ClipboardCheck className="size-3.5" /> Quiz / Eval.
+                        </Button>
+                      )}
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Imprimir «${recording.title}»`}
+                        title="Imprimir evaluación u hoja de clase"
+                      >
+                        <Link href={`/dashboard/homeschooling/imprimir/quiz/${recording.id}?modo=alumno`} target="_blank">
+                          <Printer className="size-4" />
+                        </Link>
                       </Button>
+                      {onEditRecording && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Editar «${recording.title}»`}
+                          title="Editar clase"
+                          onClick={() => onEditRecording(recording)}
+                        >
+                          <Edit2 className="size-4" />
+                        </Button>
+                      )}
+                      {recordings.length > 1 && (
+                        <div className="flex shrink-0 flex-col">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={`Subir «${recording.title}»`}
+                            disabled={indice === 0}
+                            onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice - 1))}
+                          >
+                            <ArrowUp />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={`Bajar «${recording.title}»`}
+                            disabled={indice === recordings.length - 1}
+                            onClick={() => onReordenarLecciones(mover(recordings.map((r) => r.id), indice, indice + 1))}
+                          >
+                            <ArrowDown />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Sheet open={!!materialDe} onOpenChange={(o) => !o && setMaterialDe(null)}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Material de la lección</SheetTitle>
+            <SheetTitle>Materiales y bloques de la clase</SheetTitle>
             <SheetDescription>{materialDe?.title}</SheetDescription>
           </SheetHeader>
           {materialDe && (
-            <div className="px-4 pb-4">
-              <ListaMaterial key={materialDe.id} destino={{ leccionId: materialDe.id }} contexto={`la lección «${materialDe.title}»`} />
+            <div className="px-4 pb-6">
+              <ListaMaterial key={materialDe.id} destino={{ leccionId: materialDe.id }} contexto={`la clase «${materialDe.title}»`} expandido />
             </div>
           )}
         </SheetContent>

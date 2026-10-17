@@ -37,18 +37,24 @@ export const deleteGroup = async (id: number): Promise<void> => {
   await api(`${BASE}/materias/${id}`, { method: "DELETE" });
 };
 
-export type RecordingInsert = { module_id: number; title: string; description?: string | null; video_url?: string | null };
+export type RecordingInsert = {
+  module_id: number;
+  title: string;
+  description?: string | null;
+  video_url?: string | null;
+  thumbnail_url?: string | null;
+};
 
 export const createRecording = (r: RecordingInsert) =>
   api<RecordingWithCompletion>(`${BASE}/lecciones`, {
     method: "POST",
-    body: { recursoId: r.module_id, titulo: r.title, instrucciones: r.description, url: r.video_url },
+    body: { recursoId: r.module_id, titulo: r.title, instrucciones: r.description, url: r.video_url, miniaturaUrl: r.thumbnail_url },
   });
 
 export const updateRecording = (id: number, u: Partial<Omit<RecordingInsert, "module_id">>) =>
   api<RecordingWithCompletion>(`${BASE}/lecciones/${id}`, {
     method: "PATCH",
-    body: { titulo: u.title, instrucciones: u.description, url: u.video_url },
+    body: { titulo: u.title, instrucciones: u.description, url: u.video_url, miniaturaUrl: u.thumbnail_url },
   });
 
 export const deleteRecording = async (id: number): Promise<void> => {

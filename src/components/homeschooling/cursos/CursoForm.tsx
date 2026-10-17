@@ -19,13 +19,13 @@ import { toast } from "@/lib/toast";
 import PortadaCampo from "./PortadaCampo";
 
 export const TIPOS: { id: TipoRecurso; etiqueta: string; unidad: UnidadContenido }[] = [
-  { id: "libro", etiqueta: "Libro (páginas)", unidad: "pagina" },
-  { id: "curso_videos", etiqueta: "Curso de videos", unidad: "leccion" },
-  { id: "enlaces", etiqueta: "Lista de enlaces", unidad: "leccion" },
-  { id: "pdf", etiqueta: "PDF o guía", unidad: "pagina" },
-  { id: "libre", etiqueta: "Otro (tareas o capítulos)", unidad: "unidad" },
+  { id: "enlaces", etiqueta: "Curso por clases y tareas", unidad: "leccion" },
+  { id: "curso_videos", etiqueta: "Curso de clases con video", unidad: "leccion" },
+  { id: "libro", etiqueta: "Libro (por páginas)", unidad: "pagina" },
+  { id: "pdf", etiqueta: "PDF o guía (por páginas)", unidad: "pagina" },
+  { id: "libre", etiqueta: "Otro (capítulos o unidades)", unidad: "unidad" },
 ];
-const UNIDADES: Record<UnidadContenido, string> = { pagina: "Páginas", capitulo: "Capítulos", leccion: "Lecciones", unidad: "Unidades" };
+const UNIDADES: Record<UnidadContenido, string> = { pagina: "Páginas", capitulo: "Capítulos", leccion: "Clases / Lecciones", unidad: "Unidades" };
 
 export default function CursoForm({
   open,
@@ -43,10 +43,11 @@ export default function CursoForm({
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [portada, setPortada] = useState("");
-  const [tipo, setTipo] = useState<TipoRecurso>("libro");
-  const [unidad, setUnidad] = useState<UnidadContenido>("pagina");
+  const [tipo, setTipo] = useState<TipoRecurso>("enlaces");
+  const [unidad, setUnidad] = useState<UnidadContenido>("leccion");
   const [total, setTotal] = useState("");
   const [minutos, setMinutos] = useState("20");
+  const [umbral, setUmbral] = useState("70");
   const [url, setUrl] = useState("");
   const [libre, setLibre] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -58,10 +59,11 @@ export default function CursoForm({
     setTitulo(editing?.title ?? "");
     setDescripcion(editing?.description ?? "");
     setPortada(editing?.thumbnail_url ?? "");
-    setTipo(editing?.tipo ?? "libro");
-    setUnidad(editing?.unidad_tipo ?? "pagina");
+    setTipo(editing?.tipo ?? "enlaces");
+    setUnidad(editing?.unidad_tipo ?? "leccion");
     setTotal(editing ? String(editing.total_unidades) : "");
     setMinutos(String(editing?.minutos_por_unidad ?? 20));
+    setUmbral(String(editing?.umbral_aprobacion ?? 70));
     setUrl(editing?.url ?? "");
     setLibre(editing?.navegacion_libre ?? false);
   }, [open, editing]);
@@ -88,10 +90,11 @@ export default function CursoForm({
         unidad_tipo: unidad,
         url: url.trim() || null,
         minutos_por_unidad: Number(minutos) || 20,
+        umbral_aprobacion: Math.min(100, Math.max(0, Number(umbral) || 70)),
         navegacion_libre: libre,
         ...(conLecciones ? {} : { total_unidades: totalNum }),
       };
-      onSuccess(editing ? await updateModule(editing.id, comunes) : await createModule({ ...comunes, materia_id: materiaId, tipo, libro_id: null, umbral_aprobacion: 70 }));
+      onSuccess(editing ? await updateModule(editing.id, comunes) : await createModule({ ...comunes, materia_id: materiaId, tipo, libro_id: null }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo guardar el curso");
     } finally {

@@ -5,6 +5,7 @@
 import { useEffect } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { esImagenMaterial } from "@/lib/homeschooling/material";
 import type { HojaImpresa } from "@/lib/homeschooling/servidor/impresiones";
 import MarkdownTexto from "./MarkdownTexto";
 
@@ -12,6 +13,7 @@ const FECHA = new Intl.DateTimeFormat("es", { weekday: "long", day: "numeric", m
 
 export default function HojaImpresion({ hoja }: { hoja: HojaImpresa }) {
   const { material: m } = hoja;
+  const esImagen = esImagenMaterial(m);
 
   useEffect(() => {
     const t = setTimeout(() => window.print(), 400);
@@ -36,7 +38,14 @@ export default function HojaImpresion({ hoja }: { hoja: HojaImpresa }) {
           </p>
         </header>
 
-        <MarkdownTexto texto={m.contenido ?? ""} markdown={m.tipo === "markdown"} className="text-base leading-7 text-black" />
+        {esImagen && m.url && (
+          <figure className="sin-corte flex flex-col items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={m.url} alt={m.titulo} className="max-h-[65svh] w-auto rounded-lg border border-black/20 object-contain" />
+          </figure>
+        )}
+
+        {m.contenido && <MarkdownTexto texto={m.contenido} markdown={m.tipo === "markdown"} className="text-base leading-7 text-black" />}
 
         <footer className="sin-corte space-y-6 pt-4 text-sm">
           <p className="font-medium">En tu cuaderno:</p>

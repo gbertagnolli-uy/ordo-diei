@@ -23,10 +23,52 @@ export class ImagenInvalidaError extends Error {
 /** URL pública de un archivo guardado */
 export const urlArchivo = (clave: string) => `${PREFIJO_ARCHIVOS}${clave}`;
 
-/** Clave de una URL /api/archivos/<uuid>, o null si no es una */
+/** Clave de una URL /api/archivos/<uuid> (con o sin parámetros), o null si no es una */
 export function claveDeUrl(url: string | null | undefined): string | null {
-  const m = /^\/api\/archivos\/([0-9a-f-]{36})$/.exec(url?.trim() ?? "");
+  const m = /^\/api\/archivos\/([0-9a-f-]{36})(?:\?.*)?$/i.exec(url?.trim() ?? "");
   return m ? m[1] : null;
+}
+
+const DOCS_MIME: Record<string, { mime: string; categoria: "pdf" | "epub" | "documento" }> = {
+  "application/pdf": { mime: "application/pdf", categoria: "pdf" },
+  "application/epub+zip": { mime: "application/epub+zip", categoria: "epub" },
+  "text/plain": { mime: "text/plain; charset=utf-8", categoria: "documento" },
+  "text/markdown": { mime: "text/markdown; charset=utf-8", categoria: "documento" },
+  "text/csv": { mime: "text/csv; charset=utf-8", categoria: "documento" },
+  "application/msword": { mime: "application/msword", categoria: "documento" },
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+    mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    categoria: "documento",
+  },
+  "application/vnd.oasis.opendocument.text": { mime: "application/vnd.oasis.opendocument.text", categoria: "documento" },
+  "application/vnd.ms-excel": { mime: "application/vnd.ms-excel", categoria: "documento" },
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+    mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    categoria: "documento",
+  },
+  "application/vnd.ms-powerpoint": { mime: "application/vnd.ms-powerpoint", categoria: "documento" },
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": {
+    mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    categoria: "documento",
+  },
+};
+
+function detectarDocPorNombre(nombre: string, mime: string): { mime: string; categoria: "pdf" | "epub" | "documento" } | null {
+  if (DOCS_MIME[mime]) return DOCS_MIME[mime];
+  const n = nombre.toLowerCase();
+  if (n.endsWith(".pdf")) return DOCS_MIME["application/pdf"];
+  if (n.endsWith(".epub")) return DOCS_MIME["application/epub+zip"];
+  if (n.endsWith(".txt")) return DOCS_MIME["text/plain"];
+  if (n.endsWith(".md") || n.endsWith(".markdown")) return DOCS_MIME["text/markdown"];
+  if (n.endsWith(".csv")) return DOCS_MIME["text/csv"];
+  if (n.endsWith(".doc")) return DOCS_MIME["application/msword"];
+  if (n.endsWith(".docx")) return DOCS_MIME["application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+  if (n.endsWith(".odt")) return DOCS_MIME["application/vnd.oasis.opendocument.text"];
+  if (n.endsWith(".xls")) return DOCS_MIME["application/vnd.ms-excel"];
+  if (n.endsWith(".xlsx")) return DOCS_MIME["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
+  if (n.endsWith(".ppt")) return DOCS_MIME["application/vnd.ms-powerpoint"];
+  if (n.endsWith(".pptx")) return DOCS_MIME["application/vnd.openxmlformats-officedocument.presentationml.presentation"];
+  return null;
 }
 
 /** Comprime y guarda una imagen; devuelve su URL */
@@ -87,18 +129,54 @@ export async function guardarImagen(
   return { url: urlArchivo(clave), bytes: datos!.length, ancho: info!.width, alto: info!.height };
 }
 
-const cacheMemoria = new Map<string, { datos: Buffer; tipo: string }>();
+/** Guarda una imagen o un documento descargable de estudio (PDF, ePub, Office, texto ≤ 4 MB) */
+export async function guardarArchivoEstudio(
+  entrada: File,
+  opciones: { subidoPorId?: number | null } = {}
+): Promise<{ url: string; bytes: number; ancho: number | null; alto: number | null; categoria: "imagen" | "pdf" | "epub" | "documento"; nombre: string }> {
+  const nombre = (entrada.name || "archivo").slice(0, 200);
+  if (TIPOS_ACEPTADOS.includes(entrada.type)) {
+    const img = await guardarImagen(entrada, { subidoPorId: opciones.subidoPorId, nombreOrigen: nombre });
+    const params = new URLSearchParams({ tipo: "imagen", nombre });
+    return { ...img, url: `${img.url}?${params.toString()}`, categoria: "imagen", nombre };
+  }
+  const doc = detectarDocPorNombre(nombre, entrada.type);
+  if (!doc) {
+    throw new ImagenInvalidaError("Formato no permitido. Podés subir imágenes, PDF, ePub, Word (.docx/.odt), Excel, PowerPoint o texto.");
+  }
+  if (entrada.size > MAX_BYTES_SUBIDA) {
+    throw new ImagenInvalidaError("El archivo no puede superar 4 MB (para archivos más grandes pegá un enlace de Drive)");
+  }
+  const datos = Buffer.from(await entrada.arrayBuffer());
+  const clave = crypto.randomUUID();
+  await prisma.archivo.create({
+    data: {
+      clave,
+      tipo: doc.mime,
+      datos: new Uint8Array(datos),
+      bytes: datos.length,
+      ancho: null,
+      alto: null,
+      nombreOrigen: nombre,
+      subidoPorId: opciones.subidoPorId ?? null,
+    },
+  });
+  const params = new URLSearchParams({ tipo: doc.categoria, nombre });
+  return { url: `${urlArchivo(clave)}?${params.toString()}`, bytes: datos.length, ancho: null, alto: null, categoria: doc.categoria, nombre };
+}
+
+const cacheMemoria = new Map<string, { datos: Buffer; tipo: string; nombreOrigen: string | null }>();
 
 /** Bytes y tipo de un archivo por su URL /api/archivos/<uuid> */
-export async function leerArchivo(url: string): Promise<{ datos: Buffer; tipo: string } | null> {
+export async function leerArchivo(url: string): Promise<{ datos: Buffer; tipo: string; nombreOrigen?: string | null } | null> {
   const clave = claveDeUrl(url);
   if (!clave) return null;
   const enCache = cacheMemoria.get(clave);
   if (enCache) return enCache;
 
-  const a = await prisma.archivo.findUnique({ where: { clave }, select: { datos: true, tipo: true } });
+  const a = await prisma.archivo.findUnique({ where: { clave }, select: { datos: true, tipo: true, nombreOrigen: true } });
   if (a) {
-    const res = { datos: Buffer.from(a.datos), tipo: a.tipo };
+    const res = { datos: Buffer.from(a.datos), tipo: a.tipo, nombreOrigen: a.nombreOrigen };
     cacheMemoria.set(clave, res);
     return res;
   }

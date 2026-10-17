@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Download, ExternalLink } from "lucide-react";
 import { useMantenerActivo } from "@/hooks/useInactividad";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import { esArchivoVideo, urlEmbed } from "@/lib/homeschooling/video";
 import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
+import MarkdownTexto from "@/components/homeschooling/material/MarkdownTexto";
 import MaterialesDelDia from "@/components/homeschooling/material/MaterialesDelDia";
 import type { DiaHoy, LeccionHoy } from "@/lib/homeschooling/servidor/hoy";
 import { useModalStore } from "@/store/modalStore";
@@ -172,18 +173,37 @@ export default function VisorLeccion({ dia, onClose }: { dia: DiaHoy | null; onC
                       <ReproductorLeccion key={actual.id} leccionId={actual.id} src={embed} titulo={actual.titulo} tieneCheckpoints={actual.checkpoints > 0} />
                     ) : (
                       actual.url && (
-                        <Button asChild variant="outline" size="lg">
-                          <a href={actual.url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink /> Abrir el material
-                          </a>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild variant="outline" size="lg">
+                            <a href={actual.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink /> Abrir el material
+                            </a>
+                          </Button>
+                          {actual.url.startsWith("/api/archivos/") && (
+                            <Button asChild size="lg">
+                              <a href={`${actual.url}${actual.url.includes("?") ? "&" : "?"}descargar=1`} download>
+                                <Download /> Descargar documento
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                       )
+                    )}
+                    {actual.miniaturaUrl && !actual.miniaturaUrl.includes("ytimg.com") && (
+                      <figure className="overflow-hidden rounded-xl border bg-muted/20 p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={actual.miniaturaUrl} alt={actual.titulo} className="mx-auto max-h-96 w-auto rounded object-contain" />
+                      </figure>
                     )}
                     <div>
                       <h2 className="text-xl font-bold text-foreground">
                         {actual.orden}. {actual.titulo}
                       </h2>
-                      {actual.instrucciones && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{actual.instrucciones}</p>}
+                      {actual.instrucciones && (
+                        <div className="mt-2 rounded-lg bg-muted/30 p-3.5">
+                          <MarkdownTexto texto={actual.instrucciones} markdown className="text-sm leading-6" />
+                        </div>
+                      )}
                     </div>
                     <MaterialesDelDia materiales={actual.materiales} titulo="Material de esta lección" />
                     <ComentariosEstudio key={actual.id} destino={{ leccionId: actual.id }} titulo="Preguntas y comentarios" placeholder="Escribile a mamá o a papá sobre esta lección…" />

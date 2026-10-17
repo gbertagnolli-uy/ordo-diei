@@ -12,7 +12,16 @@ export type MateriaPanel = {
   icono: string | null;
   color: string | null;
   portadaUrl: string | null;
-  cursos: { id: number; titulo: string; porcentaje: number; alumnos: number }[];
+  cursos: {
+    id: number;
+    titulo: string;
+    tipo: string;
+    porcentaje: number;
+    alumnos: number;
+    lecciones: number;
+    materiales: number;
+    quizzes: number;
+  }[];
 };
 
 export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlumno[]; materias: MateriaPanel[]; archivadas: { id: number; nombre: string }[] }> {
@@ -32,7 +41,11 @@ export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlum
       include: {
         recursos: {
           orderBy: [{ orden: "asc" }, { id: "asc" }],
-          include: { planes: { where: { estado: "activo" }, include: { dias: { select: { estado: true, unidadDesde: true, unidadHasta: true } } } } },
+          include: {
+            planes: { where: { estado: "activo" }, include: { dias: { select: { estado: true, unidadDesde: true, unidadHasta: true } } } },
+            _count: { select: { lecciones: true } },
+            lecciones: { select: { id: true, _count: { select: { materiales: true, preguntas: true } } } },
+          },
         },
       },
     }),
@@ -62,7 +75,18 @@ export async function resumenPanel(hoy = hoyEnFamilia()): Promise<{ hoy: HoyAlum
         0
       );
       const total = r.totalUnidades * r.planes.length;
-      return { id: r.id, titulo: r.titulo, porcentaje: total > 0 ? Math.min(100, Math.round((hechas / total) * 100)) : 0, alumnos: r.planes.length };
+      const materialesLecciones = r.lecciones.reduce((acc, l) => acc + l._count.materiales, 0);
+      const quizzesLecciones = r.lecciones.filter((l) => l._count.preguntas > 0).length;
+      return {
+        id: r.id,
+        titulo: r.titulo,
+        tipo: r.tipo,
+        porcentaje: total > 0 ? Math.min(100, Math.round((hechas / total) * 100)) : 0,
+        alumnos: r.planes.length,
+        lecciones: r._count.lecciones,
+        materiales: materialesLecciones,
+        quizzes: quizzesLecciones,
+      };
     }),
   }));
 

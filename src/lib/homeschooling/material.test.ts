@@ -115,3 +115,16 @@ test("vistaMaterial: PDF y ePub con enlace tienen ruta propia en la app; lo dem�
   assert.equal(vistaMaterial({ id: 10, tipo: "web", proveedor: "web", externoId: null, url: "https://x.org" }).archivoUrl, null);
   assert.equal(vistaMaterial({ tipo: "pdf", proveedor: "web", externoId: null, url: "https://x.org/a.pdf" }).archivoUrl, null);
 });
+
+test("archivos e imágenes subidos a /api/archivos/: se detectan y las imágenes son imprimibles", () => {
+  const uuid = "12345678-1234-1234-1234-1234567890ab";
+  const imgUrl = `/api/archivos/${uuid}`;
+  assert.equal(esEnlace(imgUrl), true);
+  const img = detectarMaterial(imgUrl);
+  assert.deepEqual([img.tipo, img.proveedor, img.miniaturaUrl], ["archivo", "imagen", imgUrl]);
+  assert.equal(esImprimible(img), true);
+
+  const pdfSubido = detectarMaterial(`/api/archivos/${uuid}?tipo=pdf`);
+  assert.equal(pdfSubido.tipo, "pdf");
+  assert.equal(esImprimible(pdfSubido), true);
+});

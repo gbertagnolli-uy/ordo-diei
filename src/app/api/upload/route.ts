@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { guardarImagen, ImagenInvalidaError, PERFILES_IMAGEN, type PerfilImagen } from "@/lib/archivos";
+import { guardarArchivoEstudio, guardarImagen, ImagenInvalidaError, PERFILES_IMAGEN, type PerfilImagen } from "@/lib/archivos";
 
 export const runtime = "nodejs";
 
-// POST /api/upload — sube una imagen y devuelve { url, bytes, ancho, alto }. Se guarda en la base (lib/archivos.ts).
+// POST /api/upload — sube una imagen (o un archivo de estudio con modo="estudio") y devuelve { url, bytes, ancho, alto }.
 // Campo opcional "perfil": "general" (1600 px) o "carta" (1200 px, ≤ 300 KB).
 // Requiere sesión, salvo en la configuración inicial (todavía no hay ningún usuario).
 export async function POST(request: NextRequest) {
@@ -20,10 +20,16 @@ export async function POST(request: NextRequest) {
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Archivo faltante" }, { status: 400 });
     }
+    const subidoPorId = session?.user ? Number(session.user.id) : null;
+    if (form.get("modo") === "estudio") {
+      const guardado = await guardarArchivoEstudio(file, { subidoPorId });
+      return NextResponse.json(guardado);
+    }
+
     const pedido = String(form.get("perfil") ?? "general");
     const perfil: PerfilImagen = pedido in PERFILES_IMAGEN ? (pedido as PerfilImagen) : "general";
 
-    const guardada = await guardarImagen(file, { subidoPorId: session?.user ? Number(session.user.id) : null, perfil });
+    const guardada = await guardarImagen(file, { subidoPorId, perfil });
     return NextResponse.json(guardada);
   } catch (error) {
     if (error instanceof ImagenInvalidaError) {

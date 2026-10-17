@@ -221,17 +221,21 @@ export type DatosLeccion = {
   titulo: string;
   instrucciones?: string | null;
   url?: string | null;
+  miniaturaUrl?: string | null;
 };
 
+const esUrlLeccionValida = (u: string) => /^https?:\/\//i.test(u) || /^\/api\/archivos\/[0-9a-f-]{36}(\?.*)?$/i.test(u);
+
 /** Video a partir de la URL (HS0); una URL que no es YouTube/Vimeo queda como enlace sin reproductor */
-export function datosDeVideo(url: string | null | undefined) {
+export function datosDeVideo(url: string | null | undefined, miniaturaExplicita?: string | null) {
   const limpia = url?.trim() || null;
   const video = limpia ? parsearEnlaceVideo(limpia) : null;
+  const miniatura = miniaturaExplicita !== undefined ? (miniaturaExplicita?.trim() || video?.miniaturaUrl || null) : (video?.miniaturaUrl ?? null);
   return {
     url: limpia,
     videoPlataforma: video?.plataforma ?? null,
     videoId: video?.videoId ?? null,
-    miniaturaUrl: video?.miniaturaUrl ?? null,
+    miniaturaUrl: miniatura,
   };
 }
 
@@ -257,13 +261,13 @@ export async function crearLeccion(a: Actor, d: DatosLeccion, hoy: string) {
   exigirPadre(a);
   const titulo = d.titulo.trim();
   if (!titulo) throw new DatoInvalidoError("Falta el título de la lección");
-  if (d.url?.trim() && !/^https?:\/\//i.test(d.url.trim())) throw new DatoInvalidoError("El enlace tiene que empezar con http:// o https://");
+  if (d.url?.trim() && !esUrlLeccionValida(d.url.trim())) throw new DatoInvalidoError("El enlace tiene que empezar con http:// o https://");
   return prisma.$transaction(async (tx) => {
     const recurso = await tx.recursoCurso.findUnique({ where: { id: d.recursoId } });
     if (!recurso) throw new NoEncontradoError("Curso no encontrado");
     const orden = ((await tx.leccionCurso.aggregate({ where: { recursoId: d.recursoId }, _max: { orden: true } }))._max.orden ?? 0) + 1;
     const leccion = await tx.leccionCurso.create({
-      data: { recursoId: d.recursoId, orden, titulo, instrucciones: d.instrucciones ?? null, creadorId: a.id, ...datosDeVideo(d.url) },
+      data: { recursoId: d.recursoId, orden, titulo, instrucciones: d.instrucciones ?? null, creadorId: a.id, ...datosDeVideo(d.url, d.miniaturaUrl) },
     });
     await sincronizarTotal(tx, recurso, hoy);
     return mapRecording(leccion);
@@ -277,7 +281,7 @@ export async function crearLeccionesEnLote(a: Actor, recursoId: number, items: {
   if (items.length > 100) throw new DatoInvalidoError("Se pueden crear hasta 100 lecciones por vez");
   for (const it of items) {
     if (!it.titulo.trim()) throw new DatoInvalidoError("Falta el título de una lección");
-    if (it.url?.trim() && !/^https?:\/\//i.test(it.url.trim())) throw new DatoInvalidoError(`El enlace de «${it.titulo.trim()}» tiene que empezar con http:// o https://`);
+    if (it.url?.trim() && !esUrlLeccionValida(it.url.trim())) throw new DatoInvalidoError(`El enlace de «${it.titulo.trim()}» tiene que empezar con http:// o https://`);
   }
   return prisma.$transaction(
     async (tx) => {
@@ -300,11 +304,12 @@ export async function crearLeccionesEnLote(a: Actor, recursoId: number, items: {
 export async function editarLeccion(a: Actor, id: number, d: Partial<Omit<DatosLeccion, "recursoId">>) {
   exigirPadre(a);
   if (d.titulo !== undefined && !d.titulo.trim()) throw new DatoInvalidoError("Falta el título de la lección");
-  if (d.url?.trim() && !/^https?:\/\//i.test(d.url.trim())) throw new DatoInvalidoError("El enlace tiene que empezar con http:// o https://");
+  if (d.url?.trim() && !esUrlLeccionValida(d.url.trim())) throw new DatoInvalidoError("El enlace tiene que empezar con http:// o https://");
   const data: Prisma.LeccionCursoUpdateInput = {
     ...(d.titulo !== undefined && { titulo: d.titulo.trim() }),
     ...(d.instrucciones !== undefined && { instrucciones: d.instrucciones }),
-    ...(d.url !== undefined && datosDeVideo(d.url)),
+    ...(d.url !== undefined && datosDeVideo(d.url, d.miniaturaUrl)),
+    ...(d.url === undefined && d.miniaturaUrl !== undefined && { miniaturaUrl: d.miniaturaUrl?.trim() || null }),
   };
   try {
     return mapRecording(await prisma.leccionCurso.update({ where: { id }, data }));

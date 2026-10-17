@@ -4,27 +4,53 @@
 // renderizados, PDF y Google Docs/Drive en visor embebido, y lo que no se puede incrustar (ePub, webs) con un botón claro para
 // abrirlo— y deja pasar al anterior/siguiente sin cerrar. El hijo lee o mira; no hay nada que configurar.
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, ExternalLink, MessageCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, ExternalLink, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ETIQUETA_TIPO } from "@/lib/homeschooling/material";
+import { esImagenMaterial, ETIQUETA_TIPO } from "@/lib/homeschooling/material";
 import type { MaterialVista } from "@/lib/homeschooling/servidor/materiales";
 import ComentariosEstudio from "@/components/homeschooling/comunidad/ComentariosEstudio";
 import IconoMaterial from "./IconoMaterial";
 import LectorEpub from "./LectorEpub";
 import MarkdownTexto from "./MarkdownTexto";
 
+const urlDescarga = (url: string) => (url.startsWith("/api/archivos/") ? `${url}${url.includes("?") ? "&" : "?"}descargar=1` : url);
+
 function Cuerpo({ m }: { m: MaterialVista }) {
   const v = m.vista;
 
-  if (m.contenido !== null) return <MarkdownTexto texto={m.contenido} markdown={m.tipo === "markdown"} className="mx-auto w-full min-w-0 max-w-prose" />;
+  if (esImagenMaterial(m) && m.url) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-center overflow-hidden rounded-xl border bg-muted/30 p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={m.url} alt={m.titulo} className="max-h-[72svh] w-auto rounded-lg object-contain" />
+        </div>
+        {m.contenido && <MarkdownTexto texto={m.contenido} markdown={m.tipo === "markdown"} className="mx-auto w-full min-w-0 max-w-prose" />}
+        <div className="flex justify-center">
+          <Button asChild variant="outline" size="sm">
+            <a href={urlDescarga(m.url)} download>
+              <Download /> Descargar imagen
+            </a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (m.contenido !== null && !m.url) return <MarkdownTexto texto={m.contenido} markdown={m.tipo === "markdown"} className="mx-auto w-full min-w-0 max-w-prose" />;
 
   if (m.tipo === "video" && v.embedUrl) {
-    return v.videoDirecto ? (
-      <video src={v.embedUrl} controls playsInline className="aspect-video w-full rounded-xl bg-black" />
-    ) : (
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
-        <iframe src={v.embedUrl} title={m.titulo} className="absolute inset-0 size-full" allow="fullscreen; picture-in-picture" allowFullScreen />
+    return (
+      <div className="space-y-4">
+        {v.videoDirecto ? (
+          <video src={v.embedUrl} controls playsInline className="aspect-video w-full rounded-xl bg-black" />
+        ) : (
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+            <iframe src={v.embedUrl} title={m.titulo} className="absolute inset-0 size-full" allow="fullscreen; picture-in-picture" allowFullScreen />
+          </div>
+        )}
+        {m.contenido && <MarkdownTexto texto={m.contenido} markdown className="mx-auto w-full min-w-0 max-w-prose" />}
       </div>
     );
   }
@@ -35,7 +61,16 @@ function Cuerpo({ m }: { m: MaterialVista }) {
     return (
       <div className="space-y-2">
         <iframe src={v.archivoUrl} title={m.titulo} className="h-[72svh] w-full rounded-xl border bg-background" />
-        <p className="text-center text-xs text-muted-foreground">Si no se ve, abrilo en otra pestaña con el botón de arriba.</p>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>Si no se ve, abrilo o descargalo con los botones.</span>
+          {m.url && (
+            <Button asChild variant="outline" size="sm">
+              <a href={urlDescarga(m.url)} download>
+                <Download /> Descargar PDF
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -49,21 +84,30 @@ function Cuerpo({ m }: { m: MaterialVista }) {
     );
   }
 
-  // ePub, páginas web y todo lo que no admite iframe
+  // Documentos descargables, páginas web y todo lo que no admite iframe
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed p-8 text-center">
       <IconoMaterial tipo={m.tipo} className="size-12 text-primary" />
       <div>
         <p className="text-lg font-semibold text-foreground">{m.titulo}</p>
-        <p className="text-sm text-muted-foreground">{ETIQUETA_TIPO[m.tipo]}: se abre en otra pestaña.</p>
+        <p className="text-sm text-muted-foreground">{ETIQUETA_TIPO[m.tipo]}</p>
       </div>
-      {v.abrirUrl && (
-        <Button asChild size="lg">
-          <a href={v.abrirUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink /> Abrir
-          </a>
-        </Button>
-      )}
+      <div className="flex flex-wrap justify-center gap-2">
+        {v.abrirUrl && m.url?.startsWith("/api/archivos/") && (
+          <Button asChild size="lg">
+            <a href={urlDescarga(m.url)} download>
+              <Download /> Descargar archivo
+            </a>
+          </Button>
+        )}
+        {v.abrirUrl && (
+          <Button asChild size="lg" variant={m.url?.startsWith("/api/archivos/") ? "outline" : "default"}>
+            <a href={v.abrirUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink /> Abrir
+            </a>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
