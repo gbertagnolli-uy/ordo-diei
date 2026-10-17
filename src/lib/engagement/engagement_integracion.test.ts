@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { addDays, format, parseISO } from "date-fns";
 import prisma from "../prisma.ts";
 import { aFecha, hoyEnFamilia } from "../habitos/server.ts";
-import { parteDeHoy, rachaDe, registrarIngreso } from "./servidor.ts";
+import { desbloquearCofresDePadres, parteDeHoy, rachaDe, registrarIngreso } from "./servidor.ts";
 import { PUNTOS_MISION } from "./misiones.ts";
 
 const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base)";
@@ -95,5 +95,30 @@ test("«Tu parte de hoy»: cada misión se premia una vez y, registrar a los hij
     await prisma.comportamiento.deleteMany({ where: { registradoPorId: padre.id } });
     await prisma.mensajeFamilia.deleteMany({ where: { deId: padre.id } });
     await prisma.usuario.deleteMany({ where: { id: { in: [padre.id, hijo.id] } } });
+  }
+});
+
+test("cofres de padres: registrar a los hijos desbloquea el cofre de otro administrador sin que entre", { skip: sinBase }, async () => {
+  const marca = `__test_cofres_${Date.now()}__`;
+  const mk = (nombre: string, rolFamiliar: "Padre" | "Madre") =>
+    prisma.usuario.create({ data: { nombre: `${marca}${nombre}`, pinSecretoHash: "x", fechaNacimiento: new Date("1990-01-01"), rolFamiliar } });
+  const papa = await mk("papa", "Padre");
+  const mama = await mk("mama", "Madre");
+  try {
+    const hijos = await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true } });
+    if (hijos.length === 0) return;
+    await prisma.comportamiento.createMany({ data: hijos.map((h) => ({ usuarioId: h.id, registradoPorId: papa.id, tipo: "Positivo" as const, titulo: "bien" })) });
+    const nuevos = await desbloquearCofresDePadres();
+    assert.ok(nuevos.includes(papa.id) && nuevos.includes(mama.id));
+    assert.equal(await prisma.recompensa.count({ where: { usuarioId: mama.id, origen: { startsWith: "Tu parte de hoy" } } }), 1);
+    assert.deepEqual((await desbloquearCofresDePadres()).filter((id) => id === mama.id), []);
+    // Cuando mamá entra no se duplica
+    await parteDeHoy({ id: mama.id, rol: "Madre" });
+    assert.equal(await prisma.recompensa.count({ where: { usuarioId: mama.id, origen: { startsWith: "Tu parte de hoy" } } }), 1);
+  } finally {
+    await prisma.recompensa.deleteMany({ where: { usuarioId: { in: [papa.id, mama.id] } } });
+    await prisma.comportamiento.deleteMany({ where: { registradoPorId: papa.id } });
+    await prisma.actividadDia.deleteMany({ where: { usuarioId: { in: [papa.id, mama.id] } } });
+    await prisma.usuario.deleteMany({ where: { id: { in: [papa.id, mama.id] } } });
   }
 });
