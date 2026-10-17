@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { calcularRachaApp } from "./racha.ts";
 import { HITOS_RACHA, hitosAlcanzados, proximoHito, origenHito } from "./hitos.ts";
-import { misionesDeHoy, PUNTOS_MISION, type ContextoMisiones } from "./misiones.ts";
+import { cofreGanado, misionesDeHoy, PUNTOS_MISION, type ContextoMisiones } from "./misiones.ts";
 
 const HOY = "2026-10-16";
 
@@ -122,4 +122,17 @@ test("misiones: con muchos hijos sin registrar, la lista de nombres se acorta", 
   const hijos = ["Ana", "Luis", "Eva", "Tomás", "Rosa"].map((nombre, id) => ({ id, nombre, registradoHoy: false }));
   const m = misionesDeHoy({ ...base, hijos });
   assert.match(m[0].detalle, /Ana, Luis, Eva y 2 más/);
+});
+
+test("cofre: alcanza con registrar a todos los hijos, sin importar las otras misiones", () => {
+  assert.equal(cofreGanado(misionesDeHoy(base)), false);
+  const registrados = { ...base, hijos: base.hijos.map((h) => ({ ...h, registradoHoy: true })) };
+  assert.equal(cofreGanado(misionesDeHoy(registrados)), true);
+  assert.equal(misionesDeHoy(registrados).some((m) => !m.hecha), true);
+});
+
+test("cofre: sin hijos hacen falta todas las misiones", () => {
+  const sinHijos = { ...base, hijos: [] };
+  assert.equal(cofreGanado(misionesDeHoy(sinHijos)), false);
+  assert.equal(cofreGanado(misionesDeHoy({ ...sinHijos, estudioHoy: 1, mensajesHoy: 1 })), true);
 });

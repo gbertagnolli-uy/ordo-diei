@@ -38,7 +38,7 @@ test("ingreso diario: una fila por día, racha y premios por hito sin duplicarse
   }
 });
 
-test("«Tu parte de hoy»: cada misión se premia una vez y, completas, dejan un premio sorpresa", { skip: sinBase }, async () => {
+test("«Tu parte de hoy»: cada misión se premia una vez y, registrar a los hijos deja un cofre", { skip: sinBase }, async () => {
   const marca = `__test_parte_${Date.now()}__`;
   const mk = (nombre: string, rolFamiliar: "Padre" | "Hijo") =>
     prisma.usuario.create({ data: { nombre: `${marca}${nombre}`, pinSecretoHash: "x", fechaNacimiento: new Date("1990-01-01"), rolFamiliar } });
@@ -54,7 +54,7 @@ test("«Tu parte de hoy»: cada misión se premia una vez y, completas, dejan un
     assert.ok(antes);
     assert.equal(antes.racha.ingresoHoy, true);
     assert.equal(antes.racha.dias, 1);
-    assert.equal(antes.completa, false);
+    assert.equal(antes.cofre, false);
     const comp = antes.misiones.find((m) => m.clave === "comportamiento");
     assert.ok(comp && !comp.hecha);
 
@@ -75,11 +75,12 @@ test("«Tu parte de hoy»: cada misión se premia una vez y, completas, dejan un
     await prisma.comentarioEstudio.create({ data: { autorId: padre.id, publicacionId: pub.id, texto: "Muy bien" } });
     const fin = await parteDeHoy(actor);
     assert.ok(fin);
-    // Si hay una tarea esperando aprobación en la base, la tercera misión es «pendientes» y no está hecha: se prueba lo que sí vale siempre
+    // Registrar a los hijos alcanza para el cofre, aunque quede otra misión sin cumplir (p. ej. «pendientes»)
+    assert.equal(fin.cofre, true);
     assert.equal(fin.misiones.find((m) => m.clave === "comportamiento")?.hecha, true);
     assert.equal(fin.misiones.find((m) => m.clave === "estudio")?.hecha, true);
     assert.equal(fin.hechas, fin.misiones.filter((m) => m.hecha).length);
-    if (fin.completa) {
+    {
       const premio = await prisma.recompensa.findMany({ where: { usuarioId: padre.id, origen: { startsWith: "Tu parte de hoy" } } });
       assert.equal(premio.length, 1);
       await parteDeHoy(actor);

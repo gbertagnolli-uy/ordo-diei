@@ -12,11 +12,11 @@ import type { ParteDeHoy as Datos } from "@/lib/engagement/servidor";
 const dias = (n: number) => `${n} ${n === 1 ? "día" : "días"}`;
 
 export function ParteDeHoy({ datos }: { datos: Datos }) {
-  const { racha, misiones, hechas, completa, puntosHoy, proximoHito } = datos;
+  const { racha, misiones, hechas, completa, cofre, puntosHoy, proximoHito } = datos;
   const total = misiones.length;
 
   // Con todo cumplido ocupa una sola fila: lo que sigue es el trabajo del día
-  if (completa) {
+  if (completa && cofre) {
     return (
       <Card aria-label="Tu parte de hoy" className="gap-0 py-3">
         <CardHeader className="items-center">
@@ -24,7 +24,7 @@ export function ParteDeHoy({ datos }: { datos: Datos }) {
             <CheckCircle2 className="size-4 text-primary" /> Tu parte de hoy, completa
           </CardTitle>
           <CardDescription>
-            Hoy sumaste <span className="font-medium text-foreground">{puntosHoy} puntos</span> y un cofre sorpresa en «Mis premios».
+            Registraste a tus hijos: ganaste tu cofre y el de ellos. Hoy sumaste <span className="font-medium text-foreground">{puntosHoy} puntos</span>.
           </CardDescription>
           <CardAction className="flex items-center gap-1">
             <Badge>
@@ -48,7 +48,14 @@ export function ParteDeHoy({ datos }: { datos: Datos }) {
           Tu parte de hoy
         </CardTitle>
         <CardDescription>
-          {hechas === 0 ? "Tres cosas chicas que ayudan a toda la familia." : `${hechas} de ${total} · hoy sumaste `}
+          {cofre ? (
+            <>Tu cofre ya está en «Mis premios». Hoy sumaste </>
+          ) : (
+            <>
+              <span className="font-medium text-foreground">Registrá el comportamiento de tus hijos para desbloquear tu cofre y el de ellos.</span>{" "}
+              {hechas > 0 ? "Hoy sumaste " : "Las otras misiones suman puntos."}
+            </>
+          )}
           {hechas > 0 && <span className="font-medium text-foreground">{puntosHoy} puntos</span>}
         </CardDescription>
         <CardAction>
