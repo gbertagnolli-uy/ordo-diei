@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { CATEGORIAS } from "@/lib/habitos/catalogo";
 import { HabitoIcon } from "./HabitoIcon";
@@ -13,10 +14,17 @@ export function HabitosComunitarios({
   habitos,
   habitosActivos,
   onElegir,
+  esAdmin = false,
+  onEditar,
+  onEliminar,
 }: {
   habitos: HabitoVista[];
   habitosActivos: EstadoHabito[];
   onElegir: (habitoId: number) => void;
+  /** Padre/Madre: editar y eliminar (archivar) cualquier hábito comunitario por swipe. */
+  esAdmin?: boolean;
+  onEditar?: (h: HabitoVista) => void;
+  onEliminar?: (h: HabitoVista) => Promise<void>;
 }) {
   const [active, setActive] = useState<HabitoVista | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -122,8 +130,17 @@ export function HabitosComunitarios({
             layoutId={`card-${h.id}-${id}`}
             key={h.id}
             onClick={() => setActive(h)}
-            className="flex cursor-pointer flex-col items-center justify-between rounded-xl p-4 hover:bg-muted/50 md:flex-row"
+            className="cursor-pointer rounded-xl hover:bg-muted/50"
           >
+            <AdminItem
+              enabled={esAdmin}
+              nombre={`el hábito «${h.nombre}»`}
+              className="rounded-xl"
+              aviso="Se archiva: nadie en la familia podrá adoptarlo. El progreso ya registrado queda guardado."
+              onEdit={onEditar ? () => onEditar(h) : undefined}
+              onDelete={onEliminar ? () => onEliminar(h) : undefined}
+            >
+            <div className="flex flex-col items-center justify-between p-4 md:flex-row">
             <div className="flex flex-col gap-4 md:flex-row">
               <motion.div layoutId={`image-${h.id}-${id}`}>
                 <Imagen h={h} className="size-40 rounded-lg object-cover object-top md:size-14" />
@@ -147,6 +164,8 @@ export function HabitosComunitarios({
             >
               {textoCta(h)}
             </motion.button>
+            </div>
+            </AdminItem>
           </motion.li>
         ))}
       </ul>

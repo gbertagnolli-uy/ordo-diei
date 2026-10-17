@@ -357,6 +357,9 @@ test("puedeEditarHabito: creador sí, otro no, sistema nadie", () => {
   // Sistema (creadorId = null)
   assert.equal(puedeEditarHabito({ creadorId: null }, 1), false);
   assert.equal(puedeEditarHabito({ creadorId: null }, 2), false);
+  // un admin edita lo creado por otros, pero nunca los del sistema
+  assert.equal(puedeEditarHabito({ creadorId: 3 }, 1, true), true);
+  assert.equal(puedeEditarHabito({ creadorId: null }, 1, true), false);
 });
 
 // ---------- Leer un libro (vault/HABITO_LIBRO.md) ----------

@@ -17,13 +17,14 @@ import {
 } from "@/components/ui/empty";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import { useModalStore } from "@/store/modalStore";
-import type { Franja, Marca } from "@/lib/habitos/catalogo";
+import { DIAS_TODOS, type Franja, type Marca } from "@/lib/habitos/catalogo";
 import type { EstadoHabito, EstadoUsuario, HabitoVista } from "@/lib/habitos/server";
 import { HabitoCard } from "./HabitoCard";
 import { Escalera } from "./Escalera";
 import { CalendarioHabitos } from "./CalendarioHabitos";
 import { TrayectoriaHabitos } from "./TrayectoriaHabitos";
 import { HabitosCarrusel } from "./HabitosCarrusel";
+import { AdminItem } from "@/components/AdminItem";
 import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";
 import { toast } from "@/lib/toast";
@@ -184,6 +185,18 @@ export function HabitosClient({
     }
   };
 
+  // Para AdminItem: lanza si falla, así el diálogo de confirmación muestra el error
+  const eliminarHabito = async (habitoId: number) => {
+    const res = await fetch(`/api/habitos/${habitoId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "No se pudo eliminar el hábito");
+    toast.success("Hábito eliminado");
+    router.refresh();
+  };
+  const editarHabitoDe = (h: HabitoVista) => {
+    setHabitoAEditar({ ...h, habitoId: h.id, dias: DIAS_TODOS, creadorId: h.creador?.id ?? null } as unknown as EstadoHabito);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="space-y-8">
       {/* 1. Hábitos predeterminados: carrusel; al tocar uno se abre su configuración */}
@@ -313,12 +326,25 @@ export function HabitosClient({
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {habitosFranja.map((h) => (
-                    <HabitoCard
+                    <AdminItem
                       key={h.habitoId}
+                      enabled={esPadre && h.creadorId !== null}
+                      forma="tarjeta"
+                      menu={false}
+                      className="rounded-xl"
+                      nombre={`el hábito «${h.nombre}»`}
+                      aviso="Se archiva: nadie en la familia podrá adoptarlo. El progreso ya registrado queda guardado."
+                      onEdit={() => {
+                        setHabitoAEditar(h);
+                        setDialogOpen(true);
+                      }}
+                      onDelete={() => eliminarHabito(h.habitoId)}
+                    >
+                    <HabitoCard
                       h={h}
                       misterios={estado.misterios?.misterios || []}
                       ocupado={ocupadoId === h.habitoId}
-                      puedeEditar={h.creadorId === usuarioActualId}
+                      puedeEditar={h.creadorId === usuarioActualId || (esPadre && h.creadorId !== null)}
                       onRegistrar={handleRegistrar}
                       onAjustar={handleAjustar}
                       onDejarDePracticar={handleDejarDePracticar}
@@ -329,6 +355,7 @@ export function HabitosClient({
                       onArchivar={handleArchivar}
                       onCargarLibro={handleCargarLibro}
                     />
+                    </AdminItem>
                   ))}
                 </div>
               </section>
@@ -358,6 +385,9 @@ export function HabitosClient({
           <HabitosComunitarios
             habitos={comunitarios}
             habitosActivos={habitos}
+            esAdmin={esPadre}
+            onEditar={editarHabitoDe}
+            onEliminar={(h) => eliminarHabito(h.id)}
             onElegir={(id) => {
               setHabitoAEditar(null);
               setHabitoElegidoId(id);

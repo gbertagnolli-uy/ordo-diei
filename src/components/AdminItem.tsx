@@ -25,13 +25,15 @@ interface Props {
   confirmar?: boolean;
   /** «tarjeta»: el menú «⋯» flota arriba a la derecha (grillas); «fila»: va al costado. */
   forma?: "fila" | "tarjeta";
+  /** false: sin menú «⋯» (el item ya tiene el suyo); queda solo el swipe. */
+  menu?: boolean;
 }
 
 /**
  * Editar / eliminar para cualquier item creable: swipe a la derecha = editar, a la izquierda = eliminar
  * (mismo SwipeRow que aprobar/rechazar tareas) y un menú «⋯» equivalente para quien no usa gestos.
  */
-export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, className, confirmar: pedirConfirmacion = true, forma = "fila" }: Props) {
+export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, className, confirmar: pedirConfirmacion = true, forma = "fila", menu = true }: Props) {
   const [confirmar, setConfirmar] = useState(false);
   const [borrando, setBorrando] = useState(false);
 
@@ -61,6 +63,7 @@ export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, 
       >
         <div className={flota ? "relative" : "flex items-center"}>
           <div className="min-w-0 flex-1">{children}</div>
+          {menu && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className={flota ? "absolute top-2 right-2 bg-card/80 backdrop-blur" : "mr-2 shrink-0"} aria-label={`Acciones de ${nombre}`}>
@@ -80,6 +83,7 @@ export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, 
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </div>
       </SwipeRow>
 

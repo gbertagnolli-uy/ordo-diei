@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { esPadre } from "@/lib/habitos/permisos";
 import {
   archivarHabito,
   editarHabito,
@@ -26,7 +27,7 @@ export async function PATCH(
     const actorId = Number(session.user.id);
 
     try {
-      const habito = await editarHabito(actorId, id, body);
+      const habito = await editarHabito(actorId, id, body, esPadre(session.user.rolFamiliar));
       return NextResponse.json({ habito });
     } catch (err) {
       if (err instanceof NoAutorizadoError) {
@@ -58,7 +59,7 @@ export async function DELETE(
 
     const actorId = Number(session.user.id);
     try {
-      await archivarHabito(actorId, id);
+      await archivarHabito(actorId, id, esPadre(session.user.rolFamiliar));
       return NextResponse.json({ ok: true });
     } catch (err) {
       if (err instanceof NoAutorizadoError) {

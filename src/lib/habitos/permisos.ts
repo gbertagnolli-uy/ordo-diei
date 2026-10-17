@@ -23,12 +23,14 @@ export async function usuariosObjetivo(
 
 /**
  * Indica si un usuario puede editar o archivar un hábito:
- * solo quien lo creó; los del sistema (creadorId = null) nadie los puede editar.
+ * quien lo creó, o un administrador (Padre/Madre) cualquiera creado por la familia;
+ * los del sistema (creadorId = null) nadie los puede editar.
  */
 export function puedeEditarHabito(
   habito: { creadorId: number | null },
-  usuarioId: number
+  usuarioId: number,
+  esAdmin = false
 ): boolean {
   if (habito.creadorId === null) return false;
-  return habito.creadorId === usuarioId;
+  return esAdmin || habito.creadorId === usuarioId;
 }
