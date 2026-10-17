@@ -58,3 +58,9 @@ Tareas (tabla/calendario/kanban) las toma la lane 218 de otro agente.
 Ayuda (`AyudaIcono`): solo está en el asistente «Asignar curso». Faltan el resto de asistentes y formularios (Nuevo hábito, Asistente de año, Nueva tarea, Nuevo premio, Rutina, Cargar semana, Boletín).
 
 Notas de proceso: las lanes 218 y 220 las ocupó otro agente mientras trabajaba; antes de crear un worktree comprobar que `../ordo-diei-lanes/lane-NN` no exista (un `git worktree add` fallido deja la rama y el `cd` posterior cae en la lane ajena).
+
+## 6. Lane 227 — listas de Estudio (2026-10-16)
+
+Hecho: `AdminItem` en períodos (nuevo PATCH + formulario de edición reutilizado), días sin clase (nuevo PATCH del motivo; mover la fecha = quitar y agregar), materiales (editar = foco en el título inline), memoria (nuevo PATCH título/texto sin tocar el repaso), muro (PATCH de título/cuerpo solo en avisos; los logros los escribe la app) y registros de comportamiento (solo eliminar: es una bitácora con premios y penalizaciones, editarla reescribiría la historia).
+
+Pendiente: cartas, lectura, actividades, neurodivergencia, libreta (ya editan y eliminan con botones propios: pasarlos a `AdminItem`), rutina semanal/mensual, e iconos de ayuda en el resto de asistentes.

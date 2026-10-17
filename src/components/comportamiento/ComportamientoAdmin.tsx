@@ -4,7 +4,8 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Gift, HeartHandshake, Plus, ScrollText, ThumbsDown, ThumbsUp, Trash2, User, X } from "lucide-react";
+import { Gift, HeartHandshake, Plus, ScrollText, ThumbsDown, ThumbsUp, User, X } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
@@ -150,20 +151,20 @@ export function ComportamientoAdmin({
     }
   };
 
-  const eliminar = async (r: ComportamientoVista) => {
+  const avisoDe = (r: ComportamientoVista) => {
     const aviso =
       r.estadoPremio === "disponible"
-        ? "¿Eliminar este registro? Su premio sorpresa todavía no se abrió y también se va a quitar."
-        : "¿Eliminar este registro de la bitácora?";
-    if (!confirm(aviso)) return;
-    try {
-      const res = await fetch(`/api/comportamiento/${r.id}`, { method: "DELETE" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "No se pudo eliminar");
-      setRegistros(json);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo eliminar");
-    }
+        ? "Su premio sorpresa todavía no se abrió y también se va a quitar."
+        : "Se quita de la bitácora. No se puede deshacer.";
+    return aviso;
+  };
+
+  // Lanza si falla: AdminItem muestra el error en su diálogo
+  const borrarRegistro = async (r: ComportamientoVista) => {
+    const res = await fetch(`/api/comportamiento/${r.id}`, { method: "DELETE" });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "No se pudo eliminar");
+    setRegistros(json);
   };
 
   const listo = destinatarios.length > 0 && titulo.trim() !== "" && (tipo !== "Positivo" || items.length > 0);
@@ -199,7 +200,8 @@ export function ComportamientoAdmin({
       ) : (
         <ItemGroup className="gap-0 divide-y rounded-xl border bg-card">
           {visibles.map((r) => (
-            <Item key={r.id} className="items-start rounded-none px-4 py-4 sm:px-6">
+            <AdminItem key={r.id} enabled nombre={`el registro «${r.titulo}»`} aviso={avisoDe(r)} onDelete={() => borrarRegistro(r)}>
+            <Item className="items-start rounded-none px-4 py-4 sm:px-6">
               <ItemMedia>
                 <Avatar className="size-10 rounded-lg">
                   <AvatarImage src={r.usuario.fotoUrl ?? undefined} alt={r.usuario.nombre} className="object-cover" />
@@ -242,12 +244,8 @@ export function ComportamientoAdmin({
                   </p>
                 )}
               </ItemContent>
-              <ItemActions>
-                <Button variant="ghost" size="icon" aria-label="Eliminar registro" onClick={() => eliminar(r)}>
-                  <Trash2 className="size-4" />
-                </Button>
-              </ItemActions>
             </Item>
+            </AdminItem>
           ))}
         </ItemGroup>
       )}

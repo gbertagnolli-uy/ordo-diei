@@ -56,6 +56,15 @@ export async function crearTrimestres(a: Actor, anio: number): Promise<number> {
   return creados;
 }
 
+export async function editarPeriodo(a: Actor, id: number, d: PeriodoBase): Promise<Periodo> {
+  exigirPadre(a);
+  const error = validarPeriodo(d);
+  if (error) throw new DatoInvalidoError(error);
+  const { count } = await prisma.periodoCalificacion.updateMany({ where: { id }, data: { nombre: d.nombre.trim().slice(0, 80), inicio: aFecha(d.inicio), fin: aFecha(d.fin) } });
+  if (count === 0) throw new NoEncontradoError("Período no encontrado");
+  return aPeriodo((await prisma.periodoCalificacion.findUniqueOrThrow({ where: { id } })));
+}
+
 export async function borrarPeriodo(a: Actor, id: number): Promise<void> {
   exigirPadre(a);
   const { count } = await prisma.periodoCalificacion.deleteMany({ where: { id } });

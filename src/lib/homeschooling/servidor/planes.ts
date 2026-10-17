@@ -300,6 +300,14 @@ export async function quitarNoLectivo(datos: { actorId: number; id: number; hoy:
   });
 }
 
+/** Cambia el motivo de un día sin clase (la fecha y el alumno no se tocan: no hace falta recalcular planes) */
+export async function cambiarMotivoNoLectivo(datos: { actorId: number; id: number; motivo: string }) {
+  await exigirPadre(datos.actorId);
+  const { count } = await prisma.diaNoLectivo.updateMany({ where: { id: datos.id }, data: { motivo: datos.motivo.trim() } });
+  if (count === 0) throw new NoEncontradoError("Día sin clase no encontrado");
+  return { ok: true };
+}
+
 // ---------- Gestión de un plan ya creado ----------
 
 export type CambiosPlan = { estado?: "activo" | "pausado" | "finalizado"; fin?: string; diasSemana?: number[] };

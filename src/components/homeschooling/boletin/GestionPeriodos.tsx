@@ -4,7 +4,8 @@
 // uno propio (un semestre, un bimestre) y borrar los que sobran.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarRange, Trash2 } from "lucide-react";
+import { CalendarRange } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export default function GestionPeriodos({ periodos, anio }: { periodos: Periodo[
   const [nombre, setNombre] = useState("");
   const [inicio, setInicio] = useState("");
   const [fin, setFin] = useState("");
+  const [editandoId, setEditandoId] = useState<number | null>(null);
 
   const correr = async (fn: () => Promise<unknown>, ok: string) => {
     setOcupado(true);
@@ -57,16 +59,30 @@ export default function GestionPeriodos({ periodos, anio }: { periodos: Periodo[
             {periodos.length > 0 && (
               <ul className="divide-y rounded-xl border">
                 {periodos.map((p) => (
-                  <li key={p.id} className="flex items-center gap-2 px-3 py-2 text-sm">
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-foreground">{p.nombre}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {f(p.inicio)} → {f(p.fin)}
-                      </span>
-                    </span>
-                    <Button variant="ghost" size="icon-sm" aria-label={`Borrar ${p.nombre}`} disabled={ocupado} onClick={() => window.confirm(`¿Borrar «${p.nombre}»? Se pierde también el comentario de sus boletines.`) && void correr(() => api(`/api/homeschooling/periodos/${p.id}`, { method: "DELETE" }), "Período borrado")}>
-                      <Trash2 />
-                    </Button>
+                  <li key={p.id}>
+                    <AdminItem
+                      enabled
+                      nombre={`el período «${p.nombre}»`}
+                      aviso="Se pierde también el comentario de sus boletines."
+                      onEdit={() => {
+                        setEditandoId(p.id);
+                        setNombre(p.nombre);
+                        setInicio(p.inicio);
+                        setFin(p.fin);
+                      }}
+                      onDelete={async () => {
+                        await api(`/api/homeschooling/periodos/${p.id}`, { method: "DELETE" });
+                        toast.success("Período borrado");
+                        router.refresh();
+                      }}
+                    >
+                      <div className="px-3 py-2 text-sm">
+                        <span className="block truncate font-medium text-foreground">{p.nombre}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {f(p.inicio)} → {f(p.fin)}
+                        </span>
+                      </div>
+                    </AdminItem>
                   </li>
                 ))}
               </ul>
@@ -77,14 +93,17 @@ export default function GestionPeriodos({ periodos, anio }: { periodos: Periodo[
               onSubmit={(e) => {
                 e.preventDefault();
                 void correr(async () => {
-                  await api("/api/homeschooling/periodos", { method: "POST", body: { nombre: nombre.trim(), inicio, fin } });
+                  const cuerpo = { nombre: nombre.trim(), inicio, fin };
+                  if (editandoId) await api(`/api/homeschooling/periodos/${editandoId}`, { method: "PATCH", body: cuerpo });
+                  else await api("/api/homeschooling/periodos", { method: "POST", body: cuerpo });
+                  setEditandoId(null);
                   setNombre("");
                   setInicio("");
                   setFin("");
-                }, "Período creado");
+                }, editandoId ? "Período actualizado" : "Período creado");
               }}
             >
-              <p className="text-sm font-medium text-foreground">Agregar uno propio</p>
+              <p className="text-sm font-medium text-foreground">{editandoId ? "Editar período" : "Agregar uno propio"}</p>
               <div className="space-y-1.5">
                 <Label htmlFor="per-nombre">Nombre</Label>
                 <Input id="per-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} placeholder="Primer semestre" />
@@ -100,8 +119,13 @@ export default function GestionPeriodos({ periodos, anio }: { periodos: Periodo[
                 </div>
               </div>
               <Button type="submit" variant="outline" disabled={ocupado || !nombre.trim() || !inicio || !fin}>
-                Agregar período
+                {editandoId ? "Guardar cambios" : "Agregar período"}
               </Button>
+              {editandoId && (
+                <Button type="button" variant="ghost" className="ml-2" onClick={() => { setEditandoId(null); setNombre(""); setInicio(""); setFin(""); }}>
+                  Cancelar
+                </Button>
+              )}
             </form>
           </div>
         </DialogContent>
