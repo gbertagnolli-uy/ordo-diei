@@ -408,11 +408,12 @@ export async function editarHabito(
     minimo: string | null;
     icono: string;
     imagen: string | null;
-  }>
+  }>,
+  esAdmin = false
 ) {
   const habito = await prisma.habito.findUnique({ where: { id } });
   if (!habito) throw new NoEncontradoError("Hábito no encontrado");
-  if (!puedeEditarHabito(habito, actorId)) throw new NoAutorizadoError("No tenés permiso para editar este hábito");
+  if (!puedeEditarHabito(habito, actorId, esAdmin)) throw new NoAutorizadoError("No tenés permiso para editar este hábito");
 
   const data: Record<string, unknown> = {};
   if (datos.nombre !== undefined) {
@@ -453,10 +454,10 @@ export async function editarHabito(
   });
 }
 
-export async function archivarHabito(actorId: number, id: number) {
+export async function archivarHabito(actorId: number, id: number, esAdmin = false) {
   const habito = await prisma.habito.findUnique({ where: { id } });
   if (!habito) throw new NoEncontradoError("Hábito no encontrado");
-  if (!puedeEditarHabito(habito, actorId)) throw new NoAutorizadoError("No tenés permiso para archivar este hábito");
+  if (!puedeEditarHabito(habito, actorId, esAdmin)) throw new NoAutorizadoError("No tenés permiso para archivar este hábito");
 
   await prisma.habito.update({
     where: { id },
