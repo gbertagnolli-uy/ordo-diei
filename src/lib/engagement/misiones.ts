@@ -42,7 +42,7 @@ function candidatas(c: ContextoMisiones): Mision[] {
     lista.push({
       clave: "comportamiento",
       titulo: "Registrá cómo se portó cada hijo",
-      detalle: faltan.length === 0 ? "Todos tienen su día registrado: el cofre depende de eso." : `Falta: ${nombres(faltan.map((h) => h.nombre))}. De esto depende su cofre.`,
+      detalle: faltan.length === 0 ? "Todos tienen su día registrado: tu cofre y el de ellos están desbloqueados." : `Falta: ${nombres(faltan.map((h) => h.nombre))}. Con esto se desbloquea tu cofre y el de ellos.`,
       actual: c.hijos.length - faltan.length,
       total: c.hijos.length,
       hecha: faltan.length === 0,
@@ -89,6 +89,15 @@ function candidatas(c: ContextoMisiones): Mision[] {
 
   return lista;
 }
+
+/**
+ * El cofre de «Tu parte de hoy» se gana registrando el comportamiento de todos los hijos. Las demás misiones
+ * suman puntos pero no lo condicionan. Sin hijos no hay nada que registrar: ahí hacen falta todas.
+ */
+export const cofreGanado = (lista: readonly Mision[]) => {
+  const registro = lista.find((m) => m.clave === "comportamiento");
+  return registro ? registro.hecha : lista.length > 0 && lista.every((m) => m.hecha);
+};
 
 /**
  * Las misiones de hoy: hasta tres, por prioridad. Las que ya se cumplieron (`premiadas`) se conservan

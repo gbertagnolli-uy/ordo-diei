@@ -12,7 +12,7 @@ import { rangoDelDia } from "../comportamiento/sancionServer.ts";
 import type { ItemPremio } from "../comportamiento/premios.ts";
 import { calcularRachaApp, type RachaApp } from "./racha.ts";
 import { hitosAlcanzados, origenHito, proximoHito, type Hito } from "./hitos.ts";
-import { misionesDeHoy, PUNTOS_MISION, type Mision } from "./misiones.ts";
+import { cofreGanado, misionesDeHoy, PUNTOS_MISION, type Mision } from "./misiones.ts";
 
 type Cliente = Prisma.TransactionClient | typeof prisma;
 
@@ -94,8 +94,10 @@ export type ParteDeHoy = {
   proximoHito: { dias: number; faltan: number } | null;
   misiones: Mision[];
   hechas: number;
-  /** Se cumplieron todas y el premio de «Tu parte de hoy» ya está en «Mis premios» */
+  /** Se cumplieron todas las misiones */
   completa: boolean;
+  /** Registró el comportamiento de todos los hijos y el cofre de «Tu parte de hoy» ya está en «Mis premios» */
+  cofre: boolean;
   /** Puntos que sumaron las misiones de hoy */
   puntosHoy: number;
 };
@@ -138,7 +140,7 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     mensajesHoy: mensajes + publicaciones,
   };
 
-  const { misiones, completa, puntosHoy } = await prisma.$transaction(async (tx) => {
+  const { misiones, cofre, puntosHoy } = await prisma.$transaction(async (tx) => {
     // Un candado por persona evita premiar dos veces si se abren dos pestañas a la vez
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${usuario.id}::bigint + 8000000)`;
     const fila = await tx.actividadDia.findUniqueOrThrow({ where: { usuarioId_fecha: { usuarioId: usuario.id, fecha } } });
@@ -147,8 +149,7 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
 
     const nuevas = lista.filter((m) => m.hecha && !premiadas.includes(m.clave));
     const claves = [...premiadas, ...nuevas.map((m) => m.clave)];
-    const todas = lista.length > 0 && lista.every((m) => m.hecha);
-    const premioFinal = todas && !premiadas.includes("completo");
+    const premioFinal = cofreGanado(lista) && !premiadas.includes("completo");
     if (premioFinal) claves.push("completo");
 
     const puntos = nuevas.reduce((n, m) => n + m.puntos, 0);
@@ -171,7 +172,7 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
       await tx.actividadDia.update({ where: { id: fila.id }, data: { misiones: claves } });
     }
     const final = misionesDeHoy(contexto, claves);
-    return { misiones: final, completa: claves.includes("completo"), puntosHoy: final.filter((m) => m.hecha).length * PUNTOS_MISION };
+    return { misiones: final, cofre: claves.includes("completo"), puntosHoy: final.filter((m) => m.hecha).length * PUNTOS_MISION };
   });
 
   const racha = calcularRachaApp(fechas, hoy);
@@ -181,7 +182,8 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     proximoHito: sig ? { dias: sig.dias, faltan: sig.dias - racha.dias } : null,
     misiones,
     hechas: misiones.filter((m) => m.hecha).length,
-    completa,
+    completa: misiones.length > 0 && misiones.every((m) => m.hecha),
+    cofre,
     puntosHoy,
   };
 }

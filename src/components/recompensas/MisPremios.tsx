@@ -310,11 +310,11 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
             <p className="text-sm text-muted-foreground">
               {porReclamar.some(esCofreDeLaParte)
                 ? "Ya lo ganaste: está arriba, listo para abrir."
-                : "Se desbloquea al completar las 3 misiones de «Tu parte de hoy», en el panel de administración."}
+                : "Registrá el comportamiento de tus hijos para desbloquear tu cofre y el de ellos."}
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/admin">Ver misiones</Link>
+            <Link href="/dashboard/admin/conducta">Registrar comportamiento</Link>
           </Button>
         </Card>
       ) : (
