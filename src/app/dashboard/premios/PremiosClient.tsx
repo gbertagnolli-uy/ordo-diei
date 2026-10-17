@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Gift, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Plus, Gift, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,8 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empt
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/lib/toast";
+import { AdminItem } from "@/components/AdminItem";
 import { ValesAdmin } from "@/components/recompensas/ValesAdmin";
 
 interface Premio {
@@ -82,20 +82,10 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar este premio? Los premios entregados no se pueden eliminar.")) return;
-    
-    try {
-      const res = await fetch(`/api/premios/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Error al eliminar");
-      }
-    } catch {
-      toast.error("Error de conexión");
-    }
+  const eliminarPremio = async (id: number) => {
+    const res = await fetch(`/api/premios/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al eliminar");
+    window.location.reload();
   };
 
   const openEditModal = (premio: Premio) => {
@@ -157,32 +147,28 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
           </Button>
         </CardHeader>
 
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="pl-6">Premio</TableHead>
-              <TableHead>Frecuencia</TableHead>
-              <TableHead>Tareas Requeridas</TableHead>
-              <TableHead>Entregas</TableHead>
-              <TableHead className="pr-6 text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {premios.map(premio => (
-              <TableRow key={premio.id}>
-                <TableCell className="pl-6">
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Gift className="size-4" />
-                    </span>
-                    <div>
-                      <div className="font-medium">{premio.esVale ? `Vale por ${premio.titulo}` : premio.titulo}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">{premio.esVale ? "Vale" : `x${premio.cantidad}`}</div>
-                    </div>
+        <div className="divide-y">
+          {premios.map(premio => (
+            <AdminItem
+              key={premio.id}
+              enabled
+              nombre={`el premio «${premio.titulo}»`}
+              aviso="Los premios ya entregados no se pueden eliminar."
+              onEdit={() => openEditModal(premio)}
+              onDelete={() => eliminarPremio(premio.id)}
+            >
+              <div className="grid items-start gap-3 px-6 py-3 md:grid-cols-[minmax(0,1.4fr)_1fr_1fr_1fr]">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Gift className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{premio.esVale ? `Vale por ${premio.titulo}` : premio.titulo}</div>
+                    <div className="text-xs text-muted-foreground tabular-nums">{premio.esVale ? "Vale" : `x${premio.cantidad}`}</div>
                   </div>
-                </TableCell>
-                <TableCell className="text-sm">{getFrecuenciaLabel(premio.tipoFrecuencia,premio.diaEntregaSemana,premio.diaDelMes)}</TableCell>
-                <TableCell>
+                </div>
+                <div className="text-sm">{getFrecuenciaLabel(premio.tipoFrecuencia,premio.diaEntregaSemana,premio.diaDelMes)}</div>
+                <div>
                   <div className="flex flex-wrap gap-1">
                     {getTareasRequeridas(premio.tareasRequeridasIds).length > 0 ? (
                       getTareasRequeridas(premio.tareasRequeridasIds).slice(0, 2).map((t, i) => (
@@ -195,8 +181,8 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                       <Badge variant="secondary">+{getTareasRequeridas(premio.tareasRequeridasIds).length - 2}</Badge>
                     )}
                   </div>
-                </TableCell>
-                <TableCell>
+                </div>
+                <div>
                   <div className="flex flex-col gap-1">
                     {premio.entregas.length > 0 ? (
                       premio.entregas.slice(0, 3).map(e => (
@@ -212,21 +198,11 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
                       <span className="text-xs font-medium text-primary">+{premio.entregas.length - 3} más</span>
                     )}
                   </div>
-                </TableCell>
-                <TableCell className="pr-6 text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(premio)} aria-label="Editar">
-                      <Edit2 />
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(premio.id)} aria-label="Eliminar" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                      <Trash2 />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+            </AdminItem>
+          ))}
+        </div>
         {premios.length === 0 && (
           <Empty className="py-16">
             <EmptyHeader>
