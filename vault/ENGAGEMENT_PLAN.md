@@ -59,7 +59,7 @@ Pendiente para las lanes siguientes: **202** meta semanal en familia, **203** co
 - «Tu parte de hoy» se **compacta en una sola fila** cuando está completa, para no empujar el trabajo del día.
 - `GET/POST /api/meta-semanal`. Pruebas: 4 unitarias + 1 de integración con base local.
 
-### Lane 203 — hecha (2026-10-16)
+### Lane 203 — hecha (2026-10-16) · reemplazada por la lane 220 ([`COMPANERO_HEROE.md`](COMPANERO_HEROE.md)): ahora es un héroe de 6 personajes que sube con el nivel
 
 - **Tabla nueva `Companeros`** (`Companero`: nombre elegido + última etapa festejada). SQL **solo aditivo**, aplicado a la base.
 - **Evoluciona con los días de uso, no con la racha**: cada día distinto en que el niño entra (`ActividadDia`) suma. Etapas por días: **Huevito 0 · Pichón 3 · Palomita 10 · Angelito 30 · Ángel guardián 100**. Faltar no lo achica ni lo «mata».

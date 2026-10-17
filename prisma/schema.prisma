@@ -73,22 +73,23 @@ model Usuario {
   registrosAnimo    RegistroAnimo[]
   premiosEntregados PremioEntregado[]
 
-  experienciaHabitos         Int               @default(0) @map("Experiencia_Habitos")
+  experienciaHabitos         Int                  @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
   suscripcionesPush          SuscripcionPush[]
   companero                  Companero?
-  metasSemanales             MetaSemanal[]     @relation("MetasSemanales")
-  habitosCreados             Habito[]          @relation("HabitosCreados")
+  companeroAccesorios        CompaneroAccesorio[]
+  metasSemanales             MetaSemanal[]        @relation("MetasSemanales")
+  habitosCreados             Habito[]             @relation("HabitosCreados")
   habitosUsuario             HabitoUsuario[]
-  registrosHabito            RegistroHabito[]  @relation("RegistrosHabito")
-  registrosHabitoHechos      RegistroHabito[]  @relation("RegistrosHabitoHechos")
+  registrosHabito            RegistroHabito[]     @relation("RegistrosHabito")
+  registrosHabitoHechos      RegistroHabito[]     @relation("RegistrosHabitoHechos")
   libros                     Libro[]
-  recompensas                Recompensa[]      @relation("Recompensas")
-  recompensasEntregadas      Recompensa[]      @relation("RecompensasEntregadas")
-  comportamientos            Comportamiento[]  @relation("ComportamientosHijo")
-  comportamientosRegistrados Comportamiento[]  @relation("ComportamientosRegistrados")
-  conductaDias               ConductaDia[]     @relation("ConductaHijo")
-  conductaRegistrada         ConductaDia[]     @relation("ConductaRegistrada")
+  recompensas                Recompensa[]         @relation("Recompensas")
+  recompensasEntregadas      Recompensa[]         @relation("RecompensasEntregadas")
+  comportamientos            Comportamiento[]     @relation("ComportamientosHijo")
+  comportamientosRegistrados Comportamiento[]     @relation("ComportamientosRegistrados")
+  conductaDias               ConductaDia[]        @relation("ConductaHijo")
+  conductaRegistrada         ConductaDia[]        @relation("ConductaRegistrada")
 
   incienso             Int                   @default(0) @map("Incienso")
   cartasCreadas        Carta[]               @relation("CartasCreadas")
@@ -467,7 +468,7 @@ model ConductaDia {
   id              Int      @id @default(autoincrement())
   usuarioId       Int      @map("Usuario_ID")
   registradoPorId Int      @map("Registrado_Por_ID")
-  fecha           DateTime @db.Date @map("Fecha")
+  fecha           DateTime @map("Fecha") @db.Date
   nivel           Int      @map("Nivel")
   nota            String?  @map("Nota")
   createdAt       DateTime @default(now()) @map("Created_At")
@@ -1542,13 +1543,30 @@ model Companero {
   id         Int      @id @default(autoincrement())
   usuarioId  Int      @unique @map("Usuario_ID")
   nombre     String   @map("Nombre")
-  etapaVista Int      @default(1) @map("Etapa_Vista") // última etapa que el niño ya festejó
+  etapaVista Int      @default(1) @map("Etapa_Vista") // en desuso desde la lane 220 (héroe): reemplazado por nivelVisto
+  // Héroe (lane 220, vault/COMPANERO_HEROE.md): quién lo acompaña, qué nivel ya festejó y qué tiene puesto
+  personaje  String?  @map("Personaje") // monja | sacerdote | hombre | mujer | nino | nina; null = todavía no eligió
+  nivelVisto Int      @default(0) @map("Nivel_Visto") // último nivel que ya festejó
+  equipados  Json     @default("{\"fondo\": \"capilla\", \"objetos\": [\"veladora\"]}") @map("Equipados") // { fondo, objetos[] }
   createdAt  DateTime @default(now()) @map("Created_At")
   updatedAt  DateTime @updatedAt @map("Updated_At")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("Companeros")
+}
+
+// Accesorios que el usuario ya compró para su compañero (los de regalo no tienen fila).
+model CompaneroAccesorio {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("Usuario_ID")
+  clave     String   @map("Clave") // catálogo en src/lib/engagement/accesorios.ts
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, clave])
+  @@map("Companero_Accesorios")
 }
 
 // Avisos push en el celular (vault/ENGAGEMENT_PLAN.md, lane 204): un dispositivo suscripto por fila.

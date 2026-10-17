@@ -12,6 +12,7 @@ import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
+import { nivelDe, xpTotal } from "@/lib/niveles";
 import { parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
@@ -51,6 +52,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
+  // El compañero llama la atención hasta que se lo elige y cada vez que sube de nivel
+  const fichaCompanero = await prisma.companero.findUnique({ where: { usuarioId: Number(session.user.id) }, select: { personaje: true, nivelVisto: true } }).catch(() => null);
+  const companeroPendiente = !fichaCompanero?.personaje || nivelDe(xpTotal(currentUser)).level > fichaCompanero.nivelVisto;
   const tasks = myTasks.map((t) => ({
     ...t,
     timerStartedAt: t.timerStartedAt?.toISOString() ?? null,
@@ -67,6 +71,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         habitosPendientes={habitosPendientes}
         premiosPendientes={premiosPendientes}
         hayEventosCartas={hayEventosCartas}
+        companeroPendiente={companeroPendiente}
       />
       <SidebarInset className="min-w-0">
         <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />

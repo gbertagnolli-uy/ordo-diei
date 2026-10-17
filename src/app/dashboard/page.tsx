@@ -9,6 +9,8 @@ import { MetaSemanal } from "@/components/engagement/MetaSemanal";
 import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
 import { CompaneroCard } from "@/components/engagement/CompaneroCard";
 import { companeroDe } from "@/lib/engagement/companeroServidor";
+import { eventosDeHoy } from "@/lib/cartas/server";
+import { haySancion } from "@/lib/comportamiento/sancionServer";
 import { AvisosPush } from "@/components/engagement/AvisosPush";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
@@ -63,10 +65,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         return null;
       });
 
-  // Compañero que evoluciona: es de los chicos
-  const companero = isCurrentUserAdmin || !enVistaPrincipal
+  // Compañero «héroe»: es de todos (hijos y padres). Si hay cartas por reclamar, las señala
+  const companero = !enVistaPrincipal
     ? null
-    : await companeroDe(Number(session.user.id)).catch((e) => {
+    : await (async () => {
+        const id = Number(session.user.id);
+        const [cartas, sancionado] = await Promise.all([eventosDeHoy(id).catch(() => null), haySancion(prisma, id)]);
+        return companeroDe(id, new Date(), { cartasNuevas: !!cartas?.hayPendientes, sancionado });
+      })().catch((e) => {
         console.error("[Companero]", e);
         return null;
       });
