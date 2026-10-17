@@ -5,12 +5,12 @@ import prisma from "../prisma.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { regalarCartaEnTx, type FragmentosOtorgados } from "../cartas/server.ts";
-import { APP_TZ, inicioDelDiaEnTz } from "../cartas/eventos.ts";
+import { APP_TZ } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
 import { desbloquearCofresDePadres } from "../engagement/servidor.ts";
 import { cofreMerecido, contenidoCofre, elegirRareza, HORA_COFRE } from "./cofre.ts";
-import { haySancion, origenCofreDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
+import { haySancion, origenCofreDelDia, rangoDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
 import { hoyDia } from "../conducta/server.ts";
 import { avisoCofre } from "../push/avisos.ts";
 import { enviarAviso } from "../push/servidor.ts";
@@ -146,14 +146,17 @@ export async function registrarComportamiento(
         }
       }
     });
-    // Si ya pasaron las 18:00, el cofre llega ahora y el chico se entera en el celular (sin esperar a que entre)
+    // El cofre del día se desbloquea al registrar; si ya pasaron las 18:00, el chico también recibe el aviso en el celular
+    const ahora = new Date();
     await Promise.allSettled(
       usuarioIds.map(async (usuarioId) => {
-        if (await otorgarCofreDelDia(usuarioId)) await enviarAviso(usuarioId, avisoCofre());
+        if ((await otorgarCofreDelDia(usuarioId, ahora)) && horaEnFamilia(ahora) >= HORA_COFRE) {
+          await enviarAviso(usuarioId, avisoCofre(), { ahora });
+        }
       })
     );
     // Si con esto ya están registrados todos los hijos, los cofres de los administradores se desbloquean ya
-    await desbloquearCofresDePadres().catch((e) => console.error("[CofresPadres]", e));
+    await desbloquearCofresDePadres(ahora).catch((e) => console.error("[CofresPadres]", e));
     return;
   }
 
@@ -187,6 +190,7 @@ export async function registrarComportamiento(
       await retirarCofreDeHoy(tx, usuarioId);
     }
   });
+  await desbloquearCofresDePadres().catch((e) => console.error("[CofresPadres]", e));
 }
 
 /** Elimina el registro; si el premio sorpresa todavía no se abrió, también desaparece de «Mis premios» */
@@ -283,7 +287,7 @@ export async function abrirPremioSorpresa(usuarioId: number, id: number): Promis
   });
 }
 
-const horaEnFamilia = (ahora: Date) =>
+export const horaEnFamilia = (ahora: Date) =>
   Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: APP_TZ }).format(ahora));
 
 /** Crea un cofre sorpresa con una carta al azar (por rareza). `origen` identifica el motivo. */
@@ -300,28 +304,30 @@ export async function crearCofre(cliente: Prisma.TransactionClient | typeof pris
 }
 
 /**
- * Cofre del día: desde las 18:00, si los padres evaluaron bien el día de este usuario, recibe uno
- * (máximo uno por día). Se evalúa al entrar a la app, así que no hace falta un cron.
+ * Cofre del día: si los padres evaluaron bien el día de este usuario, deja el cofre en «Mis premios»
+ * (máximo uno por día; recién se puede abrir desde las 18:00). Si la evaluación baja o hay sanción y
+ * todavía no lo abrió, se retira.
  * @returns true si se otorgó ahora.
  */
 export async function otorgarCofreDelDia(usuarioId: number, ahora = new Date()): Promise<boolean> {
-  if (horaEnFamilia(ahora) < HORA_COFRE) return false;
-  const desde = inicioDelDiaEnTz(ahora, APP_TZ);
+  const { desde, hasta } = rangoDelDia(ahora);
   const origen = origenCofreDelDia(ahora);
 
   return prisma.$transaction(async (tx) => {
     // Un candado por usuario evita dos cofres si se abren dos pestañas a la vez
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${usuarioId}::bigint + 7000000)`;
-    const yaTiene = await tx.recompensa.count({ where: { usuarioId, tipo: "cofre", origen } });
-    if (yaTiene > 0) return false;
-    // Un día con sanción no da cofre, aunque haya más registros positivos que negativos
-    if (await haySancion(tx, usuarioId, ahora)) return false;
-    const [positivos, negativos, conducta] = await Promise.all([
-      tx.comportamiento.count({ where: { usuarioId, tipo: "Positivo", createdAt: { gte: desde } } }),
-      tx.comportamiento.count({ where: { usuarioId, tipo: "Negativo", createdAt: { gte: desde } } }),
+    const [yaTiene, sancionado, positivos, negativos, conducta] = await Promise.all([
+      tx.recompensa.count({ where: { usuarioId, tipo: "cofre", origen } }),
+      haySancion(tx, usuarioId, ahora),
+      tx.comportamiento.count({ where: { usuarioId, tipo: "Positivo", createdAt: { gte: desde, lt: hasta } } }),
+      tx.comportamiento.count({ where: { usuarioId, tipo: "Negativo", createdAt: { gte: desde, lt: hasta } } }),
       tx.conductaDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha: new Date(`${hoyDia(ahora)}T00:00:00Z`) } }, select: { nivel: true } }),
     ]);
-    if (!cofreMerecido(positivos, negativos, conducta?.nivel ?? null)) return false;
+    if (sancionado || !cofreMerecido(positivos, negativos, conducta?.nivel ?? null)) {
+      if (yaTiene > 0) await retirarCofreDeHoy(tx, usuarioId, ahora);
+      return false;
+    }
+    if (yaTiene > 0) return false;
 
     await crearCofre(tx, usuarioId, origen);
     return true;

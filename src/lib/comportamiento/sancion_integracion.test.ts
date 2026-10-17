@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import prisma from "../prisma.ts";
 import { haySancion, origenCofreDelDia } from "./sancionServer.ts";
 import { abrirPremioSorpresa, otorgarCofreDelDia, registrarComportamiento, eliminarComportamiento } from "./server.ts";
+import { registrarConducta } from "../conducta/server.ts";
 import { comprarSobre, eventosDeHoy, reclamarBienvenida } from "../cartas/server.ts";
 import { comprarProducto } from "../tienda/server.ts";
 import { calcularRecompensa } from "../habitos/server.ts";
@@ -90,6 +91,30 @@ test("un día con sanción: cofre perdido, premios a la mitad, sin cartas ni tie
     await prisma.recompensa.deleteMany({ where: { usuarioId: hijo.id } });
     await prisma.comportamiento.deleteMany({ where: { usuarioId: hijo.id } });
     await prisma.reclamoCarta.deleteMany({ where: { usuarioId: hijo.id } }).catch(() => {});
+    await prisma.usuario.deleteMany({ where: { id: { in: [hijo.id, padre.id] } } });
+  }
+});
+
+test("registrar conducta diaria desbloquea el cofre del hijo al instante y lo retira si se corrige a menos de 4", { skip: sinBase }, async () => {
+  const marca = `__test_conducta_cofre_${Date.now()}__`;
+  const padre = await prisma.usuario.create({ data: { nombre: `${marca}padre`, pinSecretoHash: "x", fechaNacimiento: new Date("1980-01-01"), rolFamiliar: "Padre" } });
+  const hijo = await prisma.usuario.create({ data: { nombre: `${marca}hijo`, pinSecretoHash: "x", fechaNacimiento: new Date("2015-01-01"), rolFamiliar: "Hijo" } });
+  const actor = { id: padre.id, rol: "Padre" };
+  const origen = origenCofreDelDia(new Date());
+  try {
+    await registrarConducta(actor, { usuarioId: hijo.id, nivel: 4, nota: "Se portó bien" });
+    assert.equal(await prisma.recompensa.count({ where: { usuarioId: hijo.id, tipo: "cofre", origen } }), 1);
+
+    // Corregir a Regular (3) retira el cofre de hoy sin abrir
+    await registrarConducta(actor, { usuarioId: hijo.id, nivel: 3, nota: "Regular" });
+    assert.equal(await prisma.recompensa.count({ where: { usuarioId: hijo.id, tipo: "cofre", origen } }), 0);
+
+    // Volver a Excelente (5) lo vuelve a desbloquear
+    await registrarConducta(actor, { usuarioId: hijo.id, nivel: 5, nota: "Excelente" });
+    assert.equal(await prisma.recompensa.count({ where: { usuarioId: hijo.id, tipo: "cofre", origen } }), 1);
+  } finally {
+    await prisma.recompensa.deleteMany({ where: { usuarioId: { in: [hijo.id, padre.id] } } });
+    await prisma.conductaDia.deleteMany({ where: { usuarioId: hijo.id } });
     await prisma.usuario.deleteMany({ where: { id: { in: [hijo.id, padre.id] } } });
   }
 });

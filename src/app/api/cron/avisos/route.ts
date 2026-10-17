@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { rangoDelDia } from "@/lib/comportamiento/sancionServer";
+import { origenCofreDelDia, rangoDelDia } from "@/lib/comportamiento/sancionServer";
 import { hoyDia } from "@/lib/conducta/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { avisoCofre, avisoRegistrarDia } from "@/lib/push/avisos";
@@ -19,6 +19,7 @@ export async function GET(req: Request) {
 
   const ahora = new Date();
   const { desde, hasta } = rangoDelDia(ahora);
+  const origen = origenCofreDelDia(ahora);
   const usuarios = await prisma.usuario.findMany({
     where: { suscripcionesPush: { some: {} } },
     select: { id: true, nombre: true, rolFamiliar: true },
@@ -28,8 +29,11 @@ export async function GET(req: Request) {
   let recordatorios = 0;
   for (const u of usuarios.filter((x) => x.rolFamiliar === "Hijo" || x.rolFamiliar === "Hija")) {
     try {
-      // Si todavía no le había llegado, se le entrega ahora y recién ahí se le avisa
-      if (await otorgarCofreDelDia(u.id, ahora)) cofres += await enviarAviso(u.id, avisoCofre(), { ahora });
+      await otorgarCofreDelDia(u.id, ahora);
+      const tieneCofreHoy = await prisma.recompensa.count({
+        where: { usuarioId: u.id, tipo: "cofre", estado: "disponible", origen },
+      });
+      if (tieneCofreHoy > 0) cofres += await enviarAviso(u.id, avisoCofre(), { ahora });
     } catch (e) {
       console.error("[Cron Avisos] cofre", u.id, e);
     }
