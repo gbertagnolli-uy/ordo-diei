@@ -64,3 +64,9 @@ Notas de proceso: las lanes 218 y 220 las ocupó otro agente mientras trabajaba;
 Hecho: `AdminItem` en períodos (nuevo PATCH + formulario de edición reutilizado), días sin clase (nuevo PATCH del motivo; mover la fecha = quitar y agregar), materiales (editar = foco en el título inline), memoria (nuevo PATCH título/texto sin tocar el repaso), muro (PATCH de título/cuerpo solo en avisos; los logros los escribe la app) y registros de comportamiento (solo eliminar: es una bitácora con premios y penalizaciones, editarla reescribiría la historia).
 
 Pendiente: cartas, lectura, actividades, neurodivergencia, libreta (ya editan y eliminan con botones propios: pasarlos a `AdminItem`), rutina semanal/mensual, e iconos de ayuda en el resto de asistentes.
+
+## 7. Lane 228 (2026-10-16)
+
+Hecho: `AdminItem` en actividades de horas (se sacan Editar/Borrar del detalle para no duplicar), lectura (los hijos siguen editando lo suyo: el endpoint no es solo padres), historias de neurodivergencia y notas de la libreta (el menú no se imprime). `Modal` gana la prop `ayuda`. Iconos de ayuda en: Nuevo/Editar hábito (cambia según el paso), Etapa de rutina, Configurar el año, Cargar la semana, Ponerse al día, Día sin clase, Editar plan, Períodos, Premio.
+
+Decisión: el catálogo de cartas (`AdminCartasView`) y las tareas admin son tablas densas de herramientas de administración (9 columnas, filtros, acciones en masa): ya editan, archivan y eliminan con botones; el swipe no aplica. Pendiente solo: ayuda en «Nueva tarea» (`AdminTasksClient`, lane 218 de otro agente) y revisar rutina semanal/mensual.

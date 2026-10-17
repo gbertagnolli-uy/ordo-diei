@@ -1,10 +1,9 @@
 "use client";
 
 // Portado de vendor/roost/src/components/events/EventDetails.tsx (msrbuilds/roost@492af47).
-// Cambios: detalle en un Sheet de ui/ con duración y participantes; sin RSVP ni enlace de reunión; editar y borrar solo padres.
+// Cambios: detalle en un Sheet de ui/ con duración y participantes; sin RSVP ni enlace de reunión; editar y borrar se hacen deslizando la tarjeta en la lista (AdminItem).
 
-import { Clock, MapPin, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Clock, MapPin } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatoDuracion } from "@/lib/homeschooling/horas";
 import type { EventWithDetails } from "@/lib/homeschooling/roost/tipos";
@@ -12,16 +11,10 @@ import ParticipantesList from "./ParticipantesList";
 
 export default function ActividadDetalle({
   actividad,
-  esPadre,
   onClose,
-  onEdit,
-  onDelete,
 }: {
   actividad: EventWithDetails | null;
-  esPadre: boolean;
   onClose: () => void;
-  onEdit: (a: EventWithDetails) => void;
-  onDelete: (a: EventWithDetails) => void;
 }) {
   return (
     <Sheet open={!!actividad} onOpenChange={(o) => !o && onClose()}>
@@ -47,16 +40,6 @@ export default function ActividadDetalle({
                 <p className="font-medium text-foreground">Participaron</p>
                 <ParticipantesList participantes={actividad.participantes} conNombres />
               </div>
-              {esPadre && (
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" onClick={() => onEdit(actividad)}>
-                    <Pencil /> Editar
-                  </Button>
-                  <Button variant="ghost" className="text-destructive" onClick={() => onDelete(actividad)}>
-                    <Trash2 /> Borrar
-                  </Button>
-                </div>
-              )}
             </div>
           </>
         )}

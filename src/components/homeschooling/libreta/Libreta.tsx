@@ -5,7 +5,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Edit2, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
+import { Plus, Printer, ScrollText } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -111,7 +112,15 @@ export default function Libreta({ libreta, alumnos }: { libreta: LibretaDatos; a
               ) : (
                 <ul className="divide-y">
                   {m.notas.map((n) => (
-                    <li key={n.id} className="flex items-start gap-3 px-4 py-2.5 text-sm">
+                    <li key={n.id}>
+                      <AdminItem
+                        enabled
+                        nombre={`la nota «${n.titulo}»`}
+                        confirmar={false}
+                        onEdit={() => setForm({ abierto: true, editando: { ...n, materiaId: m.materiaId }, materiaId: null })}
+                        onDelete={() => setBorrar({ id: n.id, titulo: n.titulo })}
+                      >
+                      <div className="flex items-start gap-3 px-4 py-2.5 text-sm">
                       <span className={`w-12 shrink-0 text-right text-base font-bold tabular-nums ${TONO[tonoDe(n.puntaje)]}`}>{n.puntaje}</span>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-foreground">
@@ -119,14 +128,8 @@ export default function Libreta({ libreta, alumnos }: { libreta: LibretaDatos; a
                         </p>
                         {n.comentario && <p className="text-muted-foreground">{n.comentario}</p>}
                       </div>
-                      <div className="flex shrink-0 gap-0.5 print:hidden">
-                        <Button variant="ghost" size="icon-sm" aria-label={`Editar «${n.titulo}»`} onClick={() => setForm({ abierto: true, editando: { ...n, materiaId: m.materiaId }, materiaId: null })}>
-                          <Edit2 />
-                        </Button>
-                        <Button variant="ghost" size="icon-sm" aria-label={`Borrar «${n.titulo}»`} onClick={() => setBorrar({ id: n.id, titulo: n.titulo })}>
-                          <Trash2 />
-                        </Button>
                       </div>
+                      </AdminItem>
                     </li>
                   ))}
                 </ul>

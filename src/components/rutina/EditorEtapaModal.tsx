@@ -1,5 +1,6 @@
 "use client";
 
+import { AyudaIcono } from "@/components/AyudaIcono";
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -124,8 +125,9 @@ export function EditorEtapaModal({
     <Dialog open={abierto} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-6">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">
+          <DialogTitle className="flex items-center gap-1.5 text-lg font-bold">
             {etapaParaEditar ? "Editar Etapa de Rutina" : "Nueva Etapa de Rutina"}
+            <AyudaIcono titulo="Etapa de la rutina"><p>Una etapa es un bloque del día familiar (despertar, estudio, cena…) con su horario. Aparece en la línea de tiempo diaria y avisa cuando empieza.</p></AyudaIcono>
           </DialogTitle>
         </DialogHeader>
 

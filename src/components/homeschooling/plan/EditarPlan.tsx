@@ -3,6 +3,7 @@
 // Propio de Ordo: cambia la fecha de fin y los días de la semana de un plan ya creado. Lo que falta se vuelve a repartir
 // desde hoy; lo ya hecho no se toca.
 
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,7 +47,7 @@ export default function EditarPlan({ plan, onClose, onGuardado }: { plan: PlanEd
     <Dialog open={!!plan} onOpenChange={(o) => !o && !guardando && onClose()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Plan de {plan?.nombre}</DialogTitle>
+          <DialogTitle className="flex items-center gap-1.5">Plan de {plan?.nombre} <AyudaIcono titulo="Editar el plan"><p>Cambiá la fecha de fin o los días de clase. Lo que falta se reparte de nuevo desde hoy; lo ya hecho no cambia.</p></AyudaIcono></DialogTitle>
           <DialogDescription>Lo que falta se reparte de nuevo desde hoy hasta la fecha de fin. Lo ya hecho no cambia.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

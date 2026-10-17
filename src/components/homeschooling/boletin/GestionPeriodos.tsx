@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarRange } from "lucide-react";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -48,7 +49,7 @@ export default function GestionPeriodos({ periodos, anio }: { periodos: Periodo[
       <Dialog open={abierto} onOpenChange={setAbierto}>
         <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Períodos de calificación</DialogTitle>
+            <DialogTitle className="flex items-center gap-1.5">Períodos de calificación <AyudaIcono titulo="Períodos"><p>Son los cortes del año para armar el boletín (trimestres, semestres…). Creá los tres trimestres con un clic o agregá uno propio; deslizá un período para editarlo o borrarlo.</p></AyudaIcono></DialogTitle>
             <DialogDescription>Los cortes del año para armar el boletín: trimestres, semestres, lo que use la casa.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

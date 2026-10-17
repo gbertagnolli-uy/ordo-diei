@@ -2,6 +2,7 @@
 
 // Propio de Ordo (lane 171, R1): «Ponerse al día». Muestra, por cada plan atrasado de un hijo, cuánto se atrasó, cómo queda el
 // reparto de lo que falta y —si no entra antes del fin— con qué fecha de fin sí entra. Un clic reparte todo desde hoy.
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -62,7 +63,7 @@ export default function PonerseAlDia({ open, alumno, onClose }: { open: boolean;
     <Dialog open={open} onOpenChange={(o) => !o && !ocupado && onClose()}>
       <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Ponerse al día{alumno ? `: ${alumno.nombre}` : ""}</DialogTitle>
+          <DialogTitle className="flex items-center gap-1.5">Ponerse al día{alumno ? `: ${alumno.nombre}` : ""} <AyudaIcono titulo="Ponerse al día"><p>Si se atrasó, lo que quedó sin hacer se reparte entre los días que quedan hasta la fecha de fin. Lo ya hecho no se toca.</p></AyudaIcono></DialogTitle>
           <DialogDescription>Lo que quedó sin hacer se vuelve a repartir entre los días que quedan. Lo ya hecho no se toca.</DialogDescription>
         </DialogHeader>
 

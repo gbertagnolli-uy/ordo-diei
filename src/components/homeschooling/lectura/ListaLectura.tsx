@@ -5,7 +5,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookMarked, BookOpen, CheckCircle2, Edit2, Flame, Library, Play, Plus, Trash2 } from "lucide-react";
+import { BookMarked, BookOpen, CheckCircle2, Flame, Library, Play, Plus } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
@@ -45,13 +46,8 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
   };
 
   const borrar = async (l: LibroVista) => {
-    if (!window.confirm(`¿Sacar «${l.titulo}» de la lista?`)) return;
-    try {
-      await api(`/api/homeschooling/lectura/${l.id}`, { method: "DELETE" });
-      refrescar();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo borrar");
-    }
+    await api(`/api/homeschooling/lectura/${l.id}`, { method: "DELETE" });
+    refrescar();
   };
 
   return (
@@ -117,7 +113,16 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
       ) : (
         <ul className="space-y-3">
           {libros.map((l) => (
-            <li key={l.id} className="flex gap-3 rounded-xl border bg-card p-3">
+            <li key={l.id}>
+              <AdminItem
+                enabled
+                nombre={`el libro «${l.titulo}»`}
+                className="rounded-xl border"
+                aviso="Se saca de la lista de lectura con sus sesiones."
+                onEdit={() => setFormulario({ abierto: true, editando: l })}
+                onDelete={() => borrar(l)}
+              >
+              <div className="flex gap-3 bg-card p-3">
               <div className="flex h-24 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
                 {l.portadaUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -134,14 +139,6 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
                       {l.autor ?? "Autor sin cargar"}
                       {l.asignado && " · lo eligieron mamá o papá"}
                     </p>
-                  </div>
-                  <div className="flex shrink-0 gap-0.5">
-                    <Button variant="ghost" size="icon-sm" aria-label={`Editar «${l.titulo}»`} onClick={() => setFormulario({ abierto: true, editando: l })}>
-                      <Edit2 />
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" aria-label={`Sacar «${l.titulo}»`} onClick={() => borrar(l)}>
-                      <Trash2 />
-                    </Button>
                   </div>
                 </div>
 
@@ -186,6 +183,8 @@ export default function ListaLectura({ datos, alumnos, esPadre }: { datos: Datos
                   </div>
                 )}
               </div>
+              </div>
+              </AdminItem>
             </li>
           ))}
         </ul>
