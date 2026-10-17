@@ -215,7 +215,7 @@ export function PremiosClient({ premios, tareas, usuarios }: { premios: Premio[]
 
       <ValesAdmin />
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingPremio ? "Editar Premio" : "Nuevo Premio"} width="md">
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingPremio ? "Editar Premio" : "Nuevo Premio"} ayuda={<p>Un premio se entrega cuando se cumplen las tareas requeridas en la frecuencia elegida. Un «vale» es un premio que se canjea por algo concreto (por ejemplo, una salida).</p>} width="md">
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>

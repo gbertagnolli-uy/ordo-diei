@@ -3,6 +3,7 @@
 // Propio de Ordo (lane 192, A1/A2): «Cargar la semana». El padre escribe, día por día, lo que le toca a un hijo —un enlace de
 // YouTube o de Drive, o una tarea corta, uno por línea— y se crea todo de una vez. Es la forma más rápida de dejar la semana lista
 // (carga sin fricción). Lo que se escribe queda como borrador si se cierra el diálogo.
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
@@ -107,7 +108,7 @@ export default function CargarSemana({ alumnos, alumnoId, hoy }: { alumnos: { id
       <Dialog open={abierto} onOpenChange={setAbierto}>
         <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Cargar la semana de {alumno.nombre}</DialogTitle>
+            <DialogTitle className="flex items-center gap-1.5">Cargar la semana de {alumno.nombre} <AyudaIcono titulo="Cargar la semana"><p>Armá de una vez lo que el alumno hace cada día. Lo que cargues aparece en «Para hoy» el día que corresponde.</p></AyudaIcono></DialogTitle>
             <DialogDescription>Dejá lista toda la semana en un solo lugar: lo que cargues aparece en «Para hoy» el día que corresponda.</DialogDescription>
           </DialogHeader>
           <Formulario key={`${alumno.id}-${lunes}`} alumno={alumno} lunes={lunes} onLunes={setLunes} onListo={() => setAbierto(false)} />

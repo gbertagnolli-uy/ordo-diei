@@ -2,6 +2,7 @@
 
 // Propio de Ordo: «Hoy no hay clase» / alta de un día sin clase, con el antes/después de cada plan afectado.
 
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ export default function HoyNoHayClase({ open, onClose, alumnos, fechaInicial }: 
     <Dialog open={open} onOpenChange={(o) => !o && !guardando && onClose()}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Día sin clase</DialogTitle>
+          <DialogTitle className="flex items-center gap-1.5">Día sin clase <AyudaIcono titulo="Día sin clase"><p>Marcá un feriado, una enfermedad o una salida. Las lecciones de ese día se corren al siguiente día de clase y la fecha de fin del curso no cambia.</p></AyudaIcono></DialogTitle>
           <DialogDescription>Las lecciones de ese día se corren y la fecha de fin del curso no cambia.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

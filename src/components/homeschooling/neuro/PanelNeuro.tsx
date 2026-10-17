@@ -4,7 +4,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, Plus } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,12 +48,8 @@ export default function PanelNeuro({ alumnos, preferencias, historias }: { alumn
   };
 
   const borrar = async (h: HistoriaVista) => {
-    try {
-      await api(`/api/homeschooling/historias/${h.id}`, { method: "DELETE" });
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo borrar");
-    }
+    await api(`/api/homeschooling/historias/${h.id}`, { method: "DELETE" });
+    router.refresh();
   };
 
   return (
@@ -116,7 +113,14 @@ export default function PanelNeuro({ alumnos, preferencias, historias }: { alumn
         ) : (
           <ul className="divide-y rounded-xl border bg-card">
             {historias.map((h) => (
-              <li key={h.id} className="flex items-center gap-2 px-4 py-3 text-sm">
+              <li key={h.id}>
+              <AdminItem
+                enabled
+                nombre={`la historia «${h.titulo}»`}
+                onEdit={() => setEditor({ open: true, inicial: { id: h.id, titulo: h.titulo, pasos: h.pasos } })}
+                onDelete={() => borrar(h)}
+              >
+              <div className="flex items-center gap-2 px-4 py-3 text-sm">
                 <span className="min-w-0 flex-1 truncate font-medium text-foreground">
                   {h.titulo} <span className="font-normal text-muted-foreground">· {h.pasos.length} pasos</span>
                 </span>
@@ -126,12 +130,8 @@ export default function PanelNeuro({ alumnos, preferencias, historias }: { alumn
                 <Button size="icon" variant="ghost" aria-label="Ver" onClick={() => setVista(h)}>
                   <Eye />
                 </Button>
-                <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEditor({ open: true, inicial: { id: h.id, titulo: h.titulo, pasos: h.pasos } })}>
-                  <Pencil />
-                </Button>
-                <Button size="icon" variant="ghost" aria-label="Borrar" className="text-destructive" onClick={() => borrar(h)}>
-                  <Trash2 />
-                </Button>
+              </div>
+              </AdminItem>
               </li>
             ))}
           </ul>

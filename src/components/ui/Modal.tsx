@@ -1,5 +1,6 @@
 "use client";
 
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,8 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  /** Explicación corta del formulario: se muestra como un «?» junto al título. */
+  ayuda?: React.ReactNode;
   children: React.ReactNode;
   width?: "sm" | "md" | "lg" | "xl" | "full";
 }
@@ -20,12 +23,12 @@ const widthClasses = {
 };
 
 // API histórica de la app sobre el Dialog de shadcn/ui
-export function Modal({ isOpen, onClose, title, children, width = "md" }: ModalProps) {
+export function Modal({ isOpen, onClose, title, ayuda, children, width = "md" }: ModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className={cn("max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden", widthClasses[width])}>
         <DialogHeader className="px-6 pt-5 pb-4 border-b">
-          <DialogTitle className={cn("font-headline text-xl pr-8", !title && "sr-only")}>{title ?? "Diálogo"}</DialogTitle>
+          <DialogTitle className={cn("font-headline text-xl pr-8 flex items-center gap-1.5", !title && "sr-only")}>{title ?? "Diálogo"}{ayuda && <AyudaIcono titulo={title}>{ayuda}</AyudaIcono>}</DialogTitle>
         </DialogHeader>
         <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
       </DialogContent>

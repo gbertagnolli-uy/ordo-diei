@@ -3,6 +3,7 @@
 // Propio de Ordo (lane 197, C9): «Configurar el año». En un solo lugar: los tres trimestres del boletín, las vacaciones (con un atajo
 // para las de invierno) y las fiestas de primera clase que caen entre semana, que se pueden marcar como días sin clase de todos los
 // hijos a la vez. Al terminar se reparte de nuevo cada plan. Homeschool Planet lo llama «asistente de setup guiado».
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCog, Plus, Trash2 } from "lucide-react";
@@ -58,7 +59,7 @@ export default function AsistenteAnio({ alumnos, festividades, anio }: { alumnos
       <Dialog open={abierto} onOpenChange={(o) => !ocupado && setAbierto(o)}>
         <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Configurar el año {anio}</DialogTitle>
+            <DialogTitle className="flex items-center gap-1.5">Configurar el año {anio} <AyudaIcono titulo="Configurar el año"><p>Elegí las vacaciones y los feriados en que no hay clase. Al guardar, el plan de cada hijo se vuelve a repartir sin esos días y la fecha de fin no se mueve.</p></AyudaIcono></DialogTitle>
             <DialogDescription>Marcá de una vez las vacaciones y las fiestas en que no hay clase. Los planes de cada hijo se vuelven a repartir sin esos días.</DialogDescription>
           </DialogHeader>
 

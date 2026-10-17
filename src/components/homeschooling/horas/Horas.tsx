@@ -17,6 +17,7 @@ import type { AlumnoLite } from "@/components/homeschooling/cursos/MateriaHeader
 import ActividadCard from "./ActividadCard";
 import CampoBusqueda from "@/components/homeschooling/nav/CampoBusqueda";
 import { filtrar } from "@/lib/homeschooling/buscarTexto";
+import { AdminItem } from "@/components/AdminItem";
 import ActividadDetalle from "./ActividadDetalle";
 import ActividadForm from "./ActividadForm";
 import Cronometro from "./Cronometro";
@@ -118,20 +119,24 @@ export default function Horas({
       ) : (
         <div className="space-y-3">
           {visibles.map((a) => (
-            <ActividadCard key={a.id} actividad={a} onClick={setAbierta} />
+            <AdminItem
+              key={a.id}
+              enabled={esPadre}
+              nombre={`la actividad «${a.title}»`}
+              className="rounded-xl"
+              confirmar={false}
+              onEdit={() => setForm({ open: true, editing: a })}
+              onDelete={() => setBorrar(a)}
+            >
+              <ActividadCard actividad={a} onClick={setAbierta} />
+            </AdminItem>
           ))}
         </div>
       )}
 
       <ActividadDetalle
         actividad={abierta}
-        esPadre={esPadre}
         onClose={() => setAbierta(null)}
-        onEdit={(a) => {
-          setAbierta(null);
-          setForm({ open: true, editing: a });
-        }}
-        onDelete={setBorrar}
       />
       <ActividadForm
         open={form.open}

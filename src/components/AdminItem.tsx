@@ -66,7 +66,7 @@ export function AdminItem({ children, enabled, nombre, onEdit, onDelete, aviso, 
           {menu && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className={flota ? "absolute top-2 right-2 bg-card/80 backdrop-blur" : "mr-2 shrink-0"} aria-label={`Acciones de ${nombre}`}>
+              <Button variant="ghost" size="icon" className={flota ? "absolute top-2 right-2 bg-card/80 backdrop-blur print:hidden" : "mr-2 shrink-0 print:hidden"} aria-label={`Acciones de ${nombre}`}>
                 <MoreVertical />
               </Button>
             </DropdownMenuTrigger>
