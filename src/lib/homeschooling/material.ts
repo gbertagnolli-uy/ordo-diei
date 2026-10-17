@@ -8,7 +8,7 @@ import { parsearEnlaceVideo, urlEmbed, esArchivoVideo, type PlataformaVideo } fr
 export const TIPOS_MATERIAL = ["texto", "markdown", "video", "pdf", "documento", "epub", "web", "archivo"] as const;
 export type TipoMaterial = (typeof TIPOS_MATERIAL)[number];
 
-export const PROVEEDORES_MATERIAL = ["youtube", "vimeo", "drive", "gdocs", "gslides", "gsheets", "web"] as const;
+export const PROVEEDORES_MATERIAL = ["youtube", "vimeo", "drive", "gdocs", "gslides", "gsheets", "web", "imagen"] as const;
 export type ProveedorMaterial = (typeof PROVEEDORES_MATERIAL)[number];
 
 export const ETIQUETA_TIPO: Record<TipoMaterial, string> = {
@@ -19,7 +19,7 @@ export const ETIQUETA_TIPO: Record<TipoMaterial, string> = {
   documento: "Documento",
   epub: "Libro ePub",
   web: "Página web",
-  archivo: "Archivo de Drive",
+  archivo: "Archivo / Imagen",
 };
 
 export interface MaterialDetectado {
@@ -51,11 +51,12 @@ export interface VistaMaterial {
 }
 
 const REGEX_URL = /^(https?:\/\/|www\.)\S+$/i;
+const REGEX_ARCHIVO_LOCAL = /^\/api\/archivos\/[0-9a-f-]{36}(?:\?\S*)?$/i;
 
-/** ¿Lo pegado es un solo enlace (y nada más)? */
+/** ¿Lo pegado es un solo enlace (o un archivo subido en /api/archivos/…) y nada más? */
 export function esEnlace(entrada: string): boolean {
   const t = (entrada ?? "").trim();
-  return !!t && !/\s/.test(t) && (REGEX_URL.test(t) || /^[a-z0-9-]+(\.[a-z0-9-]+)+\/\S*$/i.test(t));
+  return !!t && !/\s/.test(t) && (REGEX_ARCHIVO_LOCAL.test(t) || REGEX_URL.test(t) || /^[a-z0-9-]+(\.[a-z0-9-]+)+\/\S*$/i.test(t));
 }
 
 const MARCAS_MARKDOWN = [/^#{1,6}\s+\S/m, /\*\*[^*\n]+\*\*/, /^\s*[-*+]\s+\S/m, /^\s*\d+\.\s+\S/m, /\[[^\]\n]+\]\([^)\n]+\)/, /^```/m, /^>\s+\S/m, /^\|.+\|$/m];
@@ -74,10 +75,14 @@ function aUrl(entrada: string): URL | null {
   }
 }
 
+const limpiarNombre = (bruto: string): string => {
+  const sinExt = bruto.replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[-_+]+/g, " ").trim();
+  return sinExt ? sinExt.charAt(0).toUpperCase() + sinExt.slice(1) : "";
+};
+
 const nombreDeRuta = (u: URL): string => {
   const ultimo = decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() ?? "");
-  const sinExt = ultimo.replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[-_+]+/g, " ").trim();
-  return sinExt ? sinExt.charAt(0).toUpperCase() + sinExt.slice(1) : u.hostname.replace(/^www\./, "");
+  return limpiarNombre(ultimo) || u.hostname.replace(/^www\./, "");
 };
 
 const ID_DRIVE = /^[A-Za-z0-9_-]{10,}$/;
@@ -101,6 +106,16 @@ function archivoDrive(u: URL): string | null {
 export function detectarMaterial(entrada: string): MaterialDetectado {
   const bruto = (entrada ?? "").trim();
   if (!bruto) return { tipo: "texto", proveedor: null, externoId: null, url: null, contenido: "", miniaturaUrl: null, titulo: "" };
+
+  if (REGEX_ARCHIVO_LOCAL.test(bruto)) {
+    const q = new URL(bruto, "http://localhost").searchParams;
+    const cat = q.get("tipo");
+    const nombre = limpiarNombre(q.get("nombre") ?? "");
+    if (cat === "pdf") return { tipo: "pdf", proveedor: "web", externoId: null, url: bruto, contenido: null, miniaturaUrl: null, titulo: nombre || "Documento PDF" };
+    if (cat === "epub") return { tipo: "epub", proveedor: "web", externoId: null, url: bruto, contenido: null, miniaturaUrl: null, titulo: nombre || "Libro ePub" };
+    if (cat === "documento") return { tipo: "documento", proveedor: "web", externoId: null, url: bruto, contenido: null, miniaturaUrl: null, titulo: nombre || "Documento" };
+    return { tipo: "archivo", proveedor: "imagen", externoId: null, url: bruto, contenido: null, miniaturaUrl: bruto, titulo: nombre || "Imagen" };
+  }
 
   if (!esEnlace(bruto)) {
     const primera = bruto.split("\n").find((l) => l.trim())?.replace(/^#{1,6}\s+/, "").replace(/[*_`>]/g, "").trim() ?? "";
@@ -137,6 +152,7 @@ export function detectarMaterial(entrada: string): MaterialDetectado {
 
   const ruta = u.pathname.toLowerCase();
   if (esArchivoVideo(url)) return { tipo: "video", proveedor: "web", externoId: null, url, contenido: null, miniaturaUrl: null, titulo: nombreDeRuta(u) };
+  if (/\.(jpe?g|png|webp|gif|svg|avif)$/i.test(ruta)) return { tipo: "archivo", proveedor: "imagen", externoId: null, url, contenido: null, miniaturaUrl: url, titulo: nombreDeRuta(u) };
   if (ruta.endsWith(".pdf")) return { tipo: "pdf", proveedor: "web", externoId: null, url, contenido: null, miniaturaUrl: null, titulo: nombreDeRuta(u) };
   if (ruta.endsWith(".epub")) return { tipo: "epub", proveedor: "web", externoId: null, url, contenido: null, miniaturaUrl: null, titulo: nombreDeRuta(u) };
   if (/\.(docx?|odt|pptx?|xlsx?)$/.test(ruta)) return { tipo: "documento", proveedor: "web", externoId: null, url, contenido: null, miniaturaUrl: null, titulo: nombreDeRuta(u) };
@@ -153,10 +169,26 @@ export type MaterialBase = {
   url: string | null;
 };
 
+/** ¿Es una imagen o lámina (subida o por enlace)? */
+export function esImagenMaterial(m: MaterialBase): boolean {
+  if (m.proveedor === "imagen") return true;
+  if (!m.url) return false;
+  if (REGEX_ARCHIVO_LOCAL.test(m.url)) {
+    const t = new URL(m.url, "http://localhost").searchParams.get("tipo");
+    return !t || t === "imagen";
+  }
+  return /\.(jpe?g|png|webp|gif|svg|avif)(?:\?\S*)?$/i.test(m.url);
+}
+
 /** Cómo se muestra, se abre y se imprime un material ya guardado. */
 export function vistaMaterial(m: MaterialBase & { id?: number }): VistaMaterial {
-  const archivoUrl = m.id !== undefined && (m.tipo === "pdf" || m.tipo === "epub") && (m.url || m.externoId) ? `/api/homeschooling/materiales/${m.id}/archivo` : null;
+  const esLocal = !!m.url && REGEX_ARCHIVO_LOCAL.test(m.url);
+  const archivoUrl = esLocal && (m.tipo === "pdf" || m.tipo === "epub") ? m.url : m.id !== undefined && (m.tipo === "pdf" || m.tipo === "epub") && (m.url || m.externoId) ? `/api/homeschooling/materiales/${m.id}/archivo` : null;
   const vacia: VistaMaterial = { embedUrl: null, abrirUrl: m.url, imprimirUrl: null, archivoUrl, videoDirecto: false, plataformaVideo: null };
+
+  if (esImagenMaterial(m) && m.url) {
+    return { ...vacia, embedUrl: m.url, abrirUrl: m.url, imprimirUrl: m.url };
+  }
 
   if (m.tipo === "video") {
     if ((m.proveedor === "youtube" || m.proveedor === "vimeo") && m.externoId) {
@@ -183,9 +215,9 @@ export function vistaMaterial(m: MaterialBase & { id?: number }): VistaMaterial 
   return vacia;
 }
 
-/** ¿Se puede imprimir desde la app? Texto y markdown siempre (hoja propia); el resto, si tiene una dirección imprimible. */
+/** ¿Se puede imprimir desde la app? Texto, markdown e imágenes siempre (hoja propia); el resto, si tiene una dirección imprimible. */
 export function esImprimible(m: MaterialBase): boolean {
-  return m.tipo === "texto" || m.tipo === "markdown" || vistaMaterial(m).imprimirUrl !== null;
+  return m.tipo === "texto" || m.tipo === "markdown" || esImagenMaterial(m) || vistaMaterial(m).imprimirUrl !== null;
 }
 
 /** Impresiones que le quedan a un alumno de un material: el límite del padre, más las que le dio de más, menos las usadas. */

@@ -61,7 +61,8 @@ export default function MateriaLayout({
   const [cursoForm, setCursoForm] = useState<{ open: boolean; editing: Module | null }>({ open: false, editing: null });
   const [leccionForm, setLeccionForm] = useState<{ open: boolean; editing: RecordingWithCompletion | null }>({ open: false, editing: null });
   const [asignar, setAsignar] = useState<Module | null>(null);
-  const [preguntas, setPreguntas] = useState(false);
+  const [preguntasLeccion, setPreguntasLeccion] = useState<{ id: number; title: string } | null>(null);
+  const [versionPreguntas, setVersionPreguntas] = useState(0);
   const [agregarVarias, setAgregarVarias] = useState(false);
   const [editarMateria, setEditarMateria] = useState(false);
   const [archivar, setArchivar] = useState(false);
@@ -200,6 +201,7 @@ export default function MateriaLayout({
         <Migas
           items={[
             { etiqueta: "Estudio", href: "/dashboard/homeschooling" },
+            { etiqueta: "Materias", href: "/dashboard/homeschooling/materias" },
             { etiqueta: group.name, onClick: view !== "grid" ? irALaGrilla : undefined },
             ...(activeModule ? [{ etiqueta: activeModule.title, onClick: view === "lesson" ? () => irAlCurso(activeModule.id) : undefined }] : []),
             ...(view === "lesson" && activeRecording ? [{ etiqueta: `${activeRecording.display_order}. ${activeRecording.title}` }] : []),
@@ -222,6 +224,8 @@ export default function MateriaLayout({
               materiaNombre={group.name}
               onAddRecording={() => setLeccionForm({ open: true, editing: null })}
               onAddVarias={() => setAgregarVarias(true)}
+              onEditRecording={rol === "admin" ? (r) => setLeccionForm({ open: true, editing: r }) : undefined}
+              onQuizRecording={rol === "admin" ? (r) => setPreguntasLeccion({ id: r.id, title: r.title }) : undefined}
               onDuplicar={async () => {
                 try {
                   const r = await api<{ id: number }>(`/api/homeschooling/cursos/${activeModule.id}/duplicar`, { method: "POST", body: {} });
@@ -256,9 +260,10 @@ export default function MateriaLayout({
               onNavigate={(id) => irALeccion(activeModule.id, id)}
               cursoTitulo={activeModule.title}
               onBack={() => irAlCurso(activeModule.id)}
-              onPreguntas={rol === "admin" ? () => setPreguntas(true) : undefined}
+              onPreguntas={rol === "admin" ? () => setPreguntasLeccion({ id: activeRecording.id, title: activeRecording.title }) : undefined}
               onEdit={rol === "admin" ? () => setLeccionForm({ open: true, editing: activeRecording }) : undefined}
               onDelete={rol === "admin" ? () => setBorrar({ tipo: "leccion", id: activeRecording.id, nombre: activeRecording.title }) : undefined}
+              versionPreguntas={versionPreguntas}
             />
           )}
         </div>
@@ -282,9 +287,16 @@ export default function MateriaLayout({
           moduleId={activeModuleId}
           editing={leccionForm.editing}
           onClose={() => setLeccionForm({ open: false, editing: null })}
-          onSuccess={() => {
+          onSuccess={(rec, abrirQuiz) => {
+            const esNueva = !leccionForm.editing;
             setLeccionForm({ open: false, editing: null });
             refrescar();
+            if (rec && esNueva && activeModuleId) {
+              irALeccion(activeModuleId, rec.id);
+            }
+            if (rec && abrirQuiz) {
+              setPreguntasLeccion({ id: rec.id, title: rec.title });
+            }
           }}
         />
       )}
@@ -302,8 +314,17 @@ export default function MateriaLayout({
         />
       )}
 
-      {activeRecording && (
-        <EditorPreguntas open={preguntas} leccionId={activeRecording.id} titulo={activeRecording.title} onClose={() => setPreguntas(false)} />
+      {preguntasLeccion && (
+        <EditorPreguntas
+          open={!!preguntasLeccion}
+          leccionId={preguntasLeccion.id}
+          titulo={preguntasLeccion.title}
+          onClose={() => setPreguntasLeccion(null)}
+          onGuardado={() => {
+            setVersionPreguntas((v) => v + 1);
+            refrescar();
+          }}
+        />
       )}
 
       <EditarPlan
@@ -346,7 +367,7 @@ export default function MateriaLayout({
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>¿Archivar «{group.name}»?</DialogTitle>
-            <DialogDescription>Deja de aparecer en el panel y en «Hoy aprendo»; los cursos, planes y avances se conservan y se puede restaurar desde el panel.</DialogDescription>
+            <DialogDescription>Deja de aparecer en el panel y en «Hoy aprendo»; los cursos, planes y avances se conservan y se puede restaurar desde Materias.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setArchivar(false)}>
@@ -356,7 +377,7 @@ export default function MateriaLayout({
               onClick={async () => {
                 try {
                   await updateGroup(group.id, { is_active: false });
-                  router.push("/dashboard/homeschooling");
+                  router.push("/dashboard/homeschooling/materias");
                   router.refresh();
                 } catch (error) {
                   toast.error(error instanceof Error ? error.message : "No se pudo archivar");

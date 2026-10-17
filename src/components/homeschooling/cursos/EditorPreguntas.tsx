@@ -4,7 +4,7 @@
 // si se quiere que el video se pause, el segundo del checkpoint (sin segundo = parte del quiz final).
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { KeyRound, Plus, Printer, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,19 @@ const indiceTrasQuitar = (correcta: number, k: number) => (correcta === k ? 0 : 
 
 const vacia = (): Borrador => ({ enunciado: "", opciones: ["", ""], correcta: 0, explicacion: "", segundoVideo: "" });
 
-export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { open: boolean; leccionId: number; titulo: string; onClose: () => void }) {
+export default function EditorPreguntas({
+  open,
+  leccionId,
+  titulo,
+  onClose,
+  onGuardado,
+}: {
+  open: boolean;
+  leccionId: number;
+  titulo: string;
+  onClose: () => void;
+  onGuardado?: () => void;
+}) {
   const [lista, setLista] = useState<Borrador[]>([]);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -43,7 +55,7 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
 
   const cambiar = (i: number, parche: Partial<Borrador>) => setLista((l) => l.map((p, n) => (n === i ? { ...p, ...parche } : p)));
 
-  const guardar = async () => {
+  const guardar = async (abrirImpresion?: "alumno" | "clave") => {
     const preguntas: PreguntaEditable[] = lista.map((p) => ({
       enunciado: p.enunciado,
       opciones: p.opciones,
@@ -59,8 +71,13 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
     setGuardando(true);
     try {
       await api(`/api/homeschooling/lecciones/${leccionId}/preguntas`, { method: "PUT", body: { preguntas } });
-      toast.success("Preguntas guardadas");
-      onClose();
+      toast.success("Quiz / Evaluación guardado");
+      onGuardado?.();
+      if (abrirImpresion) {
+        window.open(`/dashboard/homeschooling/imprimir/quiz/${leccionId}?modo=${abrirImpresion}`, "_blank");
+      } else {
+        onClose();
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudieron guardar");
     } finally {
@@ -72,8 +89,10 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
     <Dialog open={open} onOpenChange={(o) => !o && !guardando && onClose()}>
       <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Preguntas de «{titulo}»</DialogTitle>
-          <DialogDescription>Con un segundo de video la pregunta pausa el video (checkpoint); sin segundo forma parte del quiz final.</DialogDescription>
+          <DialogTitle>Quiz y Evaluación de «{titulo}»</DialogTitle>
+          <DialogDescription>
+            Creá preguntas de opción múltiple para evaluar la clase (online o impresas en hoja A4). Si la clase tiene video y cargás el segundo, la pregunta pausa el video como checkpoint; si lo dejás vacío, forma parte del quiz/assessment final.
+          </DialogDescription>
         </DialogHeader>
 
         {cargando ? (
@@ -87,7 +106,7 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
                 <div className="flex items-start gap-2">
                   <div className="flex-1 space-y-1.5">
                     <Label htmlFor={`pq-${i}`}>Pregunta {i + 1}</Label>
-                    <Input id={`pq-${i}`} value={p.enunciado} onChange={(e) => cambiar(i, { enunciado: e.target.value })} maxLength={300} />
+                    <Input id={`pq-${i}`} value={p.enunciado} onChange={(e) => cambiar(i, { enunciado: e.target.value })} maxLength={300} placeholder="¿Cuál fue la causa principal de…?" />
                   </div>
                   <Button type="button" variant="ghost" size="icon" aria-label="Quitar pregunta" className="mt-6 text-destructive" onClick={() => setLista((l) => l.filter((_, n) => n !== i))}>
                     <Trash2 />
@@ -113,7 +132,7 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
                 )}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label htmlFor={`pe-${i}`}>Explicación (opcional)</Label>
+                    <Label htmlFor={`pe-${i}`}>Explicación para la corrección (opcional)</Label>
                     <Textarea id={`pe-${i}`} rows={2} value={p.explicacion} onChange={(e) => cambiar(i, { explicacion: e.target.value })} maxLength={500} />
                   </div>
                   <div className="space-y-1.5">
@@ -123,9 +142,21 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
                 </div>
               </div>
             ))}
-            <Button type="button" variant="outline" onClick={() => setLista((l) => [...l, vacia()])} disabled={lista.length >= 20}>
-              <Plus /> Agregar pregunta
-            </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button type="button" variant="outline" onClick={() => setLista((l) => [...l, vacia()])} disabled={lista.length >= 20}>
+                <Plus /> Agregar pregunta
+              </Button>
+              {lista.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Button type="button" variant="outline" size="sm" disabled={guardando} onClick={() => void guardar("alumno")}>
+                    <Printer className="size-3.5" /> Guardar e imprimir evaluación
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" disabled={guardando} onClick={() => void guardar("clave")}>
+                    <KeyRound className="size-3.5" /> Imprimir clave
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -133,8 +164,8 @@ export default function EditorPreguntas({ open, leccionId, titulo, onClose }: { 
           <Button variant="outline" onClick={onClose} disabled={guardando}>
             Cancelar
           </Button>
-          <Button onClick={guardar} disabled={guardando || cargando}>
-            {guardando && <Spinner />} Guardar
+          <Button onClick={() => void guardar()} disabled={guardando || cargando}>
+            {guardando && <Spinner />} Guardar evaluación
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, Brain, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, Megaphone, NotebookPen, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarOff, Brain, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, Megaphone, NotebookPen, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -19,6 +19,7 @@ type Pestana = { href: string; etiqueta: string; icono: LucideIcon; exacta?: boo
 
 const PADRE: Pestana[] = [
   { href: RAIZ, etiqueta: "Panel", icono: LayoutDashboard, exacta: true },
+  { href: `${RAIZ}/materias`, etiqueta: "Materias", icono: BookOpen },
   { href: `${RAIZ}/muro`, etiqueta: "Familia", icono: Megaphone },
   { href: `${RAIZ}/plan`, etiqueta: "Plan", icono: CalendarDays },
   { href: `${RAIZ}/semana`, etiqueta: "Semana", icono: CalendarRange },
@@ -47,8 +48,11 @@ export default function CabeceraEstudio({ esPadre, pendientes }: { esPadre: bool
   const ruta = usePathname() ?? "";
   const router = useRouter();
   const pestanas = esPadre ? PADRE : HIJO;
-  // Una materia o un curso cuelgan del Panel (o de «Hoy», para el hijo)
-  const activa = (p: Pestana) => (p.exacta ? ruta === p.href || ruta.startsWith(`${RAIZ}/materias`) : ruta === p.href || ruta.startsWith(`${p.href}/`));
+  // Para el padre, «Materias» tiene pestaña propia; para el hijo, una materia o curso cuelga de «Hoy»
+  const activa = (p: Pestana) =>
+    p.exacta
+      ? ruta === p.href || (!esPadre && ruta.startsWith(`${RAIZ}/materias`))
+      : ruta === p.href || ruta.startsWith(`${p.href}/`);
   const actual = pestanas.find(activa);
 
   return (

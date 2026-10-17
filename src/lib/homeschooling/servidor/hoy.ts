@@ -13,6 +13,7 @@ export type LeccionHoy = {
   orden: number;
   instrucciones: string | null;
   url: string | null;
+  miniaturaUrl?: string | null;
   videoPlataforma: "youtube" | "vimeo" | null;
   videoId: string | null;
   completada: boolean;
@@ -105,6 +106,7 @@ export async function leccionesDeHoy(alumnoId: number, hoy = hoyEnFamilia()): Pr
                 orden: l.orden,
                 instrucciones: l.instrucciones,
                 url: l.url,
+                miniaturaUrl: l.miniaturaUrl,
                 videoPlataforma: l.videoPlataforma,
                 videoId: l.videoId,
                 quiz: preguntas.some((q) => q.leccionId === l.id && q.segundoVideo === null),

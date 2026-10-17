@@ -6,14 +6,14 @@ import { randomUUID } from "node:crypto";
 import prisma from "../../prisma.ts";
 import { NoAutorizadoError, NoEncontradoError } from "../../habitos/server.ts";
 import { esPadre } from "../../habitos/permisos.ts";
-import { impresionesRestantes, MINUTOS_HOJA_IMPRESA } from "../material.ts";
+import { esImagenMaterial, impresionesRestantes, MINUTOS_HOJA_IMPRESA } from "../material.ts";
 import { ConflictoError, DatoInvalidoError } from "./planes.ts";
 import { obtenerMaterial, type Actor, type MaterialVista } from "./materiales.ts";
 
 export type ResultadoImpresion = {
   /** Impresiones que le quedan tras esta (null si imprime un padre: sin tope) */
   restantes: number | null;
-  /** Hoja propia (texto/markdown): ruta de la vista de impresión */
+  /** Hoja propia (texto/markdown/imagen): ruta de la vista de impresión */
   hojaUrl: string | null;
   /** PDF/Docs: dirección que ya es un PDF imprimible, se abre en otra pestaña */
   externaUrl: string | null;
@@ -22,13 +22,13 @@ export type ResultadoImpresion = {
 export async function registrarImpresion(a: Actor, materialId: number): Promise<ResultadoImpresion> {
   const m = await obtenerMaterial(a, materialId);
   if (!m.imprimible) throw new DatoInvalidoError(m.limiteImpresiones === 0 ? "Este material no se imprime desde la app" : "Este tipo de material no se puede imprimir desde la app");
-  const esTexto = m.contenido !== null;
+  const usaHojaPropia = m.contenido !== null || esImagenMaterial(m);
 
   if (esPadre(a.rol)) {
-    // Un padre imprime sin tope y sin gastar el de los hijos; la hoja de texto necesita su token igual
-    const token = esTexto ? randomUUID() : null;
+    // Un padre imprime sin tope y sin gastar el de los hijos; la hoja de texto/imagen necesita su token igual
+    const token = usaHojaPropia ? randomUUID() : null;
     if (token) await prisma.impresionMaterial.create({ data: { materialId, alumnoId: a.id, tipo: "padre", token } });
-    return { restantes: null, hojaUrl: token ? `/dashboard/homeschooling/imprimir/${token}` : null, externaUrl: esTexto ? null : m.vista.imprimirUrl };
+    return { restantes: null, hojaUrl: token ? `/dashboard/homeschooling/imprimir/${token}` : null, externaUrl: usaHojaPropia ? null : m.vista.imprimirUrl };
   }
 
   return prisma.$transaction(
@@ -37,9 +37,9 @@ export async function registrarImpresion(a: Actor, materialId: number): Promise<
       const usadas = filas.find((f) => f.tipo === "uso")?._count._all ?? 0;
       const extras = filas.find((f) => f.tipo === "extra")?._count._all ?? 0;
       if (impresionesRestantes(m.limiteImpresiones, usadas, extras) <= 0) throw new ConflictoError("Ya usaste todas las impresiones de este material. Pedile una más a mamá o a papá.");
-      const token = esTexto ? randomUUID() : null;
+      const token = usaHojaPropia ? randomUUID() : null;
       await tx.impresionMaterial.create({ data: { materialId, alumnoId: a.id, tipo: "uso", token } });
-      return { restantes: impresionesRestantes(m.limiteImpresiones, usadas + 1, extras), hojaUrl: token ? `/dashboard/homeschooling/imprimir/${token}` : null, externaUrl: esTexto ? null : m.vista.imprimirUrl };
+      return { restantes: impresionesRestantes(m.limiteImpresiones, usadas + 1, extras), hojaUrl: token ? `/dashboard/homeschooling/imprimir/${token}` : null, externaUrl: usaHojaPropia ? null : m.vista.imprimirUrl };
     },
     { isolationLevel: "Serializable" }
   );

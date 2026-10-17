@@ -44,6 +44,7 @@ export const datosLeccion = z.object({
   titulo: z.string().trim().min(1, "Falta el título de la lección").max(150),
   instrucciones: z.string().trim().max(5000).nullable().optional(),
   url: z.string().trim().max(500).nullable().optional(),
+  miniaturaUrl: z.string().trim().max(500).nullable().optional(),
 });
 
 export const listaIds = z.object({ ids: z.array(idPositivo).min(1) });

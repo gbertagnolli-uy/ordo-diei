@@ -7,6 +7,7 @@ import { listarMaterias } from "@/lib/homeschooling/servidor/cursos";
 import { alumnosDeFamilia, progresoPorAlumno } from "@/lib/homeschooling/servidor/vistas";
 import { resumenPanel } from "@/lib/homeschooling/servidor/panel";
 import { avisosParaPadre } from "@/lib/homeschooling/servidor/quiz";
+import { misAvisos } from "@/lib/homeschooling/servidor/avisos";
 import { estadisticasEvidencias } from "@/lib/homeschooling/servidor/evidencia";
 import PanelHomeschooling from "@/components/homeschooling/plan/PanelHomeschooling";
 import HoyAprendo from "@/components/homeschooling/hoy/HoyAprendo";
@@ -24,7 +25,7 @@ import { tz } from "@date-fns/tz";
 import { APP_TZ } from "@/lib/habitos/server";
 import { historiasPendientes, obtenerPreferencia } from "@/lib/homeschooling/servidor/neuro";
 
-// Homeschooling: el padre arma materias, cursos y planes; Hijo/Hija ve «Hoy aprendo».
+// Homeschooling: el panel principal del padre es de resumen y notificaciones; Hijo/Hija ve «Hoy aprendo».
 export default async function HomeschoolingPage() {
   const session = await getSession();
   if (!session?.user) redirect("/");
@@ -46,7 +47,7 @@ export default async function HomeschoolingPage() {
     return <HoyAprendo nombre={yo?.nombre ?? ""} fotoUrl={yo?.fotoUrl ?? null} racha={yo?.streakDays ?? 0} dias={dias} preferencia={preferencia} historias={historias} sueltos={sueltos} saludo={saludoDe(Number(format(new Date(), "H", { in: tz(APP_TZ) })))} memoriaHoy={memoriaHoy} lectura={lectura} />;
   }
 
-  const [materias, alumnos, progresos, evidencias, avisos, panel, semana] = await Promise.all([
+  const [materias, alumnos, progresos, evidencias, avisos, panel, semana, notificaciones] = await Promise.all([
     listarMaterias(actor),
     alumnosDeFamilia(),
     progresoPorAlumno(),
@@ -54,6 +55,21 @@ export default async function HomeschoolingPage() {
     avisosParaPadre(actor),
     resumenPanel(),
     resumenSemanal(actor),
+    misAvisos(actor, 15),
   ]);
-  return <PanelHomeschooling materias={materias} panel={panel.materias} hoy={panel.hoy} archivadas={panel.archivadas} alumnos={alumnos} progresos={progresos} pendientes={evidencias.pending} avisos={avisos} semana={semana} />;
+  return (
+    <PanelHomeschooling
+      materias={materias}
+      panel={panel.materias}
+      hoy={panel.hoy}
+      archivadas={panel.archivadas}
+      alumnos={alumnos}
+      progresos={progresos}
+      pendientes={evidencias.pending}
+      avisos={avisos}
+      notificaciones={notificaciones.avisos}
+      sinLeerInicial={notificaciones.sinLeer}
+      semana={semana}
+    />
+  );
 }
