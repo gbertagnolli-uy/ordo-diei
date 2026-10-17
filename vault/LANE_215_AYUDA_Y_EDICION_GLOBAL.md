@@ -21,11 +21,18 @@ Contexto previo (lane 214): al asignar un curso el asistente se reiniciaba solo;
 
 | Lane | Contenido | Estado |
 |---|---|---|
-| 215 | Base (`AyudaIcono`, `AdminItem`, `SwipeRow.collapse`) + ayuda en `AsistenteCurso` | en curso |
-| 216 | Tareas, materias, cursos/lecciones: `AdminItem` en listas | pendiente |
+| 214 | Fix: el asistente de curso se reiniciaba (efecto dependía de `materias={[group]}`) | integrada |
+| 215 | Base (`AyudaIcono`, `AdminItem`, `SwipeRow.collapse`) + ayuda en `AsistenteCurso` + fix DELETE de tareas con historial (FK `Historial_Acciones`) + AdminItem en productos de la tienda | integrada |
+| 216 | `AdminItem` en materias (panel), cursos (grilla) y lecciones (sidebar). `AdminItem` gana `confirmar` y `forma="tarjeta"`. Tareas: la vista admin es tabla/calendario/kanban con drag; ya editan (clic) y eliminan (botón); swipe diferido, ver decisión abajo | integrada al terminar |
 | 217 | Hábitos y hábitos comunitarios | pendiente |
 | 218 | Premios, tienda, cartas, vales | pendiente |
 | 219 | Rutina y horarios | pendiente |
 | 220 | Homeschooling restante (planes, días sin clase, períodos, materiales, lectura, memoria, muro, actividades) + ayuda en demás asistentes | pendiente |
 
 Auditoría por lane: listar los creables, ver si ya hay PATCH/DELETE y UI; si falta el endpoint, agregarlo con chequeo de admin.
+
+## 4. Decisiones y notas
+
+- Tareas admin (`AdminTasksClient`, `TaskBoard`): tabla, calendario y kanban con drag-and-drop; el swipe choca con el drag y una tabla no se desliza. Ya tienen editar (clic en la fila) y eliminar (botón). Pendiente decidir con el usuario si se pasan a lista de tarjetas.
+- Premios (`PremiosClient`) también es una tabla con botones editar/eliminar: mismo caso.
+- Las lecciones del sidebar solo se editan desde la lista si son del curso abierto (el formulario usa el curso activo); eliminar funciona en cualquiera.

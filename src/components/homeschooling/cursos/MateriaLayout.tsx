@@ -192,6 +192,8 @@ export default function MateriaLayout({
         onSelectLesson={irALeccion}
         onBackToModules={irALaGrilla}
         showBackButton={view !== "grid"}
+        onEditLesson={rol === "admin" ? (r) => setLeccionForm({ open: true, editing: r }) : undefined}
+        onDeleteLesson={rol === "admin" ? (r) => setBorrar({ tipo: "leccion", id: r.id, nombre: r.title }) : undefined}
       />
 
       <main className="min-w-0 flex-1">
@@ -207,7 +209,7 @@ export default function MateriaLayout({
 
         <div className="p-4 sm:p-6">
           {view === "grid" && (
-            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onReordenar={reordenarCursos} materiaId={group.id} onImportado={(id) => { refrescar(); irAlCurso(id); }} />
+            <CursoGrid modules={modules} isLoading={isLoading} userRole={rol} onModuleClick={irAlCurso} onAddModule={() => setCursoForm({ open: true, editing: null })} onEditar={(m) => setCursoForm({ open: true, editing: m })} onEliminar={(m) => setBorrar({ tipo: "curso", id: m.id, nombre: m.title })} onReordenar={reordenarCursos} materiaId={group.id} onImportado={(id) => { refrescar(); irAlCurso(id); }} />
           )}
 
           {view === "module" && activeModule && (

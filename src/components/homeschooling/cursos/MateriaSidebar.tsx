@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Circle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { AdminItem } from "@/components/AdminItem";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { ModuleWithProgress, RecordingWithCompletion } from "@/lib/homeschooling/roost/tipos";
 
@@ -19,6 +20,9 @@ interface Props {
   onSelectLesson: (moduleId: number, recordingId: number) => void;
   onBackToModules: () => void;
   showBackButton: boolean;
+  /** Solo administradores: editar y eliminar lecciones desde la lista. */
+  onEditLesson?: (recording: RecordingWithCompletion) => void;
+  onDeleteLesson?: (recording: RecordingWithCompletion) => void;
 }
 
 export default function MateriaSidebar({
@@ -30,6 +34,8 @@ export default function MateriaSidebar({
   onSelectLesson,
   onBackToModules,
   showBackButton,
+  onEditLesson,
+  onDeleteLesson,
 }: Props) {
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set(activeModuleId ? [activeModuleId] : []));
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -89,8 +95,15 @@ export default function MateriaSidebar({
               {isExpanded && recordings.length > 0 && (
                 <div className="pb-2">
                   {recordings.map((recording) => (
-                    <button
+                    <AdminItem
                       key={recording.id}
+                      enabled={!!(onEditLesson || onDeleteLesson)}
+                      nombre={`la lección «${recording.title}»`}
+                      confirmar={false}
+                      onEdit={onEditLesson && module.id === activeModuleId ? () => onEditLesson(recording) : undefined}
+                      onDelete={onDeleteLesson ? () => onDeleteLesson(recording) : undefined}
+                    >
+                    <button
                       onClick={() => {
                         onSelectLesson(module.id, recording.id);
                         setIsMobileOpen(false);
@@ -106,6 +119,7 @@ export default function MateriaSidebar({
                       )}
                       <span className="truncate text-sm">{recording.title}</span>
                     </button>
+                    </AdminItem>
                   ))}
                 </div>
               )}

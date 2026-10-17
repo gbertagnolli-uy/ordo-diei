@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, ListOrdered, Plus } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
@@ -24,6 +25,8 @@ export default function CursoGrid({
   onReordenar,
   materiaId,
   onImportado,
+  onEditar,
+  onEliminar,
 }: {
   modules: ModuleWithProgress[];
   isLoading: boolean;
@@ -33,6 +36,8 @@ export default function CursoGrid({
   onReordenar: (idsEnOrden: number[]) => void;
   materiaId: number;
   onImportado: (cursoId: number) => void;
+  onEditar?: (m: ModuleWithProgress) => void;
+  onEliminar?: (m: ModuleWithProgress) => void;
 }) {
   const [ordenando, setOrdenando] = useState(false);
   const canManage = hasPermission(userRole, "crear_curso");
@@ -97,7 +102,17 @@ export default function CursoGrid({
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {modules.map((module, i) => (
             <div key={module.id} className="relative">
-              <CursoCard module={module} onClick={ordenando ? () => {} : onModuleClick} />
+              <AdminItem
+                enabled={canManage && !ordenando}
+                forma="tarjeta"
+                nombre={`el curso «${module.title}»`}
+                className="rounded-xl"
+                confirmar={false}
+                onEdit={onEditar ? () => onEditar(module) : undefined}
+                onDelete={onEliminar ? () => onEliminar(module) : undefined}
+              >
+                <CursoCard module={module} onClick={ordenando ? () => {} : onModuleClick} />
+              </AdminItem>
               {ordenando && (
                 <div className="absolute top-2 right-2 flex gap-1 rounded-lg border bg-card p-1">
                   <Button variant="ghost" size="icon-sm" aria-label={`Mover «${module.title}» antes`} disabled={i === 0} onClick={() => onReordenar(mover(modules.map((m) => m.id), i, i - 1))}>
