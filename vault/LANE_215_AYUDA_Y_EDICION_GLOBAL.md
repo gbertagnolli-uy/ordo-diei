@@ -29,7 +29,7 @@ Contexto previo (lane 214): al asignar un curso el asistente se reiniciaba solo;
 | 219 | Premios (`PremiosClient`): tabla → lista con `AdminItem`. Vales = instancias ganadas, no se «crean»: sin cambios. Tienda ya hecha en 215 | integrada al terminar |
 | 220 | (la tomó otro agente: compañero héroe) | de otro agente |
 | 225 | Rutina diaria: etapas con `AdminItem` (swipe editar/eliminar + menú), reemplaza el lápiz que solo aparecía con hover (inaccesible en táctil). Rutina semanal/mensual: pendiente de revisar | integrada al terminar |
-| 221 | Homeschooling restante (planes, días sin clase, períodos, materiales, lectura, memoria, muro, actividades) + ayuda en demás asistentes | pendiente |
+| 221+ | Pendiente: ver auditoría de la sección 5 | pendiente |
 
 Auditoría por lane: listar los creables, ver si ya hay PATCH/DELETE y UI; si falta el endpoint, agregarlo con chequeo de admin.
 
@@ -38,3 +38,23 @@ Auditoría por lane: listar los creables, ver si ya hay PATCH/DELETE y UI; si fa
 - Tareas admin (`AdminTasksClient`, `TaskBoard`): tabla, calendario y kanban con drag-and-drop; el swipe choca con el drag y una tabla no se desliza. Ya tienen editar (clic en la fila) y eliminar (botón). Pendiente decidir con el usuario si se pasan a lista de tarjetas.
 - Premios (`PremiosClient`) también es una tabla con botones editar/eliminar: mismo caso.
 - Las lecciones del sidebar solo se editan desde la lista si son del curso abierto (el formulario usa el curso activo); eliminar funciona en cualquiera.
+
+## 5. Auditoría de lo que falta (2026-10-16)
+
+Ya con editar + eliminar para admin y swipe (`AdminItem`): tienda (productos), materias, cursos, lecciones, hábitos y comunitarios, premios, etapas de la rutina diaria.
+
+Con editar y eliminar propios pero sin swipe (convertir a `AdminItem`, sin duplicar botones): cartas admin (`AdminCartasView`), lectura (`ListaLectura`), actividades (`ActividadDetalle`), neurodivergencia (`PanelNeuro`), libreta (`Libreta`), materiales (`ListaMaterial`: título/límite se editan inline, eliminar con botón).
+
+Solo eliminar, **falta el editar** (requiere endpoint PATCH + formulario):
+- Días sin clase (`DiasSinClase`, `/api/homeschooling/no-lectivos`: solo POST/DELETE).
+- Períodos de calificación (`GestionPeriodos`, `/api/homeschooling/periodos`: solo POST/DELETE).
+- Memoria (`ListaMemoria`, `/api/homeschooling/memoria`: solo POST/DELETE).
+- Registros de comportamiento (`ComportamientoAdmin`, `/api/comportamiento`: solo POST/DELETE).
+- Muro de la familia (`MuroFamilia`): PATCH existe para fijar; falta editar el texto.
+- Rutina semanal/mensual: revisar si hay edición.
+
+Tareas (tabla/calendario/kanban) las toma la lane 218 de otro agente.
+
+Ayuda (`AyudaIcono`): solo está en el asistente «Asignar curso». Faltan el resto de asistentes y formularios (Nuevo hábito, Asistente de año, Nueva tarea, Nuevo premio, Rutina, Cargar semana, Boletín).
+
+Notas de proceso: las lanes 218 y 220 las ocupó otro agente mientras trabajaba; antes de crear un worktree comprobar que `../ordo-diei-lanes/lane-NN` no exista (un `git worktree add` fallido deja la rama y el `cd` posterior cae en la lane ajena).
