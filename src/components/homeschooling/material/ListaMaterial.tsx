@@ -3,7 +3,8 @@
 // Propio de Ordo (lane 166, M1): material de un día / lección / alumno visto por el padre — lista con abrir, cambiar el límite
 // de impresiones, renombrar y quitar — y el botón para agregar.
 import { useCallback, useEffect, useState } from "react";
-import { ExternalLink, Plus, Printer, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, Printer } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -65,13 +66,8 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
   };
 
   const quitar = async (m: MaterialVista) => {
-    if (!window.confirm(`¿Quitar «${m.titulo}»?`)) return;
-    try {
-      await api(`/api/homeschooling/materiales/${m.id}`, { method: "DELETE" });
-      await cargar();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo quitar");
-    }
+    await api(`/api/homeschooling/materiales/${m.id}`, { method: "DELETE" });
+    await cargar();
   };
 
   return (
@@ -83,11 +79,20 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
       ) : (
         <ul className="space-y-2">
           {lista.map((m) => (
-            <li key={m.id} className="space-y-2 rounded-xl border bg-card p-3">
+            <li key={m.id}>
+              <AdminItem
+                enabled
+                nombre={`el material «${m.titulo}»`}
+                className="rounded-xl border"
+                onEdit={() => document.getElementById(`material-titulo-${m.id}`)?.focus()}
+                onDelete={() => quitar(m)}
+              >
+              <div className="space-y-2 bg-card p-3">
               <div className="flex items-start gap-2">
                 <IconoMaterial tipo={m.tipo} className="mt-0.5 size-5 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
                   <Input
+                    id={`material-titulo-${m.id}`}
                     defaultValue={m.titulo}
                     aria-label="Título del material"
                     maxLength={150}
@@ -107,9 +112,6 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
                     </a>
                   </Button>
                 )}
-                <Button variant="ghost" size="icon-sm" aria-label={`Quitar «${m.titulo}»`} onClick={() => quitar(m)}>
-                  <Trash2 />
-                </Button>
               </div>
               <div className="flex items-center gap-2 pl-7 text-xs text-muted-foreground">
                 <Printer className="size-3.5" aria-hidden />
@@ -128,6 +130,8 @@ export default function ListaMaterial({ destino, contexto, onCambio }: { destino
                 Solo para padres (clave de respuestas)
               </label>
               {m.imprimible && <ImpresionesDelMaterial materialId={m.id} />}
+              </div>
+              </AdminItem>
             </li>
           ))}
         </ul>

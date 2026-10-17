@@ -5,7 +5,9 @@
 // Roost (vendor/roost/src/components/feed/) pero de una sola familia: sin categorías, sin seguidores, sin menciones.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Church, MessageCircle, Megaphone, Pin, PinOff, Plus, Trash2, Trophy } from "lucide-react";
+import { Church, MessageCircle, Megaphone, Pin, PinOff, Plus, Trophy } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -28,6 +30,7 @@ export default function MuroFamilia({ muro, esPadre }: { muro: Muro; esPadre: bo
   const [fijar, setFijar] = useState(false);
   const [publicando, setPublicando] = useState(false);
   const [abierta, setAbierta] = useState<number | null>(null);
+  const [editando, setEditando] = useState<{ id: number; titulo: string; cuerpo: string } | null>(null);
 
   const publicar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +107,19 @@ export default function MuroFamilia({ muro, esPadre }: { muro: Muro; esPadre: bo
       ) : (
         <ul className="space-y-3">
           {muro.publicaciones.map((p: PublicacionVista) => (
-            <li key={p.id} className={`space-y-3 rounded-2xl border bg-card p-4 ${p.fijada ? "border-primary/50" : ""}`}>
+            <li key={p.id}>
+              <AdminItem
+                enabled={p.puedeBorrar}
+                nombre={`la publicación «${p.titulo}»`}
+                className={`rounded-2xl border ${p.fijada ? "border-primary/50" : ""}`}
+                aviso="También se borran sus comentarios."
+                onEdit={p.tipo === "aviso" ? () => setEditando({ id: p.id, titulo: p.titulo, cuerpo: p.cuerpo ?? "" }) : undefined}
+                onDelete={async () => {
+                  await api(`/api/homeschooling/muro/${p.id}`, { method: "DELETE" });
+                  router.refresh();
+                }}
+              >
+              <div className="space-y-3 bg-card p-4">
               <div className="flex items-start gap-3">
                 {p.alumno ? (
                   <Avatar size="sm" className="mt-0.5">
@@ -140,9 +155,6 @@ export default function MuroFamilia({ muro, esPadre }: { muro: Muro; esPadre: bo
                     <Button variant="ghost" size="icon-sm" aria-label={p.fijada ? "Soltar" : "Fijar arriba"} onClick={() => correr(() => api(`/api/homeschooling/muro/${p.id}`, { method: "PATCH", body: { fijada: !p.fijada } }))}>
                       {p.fijada ? <PinOff /> : <Pin />}
                     </Button>
-                    <Button variant="ghost" size="icon-sm" aria-label="Borrar" onClick={() => window.confirm("¿Borrar esta publicación?") && void correr(() => api(`/api/homeschooling/muro/${p.id}`, { method: "DELETE" }))}>
-                      <Trash2 />
-                    </Button>
                   </div>
                 )}
               </div>
@@ -150,10 +162,40 @@ export default function MuroFamilia({ muro, esPadre }: { muro: Muro; esPadre: bo
                 <MessageCircle /> {p.comentarios === 0 ? "Comentar" : `${p.comentarios} ${p.comentarios === 1 ? "comentario" : "comentarios"}`}
               </Button>
               {abierta === p.id && <ComentariosEstudio key={p.id} destino={{ publicacionId: p.id }} titulo="Comentarios" placeholder="Escribí algo lindo…" />}
+              </div>
+              </AdminItem>
             </li>
           ))}
         </ul>
       )}
+
+      <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar aviso</DialogTitle>
+            <DialogDescription>Corregí el título o el texto de la publicación.</DialogDescription>
+          </DialogHeader>
+          {editando && (
+            <div className="space-y-3">
+              <Input value={editando.titulo} onChange={(e) => setEditando({ ...editando, titulo: e.target.value })} maxLength={120} aria-label="Título" />
+              <Textarea rows={5} value={editando.cuerpo} onChange={(e) => setEditando({ ...editando, cuerpo: e.target.value })} maxLength={2000} aria-label="Texto" />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>Cancelar</Button>
+            <Button
+              disabled={!editando?.titulo.trim()}
+              onClick={() => editando && void correr(async () => {
+                await api(`/api/homeschooling/muro/${editando.id}`, { method: "PATCH", body: { titulo: editando.titulo, cuerpo: editando.cuerpo } });
+                setEditando(null);
+                toast.success("Aviso actualizado");
+              })}
+            >
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

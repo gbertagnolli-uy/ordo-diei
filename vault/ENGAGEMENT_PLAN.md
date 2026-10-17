@@ -129,3 +129,12 @@ Variables de entorno del proyecto (los **mismos valores** que quedaron en el `.e
 - `/dashboard/admin/tareas` se enfoca en la creación (modal «Nueva tarea» con `TaskForm`), edición, visualización (calendario y tabla) y eliminación de tareas.
 - `/dashboard/admin/agenda` redirige a `/dashboard/admin/aprobaciones` y la misión de aprobar en «Tu parte de hoy» apunta a `/dashboard/admin/aprobaciones`.
 
+### Lane 218 — vista de lista, filtros, ordenamientos y acciones en masa en `/dashboard/admin/tareas` (2026-10-16)
+
+**Pedido (textual):** «La pantalla /dashboard/admin/tareas debe estar enfocada en listar tareas antes que en la vista de calendario. tambien debe tener filtros por persona, por dificultad, poder ordenar por tiempo requerido, por fecha de vencimiento, con o sin checklsit, recurrente o no. Tambien debe tener un selector para seleccionar una o varias tareas y aplicar acciones en masa (eliminar, editar asignación, editar fecha límite, editar dificultad, editar hora limite, editar si genera o no reecompneas»
+
+- `/dashboard/admin/tareas` abre por defecto en la vista de **Lista** (con la vista de Calendario como secundaria).
+- Se agregaron filtros por **persona** (incluyendo co-responsables), **dificultad**, **checklist** (con o sin checklist), **recurrencia** (recurrentes o únicas) y búsqueda por texto, además de ordenamiento por **fecha de vencimiento** y por **tiempo requerido** (desde el selector y desde los encabezados de la tabla).
+- Se agregó selección individual y «Seleccionar todas» con barra de **acciones en masa** (`POST /api/tasks/bulk`): eliminar, editar asignación, editar fecha límite, editar hora límite, editar dificultad y editar si genera o no recompensas.
+
+

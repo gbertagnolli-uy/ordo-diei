@@ -5,7 +5,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Brain, CheckCircle2, ChevronDown, Mic, PenLine, Plus, Trash2 } from "lucide-react";
+import { Brain, CheckCircle2, ChevronDown, Mic, PenLine, Plus } from "lucide-react";
+import { AdminItem } from "@/components/AdminItem";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import ResumenCompacto from "@/components/homeschooling/nav/ResumenCompacto";
@@ -27,13 +31,22 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
   const visibles = filtrar(datos.items, q, (m) => [m.titulo, m.texto]);
   const base = "/dashboard/homeschooling";
 
-  const quitar = async (id: number, titulo: string) => {
-    if (!window.confirm(`¿Sacar «${titulo}» de la memoria?`)) return;
+  const [editando, setEditando] = useState<{ id: number; titulo: string; texto: string } | null>(null);
+
+  const quitar = async (id: number) => {
+    await api(`/api/homeschooling/memoria/${id}`, { method: "DELETE" });
+    router.refresh();
+  };
+
+  const guardarEdicion = async () => {
+    if (!editando) return;
     try {
-      await api(`/api/homeschooling/memoria/${id}`, { method: "DELETE" });
+      await api(`/api/homeschooling/memoria/${editando.id}`, { method: "PATCH", body: { titulo: editando.titulo, texto: editando.texto } });
+      toast.success("Texto actualizado");
+      setEditando(null);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo quitar");
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
     }
   };
 
@@ -43,7 +56,26 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
         <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
           <Brain className="size-6" /> {esPadre ? `Memoria de ${datos.alumno.nombre}` : "Mi memoria"}
         </h1>
-        {esPadre && (
+        <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar texto</DialogTitle>
+            <DialogDescription>Corregí el título o el texto; el calendario de repasos no cambia.</DialogDescription>
+          </DialogHeader>
+          {editando && (
+            <div className="space-y-3">
+              <Input value={editando.titulo} onChange={(e) => setEditando({ ...editando, titulo: e.target.value })} maxLength={150} aria-label="Título" />
+              <Textarea rows={8} value={editando.texto} onChange={(e) => setEditando({ ...editando, texto: e.target.value })} maxLength={5000} aria-label="Texto" />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>Cancelar</Button>
+            <Button onClick={guardarEdicion} disabled={!editando?.titulo.trim() || (editando?.texto.trim().length ?? 0) < 5}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {esPadre && (
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setAgregando(true)}>
               <Plus /> Agregar
@@ -90,7 +122,16 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
       ) : (
         <ul className="space-y-2">
           {visibles.map((m) => (
-            <li key={m.id} className="rounded-xl border bg-card">
+            <li key={m.id}>
+              <AdminItem
+                enabled={esPadre}
+                nombre={`el texto «${m.titulo}»`}
+                className="rounded-xl border"
+                aviso="Se saca de la memoria y se pierde su avance de repaso."
+                onEdit={() => setEditando({ id: m.id, titulo: m.titulo, texto: m.texto })}
+                onDelete={() => quitar(m.id)}
+              >
+              <div className="bg-card">
               <div className="flex items-center gap-2 p-3">
                 <button type="button" onClick={() => setAbierto(abierto === m.id ? null : m.id)} aria-expanded={abierto === m.id} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${abierto === m.id ? "rotate-180" : ""}`} />
@@ -110,13 +151,12 @@ export default function ListaMemoria({ datos, alumnos, esPadre }: { datos: Datos
                         <PenLine />
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon-sm" aria-label={`Quitar «${m.titulo}»`} onClick={() => quitar(m.id, m.titulo)}>
-                      <Trash2 />
-                    </Button>
                   </>
                 )}
               </div>
               {abierto === m.id && <p className="border-t px-4 py-3 text-sm leading-7 whitespace-pre-wrap text-foreground">{m.texto}</p>}
+              </div>
+              </AdminItem>
             </li>
           ))}
         </ul>
