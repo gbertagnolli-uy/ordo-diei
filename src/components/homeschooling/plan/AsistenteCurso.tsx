@@ -3,10 +3,12 @@
 // Propio de Ordo: asistente «Nuevo curso» / «Asignar a…» (la spec de H1b lo pide con el Stepper de Ordo; Roost no tiene
 // plan por alumno). Pasos: ① materia ② curso ③ alumnos, fechas y días ④ vista previa → crearPlan por alumno.
 
+import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, BookOpen, Plus } from "lucide-react";
 import Stepper, { Step } from "@/components/Stepper";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,6 +28,14 @@ import { STEPPER_VARS } from "./stepperVars";
 
 
 const hoyLocal = () => new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD en la zona del navegador
+
+// Encabezado de cada paso: qué se decide acá y qué pasa después
+const Ayuda = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
+  <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-foreground">
+    {titulo} <AyudaIcono titulo={titulo}>{children}</AyudaIcono>
+  </p>
+);
+
 const finDeAnio = () => `${new Date().getFullYear()}-11-30`;
 
 type Props = {
@@ -192,6 +202,7 @@ export default function AsistenteCurso({ open, onClose, alumnos, materias, mater
             }}
           >
             <Step title="Materia">
+              <Ayuda titulo="1. Elegí la materia"><p>La materia agrupa los cursos (por ejemplo Lengua o Matemática). Elegí una existente o creá una nueva con «Nueva materia».</p></Ayuda>
               <div className="space-y-2">
                 {lista.map((m) => (
                   <button
@@ -216,6 +227,7 @@ export default function AsistenteCurso({ open, onClose, alumnos, materias, mater
             </Step>
 
             <Step title="Curso">
+              <Ayuda titulo="2. Elegí el curso"><p>El curso es el material que se estudia: tiene unidades o lecciones que se van repartiendo en los días. Si no tiene unidades, cargalas antes de asignarlo.</p></Ayuda>
               <div className="space-y-2">
                 {cursos.length === 0 && <p className="text-sm text-muted-foreground">Esta materia todavía no tiene cursos.</p>}
                 {cursos.map((c) => (
@@ -243,6 +255,7 @@ export default function AsistenteCurso({ open, onClose, alumnos, materias, mater
             </Step>
 
             <Step title="Cuándo">
+              <Ayuda titulo="3. Quién, desde cuándo y qué días"><p>Marcá a los alumnos que lo van a cursar. «Desde» y «Hasta» son el período en el que se reparte el curso, y los días marcados son los días de clase. Con eso se calcula cuántas unidades toca por día.</p></Ayuda>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Alumnos</Label>
@@ -283,6 +296,7 @@ export default function AsistenteCurso({ open, onClose, alumnos, materias, mater
             </Step>
 
             <Step title="Vista previa">
+              <Ayuda titulo="4. Revisá el reparto"><p>Muestra, por alumno, cuántos días de clase hay y cuántas unidades por día tocan. Si el ritmo es muy alto, ofrece extender la fecha o sumar sábado o domingo. «Guardar plan» crea el plan de cada alumno.</p></Ayuda>
               {!previas ? (
                 <div className="flex justify-center py-6">
                   <Spinner className="size-6 text-primary" />
