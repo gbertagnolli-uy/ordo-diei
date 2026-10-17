@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import { Check, Bell, BellOff, Edit2, Clock, Sparkles } from "lucide-react";
+import { Check, Bell, BellOff, Clock, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EtapaRutina, CATEGORIAS_INFO } from "@/lib/rutina/tipos";
 import { IconoRutina } from "./IconoRutina";
 
@@ -14,8 +13,6 @@ interface EtapaCardProps {
   esPasada: boolean;
   estaCompletada?: boolean;
   onToggleCompletada?: (id: string) => void;
-  onEditar?: (etapa: EtapaRutina) => void;
-  esPadre?: boolean;
 }
 
 export function EtapaCard({
@@ -25,8 +22,6 @@ export function EtapaCard({
   esPasada,
   estaCompletada = false,
   onToggleCompletada,
-  onEditar,
-  esPadre = false,
 }: EtapaCardProps) {
   const cat = CATEGORIAS_INFO[etapa.categoria] || CATEGORIAS_INFO.estudio;
 
@@ -125,21 +120,6 @@ export function EtapaCard({
           </p>
         )}
       </div>
-
-      {/* Botón de edición para padres */}
-      {esPadre && onEditar && (
-        <div className="shrink-0 pt-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEditar(etapa)}
-            className="size-7 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
-            title="Editar horario o detalles de esta etapa"
-          >
-            <Edit2 className="size-3.5 text-muted-foreground" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

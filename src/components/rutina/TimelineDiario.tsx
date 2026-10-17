@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { DragScroll } from "@/components/ui/drag-scroll";
 import { EtapaRutina } from "@/lib/rutina/tipos";
+import { AdminItem } from "@/components/AdminItem";
 import { EtapaCard } from "./EtapaCard";
 import {
   horaAMinutos,
@@ -23,6 +24,7 @@ interface TimelineDiarioProps {
   completadasIds: Set<string>;
   onToggleCompletada: (id: string) => void;
   onEditarEtapa?: (etapa: EtapaRutina) => void;
+  onEliminarEtapa?: (id: string) => void;
   onCrearEtapa?: () => void;
   esPadre?: boolean;
 }
@@ -45,6 +47,7 @@ export function TimelineDiario({
   completadasIds,
   onToggleCompletada,
   onEditarEtapa,
+  onEliminarEtapa,
   onCrearEtapa,
   esPadre = false,
 }: TimelineDiarioProps) {
@@ -264,17 +267,24 @@ export function TimelineDiario({
             const esPasada = fin > ini ? minActual >= fin : minActual >= fin && minActual < ini;
 
             return (
-              <EtapaCard
+              <AdminItem
                 key={etapa.id}
+                enabled={esPadre}
+                nombre={`la etapa «${etapa.titulo}»`}
+                className="rounded-2xl"
+                aviso="Se quita de la rutina familiar de todos."
+                onEdit={onEditarEtapa ? () => onEditarEtapa(etapa) : undefined}
+                onDelete={onEliminarEtapa ? () => onEliminarEtapa(etapa.id) : undefined}
+              >
+              <EtapaCard
                 etapa={etapa}
                 esActiva={esActiva}
                 esProxima={esProxima}
                 esPasada={esPasada}
                 estaCompletada={completadasIds.has(etapa.id)}
                 onToggleCompletada={onToggleCompletada}
-                onEditar={onEditarEtapa}
-                esPadre={esPadre}
               />
+              </AdminItem>
             );
           })
         )}

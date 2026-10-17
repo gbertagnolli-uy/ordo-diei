@@ -27,7 +27,8 @@ Contexto previo (lane 214): al asignar un curso el asistente se reiniciaba solo;
 | 217 | Hábitos y hábitos comunitarios: el admin (Padre/Madre) edita y archiva cualquier hábito creado por la familia (antes solo el creador): `puedeEditarHabito(…, esAdmin)` + rutas PATCH/DELETE; swipe en tarjetas de hábito y en comunitarios. «Eliminar» = archivar (conserva el progreso). `AdminItem` gana `menu` | integrada al terminar |
 | 218 | (la tomó otro agente: tareas, filtros y acciones en masa; no tocar tareas desde acá) | de otro agente |
 | 219 | Premios (`PremiosClient`): tabla → lista con `AdminItem`. Vales = instancias ganadas, no se «crean»: sin cambios. Tienda ya hecha en 215 | integrada al terminar |
-| 220 | Rutina y horarios | pendiente |
+| 220 | (la tomó otro agente: compañero héroe) | de otro agente |
+| 225 | Rutina diaria: etapas con `AdminItem` (swipe editar/eliminar + menú), reemplaza el lápiz que solo aparecía con hover (inaccesible en táctil). Rutina semanal/mensual: pendiente de revisar | integrada al terminar |
 | 221 | Homeschooling restante (planes, días sin clase, períodos, materiales, lectura, memoria, muro, actividades) + ayuda en demás asistentes | pendiente |
 
 Auditoría por lane: listar los creables, ver si ya hay PATCH/DELETE y UI; si falta el endpoint, agregarlo con chequeo de admin.
