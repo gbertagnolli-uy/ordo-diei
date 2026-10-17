@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { ElegirCompanero, FestejarNivel } from "@/components/engagement/CompaneroAcciones";
 import { EscenaCompanero } from "@/components/engagement/EscenaCompanero";
-import { PERSONAJES } from "@/lib/engagement/companero";
+import { PERSONAJES_ELEGIBLES } from "@/lib/engagement/companero";
 import type { CompaneroVista } from "@/lib/engagement/companeroServidor";
 
 export function CompaneroCard({ datos }: { datos: CompaneroVista }) {
@@ -21,7 +21,7 @@ export function CompaneroCard({ datos }: { datos: CompaneroVista }) {
         <CardHeader>
           <CardTitle className="font-heading text-lg">Elegí quién te acompaña</CardTitle>
           <CardDescription>
-            Un compañero te recibe cada día, celebra tus logros y crece con tu nivel: {PERSONAJES.map((p) => p.emoji).join(" ")}
+            Un compañero te recibe cada día, celebra tus logros y crece con tu nivel: {PERSONAJES_ELEGIBLES.slice(0, 8).map((p) => p.emoji).join(" ")}
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,7 +1,9 @@
 // Pasa las ilustraciones del compañero (PNG/JPG/WebP) a public/companeros/ en WebP, con el tamaño y el nombre correctos.
 // Uso: npm run companeros -- <carpeta con los originales>
 // Nombres de origen (vault/COMPANERO_IMAGENES.md):
-//   <personaje>-<pose>.png   → public/companeros/<personaje>/<pose>.webp     (monja-abrazo.png)
+//   <personaje>-<pose>.png   → public/companeros/<personaje>/<pose>.webp     (madre-isabel-abrazo.png)
+//   <personaje>-objeto.png   → public/companeros/<personaje>/objeto.webp     (pedro-objeto.png)
+//   (Las carpetas con todas las poses de cada héroe se importan con `npm run heroes`, scripts/importar-heroes.ts.)
 //   fondo-<clave>.png        → public/companeros/fondos/<clave>.webp         (fondo-jardin.png)
 //   objeto-<clave>.png       → public/companeros/objetos/<clave>.webp        (objeto-veladora.png)
 import fs from "node:fs/promises";
@@ -14,12 +16,18 @@ const DESTINO = "public/companeros";
 
 /** Dónde va un archivo de origen y a qué tamaño máximo; null si el nombre no corresponde a nada del catálogo */
 export function destinoDe(archivo: string): { ruta: string; ancho: number; alto: number } | null {
-  const base = path.parse(archivo).name.toLowerCase();
+  const base = path.parse(archivo).name.toLowerCase().replace(/\s+/g, "-");
+  // Las claves de los héroes pueden llevar guiones («madre-isabel-abrazo»): se busca por prefijo
+  const heroe = CLAVES_PERSONAJE.find((c) => base.startsWith(`${c}-`));
+  if (heroe) {
+    const resto = base.slice(heroe.length + 1);
+    if (resto === "objeto") return { ruta: `${heroe}/objeto.webp`, ancho: 768, alto: 768 };
+    return POSES.some((p) => p.clave === resto) ? { ruta: `${heroe}/${resto}.webp`, ancho: 768, alto: 1024 } : null;
+  }
   const corte = base.indexOf("-");
   if (corte < 0) return null;
   const grupo = base.slice(0, corte);
   const resto = base.slice(corte + 1);
-  if ((CLAVES_PERSONAJE as string[]).includes(grupo) && POSES.some((p) => p.clave === resto)) return { ruta: `${grupo}/${resto}.webp`, ancho: 768, alto: 1024 };
   if (grupo === "fondo" && ACCESORIOS.some((a) => a.tipo === "fondo" && a.clave === resto)) return { ruta: `fondos/${resto}.webp`, ancho: 768, alto: 1024 };
   if (grupo === "objeto" && ACCESORIOS.some((a) => a.tipo === "objeto" && a.clave === resto)) return { ruta: `objetos/${resto}.webp`, ancho: 512, alto: 512 };
   return null;

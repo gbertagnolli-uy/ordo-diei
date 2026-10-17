@@ -2,6 +2,7 @@
 
 > Pedido del usuario (2026-10-16), registrado **completo y textual** en §1. Reemplaza al «compañero que evoluciona» de la lane 203 ([`ENGAGEMENT_PLAN.md`](ENGAGEMENT_PLAN.md)).
 > Lista de arte que hay que generar: [`COMPANERO_IMAGENES.md`](COMPANERO_IMAGENES.md).
+> **Actualización (lane 233):** los 6 personajes genéricos fueron reemplazados por 26 héroes con nombre y arte propio. Ver [`LANE_233_HEROES_COMPANEROS.md`](LANE_233_HEROES_COMPANEROS.md) y [`COMPANERO_PERSONAJES_OBJETOS.md`](COMPANERO_PERSONAJES_OBJETOS.md). Lo de abajo sobre «6 personajes» es el diseño original.
 
 Rama `task/lane-220-companero-heroe` · worktree `../ordo-diei-lanes/lane-220` · base `dev`.
 

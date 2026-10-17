@@ -6,19 +6,56 @@ export const MAX_NOMBRE = 20;
 export const NOMBRE_POR_DEFECTO = "Tu compañero";
 
 // ── Personajes ─────────────────────────────────────────────────────────────────────────────────
+// Los héroes son los de las carpetas de arte (public/companeros/<clave>/): la clave es el nombre sin tildes ni espacios.
+// `voz` es la forma de hablar (companeroFrases.ts); `arte` dice cuántas imágenes tiene y `objeto` es lo que lo identifica
+// (una imagen por héroe: public/companeros/<clave>/objeto.webp, con el emoji de respaldo hasta que exista).
+// vault/COMPANERO_PERSONAJES_OBJETOS.md tiene la lista legible con el pedido de cada objeto.
+export type Voz = "monja" | "sacerdote" | "hombre" | "mujer" | "nino" | "nina";
+/** completo = las 6 poses · parcial = alguna pose (el resto muestra la neutral) · pendiente = todavía sin imagen, no se puede elegir */
+export type Arte = "completo" | "parcial" | "pendiente";
+type Heroe = { clave: string; nombre: string; titulo: string; descripcion: string; voz: Voz; emoji: string; arte: Arte; objeto: { nombre: string; emoji: string } };
+
 export const PERSONAJES = [
-  { clave: "monja", titulo: "La hermana", descripcion: "Una monja joven, serena y alegre", nombreSugerido: "Hermana Clara", emoji: "⛪" },
-  { clave: "sacerdote", titulo: "El padre", descripcion: "Un sacerdote joven, cercano y con humor", nombreSugerido: "Padre Tomás", emoji: "✝️" },
-  { clave: "hombre", titulo: "El amigo", descripcion: "Un hombre de todos los días, firme y leal", nombreSugerido: "Mateo", emoji: "👨" },
-  { clave: "mujer", titulo: "La amiga", descripcion: "Una mujer de todos los días, cálida y decidida", nombreSugerido: "Lucía", emoji: "👩" },
-  { clave: "nino", titulo: "El niño", descripcion: "Un niño curioso que quiere jugar y aprender", nombreSugerido: "Benja", emoji: "👦" },
-  { clave: "nina", titulo: "La niña", descripcion: "Una niña alegre que lo cuenta todo", nombreSugerido: "Sofi", emoji: "👧" },
-] as const;
+  { clave: "angelito", nombre: "Angelito", titulo: "El ángel de la guarda", descripcion: "Un angelito rubio que te cuida", voz: "nino", emoji: "👼", arte: "completo", objeto: { nombre: "Farolito de luz", emoji: "🏮" } },
+  { clave: "barbara", nombre: "Bárbara", titulo: "La joven valiente", descripcion: "Una joven de campo, firme y alegre", voz: "mujer", emoji: "👩", arte: "completo", objeto: { nombre: "Torrecita de tres ventanas", emoji: "🏰" } },
+  { clave: "catalina", nombre: "Catalina", titulo: "La maestra del chaleco verde", descripcion: "Una mujer con ganas de enseñar", voz: "mujer", emoji: "👩‍🏫", arte: "completo", objeto: { nombre: "Rueda de madera con una pluma", emoji: "🎡" } },
+  { clave: "cecilia", nombre: "Cecilia", titulo: "La cantora", descripcion: "Una joven que reza cantando", voz: "mujer", emoji: "🎶", arte: "completo", objeto: { nombre: "Laúd pequeño", emoji: "🪕" } },
+  { clave: "daniel", nombre: "Daniel", titulo: "El fuerte", descripcion: "Un hombre corpulento, noble y leal", voz: "hombre", emoji: "💪", arte: "completo", objeto: { nombre: "Rollo con una profecía", emoji: "📜" } },
+  { clave: "dom-pio", nombre: "Dom Pío", titulo: "El monje", descripcion: "Un monje sereno que reza y trabaja", voz: "sacerdote", emoji: "🧔", arte: "completo", objeto: { nombre: "Campanita del monasterio", emoji: "🔔" } },
+  { clave: "felipe", nombre: "Felipe", titulo: "El lector", descripcion: "Un niño curioso que siempre tiene un libro", voz: "nino", emoji: "👦", arte: "completo", objeto: { nombre: "Dos panes y un pescado", emoji: "🍞" } },
+  { clave: "isaias", nombre: "Isaías", titulo: "El grandote bueno", descripcion: "Un campesino barbudo y de gran corazón", voz: "hombre", emoji: "🧔", arte: "parcial", objeto: { nombre: "Brasa en unas tenazas", emoji: "🔥" } },
+  { clave: "josecito", nombre: "Josecito", titulo: "El más chiquito", descripcion: "Un bebé que camina y todo lo quiere abrazar", voz: "nino", emoji: "👶", arte: "completo", objeto: { nombre: "Martillito de carpintero", emoji: "🔨" } },
+  { clave: "laura", nombre: "Laura", titulo: "La niña piadosa", descripcion: "Una niña alegre que lee su librito", voz: "nina", emoji: "👧", arte: "completo", objeto: { nombre: "Lirio blanco", emoji: "🌷" } },
+  { clave: "lucas", nombre: "Lucas", titulo: "El joven sacerdote", descripcion: "Un sacerdote joven con su bolso de visitas", voz: "sacerdote", emoji: "✝️", arte: "parcial", objeto: { nombre: "Evangelio y pluma", emoji: "🖋️" } },
+  { clave: "madre-isabel", nombre: "Madre Isabel", titulo: "La madre", descripcion: "Una monja serena y alegre", voz: "monja", emoji: "⛪", arte: "completo", objeto: { nombre: "Rosas en un pañuelo", emoji: "🌹" } },
+  { clave: "magdalena", nombre: "Magdalena", titulo: "La del canasto", descripcion: "Una mujer de campo que saluda con una sonrisa", voz: "mujer", emoji: "🧺", arte: "parcial", objeto: { nombre: "Frasco de perfume", emoji: "🫙" } },
+  { clave: "maria", nombre: "María", titulo: "La amiga de todos", descripcion: "Una niña cariñosa que abraza y felicita", voz: "nina", emoji: "👧", arte: "completo", objeto: { nombre: "Rosario celeste", emoji: "📿" } },
+  { clave: "mariana", nombre: "Mariana", titulo: "La azucena", descripcion: "Todavía sin ilustraciones", voz: "nina", emoji: "🌼", arte: "pendiente", objeto: { nombre: "Azucena", emoji: "🌼" } },
+  { clave: "marta", nombre: "Marta", titulo: "La de la casa", descripcion: "Una mujer trabajadora, de delantal", voz: "mujer", emoji: "🍲", arte: "parcial", objeto: { nombre: "Cucharón de madera", emoji: "🥄" } },
+  { clave: "maximiliano", nombre: "Maximiliano", titulo: "El caminante", descripcion: "Un chico que va de camino con paso decidido", voz: "nino", emoji: "🚶", arte: "parcial", objeto: { nombre: "Dos coronas, blanca y roja", emoji: "👑" } },
+  { clave: "miguel", nombre: "Miguel", titulo: "El amigo fiel", descripcion: "Todavía sin ilustraciones", voz: "hombre", emoji: "🛡️", arte: "pendiente", objeto: { nombre: "Escudo pequeño", emoji: "🛡️" } },
+  { clave: "padre-santiago", nombre: "Padre Santiago", titulo: "El padre", descripcion: "Un sacerdote cercano, de sotana negra", voz: "sacerdote", emoji: "✝️", arte: "completo", objeto: { nombre: "Concha de peregrino", emoji: "🐚" } },
+  { clave: "pedro", nombre: "Pedro", titulo: "El de la túnica verde", descripcion: "Un hombre de todos los días, firme y leal", voz: "hombre", emoji: "👨", arte: "completo", objeto: { nombre: "Llaves grandes", emoji: "🔑" } },
+  { clave: "rafael", nombre: "Rafael", titulo: "El caminante", descripcion: "Todavía sin ilustraciones", voz: "hombre", emoji: "🐟", arte: "pendiente", objeto: { nombre: "Bastón y pez", emoji: "🐟" } },
+  { clave: "rosa", nombre: "Rosa", titulo: "La florecita", descripcion: "Una niña de campo, cálida y decidida", voz: "nina", emoji: "🌹", arte: "completo", objeto: { nombre: "Corona de rosas", emoji: "🌹" } },
+  { clave: "san-miguel-arcangel", nombre: "San Miguel Arcángel", titulo: "El arcángel", descripcion: "El defensor con su armadura y su espada", voz: "hombre", emoji: "⚔️", arte: "completo", objeto: { nombre: "Espada de llamas", emoji: "🗡️" } },
+  { clave: "teresa", nombre: "Teresa", titulo: "La pequeña", descripcion: "Una niña sencilla que lo hace todo con amor", voz: "nina", emoji: "🌹", arte: "completo", objeto: { nombre: "Ramito de rosas y crucifijo", emoji: "🌹" } },
+  { clave: "veronica", nombre: "Verónica", titulo: "La del velo", descripcion: "Todavía sin ilustraciones", voz: "mujer", emoji: "🕊️", arte: "pendiente", objeto: { nombre: "Velo con un rostro", emoji: "🕊️" } },
+  { clave: "vicente", nombre: "Vicente", titulo: "El generoso", descripcion: "Un chico de campo, siempre listo para ayudar", voz: "nino", emoji: "🧒", arte: "completo", objeto: { nombre: "Bolsita de monedas", emoji: "💰" } },
+] as const satisfies readonly Heroe[];
 
 export type Personaje = (typeof PERSONAJES)[number]["clave"];
 export const CLAVES_PERSONAJE = PERSONAJES.map((p) => p.clave) as Personaje[];
 export const esPersonaje = (x: unknown): x is Personaje => typeof x === "string" && (CLAVES_PERSONAJE as string[]).includes(x);
 export const datosDePersonaje = (clave: Personaje) => PERSONAJES.find((p) => p.clave === clave)!;
+/** Los que ya se pueden elegir (tienen al menos una imagen) */
+export const PERSONAJES_ELEGIBLES = PERSONAJES.filter((p) => p.arte !== "pendiente");
+export const esElegible = (x: unknown): x is Personaje => esPersonaje(x) && datosDePersonaje(x).arte !== "pendiente";
+
+/** Los 6 personajes genéricos de la primera versión (lane 220) pasaron a ser héroes: quien ya tenía uno conserva el parecido */
+const PERSONAJES_VIEJOS: Record<string, Personaje> = { monja: "madre-isabel", sacerdote: "padre-santiago", hombre: "pedro", mujer: "barbara", nino: "felipe", nina: "laura" };
+/** Lo que está guardado en la base → héroe (null si no hay o ya no existe) */
+export const personajeGuardado = (x: unknown): Personaje | null => (esPersonaje(x) ? x : typeof x === "string" ? (PERSONAJES_VIEJOS[x] ?? null) : null);
 
 // ── Poses ──────────────────────────────────────────────────────────────────────────────────────
 // Una imagen por pose y personaje: public/companeros/<personaje>/<pose>.webp (vault/COMPANERO_IMAGENES.md).
@@ -33,6 +70,9 @@ export const POSES = [
 ] as const;
 
 export type Pose = (typeof POSES)[number]["clave"];
+/** Poses que se dejan tal cual vienen, con su fondo blanco (algunas traen el cartel «¡Buenos días!» dibujado): la escena lo funde con CSS */
+export const POSES_CON_FONDO: readonly Pose[] = ["buenos-dias"];
+export const tieneFondo = (pose: Pose) => POSES_CON_FONDO.includes(pose);
 export const esPose = (x: unknown): x is Pose => POSES.some((p) => p.clave === x);
 export const poseDesbloqueada = (pose: Pose, nivel: number) => nivel >= POSES.find((p) => p.clave === pose)!.nivel;
 export const posesDesbloqueadas = (nivel: number): Pose[] => POSES.filter((p) => nivel >= p.nivel).map((p) => p.clave);
