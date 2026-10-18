@@ -2,7 +2,7 @@
 
 import { useModalStore } from "@/store/modalStore";
 import { Modal } from "@/components/ui/Modal";
-import { Save } from "lucide-react";
+import { CheckCircle2, Flame, Gift, Save, Sparkles, Star } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { PerfilResumen } from "@/components/perfil/PerfilResumen";
@@ -11,6 +11,9 @@ import { LeaderboardModal } from "./LeaderboardModal";
 import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EscenaCompanero } from "@/components/engagement/EscenaCompanero";
+import type { BienvenidaDiariaDatos } from "@/lib/engagement/companeroServidor";
 import { toast } from "@/lib/toast";
 import { badgeDeNivel, PUNTOS_SUBIR_NIVEL, tituloDeNivel } from "@/lib/niveles";
 
@@ -25,7 +28,7 @@ const HABITO_POPUP = (nombre = "este hábito") => ({
 });
 const CelebrateContext = createContext<(opts?: Parameters<ConfettiRef["fire"]>[0]) => void>(() => {});
 
-export function ModalManager() {
+export function ModalManager({ bienvenidaHoy }: { bienvenidaHoy?: BienvenidaDiariaDatos | null }) {
   const { isOpen, type, data, closeModal, openModal } = useModalStore();
   const confettiRef = useRef<ConfettiRef>(null);
   const celebrate = useCallback((opts?: Parameters<ConfettiRef["fire"]>[0]) => {
@@ -35,12 +38,30 @@ export function ModalManager() {
   }, []);
 
   useEffect(() => {
+    if (!bienvenidaHoy) return;
+    const storageKey = `bienvenida_vista_${bienvenidaHoy.usuarioId}_${bienvenidaHoy.fecha}`;
+    try {
+      if (localStorage.getItem(storageKey) === "1") return;
+      localStorage.setItem(storageKey, "1");
+    } catch {
+      // Si localStorage no está disponible, se muestra igual y el servidor lo persiste
+    }
+    fetch("/api/companero", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accion: "bienvenida" }),
+    }).catch(() => {});
+    openModal("DAILY_WELCOME", bienvenidaHoy);
+  }, [bienvenidaHoy, openModal]);
+
+  useEffect(() => {
     // Check for level up notification from previous page load
     const levelUpInfo = sessionStorage.getItem("levelUpNotification");
     if (levelUpInfo) {
       sessionStorage.removeItem("levelUpNotification");
       const info = JSON.parse(levelUpInfo);
       setTimeout(() => {
+        if (useModalStore.getState().type === "DAILY_WELCOME") return;
         openModal("LEVEL_UP", info);
       }, 500); // Small delay to let the page load
     }
@@ -292,7 +313,119 @@ export function ModalManager() {
           </div>
         </Modal>
       )}
+
+      {type === "DAILY_WELCOME" && data && (
+        <Modal
+          isOpen={isOpen}
+          onClose={closeModal}
+          title={`✨ ¡Bienvenido de vuelta, ${data.quien}!`}
+          width="md"
+        >
+          <BienvenidaDiariaPopup data={data as BienvenidaDiariaDatos} onClose={closeModal} />
+        </Modal>
+      )}
     </CelebrateContext.Provider>
+  );
+}
+
+function BienvenidaDiariaPopup({ data, onClose }: { data: BienvenidaDiariaDatos; onClose: () => void }) {
+  const celebrate = useContext(CelebrateContext);
+  const [mostrarPremios, setMostrarPremios] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setMostrarPremios(true);
+      celebrate({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: GOLD });
+    }, 450);
+    return () => clearTimeout(t);
+  }, [celebrate]);
+
+  const { companero, quien, rachaApp, diasJuntos, puntos, xp, hitoHoy } = data;
+
+  return (
+    <div className="flex flex-col items-center text-center py-2 space-y-4">
+      {/* 1. El compañero saluda y felicita por volver */}
+      <div className="flex flex-col sm:flex-row items-center gap-4 w-full rounded-xl border bg-muted/30 p-4 text-left">
+        <EscenaCompanero
+          personaje={companero.personaje}
+          pose={companero.pose}
+          equipados={companero.equipados}
+          marco={companero.marco}
+          quien={quien}
+          className="w-28 sm:w-32 shrink-0 shadow-sm"
+        />
+        <div className="flex-1 space-y-2 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <span className="font-heading text-lg font-bold text-foreground">
+              {companero.nombre}
+            </span>
+            <Badge variant="default" className="gap-1">
+              <Flame className="size-3.5" />
+              Racha en la app: {rachaApp} {rachaApp === 1 ? "día" : "días"}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {diasJuntos} {diasJuntos === 1 ? "día juntos" : "días juntos"}
+            </Badge>
+          </div>
+          <p className="text-sm font-medium text-foreground italic">
+            «{companero.saludo}»
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {companero.felicitacion}
+          </p>
+        </div>
+      </div>
+
+      {/* 2. Enseguida se muestran los premios por haber ingresado hoy */}
+      <div
+        className={`w-full space-y-3 transition-all duration-500 ${
+          mostrarPremios ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+        }`}
+      >
+        <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center justify-center gap-1.5">
+          <Sparkles className="size-3.5" />
+          Premios por tu primer ingreso de hoy
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-primary/25 bg-primary/10 p-3 flex flex-col items-center justify-center">
+            <div className="flex items-center gap-1 text-2xl font-headline font-bold text-primary tabular-nums">
+              <Sparkles className="size-5" /> +{xp} XP
+            </div>
+            <span className="text-xs font-medium text-muted-foreground mt-0.5">
+              Experiencia ganada
+            </span>
+          </div>
+
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] p-3 flex flex-col items-center justify-center">
+            <div className="flex items-center gap-1 text-2xl font-headline font-bold text-[var(--warning)] tabular-nums">
+              <Star className="size-5 fill-current" /> +{puntos} Puntos
+            </div>
+            <span className="text-xs font-medium text-muted-foreground mt-0.5">
+              Puntos disponibles
+            </span>
+          </div>
+        </div>
+
+        {hitoHoy && (
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--success)_35%,transparent)] bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-[var(--success)]">
+            <Gift className="size-4 shrink-0" />
+            <span>
+              ¡Alcanzaste el hito «{hitoHoy.titulo}»! Tenés un premio sorpresa en Mis premios.
+            </span>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+          <CheckCircle2 className="size-3.5 text-[var(--success)]" />
+          Registrado en tu perfil · 1 vez por día
+        </p>
+      </div>
+
+      <Button size="lg" onClick={onClose} className="w-full">
+        ¡Gracias, a empezar el día!
+      </Button>
+    </div>
   );
 }
 

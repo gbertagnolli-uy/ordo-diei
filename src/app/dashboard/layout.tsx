@@ -14,7 +14,8 @@ import { contarComprasCompartidasPendientes } from "@/lib/tienda/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 import { nivelDe, xpTotal } from "@/lib/niveles";
-import { parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
+import { parteDeHoy, registrarIngreso, resumenRachaAppDeUsuarios } from "@/lib/engagement/servidor";
+import { bienvenidaDiariaDe } from "@/lib/engagement/companeroServidor";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
@@ -26,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/");
 
   // Desde las 18:00 el cofre del día llega al entrar (si los padres evaluaron bien el día)
-  // y se anota el ingreso del día para la racha en la app (lane 201)
+  // y se anota el ingreso del día para la racha en la app (lane 201 + lane 243: +5 XP y +5 puntos)
   await Promise.all([
     otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e)),
     registrarIngreso(Number(session.user.id)).catch((e) => console.error("[Ingreso]", e)),
@@ -36,7 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes] = await Promise.all([
+  const [usersRaw, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes, bienvenidaHoy] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -49,7 +50,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     contarSorpresasSinAbrir(Number(session.user.id)),
     contarReconocimientosSinAbrir(Number(session.user.id)),
     contarComprasCompartidasPendientes(Number(session.user.id)).catch(() => 0),
+    bienvenidaDiariaDe(Number(session.user.id)).catch((e) => {
+      console.error("[Bienvenida]", e);
+      return null;
+    }),
   ]);
+  const rachasApp = await resumenRachaAppDeUsuarios(usersRaw.map((u) => u.id)).catch(() => new Map());
+  const users = usersRaw.map((u) => ({
+    ...u,
+    rachaApp: rachasApp.get(u.id) ?? null,
+  }));
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
@@ -83,7 +93,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </SidebarInset>
       <ModoRelajado activo={modoRelajado} />
       <ActualizarPremios />
-      <ModalManager />
+      <ModalManager bienvenidaHoy={bienvenidaHoy} />
       <MainDock currentUser={currentUser} allUsers={users} />
     </SidebarProvider>
   );

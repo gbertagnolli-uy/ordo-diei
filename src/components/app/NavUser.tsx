@@ -37,12 +37,14 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
     notificadoRef.current = currentLevel;
     const nivelesSubidos = Math.max(1, currentLevel - Math.max(1, nivelPrevio));
     const puntosPorDefecto = nivelesSubidos * PUNTOS_SUBIR_NIVEL;
-    openModal("LEVEL_UP", {
-      level: currentLevel,
-      title: currentTitle,
-      badgeUrl: badgeDeNivel(currentLevel),
-      puntosRegalo: puntosPorDefecto,
-    });
+    if (useModalStore.getState().type !== "DAILY_WELCOME") {
+      openModal("LEVEL_UP", {
+        level: currentLevel,
+        title: currentTitle,
+        badgeUrl: badgeDeNivel(currentLevel),
+        puntosRegalo: puntosPorDefecto,
+      });
+    }
     fetch("/api/users/subir-nivel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -132,8 +134,9 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <div className="grid grid-cols-3 gap-1 px-2 py-1.5 text-center">
-              <Stat icon={<Flame className="size-3.5 text-orange-500" />} value={user.streakDays || 0} label="Racha" />
+            <div className="grid grid-cols-2 gap-1 px-2 py-1.5 text-center">
+              <Stat icon={<Flame className="size-3.5 text-primary" />} value={user.rachaApp?.dias ?? 0} label="Racha app" />
+              <Stat icon={<Flame className="size-3.5 text-orange-500" />} value={user.streakDays || 0} label="Racha tareas" />
               <Stat icon={<Star className="size-3.5 text-secondary" />} value={user.stars || 0} label="Estrellas" />
               <Stat icon={<Gift className="size-3.5 text-primary" />} value={user.surprises || 0} label="Sorpresas" />
             </div>

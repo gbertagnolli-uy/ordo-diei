@@ -11,9 +11,19 @@ import { contenidoCofre, elegirRareza } from "../comportamiento/cofre.ts";
 import { otorgarCofreDelDia } from "../comportamiento/server.ts";
 import { rangoDelDia } from "../comportamiento/sancionServer.ts";
 import type { ItemPremio } from "../comportamiento/premios.ts";
-import { calcularRachaApp, type RachaApp } from "./racha.ts";
+import {
+  armarResumenRachaApp,
+  calcularRachaApp,
+  CLAVE_BIENVENIDA_VISTA,
+  PUNTOS_INGRESO_DIARIO,
+  XP_INGRESO_DIARIO,
+  type RachaApp,
+  type ResumenRachaApp,
+} from "./racha.ts";
 import { hitosAlcanzados, origenHito, proximoHito, type Hito } from "./hitos.ts";
 import { cofreGanado, misionesDeHoy, PUNTOS_MISION, type Mision } from "./misiones.ts";
+
+export { armarResumenRachaApp, CLAVE_BIENVENIDA_VISTA, PUNTOS_INGRESO_DIARIO, XP_INGRESO_DIARIO, type ResumenRachaApp };
 
 type Cliente = Prisma.TransactionClient | typeof prisma;
 
@@ -33,6 +43,31 @@ async function fechasDeIngreso(cliente: Cliente, usuarioId: number, hoy: string)
 export async function rachaDe(usuarioId: number, ahora: Date = new Date()): Promise<RachaApp> {
   const hoy = diaDeFamilia(ahora);
   return calcularRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
+}
+
+export async function resumenRachaAppDe(usuarioId: number, ahora: Date = new Date()): Promise<ResumenRachaApp> {
+  const hoy = diaDeFamilia(ahora);
+  return armarResumenRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
+}
+
+export async function resumenRachaAppDeUsuarios(usuarioIds: number[], ahora: Date = new Date()): Promise<Map<number, ResumenRachaApp>> {
+  const hoy = diaDeFamilia(ahora);
+  const resultado = new Map<number, ResumenRachaApp>();
+  if (usuarioIds.length === 0) return resultado;
+  const desde = new Date(aFecha(hoy).getTime() - DIAS_HISTORIAL * 86_400_000);
+  const filas = await prisma.actividadDia.findMany({
+    where: { usuarioId: { in: usuarioIds }, fecha: { gte: desde } },
+    select: { usuarioId: true, fecha: true },
+  });
+  const porUsuario = new Map<number, string[]>();
+  for (const uid of usuarioIds) porUsuario.set(uid, []);
+  for (const f of filas) {
+    porUsuario.get(f.usuarioId)?.push(aClave(f.fecha));
+  }
+  for (const [uid, fechas] of porUsuario) {
+    resultado.set(uid, armarResumenRachaApp(fechas, hoy));
+  }
+  return resultado;
 }
 
 /** Una carta al azar (por rareza, como el cofre) para el fragmento de un premio */
@@ -69,7 +104,8 @@ async function otorgarHitos(cliente: Cliente, usuarioId: number, racha: RachaApp
 }
 
 /**
- * Anota que la persona entró hoy (una sola vez por día) y, si con eso alcanza un hito de racha, deja el premio.
+ * Anota que la persona entró hoy (una sola vez por día), acredita +5 XP y +5 puntos por el primer ingreso del día,
+ * y si con eso alcanza un hito de racha deja el premio sorpresa.
  * Es barato en las visitas repetidas: una lectura por la clave única.
  */
 export async function registrarIngreso(usuarioId: number, ahora: Date = new Date()): Promise<{ nuevo: boolean; hitos: Hito[] }> {
@@ -78,7 +114,16 @@ export async function registrarIngreso(usuarioId: number, ahora: Date = new Date
   const ya = await prisma.actividadDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha } }, select: { id: true } });
   if (ya) return { nuevo: false, hitos: [] };
   try {
-    await prisma.actividadDia.create({ data: { usuarioId, fecha } });
+    await prisma.$transaction([
+      prisma.actividadDia.create({ data: { usuarioId, fecha } }),
+      prisma.usuario.update({
+        where: { id: usuarioId },
+        data: {
+          availablePoints: { increment: PUNTOS_INGRESO_DIARIO },
+          experienciaHabitos: { increment: XP_INGRESO_DIARIO },
+        },
+      }),
+    ]);
   } catch (e) {
     // Dos pestañas a la vez: la otra ya lo anotó
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { nuevo: false, hitos: [] };
@@ -86,6 +131,39 @@ export async function registrarIngreso(usuarioId: number, ahora: Date = new Date
   }
   const racha = calcularRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
   return { nuevo: true, hitos: await otorgarHitos(prisma, usuarioId, racha) };
+}
+
+const leerClaves = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+
+/** Marca que el usuario ya vio el modal de bienvenida diaria de hoy */
+export async function marcarBienvenidaVista(usuarioId: number, ahora: Date = new Date()): Promise<void> {
+  const hoy = diaDeFamilia(ahora);
+  const fecha = aFecha(hoy);
+  await registrarIngreso(usuarioId, ahora);
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${usuarioId}::bigint + 8000000)`;
+    const fila = await tx.actividadDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha } } });
+    if (!fila) return;
+    const claves = leerClaves(fila.misiones);
+    if (!claves.includes(CLAVE_BIENVENIDA_VISTA)) {
+      await tx.actividadDia.update({
+        where: { id: fila.id },
+        data: { misiones: [...claves, CLAVE_BIENVENIDA_VISTA] },
+      });
+    }
+  });
+}
+
+/** ¿Sigue pendiente mostrar el modal de bienvenida del ingreso de hoy? */
+export async function bienvenidaPendienteHoy(usuarioId: number, ahora: Date = new Date()): Promise<boolean> {
+  const hoy = diaDeFamilia(ahora);
+  const fecha = aFecha(hoy);
+  const fila = await prisma.actividadDia.findUnique({
+    where: { usuarioId_fecha: { usuarioId, fecha } },
+    select: { misiones: true },
+  });
+  if (!fila) return true;
+  return !leerClaves(fila.misiones).includes(CLAVE_BIENVENIDA_VISTA);
 }
 
 // ─────────────────────────────── «Tu parte de hoy» (padres) ───────────────────────────────
@@ -102,8 +180,6 @@ export type ParteDeHoy = {
   /** Puntos que sumaron las misiones de hoy */
   puntosHoy: number;
 };
-
-const leerClaves = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
 /** Hijos de la familia y si ya tienen un registro de comportamiento hoy, lo haya cargado el padre que sea */
 async function hijosConRegistroHoy(ahora: Date) {
