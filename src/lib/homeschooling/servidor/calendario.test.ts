@@ -21,7 +21,7 @@ test("la firma del enlace: propia del alumno, estable y sin el sufijo .ics", () 
 });
 
 // Solo lectura contra la base
-test("un id que no es de un hijo no tiene calendario; el de un hijo real, sí", async () => {
+test("un id que no es de un hijo no tiene calendario; el de un hijo real, sí", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   assert.equal(await eventosDelAlumno(999999999, "2026-10-16"), null);
   const hijo = await prisma.usuario.findFirst({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true, nombre: true } });
   if (!hijo) return;

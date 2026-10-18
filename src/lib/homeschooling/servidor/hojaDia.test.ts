@@ -4,7 +4,7 @@ import prisma from "../../prisma.ts";
 import { darImpresionExtraDia, hojaDiaPorToken, hojasRestantes, registrarImpresionDia, resumenHojaDia } from "./hojaDia.ts";
 
 // --- Sin base (solo lectura) ---
-test("permisos: un hijo no da extras ni ve el resumen; un token que no existe es 404", async () => {
+test("permisos: un hijo no da extras ni ve el resumen; un token que no existe es 404", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const hijo = { id: 5, rol: "Hijo" };
   await assert.rejects(darImpresionExtraDia(hijo, 1), { status: 403 });
   await assert.rejects(resumenHojaDia(hijo, 1), { status: 403 });

@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistModal } from "@/components/dashboard/ChecklistModal";
 import { cn } from "@/lib/utils";
+import { describirRotacion, normalizarRotacionConfig } from "@/lib/rotacionTarea";
 import { useTaskActions } from "./useTaskActions";
 import {
   CoResponsable,
@@ -45,13 +46,14 @@ export function TaskDetailPanel({
   onBack: () => void;
 }) {
   const actions = useTaskActions(task);
-  const [confirm, setConfirm] = useState<null | "finish" | "notDone">(null);
+  const [confirm, setConfirm] = useState<null | "finish" | "finishDirect" | "notDone">(null);
   const [checklistOpen, setChecklistOpen] = useState(false);
   const canAct = isActionable(task);
   const checklist = checklistProgress(task);
   const status = statusInfo(task);
+  const rotacion = normalizarRotacionConfig(task.rotacionConfig);
 
-  const openConfirm = (kind: "finish" | "notDone") => {
+  const openConfirm = (kind: "finish" | "finishDirect" | "notDone") => {
     actions.pauseForConfirm();
     setConfirm(kind);
   };
@@ -63,6 +65,11 @@ export function TaskDetailPanel({
           <ArrowLeft /> Agenda
         </Button>
         <div className="flex items-center gap-1.5 pr-2">
+          {rotacion && (
+            <Badge variant="outline" className="h-5 gap-1 text-primary border-primary/40">
+              <Repeat className="size-3" /> Turno de hoy
+            </Badge>
+          )}
           {isUrgent(task) && !isLate(task) && <Badge variant="secondary" className="h-5">Urgente</Badge>}
           <StatusBadge label={status.label} color={status.color} />
         </div>
@@ -80,12 +87,18 @@ export function TaskDetailPanel({
             <Meta icon={<Clock />} label="Estimado" value={formatDuration(task.tiempoEjecucionEstimadoSeg || 0)} />
             <Meta icon={<CalendarClock />} label="Vence" value={formatDue(task, true) ?? "Sin fecha"} />
             <Meta icon={<Star />} label="Puntos" value={task.generaPuntosYRecompensa ? pointsLabel(task) : "No suma"} />
-            <Meta icon={<Repeat />} label="Repite" value={RECURRENCIA[task.tipoRecurrencia] ?? "Única"} />
+            <Meta
+              icon={<Repeat />}
+              label={rotacion ? "Rotación" : "Repite"}
+              value={(rotacion ? describirRotacion(rotacion) : null) ?? (RECURRENCIA[task.tipoRecurrencia] ?? "Única")}
+            />
           </dl>
 
           {coResponsables.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Co-responsables</p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                {rotacion ? "Compañeros de rotación" : "Co-responsables"}
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {coResponsables.map((cr) => (
                   <Badge key={cr.id} variant="outline" className="h-6 gap-1.5 pl-0.5">
@@ -112,22 +125,31 @@ export function TaskDetailPanel({
 
           {canAct && (
             <Card className="py-4">
-              <CardContent className="flex items-end justify-between px-4">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">{actions.isOvertime ? "¡Tiempo excedido!" : "Restante"}</p>
-                  <p
-                    className={cn(
-                      "font-mono text-3xl font-semibold tabular-nums tracking-tight",
-                      actions.isOvertime ? "text-destructive" : actions.isPlaying ? "text-success" : "text-foreground"
-                    )}
-                  >
-                    {formatClock(actions.remaining)}
-                  </p>
+              <CardContent className="space-y-3 px-4">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {actions.isOvertime ? "¡Tiempo excedido!" : actions.fueIniciada ? "Tiempo restante" : "Duración estimada"}
+                    </p>
+                    <p
+                      className={cn(
+                        "font-mono text-3xl font-semibold tabular-nums tracking-tight",
+                        actions.isOvertime ? "text-destructive" : actions.isPlaying ? "text-success" : "text-foreground"
+                      )}
+                    >
+                      {formatClock(actions.remaining)}
+                    </p>
+                  </div>
+                  <Button variant={actions.isPlaying ? "secondary" : "default"} onClick={actions.togglePlay}>
+                    {actions.isPlaying ? <Pause /> : <Play />}
+                    {actions.isPlaying ? "Pausar" : actions.fueIniciada ? "Reanudar" : "Iniciar"}
+                  </Button>
                 </div>
-                <Button variant={actions.isPlaying ? "secondary" : "default"} onClick={actions.togglePlay}>
-                  {actions.isPlaying ? <Pause /> : <Play />}
-                  {actions.isPlaying ? "Pausa" : "Iniciar"}
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {actions.fueIniciada
+                    ? "Tarea iniciada: al presionar Finalizar recibís el 100% de los puntos."
+                    : "Iniciá la tarea antes de hacerla y luego presioná Finalizar para ganar el 100% de los puntos (si solo la marcás como realizada otorga el 80%)."}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -146,30 +168,103 @@ export function TaskDetailPanel({
       {canAct && (
         <>
           <Separator />
-          <div className="flex shrink-0 gap-2 p-3">
-            <Button className="flex-1 bg-[var(--success)] text-[var(--on-success)] hover:bg-[var(--success-container)]" onClick={() => openConfirm("finish")}>
-              <Check /> Completar
-            </Button>
-            <Button variant="outline" onClick={() => openConfirm("notDone")} className="hover:border-destructive hover:text-destructive">
+          <div className="flex shrink-0 flex-wrap gap-2 p-3">
+            {actions.fueIniciada ? (
+              <Button
+                className="flex-1 bg-[var(--success)] text-[var(--on-success)] hover:bg-[var(--success-container)]"
+                onClick={() => openConfirm("finish")}
+              >
+                <Check /> Finalizar (100% pts)
+              </Button>
+            ) : (
+              <>
+                <Button className="flex-1" onClick={actions.togglePlay}>
+                  <Play /> Iniciar tarea
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => openConfirm("finishDirect")}
+                  title="Marcar como realizada sin haber iniciado el cronómetro (otorga 80% de los puntos)"
+                >
+                  <Check /> Marcar realizada (80%)
+                </Button>
+              </>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => openConfirm("notDone")}
+              className="hover:border-destructive hover:text-destructive"
+              aria-label="No realizada"
+            >
               <X /> No realizada
             </Button>
           </div>
         </>
       )}
 
-      <Modal isOpen={confirm === "finish"} onClose={() => setConfirm(null)} title="¿Terminaste la tarea?">
+      <Modal
+        isOpen={confirm === "finish" || confirm === "finishDirect"}
+        onClose={() => setConfirm(null)}
+        title={confirm === "finishDirect" ? "¿Marcar tarea como realizada?" : "¿Finalizar la tarea?"}
+      >
         <div className="flex flex-col items-center gap-4 text-center">
           <img src="/time-machine-animate.svg" alt="Time Machine" className="mb-2 size-48 drop-shadow-sm" />
-          <p className="text-lg leading-relaxed text-muted-foreground">
-            Siempre revisa que la tarea fue completada correctamente para no perderte puntos y premios sorpresa!
-          </p>
+          {confirm === "finishDirect" ? (
+            <p className="text-base leading-relaxed text-muted-foreground">
+              Como no iniciaste el cronómetro antes de hacerla, marcarla directamente como realizada otorga el{" "}
+              <strong className="text-foreground">80% de los puntos</strong>. Si recién vas a hacerla, podés iniciarla ahora para ganar el{" "}
+              <strong className="text-foreground">100%</strong>.
+            </p>
+          ) : (
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              ¡Excelente! Iniciaste y realizaste la tarea, por lo que vas a recibir el{" "}
+              <strong className="text-foreground">100% de los puntos</strong> al aprobarse.
+            </p>
+          )}
           <div className="mt-4 flex w-full gap-3">
-            <Button variant="outline" size="lg" className="flex-1" disabled={actions.loading} onClick={() => setConfirm(null)}>
-              Voy a revisar
-            </Button>
-            <Button size="lg" className="flex-1" disabled={actions.loading} onClick={async () => { if (await actions.finishTask()) setConfirm(null); }}>
-              {actions.loading ? "Evaluando..." : "Sí, finalizar"}
-            </Button>
+            {confirm === "finishDirect" ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex-1"
+                  disabled={actions.loading}
+                  onClick={() => {
+                    setConfirm(null);
+                    void actions.togglePlay();
+                  }}
+                >
+                  <Play /> Iniciar ahora (100%)
+                </Button>
+                <Button
+                  size="lg"
+                  className="flex-1"
+                  disabled={actions.loading}
+                  onClick={async () => {
+                    if (await actions.finishTask("realizada_directa")) setConfirm(null);
+                  }}
+                >
+                  {actions.loading ? "Evaluando..." : "Marcar realizada (80%)"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="lg" className="flex-1" disabled={actions.loading} onClick={() => setConfirm(null)}>
+                  Voy a revisar
+                </Button>
+                <Button
+                  size="lg"
+                  className="flex-1"
+                  disabled={actions.loading}
+                  onClick={async () => {
+                    if (await actions.finishTask("iniciada_finalizada")) setConfirm(null);
+                  }}
+                >
+                  {actions.loading ? "Evaluando..." : "Sí, finalizar (100%)"}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </Modal>

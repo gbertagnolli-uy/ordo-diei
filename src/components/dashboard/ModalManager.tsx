@@ -145,8 +145,24 @@ export function ModalManager() {
             </h3>
 
             {data?.puntos > 0 && (
-              <div className="text-4xl font-display font-bold text-[var(--warning)] mb-4 animate-bounce">
+              <div className="text-4xl font-display font-bold text-[var(--warning)] mb-2 animate-bounce">
                 +{data.puntos} Pts
+              </div>
+            )}
+
+            {(data?.porcentajePuntos === 100 || data?.porcentajePuntos === 80) && (
+              <div className="mb-3">
+                <span
+                  className={
+                    data.porcentajePuntos === 100
+                      ? "inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--success)_15%,transparent)] border border-[color-mix(in_srgb,var(--success)_35%,transparent)] px-3 py-1 text-xs font-bold text-[var(--success)]"
+                      : "inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] border border-[color-mix(in_srgb,var(--warning)_35%,transparent)] px-3 py-1 text-xs font-bold text-[var(--warning)]"
+                  }
+                >
+                  {data.porcentajePuntos === 100
+                    ? "⏱️ 100% de puntos (iniciada y finalizada)"
+                    : "✓ 80% de puntos (marcada como realizada)"}
+                </span>
               </div>
             )}
 

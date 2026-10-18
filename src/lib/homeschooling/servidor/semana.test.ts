@@ -12,7 +12,7 @@ test("un Hijo no pide la hoja semanal", async () => {
 });
 
 // Solo lectura contra la base: la consulta es válida y la forma de la hoja es la esperada
-test("la hoja de un hijo real trae siete días seguidos de lunes a domingo", async () => {
+test("la hoja de un hijo real trae siete días seguidos de lunes a domingo", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const hijo = await prisma.usuario.findFirst({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true } });
   if (!hijo) return;
   const h = await hojaSemana({ id: 1, rol: "Padre" }, hijo.id, "2026-10-12");
