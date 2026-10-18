@@ -195,7 +195,7 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
 
       {/* Contenido reposicionado según anti burn-in */}
       <div
-        className="relative z-10 flex size-full flex-col justify-between p-6 sm:p-10 transition-transform duration-1000 ease-out"
+        className="relative z-10 flex size-full flex-col justify-between px-6 py-8 sm:px-10 sm:py-10 transition-transform duration-1000 ease-out"
         style={{
           transform: `translate3d(${burnInOffset.x}px, ${burnInOffset.y}px, 0)`,
         }}
@@ -203,7 +203,7 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
         {/* Cabecera: Esquina superior izquierda (Logo) y derecha (Título Litúrgico) */}
         <div
           className={cn(
-            "flex w-full items-start justify-between gap-4 transition-opacity duration-500",
+            "flex w-full shrink-0 items-start justify-between gap-4 transition-opacity duration-500",
             atenuado ? "opacity-60" : "opacity-100",
           )}
         >
@@ -221,15 +221,15 @@ export function ReposoPantalla({ onEntrar, className }: ReposoPantallaProps) {
           <TituloDia dia={diaLiturgico} />
         </div>
 
-        {/* Zona central: Frase (alineada a la izquierda en el 10-12% del ancho) */}
-        <div className="my-auto w-full max-w-5xl pl-[2%] sm:pl-[10%]">
+        {/* Zona central: Frase (alineada a la izquierda en el 10-12% del ancho y contenida en el alto libre) */}
+        <div className="my-auto flex min-h-0 flex-1 items-center w-full max-w-5xl py-3 sm:py-4 pl-[2%] sm:pl-[10%]">
           {itemActual ? <FraseReposo item={itemActual} mostrarRefCatecismo={mostrarRefCatecismo} /> : null}
         </div>
 
         {/* Zona inferior: Botón Entrar centrado */}
         <div
           className={cn(
-            "flex w-full items-center justify-center transition-opacity duration-500 mb-2 sm:mb-4",
+            "flex w-full shrink-0 items-center justify-center transition-opacity duration-500 mb-1 sm:mb-2",
             atenuado ? "opacity-60" : "opacity-100",
           )}
         >

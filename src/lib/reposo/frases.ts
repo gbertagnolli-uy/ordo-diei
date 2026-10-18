@@ -73,6 +73,29 @@ export function calcularDuracionFraseMs(item: ItemFrase): number {
   return Math.min(LIMITES_FRASES.maxDuracionMs, Math.max(LIMITES_FRASES.minDuracionMs, ms));
 }
 
+/**
+ * Calcula un factor de escala tipográfica (0.68 a 1.0) según la carga vertical del texto,
+ * ponderando más el bloque N1 (latín / pregunta) que el N2 (español / respuesta) para que
+ * las frases largas entren holgadamente en pantalla sin empujar el botón «Entrar».
+ */
+export function calcularEscalaFrase(item: ItemFrase): number {
+  const n1Len = item.tipo === "biblia" ? item.datos.la.length : item.datos.pregunta.length;
+  const n2Len = item.tipo === "biblia" ? item.datos.es.length : item.datos.respuesta.length;
+  const pesoVertical = n1Len * 1.6 + n2Len;
+
+  const umbralCorto = 160;
+  const umbralMaximo = 620;
+  const escalaMinima = 0.68;
+
+  if (pesoVertical <= umbralCorto) return 1;
+  if (pesoVertical >= umbralMaximo) return escalaMinima;
+
+  const proporcion = (pesoVertical - umbralCorto) / (umbralMaximo - umbralCorto);
+  const escala = 1 - proporcion * (1 - escalaMinima);
+  return Math.round(escala * 1000) / 1000;
+}
+
+
 /** Barajado Fisher-Yates puro. */
 export function barajar<T>(array: readonly T[], rng: () => number = Math.random): T[] {
   const copia = [...array];
