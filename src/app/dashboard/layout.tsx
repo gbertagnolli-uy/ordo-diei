@@ -10,6 +10,7 @@ import { ActualizarPremios } from "@/components/dashboard/ActualizarPremios";
 import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
+import { contarComprasCompartidasPendientes } from "@/lib/tienda/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 import { nivelDe, xpTotal } from "@/lib/niveles";
@@ -35,7 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos] = await Promise.all([
+  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -47,6 +48,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     eventosDeHoy(Number(session.user.id)).catch(() => null),
     contarSorpresasSinAbrir(Number(session.user.id)),
     contarReconocimientosSinAbrir(Number(session.user.id)),
+    contarComprasCompartidasPendientes(Number(session.user.id)).catch(() => 0),
   ]);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
@@ -72,6 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         premiosPendientes={premiosPendientes}
         hayEventosCartas={hayEventosCartas}
         companeroPendiente={companeroPendiente}
+        tiendaCompartidasPendientes={tiendaCompartidasPendientes}
       />
       <SidebarInset className="min-w-0">
         <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />

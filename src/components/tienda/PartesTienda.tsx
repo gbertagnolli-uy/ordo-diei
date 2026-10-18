@@ -172,7 +172,15 @@ export function CompraExitosa({ resultado, onCerrar }: { resultado: ResultadoCom
 }
 
 // ─── Historial ─────────────────────────────────────────────────────────────────────────────────────
-type CompraHistorial = { id: number; estado: string; titulo: string; costos: { moneda: keyof typeof MONEDAS; monto: number }[]; createdAt: string; motivo: string | null };
+type CompraHistorial = {
+  id: number;
+  estado: string;
+  titulo: string;
+  costos: { moneda: keyof typeof MONEDAS; monto: number }[];
+  createdAt: string;
+  motivo: string | null;
+  compartidaCon?: string[] | null;
+};
 
 const ETIQUETA_ESTADO: Record<string, { texto: string; variante: "default" | "secondary" | "outline" | "destructive" }> = {
   completada: { texto: "Comprado", variante: "secondary" },
@@ -203,7 +211,14 @@ export function MisCompras({ version }: { version: number }) {
         return (
           <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
             <span className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-medium">{c.titulo}</span>
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className="truncate text-sm font-medium">{c.titulo}</span>
+                {c.compartidaCon && c.compartidaCon.length > 0 && (
+                  <Badge variant="outline" className="text-[11px]">
+                    Compartida ({c.compartidaCon.join(", ")})
+                  </Badge>
+                )}
+              </span>
               <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString("es-UY", { day: "numeric", month: "short" })}</span>
             </span>
             <span className="flex flex-wrap items-center gap-2">

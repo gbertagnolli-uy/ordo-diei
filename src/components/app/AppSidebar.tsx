@@ -83,6 +83,7 @@ export function AppSidebar({
   premiosPendientes,
   hayEventosCartas,
   companeroPendiente,
+  tiendaCompartidasPendientes,
 }: {
   currentUser: { id?: number; nombre?: string; rolFamiliar?: string; fotoUrl?: string | null } | null | Record<string, unknown>;
   tasks: Array<{ id: number; estado?: string; timerStartedAt?: string | null; fechaVencimiento?: string | null; horaEjecucion?: string | null; asignadoId?: number }>;
@@ -94,6 +95,8 @@ export function AppSidebar({
   hayEventosCartas?: boolean;
   /** Todavía no eligió compañero o subió de nivel y no lo festejó */
   companeroPendiente?: boolean;
+  /** Solicitudes de compra compartida en la tienda pendientes de respuesta */
+  tiendaCompartidasPendientes?: number | null;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -222,6 +225,11 @@ export function AppSidebar({
                   <span>Tienda</span>
                 </Link>
               </SidebarMenuButton>
+              {!!tiendaCompartidasPendientes && (
+                <SidebarMenuBadge className="tabular-nums" title="Compras compartidas pendientes">
+                  {tiendaCompartidasPendientes}
+                </SidebarMenuBadge>
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
