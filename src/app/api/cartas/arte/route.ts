@@ -26,12 +26,19 @@ export async function GET(req: NextRequest) {
   if (rol !== "Padre" && rol !== "Madre") {
     const clave = ruta.split("/")[2];
     const carta = await prisma.carta.findUnique({ where: { clave } });
-    if (!carta || !carta.activa) return NextResponse.json({ error: "Carta no encontrada" }, { status: 404 });
-    const cu = await prisma.cartaUsuario.findUnique({
-      where: { usuarioId_cartaId: { usuarioId: Number(session.user.id), cartaId: carta.id } },
-    });
-    if (rutaPermitida(carta, cu?.fragmentos ?? 0, cu?.gradoReclamado ?? 0) !== ruta) {
-      return NextResponse.json({ error: "Todavía no alcanzaste este grado" }, { status: 403 });
+    if (!carta || !carta.activa) {
+      // Si la carta del catálogo aún no está en la base pero se pide el arte base 1.webp (p. ej. en Rosarium), permitirlo
+      if (!ruta.endsWith("/1.webp")) {
+        return NextResponse.json({ error: "Carta no encontrada" }, { status: 404 });
+      }
+    } else {
+      const cu = await prisma.cartaUsuario.findUnique({
+        where: { usuarioId_cartaId: { usuarioId: Number(session.user.id), cartaId: carta.id } },
+      });
+      const permitida = rutaPermitida(carta, cu?.fragmentos ?? 0, cu?.gradoReclamado ?? 0);
+      if (permitida !== ruta && ruta !== carta.imagenUrl && !ruta.endsWith("/1.webp")) {
+        return NextResponse.json({ error: "Todavía no alcanzaste este grado" }, { status: 403 });
+      }
     }
   }
 
