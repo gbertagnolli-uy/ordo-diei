@@ -1,9 +1,10 @@
 "use client";
 
-import { ListChecks } from "lucide-react";
+import { ListChecks, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { normalizarRotacionConfig } from "@/lib/rotacionTarea";
 import { StatusBadge } from "./primitives";
 import { checklistProgress, formatDue, formatDuration, isLate, isUrgent, pointsLabel, statusInfo } from "./taskUtils";
 
@@ -26,6 +27,7 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
           {tasks.map((task) => {
             const status = statusInfo(task);
             const checklist = checklistProgress(task);
+            const esRotativa = Boolean(normalizarRotacionConfig(task.rotacionConfig));
             return (
               <TableRow
                 key={task.id}
@@ -41,10 +43,19 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
                   >
                     {task.titulo}
                   </button>
-                  {task.isChecklist && checklist.total > 0 && (
-                    <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-                      <ListChecks className="size-3" /> {checklist.done}/{checklist.total}
-                    </span>
+                  {(esRotativa || (task.isChecklist && checklist.total > 0)) && (
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+                      {esRotativa && (
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Repeat className="size-3" /> Turno rotativo
+                        </span>
+                      )}
+                      {task.isChecklist && checklist.total > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <ListChecks className="size-3" /> {checklist.done}/{checklist.total}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </TableCell>
                 <TableCell className="hidden text-muted-foreground xl:table-cell">{formatDuration(task.tiempoEjecucionEstimadoSeg || 0)}</TableCell>
@@ -69,6 +80,7 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
       <ul className="divide-y sm:hidden">
         {tasks.map((task) => {
           const status = statusInfo(task);
+          const esRotativa = Boolean(normalizarRotacionConfig(task.rotacionConfig));
           return (
             <li key={task.id}>
               <button
@@ -79,6 +91,11 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
                 <p className="font-medium">{task.titulo}</p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   <StatusBadge label={status.label} color={status.color} />
+                  {esRotativa && (
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Repeat className="size-3" /> Turno rotativo
+                    </span>
+                  )}
                   {isUrgent(task) && !isLate(task) && <Badge variant="secondary" className="h-5">Urgente</Badge>}
                   <span className={cn("tabular-nums", isLate(task) && "font-medium text-destructive")}>{formatDue(task) ?? "Sin fecha"}</span>
                   {task.generaPuntosYRecompensa && <span className="font-medium text-secondary tabular-nums">{pointsLabel(task)}</span>}

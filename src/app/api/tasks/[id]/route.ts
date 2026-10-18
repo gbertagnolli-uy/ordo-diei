@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { DIFICULTAD_DEFAULT, esDificultad } from "@/lib/recompensaTarea";
+import { esDificultad } from "@/lib/recompensaTarea";
+import {
+  formatearFechaLocalISO,
+  normalizarRotacionConfig,
+  primeraAsignacionRotativa,
+  type RotacionConfig,
+} from "@/lib/rotacionTarea";
 import { getSession } from "@/lib/session";
 import { randomUUID } from "crypto";
 
@@ -82,22 +89,145 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         : null;
     const isChecklist = checklistTextos ? checklistTextos.length > 0 : currentTask.isChecklist;
 
+    const rotacionInput =
+      body.rotacionConfig !== undefined
+        ? body.rotacionConfig
+          ? normalizarRotacionConfig({
+              ...body.rotacionConfig,
+              responsablesIds:
+                Array.isArray(body.rotacionConfig.responsablesIds) && body.rotacionConfig.responsablesIds.length > 0
+                  ? body.rotacionConfig.responsablesIds
+                  : asignadoIds ?? [currentTask.asignadoId],
+            })
+          : null
+        : normalizarRotacionConfig((currentTask as any).rotacionConfig);
+
     const updatedTask = await prisma.$transaction(async (tx) => {
+        if (rotacionInput) {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const anclaBase = currentTask.anclaFecha ?? currentTask.fechaVencimiento ?? hoy;
+            const rotacionFinal: RotacionConfig = {
+                ...rotacionInput,
+                fechaInicio: rotacionInput.fechaInicio ?? formatearFechaLocalISO(anclaBase),
+            };
+            const tipoRecEfectivo =
+                !updatedData.tipoRecurrencia || updatedData.tipoRecurrencia === "Unica"
+                    ? "Diaria"
+                    : updatedData.tipoRecurrencia;
+
+            const proxima = primeraAsignacionRotativa(
+                {
+                    ...updatedData,
+                    tipoRecurrencia: tipoRecEfectivo,
+                    anclaFecha: anclaBase,
+                    rotacionConfig: rotacionFinal,
+                },
+                hoy
+            );
+
+            const fechaAsignada = proxima ? new Date(proxima.fecha) : (updatedData.fechaVencimiento ?? hoy);
+            fechaAsignada.setHours(0, 0, 0, 0);
+            let horaAsignada = updatedData.horaEjecucion;
+            if (body.hora) {
+                const [h, m] = String(body.hora).split(":");
+                horaAsignada = new Date(fechaAsignada);
+                horaAsignada.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
+            } else if (horaAsignada) {
+                const orig = new Date(horaAsignada);
+                horaAsignada = new Date(fechaAsignada);
+                horaAsignada.setHours(orig.getHours(), orig.getMinutes(), 0, 0);
+            }
+
+            // Si antes tenía copias simultáneas (grupoTareaId), limpiar las abiertas adicionales
+            if (currentTask.grupoTareaId) {
+                const otrasAbiertas = await tx.tarea.findMany({
+                    where: {
+                        grupoTareaId: currentTask.grupoTareaId,
+                        id: { not: currentTask.id },
+                        estado: { in: ["Pendiente", "En_progreso", "Pausada", "Vencida", "No_Realizada"] },
+                    },
+                    select: { id: true },
+                });
+                const idsBorrar = otrasAbiertas.map((o) => o.id);
+                if (idsBorrar.length > 0) {
+                    await tx.historialAccion.deleteMany({ where: { tareaId: { in: idsBorrar } } });
+                    await tx.tarea.deleteMany({ where: { id: { in: idsBorrar } } });
+                }
+            }
+
+            const esActiva = ["Pendiente", "En_progreso", "Pausada"].includes(currentTask.estado);
+            await tx.tarea.update({
+                where: { id: currentTask.id },
+                data: {
+                    ...updatedData,
+                    tipoRecurrencia: currentTask.generadaPorCron ? "Unica" : (tipoRecEfectivo as any),
+                    fechaVencimiento: esActiva ? fechaAsignada : updatedData.fechaVencimiento,
+                    horaEjecucion: esActiva ? horaAsignada : updatedData.horaEjecucion,
+                    asignadoId: esActiva && proxima ? proxima.asignadoId : currentTask.asignadoId,
+                    anclaFecha: anclaBase,
+                    grupoTareaId: null,
+                    rotacionConfig: rotacionFinal as any,
+                    isChecklist,
+                } as any,
+            });
+
+            if (currentTask.parentTaskId) {
+                await tx.tarea.updateMany({
+                    where: { id: currentTask.parentTaskId },
+                    data: {
+                        titulo: updatedData.titulo,
+                        descripcion: updatedData.descripcion,
+                        tiempoEjecucionEstimadoSeg: updatedData.tiempoEjecucionEstimadoSeg,
+                        dificultad: updatedData.dificultad,
+                        tipoRecurrencia: tipoRecEfectivo as any,
+                        rotacionConfig: rotacionFinal as any,
+                        isChecklist,
+                        isSurpriseEligible: updatedData.isSurpriseEligible,
+                    } as any,
+                });
+            }
+
+            if (checklistTextos) {
+                const idsChecklist = [currentTask.id, ...(currentTask.parentTaskId ? [currentTask.parentTaskId] : [])];
+                for (const tid of idsChecklist) {
+                    const existentes = await tx.checklistItem.findMany({ where: { tareaId: tid } });
+                    const hechos = new Set(existentes.filter((c) => c.completado).map((c) => c.texto));
+                    await tx.checklistItem.deleteMany({ where: { tareaId: tid } });
+                    if (checklistTextos.length > 0) {
+                        await tx.checklistItem.createMany({
+                            data: checklistTextos.map((texto, i) => ({
+                                tareaId: tid,
+                                texto,
+                                orden: i + 1,
+                                completado: hechos.has(texto),
+                            })),
+                        });
+                    }
+                }
+            }
+
+            return tx.tarea.findUnique({ where: { id: currentTask.id } });
+        }
+
         // Filas de la misma tarea: una por persona, unidas por grupoTareaId
         const hermanas = currentTask.grupoTareaId
             ? await tx.tarea.findMany({ where: { grupoTareaId: currentTask.grupoTareaId } })
             : [currentTask];
 
+        const limpiarRotacion = body.rotacionConfig === null ? { rotacionConfig: Prisma.DbNull } : {};
+
         if (currentTask.grupoTareaId) {
-            await tx.tarea.updateMany({ where: { grupoTareaId: currentTask.grupoTareaId }, data: { ...updatedData, isChecklist } });
+            await tx.tarea.updateMany({ where: { grupoTareaId: currentTask.grupoTareaId }, data: { ...updatedData, ...limpiarRotacion, isChecklist } as any });
         } else {
             await tx.tarea.update({
                 where: { id: currentTask.id },
                 data: {
                     ...updatedData,
+                    ...limpiarRotacion,
                     isChecklist,
                     asignadoId: !asignadoIds && body.asignadoId ? parseInt(body.asignadoId) : currentTask.asignadoId,
-                },
+                } as any,
             });
         }
 

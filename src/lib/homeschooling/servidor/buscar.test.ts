@@ -14,7 +14,7 @@ test("menos de 2 letras no consulta nada", async () => {
 });
 
 // Lectura solamente (no escribe): comprueba que las consultas del padre y del hijo son válidas contra la base real
-test("el padre y un hijo pueden buscar sin error (solo lectura)", async () => {
+test("el padre y un hijo pueden buscar sin error (solo lectura)", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const padre = await buscarEnEstudio({ id: 1, rol: "Padre" }, "mat");
   assert.ok(Array.isArray(padre));
   const hijo = await buscarEnEstudio({ id: 999999, rol: "Hijo" }, "mat");

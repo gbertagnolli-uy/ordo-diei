@@ -17,7 +17,7 @@ test("un aviso vacío o enorme se rechaza", async () => {
   await assert.rejects(publicarAviso(padre, { titulo: "x".repeat(121) }), { status: 400 });
 });
 
-test("el muro se lee sin error y trae el día litúrgico si hay", async () => {
+test("el muro se lee sin error y trae el día litúrgico si hay", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const m = await leerMuro({ id: 1, rol: "Padre" }, 5, "2026-10-16");
   assert.ok(Array.isArray(m.publicaciones));
   assert.ok(m.hoyEnLaIglesia === null || typeof m.hoyEnLaIglesia.titulo === "string");
