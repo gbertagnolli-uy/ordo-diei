@@ -25,6 +25,9 @@ interface Usuario {
   completionPercentage?: number;
   moodEmoji?: string | null;
   streakDays?: number;
+  puestoRanking?: number | null;
+  emojiPodio?: string | null;
+  aceleradorPct?: number;
 }
 
 interface Props {
@@ -103,6 +106,16 @@ function Node({ user, isParent = false }: { user: Usuario, isParent?: boolean })
         {user.moodEmoji && (
           <span className="absolute -top-1 -right-1 z-20 flex size-8 items-center justify-center rounded-full border bg-card text-base shadow-sm">
             {user.moodEmoji}
+          </span>
+        )}
+
+        {user.emojiPodio && (
+          <span
+            title={`Puesto #${user.puestoRanking} en la tabla de líderes${user.aceleradorPct ? ` (+${user.aceleradorPct}% puntos)` : ""}`}
+            aria-label={`Puesto ${user.puestoRanking}`}
+            className="absolute -bottom-1 -right-1 z-20 flex size-8 items-center justify-center rounded-full border bg-card text-base leading-none shadow-sm"
+          >
+            {user.emojiPodio}
           </span>
         )}
       </div>

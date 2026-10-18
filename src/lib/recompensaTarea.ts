@@ -33,6 +33,13 @@ export function puntosBase(dificultad: Dificultad | null | undefined, tiempoSeg:
   return Math.min(PUNTOS_MAXIMOS, Math.max(PUNTOS_MINIMOS, Math.round(bruto)));
 }
 
+import {
+  aceleradorPorPuesto,
+  aplicarAceleradorRanking,
+  emojiPodioPorPuesto,
+  etiquetaPodioPorPuesto,
+} from "./ranking.ts";
+
 export const FACTOR_SOLO_REALIZADA = 0.8;
 
 export interface OpcionesCalculoCompletado {
@@ -48,6 +55,10 @@ export interface OpcionesCalculoCompletado {
   fueIniciada: boolean;
   /** true si se completó dentro del horario previsto */
   esATiempo?: boolean;
+  /** Puesto actual en la tabla de líderes (1, 2 o 3 dan acelerador) */
+  puestoRanking?: number | null;
+  /** Porcentaje de acelerador explícito (5 para 1ro, 3 para 2do, 1 para 3ro) */
+  aceleradorRankingPct?: number;
 }
 
 export interface ResultadoCalculoCompletado {
@@ -56,6 +67,8 @@ export interface ResultadoCalculoCompletado {
   streakBonus: number;
   checklistBonus: number;
   timeBonus: number;
+  rankingBonus: number;
+  aceleradorRankingPct: number;
   porcentajeAplicado: 100 | 80 | 0;
   feedback: string;
 }
@@ -64,6 +77,7 @@ export interface ResultadoCalculoCompletado {
  * Calcula los puntos otorgados al completar una tarea:
  * - Si la persona hizo clic en Iniciar, realizó la tarea y presionó Finalizar (`fueIniciada = true`) -> 100% de los puntos.
  * - Si solo marca la tarea como realizada (sin iniciar / fuera de horario) (`fueIniciada = false`) -> 80% de los puntos.
+ * - Si está en el podio del ranking (1ro: +5%, 2do: +3%, 3ro: +1%), suma el acelerador de puntos.
  */
 export function calcularPuntosCompletadoTarea(opts: OpcionesCalculoCompletado): ResultadoCalculoCompletado {
   if (!opts.generaPuntosYRecompensa) {
@@ -73,6 +87,8 @@ export function calcularPuntosCompletadoTarea(opts: OpcionesCalculoCompletado): 
       streakBonus: 0,
       checklistBonus: 0,
       timeBonus: 0,
+      rankingBonus: 0,
+      aceleradorRankingPct: 0,
       porcentajeAplicado: 0,
       feedback: "Tarea marcada como realizada. No genera puntos.",
     };
@@ -91,29 +107,46 @@ export function calcularPuntosCompletadoTarea(opts: OpcionesCalculoCompletado): 
   const bonusString = bonusText.length > 0 ? ` Bonos: ${bonusText.join(", ")}.` : "";
 
   const totalPuntos = basePoints + streakBonus + checklistBonus + timeBonus;
+  const pctAcelerador = opts.aceleradorRankingPct ?? aceleradorPorPuesto(opts.puestoRanking);
+
+  const puntosSinAcelerador = opts.fueIniciada
+    ? totalPuntos
+    : Math.max(1, Math.round(totalPuntos * FACTOR_SOLO_REALIZADA));
+
+  const { puntosTotales, bonoAcelerador, aceleradorPct } = aplicarAceleradorRanking(puntosSinAcelerador, pctAcelerador);
+  const emoji = emojiPodioPorPuesto(opts.puestoRanking);
+  const etiq = etiquetaPodioPorPuesto(opts.puestoRanking);
+  const textoAcelerador =
+    bonoAcelerador > 0
+      ? ` ${emoji ? `${emoji} ` : ""}Acelerador ${etiq ? `${etiq} puesto ` : ""}(+${aceleradorPct}%): +${bonoAcelerador} pts.`
+      : "";
 
   if (opts.fueIniciada) {
     return {
-      rewardPoints: totalPuntos,
+      rewardPoints: puntosTotales,
       basePoints,
       streakBonus,
       checklistBonus,
       timeBonus,
+      rankingBonus: bonoAcelerador,
+      aceleradorRankingPct: aceleradorPct,
       porcentajeAplicado: 100,
-      feedback: `¡Buen trabajo! Iniciaste y finalizaste la tarea (100% de los puntos). Obtuviste ${basePoints} pts base.${bonusString}`,
+      feedback: `¡Buen trabajo! Iniciaste y finalizaste la tarea (100% de los puntos). Obtuviste ${basePoints} pts base.${bonusString}${textoAcelerador}`,
     };
   }
 
-  const rewardPoints = Math.max(1, Math.round(totalPuntos * FACTOR_SOLO_REALIZADA));
   const detalleHorario = opts.esATiempo === false ? " y fuera de horario" : "";
   return {
-    rewardPoints,
+    rewardPoints: puntosTotales,
     basePoints,
     streakBonus,
     checklistBonus,
     timeBonus,
+    rankingBonus: bonoAcelerador,
+    aceleradorRankingPct: aceleradorPct,
     porcentajeAplicado: 80,
-    feedback: `Tarea marcada como realizada sin iniciar${detalleHorario} (80% de los puntos).${bonusString}`,
+    feedback: `Tarea marcada como realizada sin iniciar${detalleHorario} (80% de los puntos).${bonusString}${textoAcelerador}`,
   };
 }
+
 

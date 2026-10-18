@@ -14,7 +14,7 @@ import { contarComprasCompartidasPendientes } from "@/lib/tienda/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
 import { nivelDe, xpTotal } from "@/lib/niveles";
-import { parteDeHoy, registrarIngreso, resumenRachaAppDeUsuarios } from "@/lib/engagement/servidor";
+import { enriquecerConRachaYRanking, parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
 import { bienvenidaDiariaDe } from "@/lib/engagement/companeroServidor";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
@@ -55,11 +55,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       return null;
     }),
   ]);
-  const rachasApp = await resumenRachaAppDeUsuarios(usersRaw.map((u) => u.id)).catch(() => new Map());
-  const users = usersRaw.map((u) => ({
-    ...u,
-    rachaApp: rachasApp.get(u.id) ?? null,
-  }));
+  const users = await enriquecerConRachaYRanking(usersRaw);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;

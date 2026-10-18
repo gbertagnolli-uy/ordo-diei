@@ -14,6 +14,7 @@ import { haySancion } from "@/lib/comportamiento/sancionServer";
 import { AvisosPush } from "@/components/engagement/AvisosPush";
 import { generarTareasRecurrentes } from "@/lib/generarRecurrentes";
 import { esTareaVisibleParaUsuarioEnDia, normalizarRotacionConfig } from "@/lib/rotacionTarea";
+import { enriquecerConRachaYRanking } from "@/lib/engagement/servidor";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -44,7 +45,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   });
 
   // Fechas a string para los componentes cliente
-  const allUsers = allUsersRaw.map((u) => ({
+  const allUsersSerializados = allUsersRaw.map((u) => ({
     ...u,
     fechaNacimiento: u.fechaNacimiento ? u.fechaNacimiento.toISOString() : null,
     tareasAsignadas: u.tareasAsignadas.map((t: any) => ({
@@ -54,6 +55,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       timerStartedAt: t.timerStartedAt ? t.timerStartedAt.toISOString() : null,
     })),
   }));
+  const allUsers = await enriquecerConRachaYRanking(allUsersSerializados, ahora);
 
   const parents = allUsers.filter((u) => isParent(u.rolFamiliar));
   const children = allUsers.filter((u) => !isParent(u.rolFamiliar)).sort((a, b) => {

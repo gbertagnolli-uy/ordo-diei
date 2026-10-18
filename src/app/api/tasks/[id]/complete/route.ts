@@ -9,6 +9,7 @@ import { puedeCompletarTarea } from "@/lib/tareas/permisos";
 import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
 import { haySancion } from "@/lib/comportamiento/sancionServer";
 import { AVISO_MITAD, mitad } from "@/lib/comportamiento/sancion";
+import { infoRankingDeUsuario } from "@/lib/engagement/servidor";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -134,7 +135,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
+    const infoRanking = await infoRankingDeUsuario(task.asignadoId, now).catch(() => null);
+
     // Regla de Recompensa: 100% si Iniciar -> Hacerla -> Finalizar, 80% si solo marca realizada / fuera de horario
+    // + acelerador del podio (1ro: +5%, 2do: +3%, 3ro: +1%) mientras esté en ese puesto
     const calculo = calcularPuntosCompletadoTarea({
       generaPuntosYRecompensa: task.generaPuntosYRecompensa,
       dificultad: task.dificultad,
@@ -146,6 +150,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       isHappyHour,
       fueIniciada,
       esATiempo,
+      puestoRanking: infoRanking?.puestoRanking ?? null,
+      aceleradorRankingPct: infoRanking?.aceleradorPct ?? 0,
     });
 
     let rewardPoints = calculo.rewardPoints;
@@ -153,6 +159,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const actualBasePoints = calculo.basePoints;
     const actualStreakBonus = calculo.streakBonus;
     const actualChecklistBonus = calculo.checklistBonus;
+    const actualRankingBonus = calculo.rankingBonus;
 
     let wonSurprise = false;
     // 1 estrella cada 7 días de racha (vault/ECONOMIA_CARTAS.md §8): la racha solo sube al cambiar de día
@@ -215,6 +222,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       streakBonus: actualStreakBonus,
       speedBonus: 0,
       checklistBonus: actualChecklistBonus,
+      rankingBonus: actualRankingBonus,
+      aceleradorRankingPct: calculo.aceleradorRankingPct,
+      puestoRanking: infoRanking?.puestoRanking ?? null,
+      emojiPodio: infoRanking?.emojiPodio ?? null,
       porcentajePuntos: calculo.porcentajeAplicado,
       fueIniciada,
       estado: "Esperando_Aprobacion",

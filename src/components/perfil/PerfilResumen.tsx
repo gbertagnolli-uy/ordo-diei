@@ -47,6 +47,11 @@ interface PerfilResumenProps {
     totalTasksCompleted?: number | null;
     completionPercentage?: number | null;
     rachaApp?: ResumenRachaApp | null;
+    puestoRanking?: number | null;
+    emojiPodio?: string | null;
+    etiquetaPodio?: string | null;
+    aceleradorPct?: number | null;
+    participaRanking?: boolean | null;
   };
   habitos?: EstadoHabito[];
   enlaceCompleto?: boolean;
@@ -66,24 +71,43 @@ export function PerfilResumen({
   const [subiendo, setSubiendo] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [rachaAppCargada, setRachaAppCargada] = useState<ResumenRachaApp | null>(null);
+  const [rankingCargado, setRankingCargado] = useState<{
+    puestoRanking?: number | null;
+    emojiPodio?: string | null;
+    aceleradorPct?: number | null;
+    participaRanking?: boolean | null;
+  } | null>(null);
 
   const rachaApp = usuario.rachaApp ?? rachaAppCargada;
+  const puestoRanking = usuario.puestoRanking !== undefined ? usuario.puestoRanking : rankingCargado?.puestoRanking ?? null;
+  const emojiPodio = usuario.emojiPodio !== undefined ? usuario.emojiPodio : rankingCargado?.emojiPodio ?? null;
+  const aceleradorPct = usuario.aceleradorPct !== undefined ? (usuario.aceleradorPct ?? 0) : (rankingCargado?.aceleradorPct ?? 0);
 
   useEffect(() => {
-    if (usuario.rachaApp !== undefined && usuario.rachaApp !== null) return;
+    if (
+      usuario.rachaApp !== undefined &&
+      usuario.rachaApp !== null &&
+      usuario.puestoRanking !== undefined
+    ) {
+      return;
+    }
     let cancelado = false;
     fetch(`/api/companero?usuarioId=${usuario.id}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelado && data?.rachaApp) {
+        if (cancelado || !data) return;
+        if (data.rachaApp) {
           setRachaAppCargada(data.rachaApp);
+        }
+        if (data.infoRanking) {
+          setRankingCargado(data.infoRanking);
         }
       })
       .catch(() => {});
     return () => {
       cancelado = true;
     };
-  }, [usuario.id, usuario.rachaApp]);
+  }, [usuario.id, usuario.rachaApp, usuario.puestoRanking]);
 
   async function cambiarFoto(file: File) {
     setSubiendo(true);
@@ -175,6 +199,15 @@ export function PerfilResumen({
                   {usuario.nombre.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+              {emojiPodio && (
+                <span
+                  title={`Puesto #${puestoRanking} en la tabla de líderes${aceleradorPct ? ` (Acelerador +${aceleradorPct}% puntos)` : ""}`}
+                  aria-label={`Puesto ${puestoRanking}`}
+                  className="absolute -top-1.5 -left-1.5 z-10 flex size-8 items-center justify-center rounded-full border bg-card text-lg leading-none shadow-md"
+                >
+                  {emojiPodio}
+                </span>
+              )}
               {puedeEditarFoto && (
                 <>
                   <input
@@ -208,11 +241,17 @@ export function PerfilResumen({
 
             <div className="text-center sm:text-left">
               {errorFoto && <p className="mb-1 text-xs text-destructive">{errorFoto}</p>}
-              <div className="flex items-center justify-center gap-2 sm:justify-start">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h2 className="font-heading text-2xl font-bold">{usuario.nombre}</h2>
                 <Badge variant="secondary" className="text-xs">
                   {usuario.rolFamiliar}
                 </Badge>
+                {aceleradorPct > 0 && (
+                  <Badge variant="default" className="gap-1 text-xs">
+                    <span>{emojiPodio}</span>
+                    <span>Puesto #{puestoRanking} · Acelerador +{aceleradorPct}% pts</span>
+                  </Badge>
+                )}
               </div>
               <p className="font-serif text-lg text-primary font-semibold mt-0.5">
                 {infoNivel.title}
