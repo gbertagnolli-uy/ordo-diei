@@ -124,6 +124,11 @@ test("DEVOCIONARIO_ROSARIO: contiene oraciones tradicionales con fuentes (§10.8
     assert.ok(o.fuente.length > 5, `Falta la fuente de ${c}`);
   }
 
+  // Credo Niceno-Constantinopolitano
+  assert.match(oraciones.credo.tituloLa, /Nic[æa]no-Constantinopolitanum/);
+  assert.match(oraciones.credo.textoLa, /^Credo in unum Deum.*consubstantiálem Patri/);
+  assert.match(oraciones.credo.textoEs, /^Creo en un solo Dios.*consubstancial al Padre/);
+
   // Fátima con etiqueta «desde 1917»
   assert.equal(oraciones.fatima.etiqueta, "desde 1917");
 

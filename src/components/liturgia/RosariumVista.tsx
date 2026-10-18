@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CircleDot, BookOpen, Maximize2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleDot, BookOpen, Maximize2, ShieldCheck, Sparkles } from "lucide-react";
 import { CabeceraLiturgica } from "./CabeceraLiturgica";
 import { useLectura, rutaLiturgia } from "./useLectura";
 import { useParametrosLiturgia } from "./useParametrosLiturgia";
@@ -88,47 +88,51 @@ export function RosariumVista({ className }: RosariumVistaProps) {
             href={`/dashboard/liturgia/rosarium/rezar${qs}`}
             className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
           >
-            <Card className="border-primary/45 bg-gradient-to-r from-primary/10 via-card to-card shadow-md transition-all duration-200 group-hover:border-primary group-hover:shadow-lg overflow-hidden">
-              <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-5">
+            <Card className="py-0 gap-0 border-primary/45 bg-gradient-to-r from-primary/10 via-card to-card shadow-md transition-all duration-200 group-hover:border-primary group-hover:shadow-lg overflow-hidden">
+              <div className="flex flex-col sm:flex-row">
                 {primerMisterioHoy && (
-                  <div className="relative aspect-[63/88] w-24 sm:w-28 shrink-0 overflow-hidden rounded-lg border border-amber-500/40 bg-stone-900 shadow-md">
+                  <div className="w-full sm:w-44 md:w-48 aspect-[63/88] shrink-0 overflow-hidden border-b sm:border-b-0 sm:border-r border-border/50">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={obtenerImagen(primerMisterioHoy)}
                       alt={primerMisterioHoy.castellano}
-                      className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="block size-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                 )}
 
-                <div className="flex-1 space-y-2 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <Badge variant="default" className="text-xs uppercase tracking-wider">
-                      Rezar el Santo Rosario del Día
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {infoHoy.tituloLatino} · 5 misterios
-                    </Badge>
-                    <Badge variant="secondary" className="gap-1 text-xs">
-                      <Maximize2 className="size-3" />
-                      Incluye modo Fullscreen
-                    </Badge>
+                <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 gap-4">
+                  <div className="space-y-2 text-left">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="default" className="text-xs uppercase tracking-wider">
+                        Rezar el Santo Rosario del Día
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {infoHoy.tituloLatino} · 5 misterios
+                      </Badge>
+                      <Badge variant="secondary" className="gap-1 text-xs">
+                        <Maximize2 className="size-3" />
+                        Incluye modo Fullscreen
+                      </Badge>
+                    </div>
+
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                      Rezar hoy: {infoHoy.tituloCastellano} ({infoHoy.tituloLatino})
+                    </h3>
+
+                    <p className="text-sm text-muted-foreground">
+                      Abrí la guía paso a paso con todas las oraciones en orden, los 5 misterios de hoy ({infoHoy.motivo}) con sus imágenes de las cartas y el modo contemplativo en pantalla completa.
+                    </p>
                   </div>
 
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
-                    Rezar hoy: {infoHoy.tituloCastellano} ({infoHoy.tituloLatino})
-                  </h3>
-
-                  <p className="text-sm text-muted-foreground">
-                    Abrí la guía paso a paso con todas las oraciones en orden, los 5 misterios de hoy ({infoHoy.motivo}) con sus imágenes de las cartas y el modo contemplativo en pantalla completa.
-                  </p>
+                  <div className="flex items-center justify-end pt-2 border-t border-border/40">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-transform group-hover:translate-x-1">
+                      <span>Comenzar a rezar</span>
+                      <ArrowRight className="size-4" />
+                    </div>
+                  </div>
                 </div>
-
-                <div className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform group-hover:translate-x-1">
-                  <span>Comenzar a rezar</span>
-                  <ArrowRight className="size-4" />
-                </div>
-              </CardContent>
+              </div>
             </Card>
           </Link>
 
@@ -137,55 +141,47 @@ export function RosariumVista({ className }: RosariumVistaProps) {
             href={`/dashboard/liturgia/rosarium/rezar-completo${qs}`}
             className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
           >
-            <Card className="border-border/80 bg-card/85 shadow-sm transition-all duration-200 group-hover:border-primary/70 group-hover:shadow-md overflow-hidden">
-              <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5">
-                <div className="flex items-center -space-x-4 shrink-0">
-                  {[
-                    GRUPOS_INFO.gaudiosa.misterios[0],
-                    GRUPOS_INFO.dolorosa.misterios[0],
-                    GRUPOS_INFO.gloriosa.misterios[0],
-                  ].map((m, idx) => (
-                    <div
-                      key={m.claveCarta}
-                      style={{ zIndex: 3 - idx }}
-                      className="relative aspect-[63/88] w-16 sm:w-20 overflow-hidden rounded-lg border border-amber-500/40 bg-stone-900 shadow-md"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={obtenerImagen(m)}
-                        alt={m.castellano}
-                        className="size-full object-cover"
-                      />
-                    </div>
-                  ))}
+            <Card className="py-0 gap-0 border-border/80 bg-card/85 shadow-sm transition-all duration-200 group-hover:border-primary/70 group-hover:shadow-md overflow-hidden">
+              <div className="flex flex-col sm:flex-row">
+                <div className="w-full sm:w-44 md:w-48 aspect-[63/88] shrink-0 overflow-hidden border-b sm:border-b-0 sm:border-r border-border/50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={obtenerImagen(GRUPOS_INFO.gloriosa.misterios[4])}
+                    alt={GRUPOS_INFO.gloriosa.misterios[4].castellano}
+                    className="block size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
                 </div>
 
-                <div className="flex-1 space-y-1.5 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <Badge variant="secondary" className="gap-1 text-xs uppercase tracking-wider">
-                      <Sparkles className="size-3 text-primary" />
-                      Rosarium Integrum · 15 Misterios Completos
-                    </Badge>
-                    <Badge variant="outline" className="gap-1 text-xs">
-                      <Maximize2 className="size-3" />
-                      Incluye modo Fullscreen
-                    </Badge>
+                <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 gap-4">
+                  <div className="space-y-2 text-left">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="gap-1 text-xs uppercase tracking-wider">
+                        <Sparkles className="size-3 text-primary" />
+                        Rosarium Integrum · 15 Misterios Completos
+                      </Badge>
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <Maximize2 className="size-3" />
+                        Incluye modo Fullscreen
+                      </Badge>
+                    </div>
+
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                      Rezar los 15 Misterios Completos (Las Tres Coronas)
+                    </h3>
+
+                    <p className="text-sm text-muted-foreground">
+                      Modo separado para rezar las tres coronas tradicionales seguidas (Gozosos, Dolorosos y Gloriosos) con todas las oraciones en orden, las 15 imágenes y modo pantalla completa.
+                    </p>
                   </div>
 
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                    Rezar los 15 Misterios Completos (Las Tres Coronas)
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Modo separado para rezar las tres coronas tradicionales seguidas (Gozosos, Dolorosos y Gloriosos) con todas las oraciones en orden, las 15 imágenes y modo pantalla completa.
-                  </p>
+                  <div className="flex items-center justify-end pt-2 border-t border-border/40">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-transform group-hover:translate-x-1">
+                      <span>Rezar 15 misterios</span>
+                      <ArrowRight className="size-4" />
+                    </div>
+                  </div>
                 </div>
-
-                <div className="shrink-0 flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs sm:text-sm font-semibold text-primary transition-transform group-hover:translate-x-1">
-                  <span>Rezar 15 misterios</span>
-                  <ArrowRight className="size-4" />
-                </div>
-              </CardContent>
+              </div>
             </Card>
           </Link>
         </div>
@@ -448,32 +444,29 @@ function TarjetaMisterio({
   destacado?: boolean;
 }) {
   return (
-    <Card
-      className={cn(
-        "overflow-hidden border transition-all duration-200",
-        destacado
-          ? "border-primary/40 bg-card shadow-xs hover:border-primary/70"
-          : "border-border/70 bg-card/50 hover:bg-card/80",
-      )}
-    >
-      <div className="flex flex-col sm:flex-row">
-        {/* Imagen del misterio (la misma que en las cartas) */}
-        <div className="sm:w-48 md:w-56 shrink-0 bg-stone-950/90 p-3.5 flex items-center justify-center border-b sm:border-b-0 sm:border-r border-border/50">
-          <div className="relative aspect-[63/88] w-36 sm:w-full overflow-hidden rounded-lg border border-amber-500/35 bg-stone-900 shadow-md">
+    <div className="flex flex-col gap-2.5">
+      {/* 1. Card con la imagen destacada (proporción 63:88 de las cartas, sin fondo oscuro, sin recortes y sin espacio libre) y todos los datos del misterio */}
+      <Card
+        className={cn(
+          "py-0 gap-0 overflow-hidden border transition-all duration-200",
+          destacado
+            ? "border-primary/40 bg-card shadow-xs hover:border-primary/70"
+            : "border-border/70 bg-card/50 hover:bg-card/80",
+        )}
+      >
+        <div className="flex flex-col sm:flex-row">
+          <div className="w-full sm:w-52 md:w-56 aspect-[63/88] shrink-0 overflow-hidden border-b sm:border-b-0 sm:border-r border-border/50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imagenSrc}
               alt={misterio.castellano}
-              className="size-full object-cover"
+              className="block size-full object-cover"
             />
           </div>
-        </div>
 
-        {/* Información del misterio */}
-        <div className="flex-1 flex flex-col justify-between p-4 sm:p-5 space-y-3">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+          <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 gap-4">
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge
                   variant={destacado ? "default" : "outline"}
                   className="font-mono text-xs font-bold px-2.5 py-0.5 shrink-0"
@@ -485,42 +478,55 @@ function TarjetaMisterio({
                 </span>
               </div>
 
-              <div className="text-xs text-muted-foreground">
-                <span className="font-semibold text-primary/90 uppercase tracking-wider text-[10px] mr-1.5">
-                  Fruto espiritual:
-                </span>
-                <span className="italic font-serif">{misterio.fruto}</span>
+              <div className="space-y-1">
+                <h3 lang="la" className="font-serif font-bold text-xl sm:text-2xl leading-tight text-foreground">
+                  {misterio.latino}
+                </h3>
+                <p className="text-sm sm:text-base text-foreground/85 font-sans leading-snug">
+                  {misterio.castellano}
+                </p>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <h3 lang="la" className="font-serif font-bold text-lg sm:text-xl leading-tight text-foreground">
-                {misterio.latino}
-              </h3>
-              <p className="text-sm text-foreground/85 font-sans leading-snug">
-                {misterio.castellano}
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-border/40 pt-3">
-            <span className="block text-[10px] font-semibold text-primary/90 uppercase tracking-wider mb-1.5">
-              Lectio (Vulgata Clementina)
-            </span>
-            <div className="space-y-2">
-              {misterio.lecturas.map((l) => (
-                <div key={l.ref}>
-                  <span className="block text-[11px] font-mono text-muted-foreground">{l.ref}</span>
-                  <p lang="la" className="text-xs sm:text-sm font-serif leading-relaxed text-foreground/90">
-                    {l.la}
-                  </p>
-                </div>
-              ))}
+            <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+              <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary block">
+                  Fruto espiritual
+                </span>
+                <span className="font-serif text-xs sm:text-sm italic text-foreground">
+                  {misterio.fruto}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      {/* 2. Card con Lectio Vulgatæ en acordeón colapsado */}
+      <Card className="py-0 gap-0 border border-border/70 bg-card/75 shadow-xs overflow-hidden">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-primary select-none hover:bg-muted/30 transition-colors">
+            <div className="flex flex-wrap items-center gap-2">
+              <span>Lectio Vulgatæ ({misterio.cita})</span>
+              <span className="text-[11px] font-normal normal-case text-muted-foreground italic">
+                · {FUENTE_LECTURAS}
+              </span>
+            </div>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-border/50 bg-muted/20 px-4 py-3.5 space-y-2">
+            {misterio.lecturas.map((l) => (
+              <div key={l.ref}>
+                <span className="block text-[11px] font-mono text-muted-foreground">{l.ref}</span>
+                <p lang="la" className="text-xs sm:text-sm font-serif leading-relaxed text-foreground/95">
+                  {l.la}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+      </Card>
+    </div>
   );
 }
 

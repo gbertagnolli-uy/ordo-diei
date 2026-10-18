@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Minimize2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface RosariumFullscreenProps {
 
 /**
  * Vista en pantalla completa del Santo Rosario (inspirada en ReposoPantalla / salvapantallas):
+ * - Se monta en `document.body` con `z-[9999]` y pide Fullscreen nativo sobre su propio nodo para cubrir el Dock y toda la interfaz.
  * - Imagen de la carta del misterio actual de fondo con transición suave.
  * - Título del misterio en latín en tipografía destacada.
  * - Debajo, la cita y lectura de la Vulgata Clementina en texto más chico.
@@ -33,6 +35,7 @@ export function RosariumFullscreen({
   onSalir,
 }: RosariumFullscreenProps) {
   const reduceMotion = useReducedMotion();
+  const contenedorRef = useRef<HTMLDivElement | null>(null);
   const [indice, setIndice] = useState(() =>
     Math.max(0, Math.min(misterios.length - 1, indiceInicial)),
   );
@@ -66,14 +69,15 @@ export function RosariumFullscreen({
     onSalir();
   }, [onSalir]);
 
-  // Solicitar Fullscreen nativo al montar y escuchar salida con Escape
+  // Solicitar Fullscreen nativo sobre el propio contenedor (oculta el Dock incluso a nivel navegador) y escuchar salida con Escape
   useEffect(() => {
     if (typeof document === "undefined") return;
     let activo = true;
 
+    const nodo = contenedorRef.current ?? document.documentElement;
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {
-        // Si el navegador bloquea requestFullscreen, el overlay fijo cubre igual toda la ventana
+      nodo.requestFullscreen?.().catch(() => {
+        // Si el navegador bloquea requestFullscreen, el portal z-[9999] cubre igual toda la ventana y el Dock
       });
     }
 
@@ -109,16 +113,17 @@ export function RosariumFullscreen({
     return () => window.removeEventListener("keydown", alPresionarTecla);
   }, [irSiguiente, irAnterior, salir]);
 
-  if (!misterioActual) return null;
+  if (!misterioActual || typeof document === "undefined") return null;
 
   const esUltimo = indice === misterios.length - 1;
 
-  return (
+  const contenido = (
     <div
+      ref={contenedorRef}
       role="dialog"
       aria-modal="true"
       aria-label={`Contemplación en pantalla completa: ${misterioActual.latino}`}
-      className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-black text-white select-none"
+      className="fixed inset-0 z-[9999] flex flex-col justify-between overflow-hidden bg-black text-white select-none"
     >
       {/* 1. Fondo con la imagen de la carta del misterio (estilo screensaver) */}
       <div className="absolute inset-0 overflow-hidden bg-black pointer-events-none">
@@ -310,4 +315,7 @@ export function RosariumFullscreen({
       </div>
     </div>
   );
+
+  return createPortal(contenido, document.body);
 }
+
