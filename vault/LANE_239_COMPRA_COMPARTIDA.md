@@ -1,4 +1,4 @@
-# Lane 238 — Compra Compartida en el Marketplace (Tienda)
+# Lane 239 — Compra Compartida en el Marketplace (Tienda)
 
 **Pedido (textual, 2026-10-17):**
 > Quiero implementar la compra compartida en el marketplace, que dos o mas usuarios puedan unir economia para comprar algo. Un usuario sollicita  
