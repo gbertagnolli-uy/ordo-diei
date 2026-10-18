@@ -109,7 +109,20 @@ export function TaskBoard({
       });
     if (to === "progress") return timer("start");
     if (to === "todo") return from === "review" ? post("reject") : timer("pause");
-    if (to === "review") return post("complete", { elapsedSeconds: elapsedSeconds(task) });
+    if (to === "review") {
+      const elapsed = elapsedSeconds(task);
+      const fueIniciada =
+        from === "progress" ||
+        Boolean(task.timerStartedAt) ||
+        (task.tiempoAcumuladoTimer || 0) > 0 ||
+        task.estado === "En_progreso" ||
+        task.estado === "Pausada" ||
+        elapsed > 0;
+      return post("complete", {
+        elapsedSeconds: elapsed,
+        modoCompletado: fueIniciada ? "iniciada_finalizada" : "realizada_directa",
+      });
+    }
     return post("approve");
   };
 
@@ -130,6 +143,9 @@ export function TaskBoard({
             puntos: data.puntos,
             basePoints: data.basePoints,
             streakBonus: data.streakBonus,
+            checklistBonus: data.checklistBonus,
+            porcentajePuntos: data.porcentajePuntos,
+            fueIniciada: data.fueIniciada,
             isNewStreak: data.isNewStreak,
             streakDays: data.streakDays,
             isHappyHour: data.isHappyHour,

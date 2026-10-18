@@ -8,7 +8,7 @@ after(async () => {
 });
 
 // Solo lectura contra la base: hay datos litúrgicos de 2026 a 2035
-test("las fiestas de un año traen Navidad, Pascua y cada domingo, ordenadas", async () => {
+test("las fiestas de un año traen Navidad, Pascua y cada domingo, ordenadas", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const f = await festividadesAlrededor("2026-12-31", 365, 0);
   assert.ok(f.length > 40, `solo ${f.length}`);
   assert.ok(f.every((x, i) => i === 0 || f[i - 1].fecha <= x.fecha));

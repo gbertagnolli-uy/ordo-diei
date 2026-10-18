@@ -60,7 +60,11 @@ export function filtrarYOrdenarTareas<T extends Record<string, any>>(items: T[],
   const filtradas = items.filter((t) => {
     if (personaId !== null && personaId !== undefined) {
       const assignees: any[] = Array.isArray(t._assignees) ? t._assignees : t.asignado ? [t.asignado] : [];
-      const ids = assignees.length > 0 ? assignees.map((a) => Number(a.id)) : [Number(t.asignadoId)];
+      const baseIds = assignees.length > 0 ? assignees.map((a) => Number(a.id)) : [Number(t.asignadoId)];
+      const rotIds = Array.isArray(t.rotacionConfig?.responsablesIds)
+        ? t.rotacionConfig.responsablesIds.map((id: any) => Number(id))
+        : [];
+      const ids = [...new Set([...baseIds, ...rotIds])];
       if (!ids.includes(Number(personaId))) return false;
     }
 

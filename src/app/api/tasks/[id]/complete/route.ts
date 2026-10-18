@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
-import { puntosBase } from "@/lib/recompensaTarea";
+import { calcularPuntosCompletadoTarea } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
 import { puedeCompletarTarea } from "@/lib/tareas/permisos";
 import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
@@ -19,7 +19,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const { id } = await params;
     const taskId = Number(id);
-    const { elapsedSeconds } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { elapsedSeconds, modoCompletado } = body;
 
     const task = await prisma.tarea.findUnique({ 
       where: { id: taskId },
@@ -65,32 +66,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       fechaVencimientoReal = new Date(task.fechaVencimiento);
     }
 
-    // Calcular fechaLimite según tipo de recurrencia
-    let fechaLimite: Date | null = null;
-    if (fechaVencimientoReal) {
-      fechaLimite = new Date(fechaVencimientoReal);
-      // Agregar periodo de gracia según tipo
-      if (task.tipoRecurrencia === "Diaria") {
-        fechaLimite.setHours(22, 0, 0, 0); // misma fecha 22:00
-      } else if (task.tipoRecurrencia === "Semanal") {
-        fechaLimite.setHours(22, 0, 0, 0);
-        fechaLimite.setDate(fechaLimite.getDate() + 1); // +24 hrs
-      } else if (task.tipoRecurrencia === "Mensual_Fecha" || task.tipoRecurrencia === "Mensual_Ordinal") {
-        fechaLimite.setHours(22, 0, 0, 0);
-        fechaLimite.setDate(fechaLimite.getDate() + 3); // +72 hrs
-      } else {
-        // Unica: misma fecha 22:00
-        fechaLimite.setHours(22, 0, 0, 0);
-      }
-    }
-
     const currentHour = now.getUTCHours();
     const isHappyHour = currentHour >= 17 && currentHour < 19;
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
     const esATiempo = fechaVencimientoReal ? now <= new Date(fechaVencimientoReal) : true;
-    const estaEnPeriodoGracia = fechaLimite ? now <= fechaLimite : false;
 
     // Defensivo: asegurar que elapsed es un Int
     const cleanElapsed = Math.round(Number(elapsedSeconds) || 0);
+
+    // Determinar si la persona presionó Iniciar -> hizo la tarea -> presionó Finalizar
+    let tuvoInicioEnHistorial = false;
+    if (
+      !task.timerStartedAt &&
+      (task.tiempoAcumuladoTimer ?? 0) === 0 &&
+      task.estado !== "En_progreso" &&
+      task.estado !== "Pausada" &&
+      cleanElapsed === 0 &&
+      modoCompletado !== "realizada_directa"
+    ) {
+      const inicioPrevio = await prisma.historialAccion.findFirst({
+        where: { tareaId: taskId, estadoNuevo: "En_progreso" },
+        select: { id: true },
+      });
+      tuvoInicioEnHistorial = Boolean(inicioPrevio);
+    }
+
+    const fueIniciada =
+      modoCompletado === "realizada_directa"
+        ? false
+        : Boolean(task.timerStartedAt) ||
+          (task.tiempoAcumuladoTimer ?? 0) > 0 ||
+          task.estado === "En_progreso" ||
+          task.estado === "Pausada" ||
+          cleanElapsed > 0 ||
+          tuvoInicioEnHistorial;
 
     // Lógica de Rachas (Streaks)
     const asignado = await prisma.usuario.findUnique({ where: { id: task.asignadoId } });
@@ -125,54 +134,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Regla de Recompensa
-    let rewardPoints = 0;
-    let feedback = "";
+    // Regla de Recompensa: 100% si Iniciar -> Hacerla -> Finalizar, 80% si solo marca realizada / fuera de horario
+    const calculo = calcularPuntosCompletadoTarea({
+      generaPuntosYRecompensa: task.generaPuntosYRecompensa,
+      dificultad: task.dificultad,
+      tiempoEjecucionEstimadoSeg: task.tiempoEjecucionEstimadoSeg,
+      newStreakDays,
+      isChecklist: task.isChecklist,
+      checklistCompletados: task.checklistItems ? task.checklistItems.filter((ci) => ci.completado).length : 0,
+      isWeekend,
+      isHappyHour,
+      fueIniciada,
+      esATiempo,
+    });
 
-    // Gamification state tracking
-    let actualBasePoints = 0;
-    let actualStreakBonus = 0;
-    let speedBonus = 0;
-    let actualChecklistBonus = 0;
-    let timeBonus = 0;
-
-    if (task.generaPuntosYRecompensa) {
-      actualBasePoints = puntosBase(task.dificultad, task.tiempoEjecucionEstimadoSeg);
-
-      // Streak bonus: +2 points per streak day, max +20 points
-      actualStreakBonus = Math.max(0, Math.min(20, (newStreakDays - 1) * 2));
-
-      // Checklist Bonus: +5 points per completed checklist item
-      actualChecklistBonus = task.isChecklist && task.checklistItems ? task.checklistItems.filter(ci => ci.completado).length * 5 : 0;
-
-      // Happy Hour / Weekend Bonus
-      const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-      timeBonus = (isWeekend || isHappyHour) ? 10 : 0;
-
-      let bonusText = [];
-      if (actualStreakBonus > 0) bonusText.push(`${actualStreakBonus} pts por racha`);
-      if (actualChecklistBonus > 0) bonusText.push(`${actualChecklistBonus} pts por checklist`);
-
-      if (timeBonus > 0) bonusText.push(`${timeBonus} pts por ${isWeekend ? 'fin de semana' : 'Happy Hour'}`);
-
-      const bonusString = bonusText.length > 0 ? ` Bonos: ${bonusText.join(', ')}.` : '';
-
-      if (esATiempo) {
-        rewardPoints = actualBasePoints + actualStreakBonus + actualChecklistBonus + timeBonus;
-        feedback = `¡Buen trabajo! Completaste la tarea a tiempo. Obtuviste ${actualBasePoints} pts base.${bonusString}`;
-      } else if (estaEnPeriodoGracia) {
-        rewardPoints = Math.floor((actualBasePoints + actualStreakBonus + actualChecklistBonus + timeBonus) / 2);
-        feedback = "Tarea completada con retraso (50% puntos).";
-        if (isHappyHour) feedback += " ¡Bono de Happy Hour (1.5x) aplicado!";
-      } else {
-        rewardPoints = 0;
-        feedback = "Tarea completada fuera del período de gracia. No hay puntos.";
-      }
-
-    } else {
-      feedback = "Tarea marcada como realizada. No genera puntos.";
-    }
-
+    let rewardPoints = calculo.rewardPoints;
+    let feedback = calculo.feedback;
+    const actualBasePoints = calculo.basePoints;
+    const actualStreakBonus = calculo.streakBonus;
+    const actualChecklistBonus = calculo.checklistBonus;
 
     let wonSurprise = false;
     // 1 estrella cada 7 días de racha (vault/ECONOMIA_CARTAS.md §8): la racha solo sube al cambiar de día
@@ -235,6 +215,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       streakBonus: actualStreakBonus,
       speedBonus: 0,
       checklistBonus: actualChecklistBonus,
+      porcentajePuntos: calculo.porcentajeAplicado,
+      fueIniciada,
       estado: "Esperando_Aprobacion",
       isNewStreak,
       streakDays: newStreakDays,
