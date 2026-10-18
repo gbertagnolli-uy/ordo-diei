@@ -11,7 +11,8 @@ import { exigirSinSancion } from "../comportamiento/sancionServer.ts";
 import { MONEDAS, type Saldos } from "../tienda/monedas.ts";
 import { nivelDe, xpTotal } from "../niveles.ts";
 import { reclamarSubidaNivel } from "../nivelesServidor.ts";
-import { registrarIngreso, rachaDe } from "./servidor.ts";
+import { bienvenidaPendienteHoy, PUNTOS_INGRESO_DIARIO, rachaDe, registrarIngreso, XP_INGRESO_DIARIO } from "./servidor.ts";
+import { HITOS_RACHA, type Hito } from "./hitos.ts";
 import {
   datosDePersonaje,
   esElegible,
@@ -31,7 +32,7 @@ import {
   type Pose,
   type Situacion,
 } from "./companero.ts";
-import { fraseDe } from "./companeroFrases.ts";
+import { fraseDe, primerNombre } from "./companeroFrases.ts";
 import { ACCESORIOS, accesorioDe, cambiarEquipado, EQUIPADOS_INICIALES, esDeRegalo, leerEquipados, tieneAccesorio, type Equipados } from "./accesorios.ts";
 
 export type CompaneroVista = {
@@ -185,3 +186,92 @@ export async function equiparAccesorio(usuarioId: number, clave: unknown, puesto
   const nuevo = cambiarEquipado(leerEquipados(fila.equipados, claves, nivel), clave, puesto !== false, claves, nivel);
   await prisma.companero.update({ where: { usuarioId }, data: { equipados: nuevo } });
 }
+
+export type BienvenidaDiariaDatos = {
+  usuarioId: number;
+  fecha: string;
+  quien: string;
+  companero: {
+    personaje: Personaje;
+    nombre: string;
+    emoji: string;
+    pose: Pose;
+    equipados: Equipados;
+    marco: number;
+    saludo: string;
+    felicitacion: string;
+  };
+  rachaApp: number;
+  diasJuntos: number;
+  puntos: number;
+  xp: number;
+  hitoHoy: Hito | null;
+};
+
+/**
+ * Datos para el modal automático de bienvenida diaria:
+ * El compañero saluda al usuario y lo felicita por haber vuelto, y enseguida muestra los premios (+5 XP y +5 puntos).
+ * Devuelve `null` si ya vio la bienvenida de hoy.
+ */
+export async function bienvenidaDiariaDe(usuarioId: number, ahora: Date = new Date()): Promise<BienvenidaDiariaDatos | null> {
+  const hoy = format(ahora, "yyyy-MM-dd", { in: tz(APP_TZ) });
+  const hora = Number(format(ahora, "H", { in: tz(APP_TZ) }));
+  await registrarIngreso(usuarioId, ahora);
+  if (!(await bienvenidaPendienteHoy(usuarioId, ahora))) return null;
+
+  const [usuario, fila, comprados, diasJuntos, previa, racha] = await Promise.all([
+    prisma.usuario.findUnique({ where: { id: usuarioId }, select: { nombre: true, puntosAcumulados: true, experienciaHabitos: true } }),
+    prisma.companero.findUnique({ where: { usuarioId } }),
+    prisma.companeroAccesorio.findMany({ where: { usuarioId }, select: { clave: true } }),
+    prisma.actividadDia.count({ where: { usuarioId } }),
+    prisma.actividadDia.findFirst({ where: { usuarioId, fecha: { lt: aFecha(hoy) } }, orderBy: { fecha: "desc" }, select: { fecha: true } }),
+    rachaDe(usuarioId, ahora),
+  ]);
+  if (!usuario) return null;
+
+  const xp = xpTotal(usuario);
+  const info = nivelDe(xp);
+  const personaje = personajeGuardado(fila?.personaje) ?? "angelito";
+  const datosHeroe = datosDePersonaje(personaje);
+  const nombre = fila?.nombre ?? datosHeroe.nombre;
+  const clavesCompradas = comprados.map((c) => c.clave);
+  const desdeLaUltimaVez = previa ? differenceInCalendarDays(parseISO(hoy), parseISO(aClave(previa.fecha))) : null;
+  const semilla = Number(hoy.replaceAll("-", "")) + usuarioId;
+  const nombreCorto = primerNombre(usuario.nombre);
+
+  const esRegresoTrasFalta = desdeLaUltimaVez !== null && desdeLaUltimaVez >= 2;
+  const pose: Pose = esRegresoTrasFalta ? "abrazo" : hora >= 5 && hora < 12 ? "buenos-dias" : "felicitando";
+  const tipoSaludo = esRegresoTrasFalta ? "regreso" : hora >= 5 && hora < 12 ? "manana" : hora >= 19 || hora < 5 ? "noche" : "tarde";
+  const saludo = fraseDe(personaje, tipoSaludo, usuario.nombre, semilla);
+
+  const felicitacion =
+    racha.dias > 1
+      ? `¡Qué alegría que volviste hoy, ${nombreCorto}! Te felicito por tu constancia: ya llevamos ${racha.dias} días seguidos en la app.`
+      : diasJuntos > 1
+      ? `¡Qué bueno tenerte de vuelta hoy, ${nombreCorto}! Te felicito por volver a encontrarnos un día más.`
+      : `¡Qué alegría recibirte hoy, ${nombreCorto}! Te felicito por dar este primer paso juntos en la app.`;
+
+  const hitoHoy = HITOS_RACHA.find((h) => h.dias === racha.dias) ?? null;
+
+  return {
+    usuarioId,
+    fecha: hoy,
+    quien: usuario.nombre,
+    companero: {
+      personaje,
+      nombre,
+      emoji: datosHeroe.emoji,
+      pose,
+      equipados: leerEquipados(fila?.equipados, clavesCompradas, info.level),
+      marco: marcoDeNivel(info.level),
+      saludo,
+      felicitacion,
+    },
+    rachaApp: racha.dias,
+    diasJuntos,
+    puntos: PUNTOS_INGRESO_DIARIO,
+    xp: XP_INGRESO_DIARIO,
+    hitoHoy,
+  };
+}
+

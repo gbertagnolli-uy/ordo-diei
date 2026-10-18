@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calcularRachaApp } from "./racha.ts";
+import {
+  armarResumenRachaApp,
+  calcularRachaApp,
+  CLAVE_BIENVENIDA_VISTA,
+  PUNTOS_INGRESO_DIARIO,
+  XP_INGRESO_DIARIO,
+} from "./racha.ts";
 import { HITOS_RACHA, hitosAlcanzados, proximoHito, origenHito } from "./hitos.ts";
 import { cofreGanado, misionesDeHoy, PUNTOS_MISION, type ContextoMisiones } from "./misiones.ts";
 
@@ -12,6 +18,26 @@ test("racha: días seguidos incluyendo hoy", () => {
   assert.equal(r.inicio, "2026-10-14");
   assert.equal(r.ingresoHoy, true);
   assert.equal(r.comodinDisponible, true);
+});
+
+test("racha: resumen de RachaApp incluye días totales, próximo hito y +5 XP / +5 puntos de hoy", () => {
+  assert.equal(PUNTOS_INGRESO_DIARIO, 5);
+  assert.equal(XP_INGRESO_DIARIO, 5);
+  const conHoy = armarResumenRachaApp(["2026-10-01", "2026-10-14", "2026-10-15", "2026-10-16"], HOY);
+  assert.equal(conHoy.dias, 3);
+  assert.equal(conHoy.diasTotales, 4);
+  assert.equal(conHoy.ingresoHoy, true);
+  assert.equal(conHoy.puntosHoy, 5);
+  assert.equal(conHoy.xpHoy, 5);
+  assert.deepEqual(conHoy.proximoHito, { dias: 7, faltan: 4, titulo: "Una semana en la app" });
+
+  const sinHoy = armarResumenRachaApp(["2026-10-14", "2026-10-15"], HOY);
+  assert.equal(sinHoy.dias, 2);
+  assert.equal(sinHoy.diasTotales, 2);
+  assert.equal(sinHoy.ingresoHoy, false);
+  assert.equal(sinHoy.puntosHoy, 0);
+  assert.equal(sinHoy.xpHoy, 0);
+  assert.deepEqual(sinHoy.proximoHito, { dias: 3, faltan: 1, titulo: "3 días en la app" });
 });
 
 test("racha: si todavía no entró hoy, la racha de ayer sigue viva", () => {
@@ -89,6 +115,12 @@ test("misiones: sin pendientes, la tercera es escribirle algo a un hijo", () => 
   assert.ok(m.every((x) => x.puntos === PUNTOS_MISION));
 });
 
+test("misiones: la marca bienvenida_vista no interfiere con las misiones del padre", () => {
+  const m = misionesDeHoy(base, [CLAVE_BIENVENIDA_VISTA]);
+  assert.deepEqual(m.map((x) => x.clave), ["comportamiento", "estudio", "mensaje"]);
+  assert.ok(m.every((x) => !x.hecha));
+});
+
 test("misiones: con tareas por aprobar, esa pasa a ser la tercera; se cumple al dejar la bandeja vacía", () => {
   const con = misionesDeHoy({ ...base, pendientes: 2 });
   assert.deepEqual(con.map((x) => x.clave), ["comportamiento", "estudio", "pendientes"]);
@@ -136,3 +168,4 @@ test("cofre: sin hijos hacen falta todas las misiones", () => {
   assert.equal(cofreGanado(misionesDeHoy(sinHijos)), false);
   assert.equal(cofreGanado(misionesDeHoy({ ...sinHijos, estudioHoy: 1, mensajesHoy: 1 })), true);
 });
+

@@ -39,9 +39,9 @@ export function CompaneroCard({ datos }: { datos: CompaneroVista }) {
           <div className="space-y-1">
             <CardTitle className="flex flex-wrap items-center gap-2 font-heading text-lg">
               {nombre} <Badge variant="secondary">Nivel {nivel.numero}</Badge>
-              {racha > 1 && (
+              {racha >= 1 && (
                 <Badge>
-                  <Flame className="size-3" /> {racha} días
+                  <Flame className="size-3" /> {racha} {racha === 1 ? "día" : "días"} en la app
                 </Badge>
               )}
             </CardTitle>

@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  CalendarCheck,
   ExternalLink,
   Flame,
   Gift,
+  ShieldCheck,
+  Sparkles,
   Star,
   Trophy,
   CheckCircle2,
@@ -23,6 +26,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nivelDe, xpTotal, TITULOS, badgeDeNivel } from "@/lib/niveles";
 import { evaluarLogros, type CategoriaLogro } from "@/lib/logros";
 import type { EstadoHabito } from "@/lib/habitos/server";
+import type { ResumenRachaApp } from "@/lib/engagement/servidor";
 import { LogroIcon } from "./LogroIcon";
 import { subirImagen } from "@/lib/subirImagen";
 
@@ -42,6 +46,7 @@ interface PerfilResumenProps {
     streakDays?: number | null;
     totalTasksCompleted?: number | null;
     completionPercentage?: number | null;
+    rachaApp?: ResumenRachaApp | null;
   };
   habitos?: EstadoHabito[];
   enlaceCompleto?: boolean;
@@ -60,6 +65,25 @@ export function PerfilResumen({
   const inputFoto = useRef<HTMLInputElement>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
+  const [rachaAppCargada, setRachaAppCargada] = useState<ResumenRachaApp | null>(null);
+
+  const rachaApp = usuario.rachaApp ?? rachaAppCargada;
+
+  useEffect(() => {
+    if (usuario.rachaApp !== undefined && usuario.rachaApp !== null) return;
+    let cancelado = false;
+    fetch(`/api/companero?usuarioId=${usuario.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelado && data?.rachaApp) {
+          setRachaAppCargada(data.rachaApp);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelado = true;
+    };
+  }, [usuario.id, usuario.rachaApp]);
 
   async function cambiarFoto(file: File) {
     setSubiendo(true);
@@ -225,8 +249,8 @@ export function PerfilResumen({
         <CardHeader className="pb-3">
           <CardTitle className="font-heading text-base">Estadísticas y experiencia</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 sm:gap-3">
             <div className="rounded-lg border bg-muted/40 p-3 text-center">
               <div className="text-xl font-bold tabular-nums text-foreground">
                 {usuario.availablePoints ?? 0}
@@ -245,7 +269,15 @@ export function PerfilResumen({
               <div className="text-xl font-bold tabular-nums text-primary">
                 +{usuario.experienciaHabitos ?? 0}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">XP de hábitos</div>
+              <div className="text-xs text-muted-foreground mt-0.5">XP hábitos e ingresos</div>
+            </div>
+
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
+              <div className="text-xl font-bold tabular-nums text-foreground flex items-center justify-center gap-1">
+                <Flame className="size-4 text-primary fill-primary" />
+                {rachaApp?.dias ?? 0}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">Racha en la app</div>
             </div>
 
             <div className="rounded-lg border bg-muted/40 p-3 text-center">
@@ -253,7 +285,15 @@ export function PerfilResumen({
                 <Flame className="size-4 text-orange-500 fill-orange-500" />
                 {usuario.streakDays ?? 0}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">Días de racha</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Racha de tareas</div>
+            </div>
+
+            <div className="rounded-lg border bg-muted/40 p-3 text-center">
+              <div className="text-xl font-bold tabular-nums text-foreground flex items-center justify-center gap-1">
+                <CalendarCheck className="size-4 text-primary" />
+                {rachaApp?.diasTotales ?? 0}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">Días en la app</div>
             </div>
 
             <div className="rounded-lg border bg-muted/40 p-3 text-center">
@@ -287,6 +327,59 @@ export function PerfilResumen({
               <div className="text-xs text-muted-foreground mt-0.5">XP Total acumulada</div>
             </div>
           </div>
+
+          {/* Registro de Ingreso diario y Racha en la app (RachaApp) */}
+          {rachaApp && (
+            <div className="rounded-xl border bg-muted/25 p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Flame className="size-4 text-primary fill-primary" />
+                  <span className="font-heading text-sm font-semibold text-foreground">
+                    Racha e ingreso diario en la app
+                  </span>
+                  <Badge variant="secondary" className="text-xs tabular-nums">
+                    {rachaApp.dias} {rachaApp.dias === 1 ? "día seguido" : "días seguidos"} · {rachaApp.diasTotales} en total
+                  </Badge>
+                </div>
+
+                {rachaApp.ingresoHoy ? (
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 text-xs bg-[color-mix(in_srgb,var(--success)_15%,transparent)] text-[var(--success)]"
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    Ingreso de hoy registrado (+{rachaApp.xpHoy} XP · +{rachaApp.puntosHoy} Puntos)
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
+                    <Sparkles className="size-3.5" />
+                    Al ingresar hoy suma +5 XP y +5 Puntos
+                  </Badge>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="size-3.5 text-primary" />
+                  {rachaApp.comodinDisponible
+                    ? "Comodín semanal disponible (1 día sin entrar se perdona sin cortar la racha)"
+                    : `Comodín semanal usado (${rachaApp.ultimoComodin})`}
+                </span>
+                {rachaApp.proximoHito && (
+                  <span className="font-medium text-foreground tabular-nums">
+                    Próximo premio sorpresa: {rachaApp.proximoHito.titulo} (faltan {rachaApp.proximoHito.faltan} {rachaApp.proximoHito.faltan === 1 ? "día" : "días"})
+                  </span>
+                )}
+              </div>
+
+              {rachaApp.proximoHito && (
+                <Progress
+                  value={Math.min(100, Math.round((rachaApp.dias / rachaApp.proximoHito.dias) * 100))}
+                  className="h-1.5"
+                />
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
