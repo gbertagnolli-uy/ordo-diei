@@ -604,6 +604,61 @@ export async function comprarSobre(usuarioId: number, tipoSobre: TipoSobre, rng?
 }
 
 /**
+ * Sorteo y entrega de un sobre dentro de una transacción existente (p. ej. compra compartida en la Tienda,
+ * donde el débito ya se repartió entre los participantes y los requisitos ya fueron validados).
+ */
+export async function abrirSobreEnTx(
+  tx: Prisma.TransactionClient,
+  destinatarioId: number,
+  tipoSobre: TipoSobre,
+  puntosGastados: number,
+  estrellasGastadas: number,
+  descuentoPct = 0,
+  rng?: RngFn
+) {
+  const config = SOBRES[tipoSobre];
+  if (!config) throw new Error("Tipo de sobre no válido");
+
+  const cartasPoolDb = await tx.carta.findMany({
+    where: { activa: true },
+    select: SELECT_OTORGABLE,
+  });
+
+  if (cartasPoolDb.length === 0) {
+    throw new Error("No hay cartas disponibles en la tienda");
+  }
+
+  const resultadoSobre = sortearSobre(config, cartasPoolDb, rng);
+  const cartasAfectadas = await aplicarSobre(
+    tx,
+    destinatarioId,
+    resultadoSobre.items,
+    cartasPoolDb,
+    config.nombre,
+    puntosGastados
+  );
+
+  const usuarioActualizado = await tx.usuario.findUnique({
+    where: { id: destinatarioId },
+    select: { availablePoints: true, incienso: true, stars: true },
+  });
+
+  return {
+    tipoSobre,
+    nombreSobre: config.nombre,
+    puntosGastados,
+    costoLista: config.costoPuntos,
+    descuentoPct,
+    estrellasGastadas,
+    nuevoSaldoEstrellas: usuarioActualizado?.stars ?? 0,
+    nuevoSaldoPuntos: usuarioActualizado?.availablePoints ?? 0,
+    nuevoSaldoIncienso: usuarioActualizado?.incienso ?? 0,
+    totalInciensoGanado: cartasAfectadas.reduce((s, c) => s + c.inciensoGanado, 0),
+    cartasAfectadas,
+  };
+}
+
+/**
  * 4. Comprar fragmentos directos de una carta con puntos o Granos de Incienso.
  */
 export async function comprarFragmentosDirectos(

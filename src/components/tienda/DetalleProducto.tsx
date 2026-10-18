@@ -2,7 +2,7 @@
 
 // Detalle y compra de un producto en 2 pasos (SPEC §9.3–§9.4): elegir cómo pagar → confirmar con el saldo resultante.
 import { useEffect, useRef, useState } from "react";
-import { Check, Circle, Lock, ShieldCheck, Star } from "lucide-react";
+import { Check, Circle, Lock, ShieldCheck, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,8 +12,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import type { Saldos } from "@/lib/tienda/monedas";
 import { saldosTrasPagar } from "@/lib/tienda/precios";
-import type { ProductoVista, ResultadoCompra } from "@/lib/tienda/server";
+import type { MiembroTiendaVista, ProductoVista, ResultadoCompra } from "@/lib/tienda/server";
 import { ArteProducto } from "./ArteProducto";
+import { FormularioCompraCompartida } from "./CompraCompartida";
 import { FragmentosCartas } from "./FragmentosCartas";
 import { MonedaIcono, Precio, textoFaltan } from "./Moneda";
 import { MONEDAS } from "@/lib/tienda/monedas";
@@ -27,20 +28,26 @@ function fechaLarga(iso: string) {
 export function DetalleProducto({
   p,
   saldos,
+  usuarioActual,
+  familia,
   onCerrar,
   onComprado,
+  onSolicitudCreada,
   onCambioMeta,
   onFragmentos,
 }: {
   p: ProductoVista | null;
   saldos: Saldos;
+  usuarioActual: { id: number; nombre: string; fotoUrl: string | null; saldos: Saldos };
+  familia: MiembroTiendaVista[];
   onCerrar: () => void;
   onComprado: (r: ResultadoCompra) => void;
+  onSolicitudCreada: () => void;
   onCambioMeta: () => void;
   onFragmentos: (r: unknown) => void;
 }) {
   const [opcion, setOpcion] = useState(0);
-  const [paso, setPaso] = useState<"detalle" | "confirmar">("detalle");
+  const [paso, setPaso] = useState<"detalle" | "confirmar" | "compartida">("detalle");
   const [comprando, setComprando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clave = useRef<string>("");
@@ -58,6 +65,10 @@ export function DetalleProducto({
 
   const elegida = p?.opciones[opcion];
   const comprable = p?.estado === "comprable" && !!elegida?.alcanza;
+  const aptoCompartida =
+    (p?.estado === "comprable" || p?.estado === "sinSaldo") &&
+    p?.tipo !== "fragmentos" &&
+    familia.length > 0;
 
   async function comprar() {
     if (!p || !elegida) return;
@@ -125,6 +136,19 @@ export function DetalleProducto({
 
               {p.tipo === "fragmentos" ? (
                 <FragmentosCartas onResultado={onFragmentos} />
+              ) : paso === "compartida" ? (
+                <FormularioCompraCompartida
+                  p={p}
+                  opcion={opcion}
+                  onCambiarOpcion={setOpcion}
+                  usuarioActual={usuarioActual}
+                  familia={familia}
+                  onVolver={() => setPaso("detalle")}
+                  onSolicitudCreada={() => {
+                    onCerrar();
+                    onSolicitudCreada();
+                  }}
+                />
               ) : (
                 <>
                   {p.requisitos.length > 0 && (
@@ -196,13 +220,19 @@ export function DetalleProducto({
               )}
             </div>
 
-            {p.tipo !== "fragmentos" && (
+            {p.tipo !== "fragmentos" && paso !== "compartida" && (
               <SheetFooter className="sticky bottom-0 flex-col gap-2 border-t bg-popover p-4 sm:flex-col">
                 {paso === "detalle" ? (
                   <>
                     <Button size="lg" disabled={!comprable} onClick={() => setPaso("confirmar")} className="w-full">
                       {comprable ? "Comprar" : bloqueado ? "Bloqueado" : p.estado === "agotado" ? "Agotado" : p.estado === "limite" ? "Ya lo compraste" : p.estado === "proximamente" ? "Todavía no está a la venta" : elegida ? `Te faltan ${textoFaltan(elegida.faltan)}` : "No disponible"}
                     </Button>
+                    {aptoCompartida && (
+                      <Button variant="secondary" size="lg" onClick={() => setPaso("compartida")} className="w-full gap-2">
+                        <Users className="size-4" />
+                        Compra compartida
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={alternarMeta} className="gap-1.5">
                       <Star className={cn("size-4", p.esMeta && "fill-amber-500 text-amber-500")} />
                       {p.esMeta ? "Quitar de mi meta" : "Fijar como mi meta"}

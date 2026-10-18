@@ -54,3 +54,25 @@ export const ProductoEntradaSchema = z.object({
 });
 
 export type ProductoEntrada = z.infer<typeof ProductoEntradaSchema>;
+
+export const AporteParticipanteSchema = z.object({
+  usuarioId: z.number().int().positive("Participante no válido"),
+  costos: z.array(
+    z.object({
+      moneda: z.enum(CLAVES_MONEDA as [string, ...string[]]),
+      monto: z.number().int("El monto debe ser entero").min(0, "El monto no puede ser negativo").max(1_000_000, "Monto demasiado alto"),
+    })
+  ),
+});
+
+export const SolicitudCompartidaSchema = z.object({
+  productoId: z.number().int().positive("Producto no válido"),
+  opcion: z.number().int().min(0).max(10).default(0),
+  participantes: z
+    .array(AporteParticipanteSchema)
+    .min(2, "Seleccioná al menos un participante más para compartir la compra")
+    .max(20),
+});
+
+export type SolicitudCompartidaEntrada = z.infer<typeof SolicitudCompartidaSchema>;
+

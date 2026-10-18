@@ -265,6 +265,7 @@ export function FormularioProducto({
     disponibleHasta: null,
     requiereAprobacion: f.requiereAprobacion,
     esMeta: false,
+    aptitudFamiliar: {},
   }), [f, producto, sistema, verBloqueada]);
 
   const valido = sistema || (f.titulo.trim().length >= 2 && f.precios.length > 0 && f.precios.every((o) => o.costos.length > 0 && o.costos.every((c) => c.monto >= 1)) && f.requisitos.every((r) => (r.tipo !== "carta" || r.cartaId > 0) && (r.tipo !== "compraPrevia" || r.productoId > 0) && (r.tipo !== "rol" || r.roles.length > 0)));

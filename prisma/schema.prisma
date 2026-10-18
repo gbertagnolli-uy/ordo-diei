@@ -98,9 +98,11 @@ model Usuario {
   reclamosCarta        ReclamoCarta[]
 
   // Tienda (vault/nuevas-features/marketplace/SPEC.md)
-  comprasTienda     CompraTienda[]
-  desbloqueosTienda DesbloqueoProducto[]
-  metaTienda        MetaTienda?
+  comprasTienda                 CompraTienda[]
+  desbloqueosTienda             DesbloqueoProducto[]
+  metaTienda                    MetaTienda?
+  comprasCompartidasSolicitadas CompraCompartida[]         @relation("ComprasCompartidasSolicitadas")
+  participacionesCompraTienda   ParticipanteCompraTienda[] @relation("ParticipacionesCompraTienda")
 
   // Homeschooling (vault/nuevas-features/homeschooling/ARQUITECTURA_DETALLADA.md §3)
   materiasCreadas     Materia[]               @relation("MateriasCreadas")
@@ -671,8 +673,9 @@ model ProductoTienda {
   createdAt          DateTime      @default(now()) @map("Created_At")
   updatedAt          DateTime      @updatedAt @map("Updated_At")
 
-  compras     CompraTienda[]
-  desbloqueos DesbloqueoProducto[]
+  compras            CompraTienda[]
+  comprasCompartidas CompraCompartida[]
+  desbloqueos        DesbloqueoProducto[]
 
   @@map("Productos_Tienda")
 }
@@ -692,13 +695,68 @@ model CompraTienda {
   motivo            String?      @map("Motivo")
   createdAt         DateTime     @default(now()) @map("Created_At")
 
-  producto ProductoTienda @relation(fields: [productoId], references: [id])
-  usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  producto         ProductoTienda    @relation(fields: [productoId], references: [id])
+  usuario          Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  compraCompartida CompraCompartida?
 
   @@unique([usuarioId, claveIdempotencia])
   @@index([usuarioId, productoId, createdAt])
   @@index([estado])
   @@map("Compras_Tienda")
+}
+
+enum EstadoCompraCompartida {
+  pendiente
+  completada
+  rechazada
+  cancelada
+}
+
+enum EstadoParticipanteCompra {
+  pendiente
+  aceptada
+  rechazada
+}
+
+// Compra compartida: dos o más personas unen economía para comprar un producto de la Tienda (lane 238)
+model CompraCompartida {
+  id               Int                    @id @default(autoincrement())
+  productoId       Int                    @map("Producto_ID")
+  solicitanteId    Int                    @map("Solicitante_ID")
+  opcionPago       Int                    @map("Opcion_Pago")
+  costosTotales    Json                   @map("Costos_Totales") // [{ moneda, monto }]
+  productoSnapshot Json                   @map("Producto_Snapshot") // { tipo, titulo, imagenUrl }
+  estado           EstadoCompraCompartida @default(pendiente) @map("Estado")
+  compraId         Int?                   @unique @map("Compra_ID")
+  resueltaEn       DateTime?              @map("Resuelta_En")
+  createdAt        DateTime               @default(now()) @map("Created_At")
+
+  producto      ProductoTienda             @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  solicitante   Usuario                    @relation("ComprasCompartidasSolicitadas", fields: [solicitanteId], references: [id], onDelete: Cascade)
+  compra        CompraTienda?              @relation(fields: [compraId], references: [id], onDelete: SetNull)
+  participantes ParticipanteCompraTienda[]
+
+  @@index([solicitanteId, estado])
+  @@index([productoId, estado])
+  @@index([estado, createdAt])
+  @@map("Compras_Compartidas")
+}
+
+model ParticipanteCompraTienda {
+  id                 Int                      @id @default(autoincrement())
+  compraCompartidaId Int                      @map("Compra_Compartida_ID")
+  usuarioId          Int                      @map("Usuario_ID")
+  costos             Json                     @map("Costos") // [{ moneda, monto }] que acepta pagar este participante
+  estado             EstadoParticipanteCompra @default(pendiente) @map("Estado")
+  respondidoEn       DateTime?                @map("Respondido_En")
+  createdAt          DateTime                 @default(now()) @map("Created_At")
+
+  compraCompartida CompraCompartida @relation(fields: [compraCompartidaId], references: [id], onDelete: Cascade)
+  usuario          Usuario          @relation("ParticipacionesCompraTienda", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([compraCompartidaId, usuarioId])
+  @@index([usuarioId, estado])
+  @@map("Participantes_Compra_Tienda")
 }
 
 // Desbloqueo manual de un producto para una persona (requisito «lo habilita un padre»)

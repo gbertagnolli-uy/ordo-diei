@@ -185,9 +185,27 @@ function Bloque({ titulo, vacio, compras, acciones, historial, ocupado }: { titu
           {compras.slice(0, historial ? 30 : undefined).map((c) => (
             <li key={c.id} className="flex flex-wrap items-center gap-3 p-3">
               <Avatar className="size-9"><AvatarImage src={c.usuario.fotoUrl ?? undefined} alt="" className="object-cover" /><AvatarFallback>{c.usuario.nombre.charAt(0)}</AvatarFallback></Avatar>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">{c.titulo}</span>
-                <span className="text-xs text-muted-foreground">{c.usuario.nombre} · {new Date(c.createdAt).toLocaleDateString("es-UY", { day: "numeric", month: "short" })}</span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="truncate text-sm font-medium">{c.titulo}</span>
+                  {c.compartida && <Badge variant="outline" className="text-[11px]">Compra compartida</Badge>}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {c.compartida
+                    ? c.compartida.participantes.map((p) => p.nombre).join(" + ")
+                    : c.usuario.nombre}{" "}
+                  · {new Date(c.createdAt).toLocaleDateString("es-UY", { day: "numeric", month: "short" })}
+                </span>
+                {c.compartida && (
+                  <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {c.compartida.participantes.map((p) => (
+                      <span key={p.id} className="inline-flex items-center gap-1">
+                        <span>{p.nombre}:</span>
+                        <Precio costos={p.costos} className="text-xs text-foreground" />
+                      </span>
+                    ))}
+                  </span>
+                )}
               </span>
               <Precio costos={c.costos} className="text-sm" />
               {historial ? <Badge variant={c.estado === "completada" ? "secondary" : "outline"}>{ESTADO[c.estado] ?? c.estado}{c.entregada ? " · entregado" : ""}</Badge> : <span className="flex gap-2">{acciones?.(c)}</span>}

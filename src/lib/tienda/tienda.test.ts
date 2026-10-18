@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { aplicarDescuento, alcanza, diasParaJuntar, faltantes, saldosTrasPagar } from "./precios.ts";
 import { evaluarRequisito, evaluarRequisitos, todosCumplidos, type ContextoRequisitos } from "./requisitos.ts";
 import { estadoProducto, finPeriodo, inicioPeriodo, type DatosEstado } from "./estado.ts";
-import { PreciosSchema, ProductoEntradaSchema, RequisitoSchema } from "./esquemas.ts";
+import { PreciosSchema, ProductoEntradaSchema, RequisitoSchema, SolicitudCompartidaSchema } from "./esquemas.ts";
+import { evaluarAptitudParticipante, recomendarDistribucion, validarDistribucion } from "./compartida.ts";
 import { textoCostos } from "./monedas.ts";
 
 const saldos = { puntos: 300, estrellas: 2, incienso: 10 };
@@ -128,4 +129,161 @@ test("esquemas: precios, requisitos y producto", () => {
   const ok = ProductoEntradaSchema.safeParse({ tipo: "fisico", titulo: "Bicicleta", precios: [{ costos: [{ moneda: "puntos", monto: 1500 }] }] });
   assert.equal(ok.success, true);
   assert.equal(ProductoEntradaSchema.safeParse({ tipo: "sobre", titulo: "X", precios: [] }).success, false);
+});
+
+test("compartida: aptitud permite falta de saldo individual pero bloquea cualquier condición incumplida", () => {
+  // Sin monedas suficientes individualmente -> apto para compartir el gasto
+  const sinMonedas = evaluarAptitudParticipante(
+    base({ precios: [{ costos: [{ moneda: "puntos", monto: 9999 }] }] }),
+    env({ saldos: { puntos: 10, estrellas: 0, incienso: 0 } })
+  );
+  assert.equal(sinMonedas.apto, true);
+  assert.equal(sinMonedas.motivo, null);
+
+  // Con monedas suficientes -> apto
+  const conMonedas = evaluarAptitudParticipante(base(), env());
+  assert.equal(conMonedas.apto, true);
+  assert.equal(conMonedas.motivo, null);
+
+  // Bloqueado por nivel o XP -> no apto
+  const bloqNivel = evaluarRequisitos([{ tipo: "nivel", min: 8 }], ctx({ nivel: 3 }));
+  const noAptoNivel = evaluarAptitudParticipante(base(), env({ requisitos: bloqNivel }));
+  assert.equal(noAptoNivel.apto, false);
+  assert.match(noAptoNivel.motivo ?? "", /Nivel 8/);
+
+  // Bloqueado por límite de período -> no apto
+  const noAptoLimite = evaluarAptitudParticipante(
+    base({ limiteUsuario: 1, periodoLimite: "semana" }),
+    env({ comprasEnPeriodo: 1 })
+  );
+  assert.equal(noAptoLimite.apto, false);
+  assert.match(noAptoLimite.motivo ?? "", /límite de compras/i);
+
+  // Bloqueado por sanción activa hoy -> no apto
+  const noAptoSancion = evaluarAptitudParticipante(base(), env(), { sancionado: true });
+  assert.equal(noAptoSancion.apto, false);
+  assert.match(noAptoSancion.motivo ?? "", /sanción/);
+});
+
+test("compartida: recomendarDistribucion sugiere reparto equitativo y adapta según saldos", () => {
+  // Caso 1: 1 estrella + 150 puntos entre dos usuarios donde solo el primero tiene estrellas
+  const costos = [
+    { moneda: "puntos" as const, monto: 150 },
+    { moneda: "estrellas" as const, monto: 1 },
+  ];
+  const sugerencia = recomendarDistribucion(costos, [
+    { usuarioId: 1, saldos: { puntos: 100, estrellas: 2, incienso: 0 } },
+    { usuarioId: 2, saldos: { puntos: 200, estrellas: 0, incienso: 0 } },
+  ]);
+  assert.deepEqual(sugerencia, [
+    {
+      usuarioId: 1,
+      costos: [
+        { moneda: "puntos", monto: 75 },
+        { moneda: "estrellas", monto: 1 },
+      ],
+    },
+    {
+      usuarioId: 2,
+      costos: [{ moneda: "puntos", monto: 75 }],
+    },
+  ]);
+
+  // Caso 2: water-filling cuando uno de los participantes tiene poco saldo de puntos
+  const sugerenciaTope = recomendarDistribucion([{ moneda: "puntos", monto: 300 }], [
+    { usuarioId: 1, saldos: { puntos: 50, estrellas: 0, incienso: 0 } },
+    { usuarioId: 2, saldos: { puntos: 400, estrellas: 0, incienso: 0 } },
+  ]);
+  assert.deepEqual(sugerenciaTope, [
+    { usuarioId: 1, costos: [{ moneda: "puntos", monto: 50 }] },
+    { usuarioId: 2, costos: [{ moneda: "puntos", monto: 250 }] },
+  ]);
+});
+
+test("compartida: validarDistribucion permite distribución personalizada y valida suma y saldos", () => {
+  const costosTotales = [
+    { moneda: "puntos" as const, monto: 150 },
+    { moneda: "estrellas" as const, monto: 1 },
+  ];
+
+  // Un usuario elige pagar 1 estrella + 30 puntos y el otro paga 120 puntos
+  const ok = validarDistribucion(costosTotales, [
+    {
+      usuarioId: 1,
+      nombre: "Juan",
+      saldos: { puntos: 50, estrellas: 1, incienso: 0 },
+      costos: [
+        { moneda: "puntos", monto: 30 },
+        { moneda: "estrellas", monto: 1 },
+      ],
+    },
+    {
+      usuarioId: 2,
+      nombre: "María",
+      saldos: { puntos: 150, estrellas: 0, incienso: 0 },
+      costos: [{ moneda: "puntos", monto: 120 }],
+    },
+  ]);
+  assert.equal(ok.ok, true);
+
+  // Falla si la suma no coincide con el precio total
+  const sumaInvalida = validarDistribucion(costosTotales, [
+    {
+      usuarioId: 1,
+      nombre: "Juan",
+      saldos: { puntos: 50, estrellas: 1, incienso: 0 },
+      costos: [
+        { moneda: "puntos", monto: 20 },
+        { moneda: "estrellas", monto: 1 },
+      ],
+    },
+    {
+      usuarioId: 2,
+      nombre: "María",
+      saldos: { puntos: 150, estrellas: 0, incienso: 0 },
+      costos: [{ moneda: "puntos", monto: 120 }],
+    },
+  ]);
+  assert.equal(sumaInvalida.ok, false);
+
+  // Falla si un participante promete más monedas de las que tiene
+  const sinSaldoPart = validarDistribucion(costosTotales, [
+    {
+      usuarioId: 1,
+      nombre: "Juan",
+      saldos: { puntos: 50, estrellas: 0, incienso: 0 },
+      costos: [
+        { moneda: "puntos", monto: 30 },
+        { moneda: "estrellas", monto: 1 },
+      ],
+    },
+    {
+      usuarioId: 2,
+      nombre: "María",
+      saldos: { puntos: 150, estrellas: 0, incienso: 0 },
+      costos: [{ moneda: "puntos", monto: 120 }],
+    },
+  ]);
+  assert.equal(sinSaldoPart.ok, false);
+
+  // Esquema Zod de solicitud compartida
+  assert.equal(
+    SolicitudCompartidaSchema.safeParse({
+      productoId: 1,
+      opcion: 0,
+      participantes: [
+        { usuarioId: 1, costos: [{ moneda: "estrellas", monto: 1 }] },
+        { usuarioId: 2, costos: [{ moneda: "puntos", monto: 150 }] },
+      ],
+    }).success,
+    true
+  );
+  assert.equal(
+    SolicitudCompartidaSchema.safeParse({
+      productoId: 1,
+      opcion: 0,
+      participantes: [{ usuarioId: 1, costos: [{ moneda: "puntos", monto: 150 }] }],
+    }).success,
+    false
+  );
 });
