@@ -1,43 +1,55 @@
-# Guía Rápida de Git, Worktrees y Base de Datos Local (`dev`)
+# Guía Rápida: Git, NPM, Prisma y Base de Datos Local (`dev`)
 
-Instructivo práctico para sincronizar `dev`, trabajar con múltiples agentes en paralelo y clonar los datos actuales de Supabase a local sin tocar producción.
+Instructivo práctico de consulta rápida para sincronizar `dev`, correr comandos de `npm` y `prisma`, y reproducir la base de datos de Supabase en local para ver exactamente lo mismo que en producción.
 
 ---
 
-## 1. Descargar lo último de `dev` desde GitHub (en `ordo-diei/`)
+## 1. Git: Descargar y subir `dev` (en `ordo-diei/`)
 
-El directorio principal (`ordo-diei/`) **siempre queda parado en la rama `dev`**. Cuando otros agentes o PRs suben cambios a GitHub:
+El directorio principal (`ordo-diei/`) **siempre queda en la rama `dev`**.
 
+### Bajar cambios nuevos de otros agentes desde GitHub
 ```powershell
-# 1. Traer referencias remotas y limpiar ramas borradas
 git fetch origin --prune
-
-# 2. Bajar los commits nuevos a tu dev local (solo fast-forward)
 git pull --ff-only origin dev
-
-# 3. Si cambió prisma/schema.prisma, actualizar el cliente local
 npx prisma generate
 ```
 
----
-
-## 2. Subir tu `dev` local a GitHub
-
-Después de que una lane se integró localmente a `dev`:
-
+### Subir tu `dev` local a GitHub
 ```powershell
 git fetch origin dev
 git pull --ff-only origin dev
 git push origin dev
 ```
 
+### Diagnóstico rápido de Git
+```powershell
+git status -sb                   # Ver rama actual y si estás ahead/behind origin/dev
+git log -n 5 --oneline           # Últimos 5 commits
+git worktree list                # Ver lanes activas en disco
+git diff dev...origin/dev --stat # Ver qué cambió en GitHub antes de hacer pull
+```
+
 ---
 
-## 3. Traer datos actuales de Supabase a local (Sin tocar producción)
+## 2. Reproducir la Base de Datos de Supabase en Local
 
-Para probar la app con todos los datos reales actuales pero en una base **100% local y aislada** (donde podés crear, editar o borrar sin afectar Supabase):
+Tenés dos formas de ver los datos reales de producción en `http://localhost:3000`:
 
-### Paso A — Levantar un PostgreSQL local con Docker (una sola vez)
+### Modo A — Lectura directa de Supabase (ya configurado en `.env`)
+Tu `.env` apunta por defecto a Supabase (`?schema=family_tasker`). Si solo querés **mirar** lo mismo que ven los usuarios en producción sin configurar nada extra:
+```powershell
+npx prisma generate
+npm run dev
+```
+> ⚠️ **Cuidado:** cualquier cambio que hagas en la interfaz en este modo escribe en la base real de producción.
+
+---
+
+### Modo B — Clon exacto de Supabase en Postgres Local (100% aislado y seguro)
+Copia toda la estructura y los datos actuales de producción (usuarios, tareas, puntos, rachas, cartas, tienda) a tu máquina usando `pg_dump` (que es **100% solo lectura** sobre Supabase). Podés probar, crear, editar o borrar sin tocar producción:
+
+#### 1) Levantar contenedor PostgreSQL local (una sola vez)
 ```powershell
 docker run -d --name ordo-pg-local `
   -e POSTGRES_USER=postgres `
@@ -46,65 +58,53 @@ docker run -d --name ordo-pg-local `
   -p 5432:5432 `
   postgres:16
 ```
+*(Si ya lo habías creado y está detenido: `docker start ordo-pg-local`).*
 
-### Paso B — Copiar estructura + datos actuales de Supabase a tu Postgres local
-Este comando lee de `DIRECT_URL` en tu `.env` (**solo lectura**, `pg_dump` jamás modifica el origen) y lo restaura en tu contenedor `ordo-pg-local`:
-
+#### 2) Clonar/refrescar todos los datos actuales de Supabase a local
+Corré este bloque cada vez que quieras traer la foto actual de producción:
 ```powershell
-# 1. Leer DIRECT_URL de tu .env quitándole ?schema=... (pg_dump no acepta ese query param)
+# Toma DIRECT_URL de .env sin ?schema=... (pg_dump no admite ese query param)
 $directUrl = (Get-Content .env | Where-Object { $_ -match '^DIRECT_URL=' } | Select-Object -First 1) -replace '^DIRECT_URL=["'']?|["'']?$','' -replace '\?.*$',''
 
-# 2. Volcar el schema family_tasker desde Supabase a un archivo local (100% lectura)
+# Descarga esquema + datos reales de Supabase a dump_local.sql (solo lectura)
 docker exec -i ordo-pg-local pg_dump "$directUrl" --schema=family_tasker --clean --if-exists --no-owner --no-acl > dump_local.sql
 
-# 3. Restaurar el volcado dentro del Postgres local
+# Restaura el volcado en tu Postgres local (localhost:5432)
 Get-Content dump_local.sql | docker exec -i ordo-pg-local psql -U postgres -d postgres
 ```
-*(Cada vez que quieras refrescar tu base local con los últimos datos de producción, solo volvés a correr el **Paso B**).*
 
-### Paso C — Correr `next dev` apuntando a tu base local (sin modificar `.env`)
-Ejecutá `npm run dev` inyectando la variable en la sesión de PowerShell para que ignore la URL de Supabase de `.env`:
-
+#### 3) Levantar la app apuntando al clon local (sin tocar `.env`)
 ```powershell
 $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=family_tasker"
 $env:DIRECT_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=family_tasker"
 npm run dev
 ```
-> Cuando cierres esa terminal (o hagas `Remove-Item Env:DATABASE_URL, Env:DIRECT_URL`), todo vuelve al `.env` normal sin haber tocado ningún archivo versionado.
 
----
-
-## 4. Ciclo completo de una tarea (Lane con Worktree)
-
-Nunca se edita directo en `ordo-diei/`. Cada tarea vive en su propio worktree:
-
+#### 4) Volver a apuntar a Supabase en esa terminal
 ```powershell
-# 1. Crear worktree desde dev actualizado (ejecutar en ordo-diei/)
-git worktree add -b task/lane-NN-nombre ../ordo-diei-lanes/lane-NN dev
-
-# 2. Trabajar y commitear dentro del worktree (../ordo-diei-lanes/lane-NN)
-git add -A
-git commit -m "feat(modulo): descripcion breve (lane NN)"
-
-# 3. Integrar la lane a dev de forma segura (corre merge dev + tests + tsc + merge --no-ff)
-& "C:\Program Files\Git\bin\bash.exe" ./scripts/integrar.sh
-
-# 4. Limpiar el worktree tras integrar (ejecutar en ordo-diei/)
-git worktree remove ../ordo-diei-lanes/lane-NN
-git branch -d task/lane-NN-nombre
+Remove-Item Env:DATABASE_URL, Env:DIRECT_URL -ErrorAction SilentlyContinue
 ```
 
 ---
 
-## 5. Cambios de esquema en Supabase (Sin borrar tablas ajenas)
+## 3. Comandos útiles de Prisma
 
-**Prohibido `npx prisma db push` o `migrate reset`** contra Supabase.
+> 🚫 **Nunca correr `npx prisma db push` ni `prisma migrate reset` contra Supabase** (borra tablas de otras lanes).
 
+| Comando | Para qué sirve |
+| :--- | :--- |
+| `npx prisma generate` | Regenera los tipos de `@prisma/client` después de cambios en `prisma/schema.prisma`. |
+| `npx prisma studio` | Abre un panel web (`http://localhost:5555`) para ver y filtrar todas las tablas y filas. |
+| `npx prisma validate` | Verifica que `prisma/schema.prisma` sea válido y sin relaciones rotas. |
+| `npx prisma format` | Formatea y alinea `prisma/schema.prisma`. |
+| `npx prisma db pull --print` | Muestra en consola el esquema actual de la base sin pisar tu `schema.prisma`. |
+
+### Aplicar un cambio nuevo de `schema.prisma` en Supabase de forma segura
 ```powershell
-# 1. Generar solo el diff SQL contra la base actual
+# 1. Generar el SQL diferencial entre la base y tu schema.prisma
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > cambio.sql
 
-# 2. Revisar cambio.sql: si contiene DROP, NO aplicar (falta git merge dev)
+# 2. Revisar cambio.sql (si tiene DROP, NO aplicar: te falta git merge dev)
 Get-Content cambio.sql
 
 # 3. Si solo tiene CREATE / ALTER ADD COLUMN, ejecutarlo y regenerar cliente
@@ -114,11 +114,40 @@ npx prisma generate
 
 ---
 
-## 6. Comandos de diagnóstico rápido
+## 4. Comandos útiles de NPM (`package.json`)
+
+| Comando | Para qué sirve |
+| :--- | :--- |
+| `npm run dev` | Inicia el servidor de desarrollo Next.js en `http://localhost:3000`. |
+| `npm test` | Ejecuta todos los tests unitarios (`src/**/*.test.ts` y `scripts/**/*.test.ts`). |
+| `npx tsc --noEmit` | Chequea errores de TypeScript en todo el proyecto sin compilar archivos. |
+| `npm run lint` | Ejecuta ESLint sobre el proyecto. |
+| `npm run build` | Compila la aplicación para producción (valida rutas, SSR y tipos). |
+| `npm run start` | Corre localmente el build generado por `npm run build`. |
+| `npm run imagenes` | Convierte imágenes fuente de hábitos a `.avif` optimizados. |
+| `npm run companeros` | Prepara y procesa los assets de compañeros (`scripts/preparar-companeros.ts`). |
+| `npm run heroes` | Importa catálogo de héroes/santos (`scripts/importar-heroes.ts`). |
+| `npm run liturgia:generar` | Genera el kalendario y textos litúrgicos (`scripts/liturgia/generar.ts`). |
+| `npm run reposo:frases` | Genera el mazo de frases para el modo Reposo (`scripts/reposo/generar-frases.ts`). |
+
+---
+
+## 5. Flujo de trabajo en Lanes (`git worktree`)
+
+Nunca se commitea directo en `ordo-diei/`. Cada cambio va en una lane:
 
 ```powershell
-git status -sb                   # Ver en qué rama estás y si estás ahead/behind origin/dev
-git log -n 5 --oneline           # Ver los últimos 5 commits locales
-git worktree list                # Ver qué lanes están abiertas en disco
-git diff dev...origin/dev --stat # Ver qué cambió en GitHub antes de hacer pull
+# 1. Crear worktree desde dev (en ordo-diei/)
+git worktree add -b task/lane-NN-nombre ../ordo-diei-lanes/lane-NN dev
+
+# 2. Commitear cambios dentro del worktree (../ordo-diei-lanes/lane-NN)
+git add -A
+git commit -m "feat(modulo): descripcion breve (lane NN)"
+
+# 3. Integrar a dev (corre merge dev + tests + tsc + merge --no-ff)
+& "C:\Program Files\Git\bin\bash.exe" ./scripts/integrar.sh
+
+# 4. Limpiar worktree y rama (en ordo-diei/)
+git worktree remove ../ordo-diei-lanes/lane-NN
+git branch -d task/lane-NN-nombre
 ```
