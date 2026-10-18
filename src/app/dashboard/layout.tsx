@@ -13,9 +13,9 @@ import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpr
 import { contarComprasCompartidasPendientes } from "@/lib/tienda/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
-import { nivelDe, xpTotal } from "@/lib/niveles";
 import { enriquecerConRachaYRanking, parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
-import { bienvenidaDiariaDe } from "@/lib/engagement/companeroServidor";
+import { bienvenidaDiariaDe, companeroDe } from "@/lib/engagement/companeroServidor";
+import { CompaneroFlotante } from "@/components/engagement/CompaneroFlotante";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
@@ -37,7 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [usersRaw, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes, bienvenidaHoy] = await Promise.all([
+  const [usersRaw, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes, bienvenidaHoy, fichaCompanero] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -54,6 +54,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       console.error("[Bienvenida]", e);
       return null;
     }),
+    // El compañero flotante (lane 247) aparece en todas las pantallas de /dashboard
+    companeroDe(Number(session.user.id)).catch((e) => {
+      console.error("[Companero]", e);
+      return null;
+    }),
   ]);
   const users = await enriquecerConRachaYRanking(usersRaw);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
@@ -61,8 +66,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
   // El compañero llama la atención hasta que se lo elige y cada vez que sube de nivel
-  const fichaCompanero = await prisma.companero.findUnique({ where: { usuarioId: Number(session.user.id) }, select: { personaje: true, nivelVisto: true } }).catch(() => null);
-  const companeroPendiente = !fichaCompanero?.personaje || nivelDe(xpTotal(currentUser)).level > fichaCompanero.nivelVisto;
+  const companeroPendiente = !fichaCompanero?.personaje || fichaCompanero.nivelNuevo;
+  const personajeCompanero = fichaCompanero?.personaje ?? null;
   const tasks = myTasks.map((t) => ({
     ...t,
     timerStartedAt: t.timerStartedAt?.toISOString() ?? null,
@@ -90,7 +95,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <ModoRelajado activo={modoRelajado} />
       <ActualizarPremios />
       <ModalManager bienvenidaHoy={bienvenidaHoy} />
-      <MainDock currentUser={currentUser} allUsers={users} />
+      {fichaCompanero && personajeCompanero && (
+        <CompaneroFlotante
+          datos={{
+            usuarioId: Number(session.user.id),
+            quien: fichaCompanero.quien,
+            personaje: personajeCompanero,
+            nombre: fichaCompanero.nombre,
+            pose: fichaCompanero.pose,
+            poses: fichaCompanero.poses.desbloqueadas,
+            saludo: fichaCompanero.nivelNuevo ? `¡Subiste al nivel ${fichaCompanero.nivel.numero}, ${fichaCompanero.nivel.titulo}!` : (fichaCompanero.regreso ?? fichaCompanero.frase),
+          }}
+        />
+      )}
+      <MainDock
+        currentUser={currentUser}
+        allUsers={users}
+        companero={fichaCompanero && personajeCompanero ? { usuarioId: Number(session.user.id), nombre: fichaCompanero.nombre, personaje: personajeCompanero, pose: fichaCompanero.pose } : null}
+      />
     </SidebarProvider>
   );
 }
