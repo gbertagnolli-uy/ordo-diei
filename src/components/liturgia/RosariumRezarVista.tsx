@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   BookOpen,
   Check,
+  ChevronDown,
   CircleDot,
   Maximize2,
   Sparkles,
@@ -409,34 +410,21 @@ function TarjetaMisterioRezo({
   onAbrirFullscreen: () => void;
 }) {
   return (
-    <Card className="border-primary/35 bg-card shadow-sm overflow-hidden">
-      <div className="flex flex-col md:flex-row">
-        {/* Imagen de la carta del misterio */}
-        <div className="md:w-64 lg:w-72 shrink-0 bg-stone-950/90 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-border/50">
-          <div className="relative aspect-[63/88] w-44 sm:w-52 md:w-full overflow-hidden rounded-xl border border-amber-500/40 bg-stone-900 shadow-lg">
+    <div className="flex flex-col gap-3">
+      {/* 1. Card con la imagen destacada (formato 63:88 sin fondo oscuro, sin recortes y sin espacio libre) y todos los datos del misterio */}
+      <Card className="py-0 gap-0 border-primary/35 bg-card shadow-sm overflow-hidden">
+        <div className="flex flex-col sm:flex-row">
+          <div className="w-full sm:w-52 md:w-56 aspect-[63/88] shrink-0 overflow-hidden border-b sm:border-b-0 sm:border-r border-border/50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imagenSrc}
               alt={misterio.castellano}
-              className="size-full object-cover"
+              className="block size-full object-cover"
             />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onAbrirFullscreen}
-            className="mt-3 w-full gap-1.5 text-xs cursor-pointer"
-          >
-            <Maximize2 className="size-3.5 text-primary" />
-            <span>Ver en pantalla completa</span>
-          </Button>
-        </div>
 
-        {/* Contenido del misterio y oraciones de la decena en orden */}
-        <div className="flex-1 p-4 sm:p-6 space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border/50 pb-3">
-            <div className="space-y-1">
+          <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 gap-4">
+            <div className="space-y-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="default" className="font-mono text-xs font-bold">
                   Mysterium {misterio.numeroRomano}
@@ -444,117 +432,142 @@ function TarjetaMisterioRezo({
                 <Badge variant="outline" className="text-xs">
                   {misterio.grupoLatino}
                 </Badge>
-                {misterio.totalGlobal > 5 && (
-                  <Badge variant="secondary" className="font-mono text-xs">
-                    #{misterio.indiceGlobal} / {misterio.totalGlobal}
-                  </Badge>
-                )}
+                <Badge variant="secondary" className="font-mono text-xs">
+                  #{misterio.indiceGlobal} / {misterio.totalGlobal}
+                </Badge>
                 <span className="text-xs font-mono text-muted-foreground">
                   {misterio.cita}
                 </span>
               </div>
 
-              <h3 lang="la" className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-                {misterio.latino}
-              </h3>
-              <p className="text-sm text-foreground/85 font-sans">
-                {misterio.castellano}
-              </p>
+              <div className="space-y-1">
+                <h3 lang="la" className="font-serif text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                  {misterio.latino}
+                </h3>
+                <p className="text-sm sm:text-base text-foreground/85 font-sans">
+                  {misterio.castellano}
+                </p>
+              </div>
             </div>
 
-            <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-1.5 text-right">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary block">
-                Fruto espiritual
-              </span>
-              <span className="font-serif text-xs italic text-foreground">
-                {misterio.fruto}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/40">
+              <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary block">
+                  Fruto espiritual
+                </span>
+                <span className="font-serif text-xs sm:text-sm italic text-foreground">
+                  {misterio.fruto}
+                </span>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onAbrirFullscreen}
+                className="gap-1.5 text-xs cursor-pointer"
+              >
+                <Maximize2 className="size-3.5 text-primary" />
+                <span>Ver en pantalla completa</span>
+              </Button>
             </div>
           </div>
+        </div>
+      </Card>
 
-          {/* Cita y lectura de la Vulgata */}
-          <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                Lectio Vulgatæ ({misterio.cita})
-              </span>
-              <span className="text-[11px] text-muted-foreground italic">
-                {FUENTE_LECTURAS}
+      {/* 2. Card con Lectio Vulgatæ (en acordeón colapsado sin expandir) */}
+      <Card className="py-0 gap-0 border border-border/75 bg-card/80 shadow-xs overflow-hidden">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-primary select-none hover:bg-muted/30 transition-colors">
+            <div className="flex flex-wrap items-center gap-2">
+              <span>Lectio Vulgatæ ({misterio.cita})</span>
+              <span className="text-[11px] font-normal normal-case text-muted-foreground italic">
+                · {FUENTE_LECTURAS}
               </span>
             </div>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-border/50 bg-muted/20 px-4 py-3.5 space-y-2">
             {misterio.lecturas.map((l) => (
               <p key={l.ref} lang="la" className="font-serif text-sm leading-relaxed text-foreground/95">
                 {l.la}
               </p>
             ))}
           </div>
+        </details>
+      </Card>
 
-          {/* Contador interactivo de las 10 Avemarías de la decena */}
-          <div className="rounded-xl border border-border/60 bg-card/60 p-3.5 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-foreground">
-                Decena · Cuentas de las 10 Avemarías ({cuentas}/10)
-              </span>
-              {cuentas > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onCambiarCuentas(0)}
-                  className="text-xs text-muted-foreground underline hover:text-foreground cursor-pointer"
-                >
-                  Reiniciar decena
-                </button>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => {
-                const completada = num <= cuentas;
-                return (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => onCambiarCuentas(cuentas === num ? num - 1 : num)}
-                    aria-label={`Ave María ${num} de 10`}
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-full border text-xs font-mono font-bold transition-all cursor-pointer",
-                      completada
-                        ? "border-primary bg-primary text-primary-foreground shadow-xs"
-                        : "border-border bg-muted/40 text-muted-foreground hover:border-primary/50 hover:text-foreground",
-                    )}
-                  >
-                    {completada ? <Check className="size-3.5" /> : num}
-                  </button>
-                );
-              })}
-            </div>
+      {/* 3. Card con las cuentas de la decena */}
+      <Card className="py-3.5 gap-2.5 border border-border/75 bg-card/80 shadow-xs">
+        <CardContent className="px-4 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-foreground">
+              Decena · Cuentas de las 10 Avemarías ({cuentas}/10)
+            </span>
+            {cuentas > 0 && (
+              <button
+                type="button"
+                onClick={() => onCambiarCuentas(0)}
+                className="text-xs text-muted-foreground underline hover:text-foreground cursor-pointer"
+              >
+                Reiniciar decena
+              </button>
+            )}
           </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => {
+              const completada = num <= cuentas;
+              return (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => onCambiarCuentas(cuentas === num ? num - 1 : num)}
+                  aria-label={`Ave María ${num} de 10`}
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-full border text-xs font-mono font-bold transition-all cursor-pointer",
+                    completada
+                      ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                      : "border-border bg-muted/40 text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                  )}
+                >
+                  {completada ? <Check className="size-3.5" /> : num}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Oraciones de la decena en orden */}
-          <details className="rounded-xl border border-border/60 bg-muted/20 p-3.5 group" open={misterio.indiceGlobal === 1}>
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-primary select-none">
+      {/* 4. Card con las oraciones de la decena (en acordeón colapsado) */}
+      <Card className="py-0 gap-0 border border-border/75 bg-card/80 shadow-xs overflow-hidden">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-primary select-none hover:bg-muted/30 transition-colors">
+            <span>
               Oraciones de la decena en orden (1× Pater Noster · 10× Ave Maria · 1× Gloria Patri · Oratio Fatimæ)
-            </summary>
-            <div className="mt-3 space-y-3 border-t border-border/40 pt-3">
-              {pasosDecena.map((paso) => (
-                <div key={paso.id} className="rounded-lg border border-border/50 bg-card/80 p-3 space-y-1.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-[11px]">
-                        {paso.orden}. {paso.repeticiones ? `${paso.repeticiones}×` : ""} {paso.oracion.tituloLa}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {paso.oracion.tituloEs}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">{paso.indicacion}</span>
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-border/50 bg-muted/15 px-4 py-3.5 space-y-3">
+            {pasosDecena.map((paso) => (
+              <div key={paso.id} className="rounded-lg border border-border/50 bg-card/85 p-3 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-[11px]">
+                      {paso.orden}. {paso.repeticiones ? `${paso.repeticiones}×` : ""} {paso.oracion.tituloLa}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {paso.oracion.tituloEs}
+                    </span>
                   </div>
-                  <BloqueTextoOracion oracion={paso.oracion} modo={modoIdioma} compacto />
+                  <span className="text-[11px] text-muted-foreground">{paso.indicacion}</span>
                 </div>
-              ))}
-            </div>
-          </details>
-        </div>
-      </div>
-    </Card>
+                <BloqueTextoOracion oracion={paso.oracion} modo={modoIdioma} compacto />
+              </div>
+            ))}
+          </div>
+        </details>
+      </Card>
+    </div>
   );
 }
 
