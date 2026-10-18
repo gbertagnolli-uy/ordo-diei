@@ -32,6 +32,8 @@ import { puedeEditarHabito } from "./permisos.ts";
 import { haySancion } from "../comportamiento/sancionServer.ts";
 import { mitad } from "../comportamiento/sancion.ts";
 import { claveDeUrl } from "../archivos.ts";
+import { aplicarAceleradorRanking } from "../ranking.ts";
+import { mapaRankingDeFamilia } from "../engagement/servidor.ts";
 
 export const APP_TZ = process.env.APP_TZ || "America/Montevideo";
 /** Días hacia atrás que se pueden registrar o corregir */
@@ -679,7 +681,9 @@ export function calcularRecompensa(
   eventos: Evento[],
   categoria: Categoria,
   /** Día con sanción (vault/LANE_200_SANCION_Y_ENGAGEMENT.md): puntos y XP valen la mitad */
-  conSancion = false
+  conSancion = false,
+  /** Porcentaje de acelerador del podio en el ranking (1ro: 5%, 2do: 3%, 3ro: 1%) */
+  aceleradorPct = 0
 ): { deltaPuntos: number; deltaXp: number; nuevoPuntos: number; nuevoXp: number } {
   const previoPuntos = previo?.puntos ?? 0;
   const previoXp = previo?.xp ?? 0;
@@ -695,7 +699,9 @@ export function calcularRecompensa(
       xpBono = RECOMPENSA.xpAscenso;
     }
     nuevoXp = RECOMPENSA.xpDia + xpBono;
-    nuevoPuntos = daPuntos(categoria) ? RECOMPENSA.puntosDia : 0;
+    nuevoPuntos = daPuntos(categoria)
+      ? aplicarAceleradorRanking(RECOMPENSA.puntosDia, aceleradorPct).puntosTotales
+      : 0;
     if (conSancion) {
       nuevoXp = mitad(nuevoXp);
       nuevoPuntos = mitad(nuevoPuntos);
@@ -744,6 +750,9 @@ export async function registrar(input: {
 
   return prisma.$transaction(async (tx) => {
     const resultados: { usuarioId: number; puntos: number; xp: number; libroTerminado: string | null; pendiente: boolean }[] = [];
+    const mapaRanking = marca === "hecho" && !pendiente && daPuntos(categoria)
+      ? await mapaRankingDeFamilia(new Date(), tx).catch(() => new Map())
+      : new Map();
 
     for (const usuarioId of usuarioIds) {
       const adopcionActual = await tx.habitoUsuario.findUnique({
@@ -806,12 +815,14 @@ export async function registrar(input: {
       }
 
       // 3. Calcular recompensas
+      const aceleradorPct = mapaRanking.get(usuarioId)?.aceleradorPct ?? 0;
       const recompensa = calcularRecompensa(
         previo ? { puntos: previo.puntos, xp: previo.xp } : null,
         pendiente ? null : marca,
         eventos,
         categoria,
-        marca === "hecho" && !pendiente && (await haySancion(tx, usuarioId))
+        marca === "hecho" && !pendiente && (await haySancion(tx, usuarioId)),
+        aceleradorPct
       );
 
       // 4. Modificar registro (en "Leer un libro", las páginas van al libro en curso)

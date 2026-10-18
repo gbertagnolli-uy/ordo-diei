@@ -22,8 +22,21 @@ import {
 } from "./racha.ts";
 import { hitosAlcanzados, origenHito, proximoHito, type Hito } from "./hitos.ts";
 import { cofreGanado, misionesDeHoy, PUNTOS_MISION, type Mision } from "./misiones.ts";
+import {
+  calcularRankingUsuarios,
+  enriquecerUsuariosConRanking,
+  infoRankingPorPuesto,
+  type InfoRankingUsuario,
+} from "../ranking.ts";
 
-export { armarResumenRachaApp, CLAVE_BIENVENIDA_VISTA, PUNTOS_INGRESO_DIARIO, XP_INGRESO_DIARIO, type ResumenRachaApp };
+export {
+  armarResumenRachaApp,
+  CLAVE_BIENVENIDA_VISTA,
+  PUNTOS_INGRESO_DIARIO,
+  XP_INGRESO_DIARIO,
+  type ResumenRachaApp,
+  type InfoRankingUsuario,
+};
 
 type Cliente = Prisma.TransactionClient | typeof prisma;
 
@@ -68,6 +81,62 @@ export async function resumenRachaAppDeUsuarios(usuarioIds: number[], ahora: Dat
     resultado.set(uid, armarResumenRachaApp(fechas, hoy));
   }
   return resultado;
+}
+
+/** Mapa de puesto, emoji y acelerador de todos los miembros de la familia según rachaApp >= 2 días */
+export async function mapaRankingDeFamilia(
+  ahora: Date = new Date(),
+  cliente: Cliente = prisma
+): Promise<Map<number, InfoRankingUsuario>> {
+  const hoy = diaDeFamilia(ahora);
+  const usuarios = await cliente.usuario.findMany({
+    select: {
+      id: true,
+      completionPercentage: true,
+      stars: true,
+      puntosAcumulados: true,
+    },
+  });
+  if (usuarios.length === 0) return new Map();
+  const desde = new Date(aFecha(hoy).getTime() - DIAS_HISTORIAL * 86_400_000);
+  const filas = await cliente.actividadDia.findMany({
+    where: { usuarioId: { in: usuarios.map((u) => u.id) }, fecha: { gte: desde } },
+    select: { usuarioId: true, fecha: true },
+  });
+  const fechasPorUsuario = new Map<number, string[]>();
+  for (const u of usuarios) fechasPorUsuario.set(u.id, []);
+  for (const f of filas) {
+    fechasPorUsuario.get(f.usuarioId)?.push(aClave(f.fecha));
+  }
+  const candidatos = usuarios.map((u) => {
+    const racha = calcularRachaApp(fechasPorUsuario.get(u.id) ?? [], hoy);
+    return {
+      ...u,
+      rachaAppDias: racha.dias,
+    };
+  });
+  return calcularRankingUsuarios(candidatos).porUsuarioId;
+}
+
+export async function infoRankingDeUsuario(
+  usuarioId: number,
+  ahora: Date = new Date(),
+  cliente: Cliente = prisma
+): Promise<InfoRankingUsuario> {
+  const mapa = await mapaRankingDeFamilia(ahora, cliente);
+  return mapa.get(usuarioId) ?? infoRankingPorPuesto(0, null);
+}
+
+export async function enriquecerConRachaYRanking<
+  T extends { id: number; completionPercentage?: number | null; stars?: number | null; puntosAcumulados?: number | null }
+>(users: T[], ahora: Date = new Date()): Promise<Array<T & { rachaApp: ResumenRachaApp | null } & InfoRankingUsuario>> {
+  if (users.length === 0) return [];
+  const rachas = await resumenRachaAppDeUsuarios(users.map((u) => u.id), ahora).catch(() => new Map<number, ResumenRachaApp>());
+  const conRacha = users.map((u) => ({
+    ...u,
+    rachaApp: rachas.get(u.id) ?? null,
+  }));
+  return enriquecerUsuariosConRanking(conRacha);
 }
 
 /** Una carta al azar (por rareza, como el cofre) para el fragmento de un premio */

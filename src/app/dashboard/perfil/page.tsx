@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { usuariosObjetivo } from "@/lib/habitos/permisos";
 import { hoyDia, resumenConducta } from "@/lib/conducta/server";
 import { getEstadoHabitos } from "@/lib/habitos/server";
-import { resumenRachaAppDe } from "@/lib/engagement/servidor";
+import { infoRankingDeUsuario, resumenRachaAppDe } from "@/lib/engagement/servidor";
 import { PerfilView, type PremioItem } from "@/components/perfil/PerfilView";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export default async function PerfilPage({
     targetUserId = permitidos[0];
   }
 
-  const [targetUser, estadoUsuario, premiosRaw, animoRaw, conducta, rachaApp] = await Promise.all([
+  const [targetUser, estadoUsuario, premiosRaw, animoRaw, conducta, rachaApp, infoRanking] = await Promise.all([
     prisma.usuario.findUnique({
       where: { id: targetUserId },
       omit: { pinSecretoHash: true },
@@ -58,6 +58,7 @@ export default async function PerfilPage({
     }),
     resumenConducta(targetUserId, 30),
     resumenRachaAppDe(targetUserId).catch(() => null),
+    infoRankingDeUsuario(targetUserId).catch(() => null),
   ]);
 
   if (!targetUser) notFound();
@@ -77,7 +78,7 @@ export default async function PerfilPage({
       <PageHeader group="Cuenta" title={titulo} />
       <main className="flex-1">
         <PerfilView
-          usuario={{ ...targetUser, rachaApp }}
+          usuario={{ ...targetUser, rachaApp, ...(infoRanking ?? {}) }}
           habitos={estadoUsuario.habitos}
           premios={premios}
           animo={animoRaw.map((a) => ({ creadoEn: a.creadoEn.toISOString(), puntaje: a.puntaje }))}

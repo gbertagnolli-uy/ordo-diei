@@ -243,30 +243,36 @@ export function ModalManager({ bienvenidaHoy }: { bienvenidaHoy?: BienvenidaDiar
               </div>
 
               {/* Detailed Gamification Breakdown */}
-              {(data?.basePoints > 0 || data?.streakBonus > 0 || data?.speedBonus > 0 || data?.checklistBonus > 0) && (
+              {(data?.basePoints > 0 || data?.streakBonus > 0 || data?.speedBonus > 0 || data?.checklistBonus > 0 || data?.rankingBonus > 0) && (
                 <div className="flex flex-col gap-2 mt-1 text-sm">
                   {data?.basePoints > 0 && (
-                    <div className="flex justify-between items-center text-[var(--warning)] font-medium">
+                    <div className="flex justify-between items-center text-[var(--warning)] font-medium gap-2">
                       <span>✓ Base por dificultad</span>
                       <span>+{data.basePoints}</span>
                     </div>
                   )}
                   {data?.streakBonus > 0 && (
-                    <div className="flex justify-between items-center text-orange-500 font-bold">
+                    <div className="flex justify-between items-center text-orange-500 font-bold gap-2">
                       <span>🔥 Bono de racha</span>
                       <span>+{data.streakBonus}</span>
                     </div>
                   )}
                   {data?.speedBonus > 0 && (
-                    <div className="flex justify-between items-center text-blue-500 font-bold">
+                    <div className="flex justify-between items-center text-blue-500 font-bold gap-2">
                       <span>⚡ Bono de velocidad</span>
                       <span>+{data.speedBonus}</span>
                     </div>
                   )}
                   {data?.checklistBonus > 0 && (
-                    <div className="flex justify-between items-center text-[var(--success)] font-bold">
+                    <div className="flex justify-between items-center text-[var(--success)] font-bold gap-2">
                       <span>📝 Bono checklist perfecto</span>
                       <span>+{data.checklistBonus}</span>
+                    </div>
+                  )}
+                  {data?.rankingBonus > 0 && (
+                    <div className="flex justify-between items-center text-[var(--primary)] font-bold gap-2">
+                      <span>{data?.emojiPodio ?? "🏆"} Acelerador #{data?.puestoRanking} (+{data?.aceleradorRankingPct}%)</span>
+                      <span>+{data.rankingBonus}</span>
                     </div>
                   )}
                 </div>

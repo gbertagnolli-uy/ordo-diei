@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { comprarAccesorio, elegirPersonaje, equiparAccesorio, festejarNivel, nombrarCompanero } from "@/lib/engagement/companeroServidor";
-import { marcarBienvenidaVista, resumenRachaAppDe } from "@/lib/engagement/servidor";
+import { infoRankingDeUsuario, marcarBienvenidaVista, resumenRachaAppDe } from "@/lib/engagement/servidor";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +11,11 @@ export async function GET(req: NextRequest) {
     if (!session?.user?.id) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     const pedidoId = Number(req.nextUrl.searchParams.get("usuarioId"));
     const usuarioId = Number.isInteger(pedidoId) && pedidoId > 0 ? pedidoId : Number(session.user.id);
-    const rachaApp = await resumenRachaAppDe(usuarioId);
-    return NextResponse.json({ ok: true, rachaApp });
+    const [rachaApp, infoRanking] = await Promise.all([
+      resumenRachaAppDe(usuarioId),
+      infoRankingDeUsuario(usuarioId),
+    ]);
+    return NextResponse.json({ ok: true, rachaApp, infoRanking });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo consultar" }, { status: 400 });
   }

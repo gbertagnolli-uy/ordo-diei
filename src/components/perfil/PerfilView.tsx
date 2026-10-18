@@ -53,6 +53,11 @@ interface PerfilViewProps {
     totalTasksCompleted?: number | null;
     completionPercentage?: number | null;
     rachaApp?: ResumenRachaApp | null;
+    puestoRanking?: number | null;
+    emojiPodio?: string | null;
+    etiquetaPodio?: string | null;
+    aceleradorPct?: number | null;
+    participaRanking?: boolean | null;
   };
   habitos: EstadoHabito[];
   premios: PremioItem[];
