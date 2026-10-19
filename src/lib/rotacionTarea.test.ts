@@ -7,6 +7,7 @@ import {
   ocurreRotacionEn,
   primeraAsignacionRotativa,
   responsableEnDia,
+  responsablesEnDia,
   type RotacionConfig,
 } from "./rotacionTarea.ts";
 
@@ -159,3 +160,60 @@ test("normalizarRotacionConfig y describirRotacion", () => {
   });
   assert.equal(describirRotacion(cfg), "Rotativa · cada 2 semanas");
 });
+
+test("permite más de un responsable por día en selección de día de la semana (tareas en grupo)", () => {
+  const configGrupal: RotacionConfig = {
+    modo: "dias_semana",
+    responsablesIds: [100, 200, 300],
+    diasPorUsuario: {
+      "100": [1, 5],    // Lunes y Viernes
+      "200": [1, 3],    // Lunes y Miércoles (Lunes compartido con 100!)
+      "300": [2, 4],    // Martes y Jueves
+    },
+    fechaInicio: "2026-10-12", // Lunes 12 de oct
+  };
+
+  const lunes = new Date(2026, 9, 12);
+  const martes = new Date(2026, 9, 13);
+  const miercoles = new Date(2026, 9, 14);
+
+  // En lunes 12, tanto 100 como 200 son responsables
+  const respLunes = responsablesEnDia(configGrupal, lunes);
+  assert.deepEqual(respLunes, [100, 200]);
+
+  // En martes 13, solo 300
+  const respMartes = responsablesEnDia(configGrupal, martes);
+  assert.deepEqual(respMartes, [300]);
+
+  // En miércoles 14, solo 200
+  const respMiercoles = responsablesEnDia(configGrupal, miercoles);
+  assert.deepEqual(respMiercoles, [200]);
+
+  // Visibilidad el lunes: tanto 100 como 200 ven sus respectivas tareas asignadas
+  const tarea100 = {
+    asignadoId: 100,
+    estado: "Pendiente",
+    fechaVencimiento: lunes,
+    rotacionConfig: configGrupal,
+  };
+  const tarea200 = {
+    asignadoId: 200,
+    estado: "Pendiente",
+    fechaVencimiento: lunes,
+    rotacionConfig: configGrupal,
+  };
+  const tarea300 = {
+    asignadoId: 300,
+    estado: "Pendiente",
+    fechaVencimiento: lunes,
+    rotacionConfig: configGrupal,
+  };
+
+  assert.equal(esTareaVisibleParaUsuarioEnDia(tarea100, 100, lunes), true);
+  assert.equal(esTareaVisibleParaUsuarioEnDia(tarea200, 200, lunes), true);
+  assert.equal(esTareaVisibleParaUsuarioEnDia(tarea300, 300, lunes), false);
+
+  // Descripción indica tarea en grupo
+  assert.equal(describirRotacion(configGrupal), "Rotativa · días asignados (en grupo)");
+});
+

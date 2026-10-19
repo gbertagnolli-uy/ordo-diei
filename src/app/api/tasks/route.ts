@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { DIFICULTAD_DEFAULT, esDificultad } from "@/lib/recompensaTarea";
+import { calcularPrimerVencimientoRecurrente } from "@/lib/recurrenceUtils";
 import {
   formatearFechaLocalISO,
   normalizarRotacionConfig,
+  primerasAsignacionesRotativas,
   primeraAsignacionRotativa,
   type RotacionConfig,
 } from "@/lib/rotacionTarea";
@@ -61,28 +63,20 @@ export async function POST(req: NextRequest) {
         dt.setHours(Number(h), Number(m), 0, 0);
         horaEjecucion = dt;
       }
-    } else if (tipoRecurrencia && tipoRecurrencia !== "Unica" && hora) {
-      // Recurring task without explicit fecha — calculate dynamically
-      const now = new Date();
-      const [h, m] = hora.split(":");
-      const horaLimite = Number(h);
-      const minLimite = Number(m);
-
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      if (now.getHours() < horaLimite || (now.getHours() === horaLimite && now.getMinutes() < minLimite)) {
-        fechaVencimiento = hoy; // today
-      } else {
-        const manana = new Date(hoy);
-        manana.setDate(manana.getDate() + 1);
-        fechaVencimiento = manana; // tomorrow
-      }
-
-      // Build horaEjecucion with the calculated date
-      const dtHora = new Date(fechaVencimiento);
-      dtHora.setHours(horaLimite, minLimite, 0, 0);
-      horaEjecucion = dtHora;
+    } else if (tipoRecurrencia && tipoRecurrencia !== "Unica") {
+      const calculo = calcularPrimerVencimientoRecurrente(
+        {
+          tipoRecurrencia,
+          diaDelMes: diaDelMes ? Number(diaDelMes) : null,
+          ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
+          diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
+          intervalo: Math.max(1, Math.min(365, Math.round(Number(intervalo)) || 1)),
+        },
+        new Date(),
+        hora
+      );
+      fechaVencimiento = calculo.fechaVencimiento;
+      horaEjecucion = calculo.horaEjecucion;
     }
 
     // Determine target user IDs
@@ -129,7 +123,7 @@ export async function POST(req: NextRequest) {
       const tipoRecEfectivo =
         !tipoRecurrencia || tipoRecurrencia === "Unica" ? "Diaria" : tipoRecurrencia;
 
-      const primera = primeraAsignacionRotativa(
+      const primera = primerasAsignacionesRotativas(
         {
           tipoRecurrencia: tipoRecEfectivo,
           fechaVencimiento: fechaBase,
@@ -143,7 +137,7 @@ export async function POST(req: NextRequest) {
         fechaBase
       );
 
-      if (!primera) {
+      if (!primera || primera.asignadosIds.length === 0) {
         return NextResponse.json(
           { error: "Debes asignar al menos un día o responsable válido para la rotación" },
           { status: 400 }
@@ -159,43 +153,49 @@ export async function POST(req: NextRequest) {
         horaPrimera.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
       }
 
-      const createdTasks = await prisma.$transaction(async (tx) => {
-        const task = await tx.tarea.create({
-          data: {
-            titulo,
-            descripcion,
-            creadorId: user.id,
-            asignadoId: primera.asignadoId,
-            tiempoEjecucionEstimadoSeg,
-            generaPuntosYRecompensa: Boolean(generaRecompensa),
-            dificultad: esDificultad(dificultad) ? dificultad : DIFICULTAD_DEFAULT,
-            tipoRecurrencia: tipoRecEfectivo as any,
-            diaDelMes: diaDelMes ? Number(diaDelMes) : null,
-            ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
-            diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
-            intervalo: intervaloLimpio,
-            anclaCompletado: Boolean(anclaCompletado),
-            anclaFecha: fechaBase,
-            fechaVencimiento: fechaPrimera,
-            horaEjecucion: horaPrimera,
-            grupoTareaId: null,
-            rotacionConfig: rotacionFinal as any,
-            isSurpriseEligible: Boolean(isSurpriseEligible),
-            isChecklist: hasChecklist,
-          } as any,
-        });
+      const grupoRotacionId = primera.asignadosIds.length > 1 ? randomUUID() : null;
 
-        if (hasChecklist) {
-          await tx.checklistItem.createMany({
-            data: checklistItems.map((texto: string, index: number) => ({
-              tareaId: task.id,
-              texto,
-              orden: index + 1,
-            })),
+      const createdTasks = await prisma.$transaction(async (tx) => {
+        const tasks = [];
+        for (const uid of primera.asignadosIds) {
+          const task = await tx.tarea.create({
+            data: {
+              titulo,
+              descripcion,
+              creadorId: user.id,
+              asignadoId: uid,
+              tiempoEjecucionEstimadoSeg,
+              generaPuntosYRecompensa: Boolean(generaRecompensa),
+              dificultad: esDificultad(dificultad) ? dificultad : DIFICULTAD_DEFAULT,
+              tipoRecurrencia: tipoRecEfectivo as any,
+              diaDelMes: diaDelMes ? Number(diaDelMes) : null,
+              ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
+              diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
+              intervalo: intervaloLimpio,
+              anclaCompletado: Boolean(anclaCompletado),
+              anclaFecha: fechaBase,
+              fechaVencimiento: fechaPrimera,
+              horaEjecucion: horaPrimera,
+              grupoTareaId: grupoRotacionId,
+              rotacionConfig: rotacionFinal as any,
+              isSurpriseEligible: Boolean(isSurpriseEligible),
+              isChecklist: hasChecklist,
+            } as any,
           });
+
+          if (hasChecklist) {
+            await tx.checklistItem.createMany({
+              data: checklistItems.map((texto: string, index: number) => ({
+                tareaId: task.id,
+                texto,
+                orden: index + 1,
+              })),
+            });
+          }
+          tasks.push(task);
         }
 
-        return [task];
+        return tasks;
       });
 
       return NextResponse.json(createdTasks, { status: 201 });

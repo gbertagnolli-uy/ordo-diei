@@ -48,6 +48,7 @@ function crearMockPrisma(iniciales: any[]) {
             }
             if (where?.estado?.notIn && where.estado.notIn.includes(t.estado)) return false;
             if (where?.estado?.in && !where.estado.in.includes(t.estado)) return false;
+            if (where?.asignadoId !== undefined && t.asignadoId !== where.asignadoId) return false;
             if (where?.parentTaskId !== undefined && t.parentTaskId !== where.parentTaskId) return false;
             if (where?.OR) {
               const ok = where.OR.some((cond: any) => {
@@ -141,3 +142,50 @@ test("generarTareasRecurrentes rota responsable día por día y cierra turnos pa
   assert.equal(genMiercoles, 1);
   assert.equal(mock.tareas[2].asignadoId, 3);
 });
+
+test("generarTareasRecurrentes genera tareas para múltiples responsables el mismo día (tareas en grupo)", async () => {
+  const rotacionGrupal: RotacionConfig = {
+    modo: "dias_semana",
+    responsablesIds: [10, 20],
+    diasPorUsuario: {
+      "10": [1], // Lunes
+      "20": [1], // Lunes (¡ambos el lunes!)
+    },
+    fechaInicio: "2026-10-12",
+  };
+
+  const lunes = new Date(2026, 9, 12, 10, 0, 0);
+
+  const reglaGrupal = {
+    id: 50,
+    titulo: "Ordenar garage",
+    descripcion: "Tarea en equipo",
+    creadorId: 1,
+    asignadoId: 10,
+    tiempoEjecucionEstimadoSeg: 1800,
+    generaPuntosYRecompensa: true,
+    dificultad: "Exigente",
+    tipoRecurrencia: "Diaria",
+    fechaVencimiento: lunes,
+    horaEjecucion: new Date(2026, 9, 12, 18, 0, 0),
+    estado: "Pendiente",
+    generadaPorCron: false,
+    rotacionConfig: rotacionGrupal,
+  };
+
+  // La regla inicial ya está para el usuario 10. Al correr el cron, debe crear la instancia para el usuario 20.
+  const mock = crearMockPrisma([reglaGrupal]);
+  const genLunes = await generarTareasRecurrentes(mock, lunes);
+  assert.equal(genLunes, 1);
+
+  // Ahora ambos tienen tarea activa para el lunes
+  const tareasLunes = mock.tareas.filter((t: any) => t.estado === "Pendiente");
+  assert.equal(tareasLunes.length, 2);
+  const asignados = tareasLunes.map((t: any) => t.asignadoId).sort();
+  assert.deepEqual(asignados, [10, 20]);
+
+  // Idempotente: volver a correr no duplica para ninguno
+  const genLunes2 = await generarTareasRecurrentes(mock, lunes);
+  assert.equal(genLunes2, 0);
+});
+

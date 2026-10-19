@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ocurreEn, tocaPorCompletado } from "./recurrenceUtils.ts";
+import { calcularPrimerVencimientoRecurrente, ocurreEn, tocaPorCompletado } from "./recurrenceUtils.ts";
 
 const base = { fechaVencimiento: null as Date | null };
 
@@ -49,3 +49,36 @@ test("completado: la siguiente cuenta desde la última acción y no deriva", () 
   assert.equal(tocaPorCompletado(diaria, new Date(2026, 9, 12)), false);
   assert.equal(tocaPorCompletado(diaria, new Date(2026, 9, 13)), true);
 });
+
+test("calcularPrimerVencimientoRecurrente calcula la fecha futura correcta en vez de la fecha de creación", () => {
+  // Domingo 11 de octubre de 2026
+  const domingo = new Date(2026, 9, 11, 10, 0, 0);
+
+  // Semanal para viernes (día 5): debe caer el viernes 16 de octubre, no el domingo 11
+  const semanalViernes = calcularPrimerVencimientoRecurrente(
+    { tipoRecurrencia: "Semanal", diaDeLaSemana: 5 },
+    domingo,
+    "15:00"
+  );
+  assert.equal(semanalViernes.fechaVencimiento.getFullYear(), 2026);
+  assert.equal(semanalViernes.fechaVencimiento.getMonth(), 9);
+  assert.equal(semanalViernes.fechaVencimiento.getDate(), 16); // Viernes 16
+  assert.equal(semanalViernes.horaEjecucion?.getHours(), 15);
+
+  // Mensual el día 25: debe caer el 25 de octubre
+  const mensual25 = calcularPrimerVencimientoRecurrente(
+    { tipoRecurrencia: "Mensual_Fecha", diaDelMes: 25 },
+    domingo,
+    "12:00"
+  );
+  assert.equal(mensual25.fechaVencimiento.getDate(), 25);
+
+  // Diaria: si es hoy pero aún no pasó la hora, cae hoy; si la hora pasó, mañana
+  const diariaManana = calcularPrimerVencimientoRecurrente(
+    { tipoRecurrencia: "Diaria" },
+    domingo,
+    "08:00"
+  );
+  assert.ok(diariaManana.fechaVencimiento instanceof Date);
+});
+

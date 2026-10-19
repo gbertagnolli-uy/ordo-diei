@@ -139,14 +139,75 @@ export function ocurreEn(regla: {
   anclaFecha?: Date | null;
 }, dia: Date): boolean {
   const ancla = regla.fechaVencimiento;
+  const base = regla.anclaFecha ?? ancla;
+  if (base && diasEntre(base, dia) < 0) return false;
   if (!patronCoincide(regla, dia, ancla)) return false;
   const n = regla.intervalo ?? 1;
   if (n <= 1) return true;
-  const base = regla.anclaFecha ?? ancla;
   if (!base) return true;
   if (regla.tipoRecurrencia === "Diaria") return diasEntre(base, dia) % n === 0;
   if (regla.tipoRecurrencia === "Semanal") return Math.floor(diasEntre(base, dia) / 7) % n === 0;
   return mesesEntre(base, dia) % n === 0;
+}
+
+/**
+ * Calcula la primera fecha real de vencimiento (y hora) en que debe ocurrir una tarea recurrente.
+ * Evita asignar la fecha de creación en tareas recurrentes de días futuros (ej. Semanal los viernes).
+ */
+export function calcularPrimerVencimientoRecurrente(
+  regla: {
+    tipoRecurrencia: string;
+    fechaVencimiento?: Date | null;
+    diaDelMes?: number | null;
+    ordinalSemana?: number | null;
+    diaDeLaSemana?: number | null;
+    intervalo?: number | null;
+    anclaFecha?: Date | null;
+  },
+  desdeFecha: Date = new Date(),
+  horaStr?: string | null
+): { fechaVencimiento: Date; horaEjecucion: Date | null } {
+  const ahora = new Date();
+  const inicio = new Date(desdeFecha.getFullYear(), desdeFecha.getMonth(), desdeFecha.getDate());
+
+  let horaH: number | null = null;
+  let horaM: number | null = null;
+  if (horaStr && typeof horaStr === "string" && horaStr.includes(":")) {
+    const [h, m] = horaStr.split(":");
+    horaH = Number(h);
+    horaM = Number(m);
+  }
+
+  // Si hoy es el mismo día calendario que ahora, verificar si la hora ya venció hoy
+  const esMismoDiaQueAhora =
+    inicio.getFullYear() === ahora.getFullYear() &&
+    inicio.getMonth() === ahora.getMonth() &&
+    inicio.getDate() === ahora.getDate();
+
+  const horaYaPasoHoy =
+    esMismoDiaQueAhora &&
+    horaH !== null &&
+    horaM !== null &&
+    (ahora.getHours() > horaH || (ahora.getHours() === horaH && ahora.getMinutes() >= (horaM ?? 0)));
+
+  // Si la hora ya venció hoy, empezar a buscar a partir de mañana
+  const offsetInicial = horaYaPasoHoy ? 1 : 0;
+
+  for (let offset = offsetInicial; offset <= 366; offset++) {
+    const candidato = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + offset);
+    if (ocurreEn({ ...regla, fechaVencimiento: regla.anclaFecha ?? regla.fechaVencimiento ?? inicio }, candidato)) {
+      const fechaVencimiento = new Date(candidato.getFullYear(), candidato.getMonth(), candidato.getDate());
+      let horaEjecucion: Date | null = null;
+      if (horaH !== null && horaM !== null) {
+        horaEjecucion = new Date(fechaVencimiento);
+        horaEjecucion.setHours(horaH, horaM, 0, 0);
+      }
+      return { fechaVencimiento, horaEjecucion };
+    }
+  }
+
+  // Fallback seguro
+  return { fechaVencimiento: inicio, horaEjecucion: null };
 }
 
 function diasEntre(a: Date, b: Date): number {

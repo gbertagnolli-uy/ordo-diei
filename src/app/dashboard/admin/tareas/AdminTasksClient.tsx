@@ -39,12 +39,15 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empt
 import { SelectorNivel } from "@/components/SelectorNivel";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, esDificultad, type Dificultad } from "@/lib/recompensaTarea";
 import { describirRotacion, normalizarRotacionConfig } from "@/lib/rotacionTarea";
+import { proyectarEventosCalendario } from "@/lib/proyeccionCalendario";
 import { toast } from "@/lib/toast";
 import {
   filtrarYOrdenarTareas,
   groupTasksForTable,
   type FiltroChecklist,
   type FiltroRecurrencia,
+  type FiltroTipoTarea,
+  type FiltroRecompensa,
   type OrdenTareas,
 } from "./filtrosTareas";
 
@@ -73,6 +76,8 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
   const [dificultadFiltro, setDificultadFiltro] = useState<Dificultad | "todas">("todas");
   const [checklistFiltro, setChecklistFiltro] = useState<FiltroChecklist>("todas");
   const [recurrenciaFiltro, setRecurrenciaFiltro] = useState<FiltroRecurrencia>("todas");
+  const [tipoTareaFiltro, setTipoTareaFiltro] = useState<FiltroTipoTarea>("todas");
+  const [recompensaFiltro, setRecompensaFiltro] = useState<FiltroRecompensa>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [orden, setOrden] = useState<OrdenTareas>("vencimiento_asc");
 
@@ -98,25 +103,50 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
         dificultad: dificultadFiltro,
         checklist: checklistFiltro,
         recurrencia: recurrenciaFiltro,
+        tipoTarea: tipoTareaFiltro,
+        recompensa: recompensaFiltro,
         busqueda,
         orden,
       }),
-    [groupedTasks, personaId, dificultadFiltro, checklistFiltro, recurrenciaFiltro, busqueda, orden]
+    [
+      groupedTasks,
+      personaId,
+      dificultadFiltro,
+      checklistFiltro,
+      recurrenciaFiltro,
+      tipoTareaFiltro,
+      recompensaFiltro,
+      busqueda,
+      orden,
+    ]
   );
 
-  // Eventos del calendario también respetan los filtros activos
-  const filteredRawTasks = useMemo(
-    () =>
-      filtrarYOrdenarTareas(tasks, {
-        personaId,
-        dificultad: dificultadFiltro,
-        checklist: checklistFiltro,
-        recurrencia: recurrenciaFiltro,
-        busqueda,
-        orden,
-      }),
-    [tasks, personaId, dificultadFiltro, checklistFiltro, recurrenciaFiltro, busqueda, orden]
-  );
+  const calendarRange = useMemo(() => {
+    const start = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
+    return { start, end };
+  }, [currentDate]);
+
+  const events = useMemo(() => {
+    return proyectarEventosCalendario(tasks, users, calendarRange.start, calendarRange.end, {
+      usuarioId: personaId,
+      dificultad: dificultadFiltro,
+      tipoTarea: tipoTareaFiltro,
+      recurrencia: recurrenciaFiltro,
+      recompensa: recompensaFiltro,
+      busqueda,
+    });
+  }, [
+    tasks,
+    users,
+    calendarRange,
+    personaId,
+    dificultadFiltro,
+    tipoTareaFiltro,
+    recurrenciaFiltro,
+    recompensaFiltro,
+    busqueda,
+  ]);
 
   const miembrosDe = (t: any): number[] => {
     const rot = normalizarRotacionConfig(t.rotacionConfig);
@@ -158,6 +188,8 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
     dificultadFiltro !== "todas" ||
     checklistFiltro !== "todas" ||
     recurrenciaFiltro !== "todas" ||
+    tipoTareaFiltro !== "todas" ||
+    recompensaFiltro !== "todas" ||
     busqueda.trim() !== "";
 
   const limpiarFiltros = () => {
@@ -165,22 +197,10 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
     setDificultadFiltro("todas");
     setChecklistFiltro("todas");
     setRecurrenciaFiltro("todas");
+    setTipoTareaFiltro("todas");
+    setRecompensaFiltro("todas");
     setBusqueda("");
   };
-
-  const events = filteredRawTasks.map((t) => {
-    let start = new Date(t.fechaVencimiento || new Date());
-    let end = new Date(start);
-    let allDay = true;
-
-    if (t.horaEjecucion) {
-      start = new Date(t.horaEjecucion);
-      end = new Date(start.getTime() + t.tiempoEjecucionEstimadoSeg * 1000);
-      allDay = false;
-    }
-
-    return { id: t.id, title: t.titulo, start, end, allDay, resource: t };
-  });
 
   const CustomEvent = ({ event }: any) => {
     const task = event.resource;
@@ -190,19 +210,28 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
           <img
             src={task.asignado.fotoUrl}
             alt="Avatar"
-            className="w-4 h-4 rounded-full flex-shrink-0 border border-white/50"
+            className="w-4 h-4 rounded-full flex-shrink-0 border border-white/50 object-cover"
           />
         ) : (
           <div className="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0 text-[9px]">
-            {task.asignado?.nombre.charAt(0)}
+            {task.asignado?.nombre?.charAt(0) ?? "?"}
           </div>
         )}
         <span className="truncate">{event.title}</span>
-        {task.tipoRecurrencia !== "Unica" && (
+        {task.asignado?.nombre && (
+          <span className="text-[10px] text-white/80 shrink-0 font-normal">
+            ({task.asignado.nombre})
+          </span>
+        )}
+        {task.rotacionConfig ? (
+          <span title="Rotativa">
+            <Repeat className="w-3 h-3 text-white/90 flex-shrink-0" />
+          </span>
+        ) : task.tipoRecurrencia && task.tipoRecurrencia !== "Unica" ? (
           <span title="Recurrente">
             <Repeat className="w-3 h-3 text-white/80 flex-shrink-0" />
           </span>
-        )}
+        ) : null}
       </div>
     );
   };
@@ -333,7 +362,7 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
           </div>
 
           {/* Barra de filtros y ordenamiento */}
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
             <div className="relative">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -375,14 +404,15 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
             </NativeSelect>
 
             <NativeSelect
-              aria-label="Filtrar por checklist"
-              value={checklistFiltro}
-              onChange={(e) => setChecklistFiltro(e.target.value as FiltroChecklist)}
+              aria-label="Filtrar por tipo de tarea"
+              value={tipoTareaFiltro}
+              onChange={(e) => setTipoTareaFiltro(e.target.value as FiltroTipoTarea)}
               className="w-full"
             >
-              <NativeSelectOption value="todas">Checklist: Todas</NativeSelectOption>
-              <NativeSelectOption value="con">Con checklist</NativeSelectOption>
-              <NativeSelectOption value="sin">Sin checklist</NativeSelectOption>
+              <NativeSelectOption value="todas">Tipo: Todas</NativeSelectOption>
+              <NativeSelectOption value="rotativa">Rotativas</NativeSelectOption>
+              <NativeSelectOption value="grupal">Grupales</NativeSelectOption>
+              <NativeSelectOption value="individual">Individuales</NativeSelectOption>
             </NativeSelect>
 
             <NativeSelect
@@ -394,6 +424,28 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
               <NativeSelectOption value="todas">Recurrencia: Todas</NativeSelectOption>
               <NativeSelectOption value="recurrente">Recurrentes</NativeSelectOption>
               <NativeSelectOption value="unica">No recurrentes (Únicas)</NativeSelectOption>
+            </NativeSelect>
+
+            <NativeSelect
+              aria-label="Filtrar por recompensa"
+              value={recompensaFiltro}
+              onChange={(e) => setRecompensaFiltro(e.target.value as FiltroRecompensa)}
+              className="w-full"
+            >
+              <NativeSelectOption value="todas">Recompensa: Todas</NativeSelectOption>
+              <NativeSelectOption value="con_recompensa">Con recompensas</NativeSelectOption>
+              <NativeSelectOption value="sin_recompensa">Sin recompensas</NativeSelectOption>
+            </NativeSelect>
+
+            <NativeSelect
+              aria-label="Filtrar por checklist"
+              value={checklistFiltro}
+              onChange={(e) => setChecklistFiltro(e.target.value as FiltroChecklist)}
+              className="w-full"
+            >
+              <NativeSelectOption value="todas">Checklist: Todas</NativeSelectOption>
+              <NativeSelectOption value="con">Con checklist</NativeSelectOption>
+              <NativeSelectOption value="sin">Sin checklist</NativeSelectOption>
             </NativeSelect>
 
             <NativeSelect
@@ -694,7 +746,11 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
                 onView={(cv: any) => setCalendarView(cv)}
                 date={currentDate}
                 onNavigate={(d: any) => setCurrentDate(d)}
-                onSelectEvent={(event) => setSelectedTask(event.resource)}
+                onSelectEvent={(event) => {
+                  const res = event.resource;
+                  const base = res?.parentTaskId ? tasks.find((t) => t.id === res.parentTaskId) : null;
+                  setSelectedTask(base ?? res);
+                }}
                 components={{ event: CustomEvent }}
                 eventPropGetter={eventPropGetter}
                 messages={{
