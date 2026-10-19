@@ -50,11 +50,13 @@ export function TaskWorkspace({
   coResponsables,
   isAdmin,
   family,
+  currentUserId,
 }: {
   tasks: any[];
   coResponsables: CoResponsableMap;
   isAdmin: boolean;
   family: { parents: any[]; children: any[] };
+  currentUserId?: number;
 }) {
   const section = sectionFromParams(useSearchParams());
   const [filter, setFilter] = useState<Filter>("all");
@@ -65,23 +67,23 @@ export function TaskWorkspace({
 
   const isTaskSection = section !== "history" && section !== "family";
   const isBoard = isTaskSection && layout === "board";
-  const isCalendar = isTaskSection && layout === "calendar" && !isAdmin;
+  const isCalendar = isTaskSection && layout === "calendar";
 
   const visible = useMemo(() => {
     if (!isTaskSection) return [];
     // En tablero y calendario cada estado tiene su lugar: solo aplican atajos y filtros
     const spread = isBoard || isCalendar;
     let list = tasks.filter((t) =>
-      section === "today" ? isDueToday(t)
+      section === "today" ? isDueToday(t, currentUserId)
         : section === "late" ? isLate(t)
         : spread ? true
-        : section === "todo" ? isActionable(t)
+        : section === "todo" ? (isActionable(t) && (!t.rotacionConfig || isDueToday(t, currentUserId)))
         : taskGroup(t) === section
     );
     if (filter === "points") list = list.filter((t) => t.generaPuntosYRecompensa);
     if (filter === "checklist") list = list.filter((t) => t.isChecklist);
     return sortTasks(list, section === "done" ? "done" : null);
-  }, [tasks, section, filter, isTaskSection, isBoard, isCalendar]);
+  }, [tasks, section, filter, isTaskSection, isBoard, isCalendar, currentUserId]);
 
   const selected = tasks.find((t) => t.id === selectedId) ?? null;
   const group = NAV.find((g) => g.items.some((i) => i.id === section))!;
@@ -101,13 +103,13 @@ export function TaskWorkspace({
   const panel = selected ? (
     <TaskDetailPanel key={selected.id} task={selected} coResponsables={coResponsables[selected.id] || []} onBack={() => setSelectedId(null)} />
   ) : (
-    <SchedulePanel tasks={tasks} onSelect={selectTask} onClose={() => setPanelPref(false)} />
+    <SchedulePanel tasks={tasks} currentUserId={currentUserId} onSelect={selectTask} onClose={() => setPanelPref(false)} />
   );
 
   const layouts: [Layout, string, LucideIcon][] = [
     ["list", "Lista", List],
     ["board", "Tablero", Columns3],
-    ...(isAdmin ? [] : ([["calendar", "Calendario", CalendarDays]] as [Layout, string, LucideIcon][])),
+    ["calendar", "Calendario", CalendarDays],
   ];
 
   return (
@@ -158,7 +160,13 @@ export function TaskWorkspace({
 
             <div className={cn("relative min-h-0 flex-1", isBoard ? "overflow-hidden" : "overflow-y-auto")}>
               {isCalendar ? (
-                <div className="px-4 pb-4"><MissionCalendar tasks={visible} onSelect={selectTask} /></div>
+                <div className="px-4 pb-4">
+                  <MissionCalendar
+                    tasks={visible}
+                    users={[...(family?.parents || []), ...(family?.children || [])]}
+                    onSelect={selectTask}
+                  />
+                </div>
               ) : isBoard ? (
                 <TaskBoard tasks={visible} coResponsables={coResponsables} selectedId={selectedId} onSelect={selectTask} isParent={isAdmin} />
               ) : visible.length === 0 ? (

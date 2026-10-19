@@ -1,5 +1,14 @@
 // Agrupación, etiquetas y formato de tareas compartidos por el App Shell y el Kanban.
 
+import { ocurreEn, calcularPrimerVencimientoRecurrente } from "../../lib/recurrenceUtils.ts";
+import {
+  normalizarRotacionConfig,
+  ocurreRotacionEn,
+  responsablesEnDia,
+  parsearFechaLocal,
+  esMismoDiaCalendario,
+} from "../../lib/rotacionTarea.ts";
+
 export type TaskGroup = "todo" | "progress" | "review" | "done";
 
 export type CoResponsable = { id: number; nombre: string; fotoUrl: string | null };
@@ -23,7 +32,80 @@ export function isActionable(task: any) {
   return g === "todo" || g === "progress";
 }
 
-export function dueDate(task: any): Date | null {
+/**
+ * Determina si una tarea aplica a un día específico (y a un usuario opcional).
+ * Maneja tareas únicas, plantillas recurrentes y rotativas.
+ */
+export function taskAppliesOnDay(task: any, day: Date, userId?: number): boolean {
+  const esPlantillaBase =
+    ((task.tipoRecurrencia && task.tipoRecurrencia !== "Unica") || Boolean(task.rotacionConfig)) &&
+    !task.parentTaskId &&
+    !task.generadaPorCron;
+
+  const config = normalizarRotacionConfig(task.rotacionConfig);
+
+  if (config) {
+    if (!ocurreRotacionEn(task, day)) return false;
+    const resp = responsablesEnDia(config, day, task.anclaFecha ?? task.fechaVencimiento);
+    if (userId !== undefined && userId !== null) {
+      return resp.includes(Number(userId));
+    }
+    return resp.length > 0;
+  }
+
+  if (esPlantillaBase && task.tipoRecurrencia && task.tipoRecurrencia !== "Unica") {
+    if (userId !== undefined && userId !== null && Number(task.asignadoId) !== Number(userId)) {
+      return false;
+    }
+    return ocurreEn(task, day);
+  }
+
+  // Instancia concreta o tarea única
+  if (userId !== undefined && userId !== null && Number(task.asignadoId) !== Number(userId)) {
+    return false;
+  }
+  const raw = task.horaEjecucion || task.fechaVencimiento;
+  const d = parsearFechaLocal(raw);
+  return d ? esMismoDiaCalendario(d, day) : false;
+}
+
+/**
+ * Obtiene la fecha de vencimiento o próxima asignación efectiva de una tarea.
+ * Para plantillas recurrentes o rotativas, calcula la fecha más próxima a partir de `fromDate` (hoy por defecto)
+ * para no mostrar la fecha estática de creación.
+ */
+export function dueDate(task: any, fromDate: Date = new Date()): Date | null {
+  const esPlantillaBase =
+    ((task.tipoRecurrencia && task.tipoRecurrencia !== "Unica") || Boolean(task.rotacionConfig)) &&
+    !task.parentTaskId &&
+    !task.generadaPorCron;
+
+  if (esPlantillaBase) {
+    const config = normalizarRotacionConfig(task.rotacionConfig);
+    const inicio = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+
+    if (config) {
+      for (let offset = 0; offset <= 366; offset++) {
+        const candidato = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + offset);
+        if (taskAppliesOnDay(task, candidato, task.asignadoId)) {
+          if (task.horaEjecucion) {
+            const h = new Date(task.horaEjecucion);
+            return new Date(candidato.getFullYear(), candidato.getMonth(), candidato.getDate(), h.getHours(), h.getMinutes(), 0);
+          }
+          return candidato;
+        }
+      }
+    } else if (task.tipoRecurrencia && task.tipoRecurrencia !== "Unica") {
+      let horaStr: string | null = null;
+      if (task.horaEjecucion) {
+        const h = new Date(task.horaEjecucion);
+        horaStr = `${h.getHours()}:${h.getMinutes()}`;
+      }
+      const prox = calcularPrimerVencimientoRecurrente(task, inicio, horaStr);
+      return prox.horaEjecucion ?? prox.fechaVencimiento;
+    }
+  }
+
   const raw = task.horaEjecucion || task.fechaVencimiento;
   return raw ? new Date(raw) : null;
 }
@@ -43,9 +125,8 @@ export function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function isDueToday(task: any) {
-  const d = dueDate(task);
-  return isActionable(task) && !!d && isSameDay(d, new Date());
+export function isDueToday(task: any, userId?: number) {
+  return isActionable(task) && taskAppliesOnDay(task, new Date(), userId);
 }
 
 export const GROUP_LABEL: Record<TaskGroup, string> = {
@@ -77,14 +158,18 @@ export function sortTasks(tasks: any[], group: TaskGroup | null) {
   if (group === "done") {
     return copy.sort((a, b) => (dueDate(b)?.getTime() ?? 0) - (dueDate(a)?.getTime() ?? 0));
   }
-  // Orden original: primero las que tienen hora, luego las que tienen fecha, luego el resto
+  // Orden por fecha efectiva de vencimiento/asignación
   return copy.sort((a, b) => {
+    const da = dueDate(a);
+    const db = dueDate(b);
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    if (da && db) {
+      const diff = da.getTime() - db.getTime();
+      if (diff !== 0) return diff;
+    }
     if (a.horaEjecucion && !b.horaEjecucion) return -1;
     if (!a.horaEjecucion && b.horaEjecucion) return 1;
-    if (a.horaEjecucion && b.horaEjecucion) return new Date(a.horaEjecucion).getTime() - new Date(b.horaEjecucion).getTime();
-    if (a.fechaVencimiento && !b.fechaVencimiento) return -1;
-    if (!a.fechaVencimiento && b.fechaVencimiento) return 1;
-    if (a.fechaVencimiento && b.fechaVencimiento) return new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime();
     return 0;
   });
 }
@@ -92,11 +177,15 @@ export function sortTasks(tasks: any[], group: TaskGroup | null) {
 const dateFmt = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
 const timeFmt = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
 
-export function formatDue(task: any, withTime = false) {
-  const d = dueDate(task);
+export function formatDue(task: any, withTime = false, onDay?: Date) {
+  const d = onDay ?? dueDate(task);
   if (!d) return null;
   const day = isSameDay(d, new Date()) ? "Hoy" : dateFmt.format(d);
-  return withTime && task.horaEjecucion ? `${day}, ${timeFmt.format(d)}` : day;
+  if (withTime && task.horaEjecucion) {
+    const h = new Date(task.horaEjecucion);
+    return `${day}, ${timeFmt.format(h)}`;
+  }
+  return day;
 }
 
 export function formatDuration(secs: number) {

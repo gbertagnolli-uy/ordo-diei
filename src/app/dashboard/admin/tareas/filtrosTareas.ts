@@ -1,7 +1,10 @@
 import { DIFICULTADES, type Dificultad } from "../../../../lib/recompensaTarea.ts";
+import { determinarTipoTarea, type TipoTareaFiltro, type RecompensaFiltro } from "../../../../lib/proyeccionCalendario.ts";
 
 export type FiltroChecklist = "todas" | "con" | "sin";
 export type FiltroRecurrencia = "todas" | "recurrente" | "unica";
+export type FiltroTipoTarea = TipoTareaFiltro;
+export type FiltroRecompensa = RecompensaFiltro;
 export type OrdenTareas = "vencimiento_asc" | "vencimiento_desc" | "tiempo_asc" | "tiempo_desc";
 
 export interface FiltrosAdminTareas {
@@ -9,6 +12,8 @@ export interface FiltrosAdminTareas {
   dificultad?: Dificultad | "todas";
   checklist?: FiltroChecklist;
   recurrencia?: FiltroRecurrencia;
+  tipoTarea?: FiltroTipoTarea;
+  recompensa?: FiltroRecompensa;
   busqueda?: string;
   orden?: OrdenTareas;
 }
@@ -51,6 +56,8 @@ export function filtrarYOrdenarTareas<T extends Record<string, any>>(items: T[],
     dificultad = "todas",
     checklist = "todas",
     recurrencia = "todas",
+    tipoTarea = "todas",
+    recompensa = "todas",
     busqueda = "",
     orden = "vencimiento_asc",
   } = filtros;
@@ -72,11 +79,36 @@ export function filtrarYOrdenarTareas<T extends Record<string, any>>(items: T[],
       if ((t.dificultad ?? "Media") !== dificultad) return false;
     }
 
+    // Filtro por tipo de tarea (rotativa, grupal, individual)
+    if (tipoTarea && tipoTarea !== "todas") {
+      const esRotativa = Boolean(t.rotacionConfig);
+      const esGrupal = Boolean(
+        t.grupoTareaId ||
+        t._isGrouped ||
+        (Array.isArray(t._assignees) && t._assignees.length > 1) ||
+        (Array.isArray(t._groupTasks) && t._groupTasks.length > 1)
+      );
+      if (tipoTarea === "rotativa" && !esRotativa) return false;
+      if (tipoTarea === "grupal" && !esGrupal) return false;
+      if (tipoTarea === "individual" && (esRotativa || esGrupal)) return false;
+    }
+
+    // Filtro por si genera recompensas o no
+    if (recompensa && recompensa !== "todas") {
+      const genera = Boolean(t.generaPuntosYRecompensa);
+      if (recompensa === "con_recompensa" && !genera) return false;
+      if (recompensa === "sin_recompensa" && genera) return false;
+    }
+
     const tieneChecklist = Boolean(t.isChecklist) || (Array.isArray(t.checklistItems) && t.checklistItems.length > 0);
     if (checklist === "con" && !tieneChecklist) return false;
     if (checklist === "sin" && tieneChecklist) return false;
 
-    const esRecurrente = Boolean(t.tipoRecurrencia && t.tipoRecurrencia !== "Unica");
+    const esRecurrente = Boolean(
+      (t.tipoRecurrencia && t.tipoRecurrencia !== "Unica") ||
+      t.rotacionConfig ||
+      t.parentTaskId
+    );
     if (recurrencia === "recurrente" && !esRecurrente) return false;
     if (recurrencia === "unica" && esRecurrente) return false;
 
