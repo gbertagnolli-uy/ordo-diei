@@ -65,7 +65,7 @@ export function TaskWorkspace({
 
   const isTaskSection = section !== "history" && section !== "family";
   const isBoard = isTaskSection && layout === "board";
-  const isCalendar = isTaskSection && layout === "calendar" && !isAdmin;
+  const isCalendar = isTaskSection && layout === "calendar";
 
   const visible = useMemo(() => {
     if (!isTaskSection) return [];
@@ -107,7 +107,7 @@ export function TaskWorkspace({
   const layouts: [Layout, string, LucideIcon][] = [
     ["list", "Lista", List],
     ["board", "Tablero", Columns3],
-    ...(isAdmin ? [] : ([["calendar", "Calendario", CalendarDays]] as [Layout, string, LucideIcon][])),
+    ["calendar", "Calendario", CalendarDays],
   ];
 
   return (
@@ -158,7 +158,13 @@ export function TaskWorkspace({
 
             <div className={cn("relative min-h-0 flex-1", isBoard ? "overflow-hidden" : "overflow-y-auto")}>
               {isCalendar ? (
-                <div className="px-4 pb-4"><MissionCalendar tasks={visible} onSelect={selectTask} /></div>
+                <div className="px-4 pb-4">
+                  <MissionCalendar
+                    tasks={visible}
+                    users={[...(family?.parents || []), ...(family?.children || [])]}
+                    onSelect={selectTask}
+                  />
+                </div>
               ) : isBoard ? (
                 <TaskBoard tasks={visible} coResponsables={coResponsables} selectedId={selectedId} onSelect={selectTask} isParent={isAdmin} />
               ) : visible.length === 0 ? (

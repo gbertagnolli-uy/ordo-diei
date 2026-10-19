@@ -136,19 +136,14 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
   const toggleDiaParaUsuario = (userId: number, dia: number) => {
     setDiasPorUsuario((prev) => {
-      const next: Record<string, number[]> = {};
-      for (const uid of effectiveUserIds) {
-        const actuales = prev[String(uid)] ?? [];
-        if (uid === userId) {
-          next[String(uid)] = actuales.includes(dia)
-            ? actuales.filter((d) => d !== dia)
-            : [...actuales, dia].sort((a, b) => a - b);
-        } else {
-          // Un día pertenece a un único responsable en la rotación
-          next[String(uid)] = actuales.filter((d) => d !== dia);
-        }
-      }
-      return next;
+      const actuales = prev[String(userId)] ?? [];
+      const nuevos = actuales.includes(dia)
+        ? actuales.filter((d) => d !== dia)
+        : [...actuales, dia].sort((a, b) => a - b);
+      return {
+        ...prev,
+        [String(userId)]: nuevos,
+      };
     });
   };
 
@@ -482,7 +477,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
                 ) : (
                   <div className="space-y-3">
                     <p className="text-xs text-muted-foreground">
-                      Seleccioná qué días de la semana le toca la tarea a cada responsable. La tarea solo le aparecerá a esa persona en sus días asignados:
+                      Seleccioná qué días de la semana le toca la tarea a cada responsable. Podés asignar <strong>más de un responsable el mismo día</strong> para crear tareas en grupo:
                     </p>
                     <div className="space-y-2.5">
                       {effectiveUserIds.map((uid) => {

@@ -177,16 +177,17 @@ export function normalizarRotacionConfig(raw: unknown): RotacionConfig | null {
 }
 
 /**
- * Determina qué usuario (usuarioId) es el responsable de la tarea en la fecha `dia`.
- * Devuelve `null` si en ese día no le corresponde a nadie (p. ej. un día de la semana sin responsable asignado).
+ * Determina todos los usuarios (usuarioIds) responsables de la tarea en la fecha `dia`.
+ * En modo "dias_semana" permite más de un responsable por día (tareas en grupo).
+ * Devuelve un arreglo vacío si en ese día no le corresponde a nadie.
  */
-export function responsableEnDia(
+export function responsablesEnDia(
   rawConfig: RotacionConfig | unknown,
   dia: Date,
   anclaFallback?: Date | string | null
-): number | null {
+): number[] {
   const config = normalizarRotacionConfig(rawConfig);
-  if (!config) return null;
+  if (!config) return [];
 
   const diaLocal = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
   const base =
@@ -197,23 +198,29 @@ export function responsableEnDia(
   if (config.modo === "dias_semana") {
     const dow = diaLocal.getDay();
     const mapa = config.diasPorUsuario ?? {};
+    const resultado: number[] = [];
+    const vistos = new Set<number>();
+
     for (const uid of config.responsablesIds) {
       const dias = mapa[String(uid)];
-      if (Array.isArray(dias) && dias.includes(dow)) {
-        return uid;
+      if (Array.isArray(dias) && dias.includes(dow) && !vistos.has(uid)) {
+        resultado.push(uid);
+        vistos.add(uid);
       }
     }
     for (const [k, dias] of Object.entries(mapa)) {
-      if (Array.isArray(dias) && dias.includes(dow)) {
-        return Number(k);
+      const uid = Number(k);
+      if (Number.isInteger(uid) && uid > 0 && Array.isArray(dias) && dias.includes(dow) && !vistos.has(uid)) {
+        resultado.push(uid);
+        vistos.add(uid);
       }
     }
-    return null;
+    return resultado;
   }
 
   // modo === "frecuencia"
   const n = config.responsablesIds.length;
-  if (n === 0) return null;
+  if (n === 0) return [];
   const cada = Math.max(1, config.cada ?? 1);
   const unidad = config.unidad ?? "dias";
 
@@ -228,7 +235,22 @@ export function responsableEnDia(
 
   const bloque = Math.floor(pasos / cada);
   const idx = ((bloque % n) + n) % n;
-  return config.responsablesIds[idx] ?? null;
+  const uid = config.responsablesIds[idx];
+  return uid ? [uid] : [];
+}
+
+/**
+ * Determina el primer usuario (usuarioId) responsable de la tarea en la fecha `dia`.
+ * Devuelve `null` si en ese día no le corresponde a nadie.
+ * Conservado por compatibilidad hacia atrás.
+ */
+export function responsableEnDia(
+  rawConfig: RotacionConfig | unknown,
+  dia: Date,
+  anclaFallback?: Date | string | null
+): number | null {
+  const lista = responsablesEnDia(rawConfig, dia, anclaFallback);
+  return lista.length > 0 ? lista[0] : null;
 }
 
 /**
@@ -261,7 +283,7 @@ export function ocurreRotacionEn(
   }
 
   if (config.modo === "dias_semana") {
-    return responsableEnDia(config, diaLocal, base) !== null;
+    return responsablesEnDia(config, diaLocal, base).length > 0;
   }
 
   // modo === "frecuencia"
@@ -276,9 +298,9 @@ export function ocurreRotacionEn(
 
 /**
  * Busca a partir de `desdeDia` (inclusive) la primera fecha en que la tarea rotativa ocurre
- * y devuelve `{ fecha, asignadoId }`.
+ * y devuelve `{ fecha, asignadoId, asignadosIds }`.
  */
-export function primeraAsignacionRotativa(
+export function primerasAsignacionesRotativas(
   regla: {
     tipoRecurrencia: string;
     fechaVencimiento: Date | null;
@@ -290,7 +312,7 @@ export function primeraAsignacionRotativa(
     rotacionConfig?: unknown;
   },
   desdeDia: Date = new Date()
-): { fecha: Date; asignadoId: number } | null {
+): { fecha: Date; asignadoId: number; asignadosIds: number[] } | null {
   const config = normalizarRotacionConfig(regla.rotacionConfig);
   if (!config) return null;
 
@@ -310,18 +332,41 @@ export function primeraAsignacionRotativa(
       puntoPartida.getDate() + offset
     );
     if (!ocurreRotacionEn(regla, candidato)) continue;
-    const asignadoId = responsableEnDia(config, candidato, base);
-    if (asignadoId !== null) {
-      return { fecha: candidato, asignadoId };
+    const asignadosIds = responsablesEnDia(config, candidato, base);
+    if (asignadosIds.length > 0) {
+      return { fecha: candidato, asignadoId: asignadosIds[0], asignadosIds };
     }
   }
   return null;
 }
 
 /**
+ * Busca a partir de `desdeDia` (inclusive) la primera fecha en que la tarea rotativa ocurre
+ * y devuelve `{ fecha, asignadoId }`.
+ */
+export function primeraAsignacionRotativa(
+  regla: {
+    tipoRecurrencia: string;
+    fechaVencimiento: Date | null;
+    diaDelMes?: number | null;
+    ordinalSemana?: number | null;
+    diaDeLaSemana?: number | null;
+    intervalo?: number | null;
+    anclaFecha?: Date | null;
+    rotacionConfig?: unknown;
+  },
+  desdeDia: Date = new Date()
+): { fecha: Date; asignadoId: number } | null {
+  const res = primerasAsignacionesRotativas(regla, desdeDia);
+  if (!res) return null;
+  return { fecha: res.fecha, asignadoId: res.asignadoId };
+}
+
+/**
  * Determina si una tarea debe mostrarse al usuario `usuarioId` en el día `hoy`.
  * Para tareas con rotación: si la tarea está activa (Pendiente / En_progreso / Pausada / Rechazada),
  * SOLO le aparece a la persona que la tiene asignada en el día en que la tiene asignada.
+ * En tareas en grupo con más de un responsable el mismo día, le aparece a cualquiera de ellos.
  */
 export function esTareaVisibleParaUsuarioEnDia(
   tarea: {
@@ -341,18 +386,18 @@ export function esTareaVisibleParaUsuarioEnDia(
   if (!config) return true;
 
   // Si la tarea está en un estado activo (por hacer / en curso), solo debe aparecer
-  // en el día que corresponde y únicamente al responsable de ese día.
+  // en el día que corresponde y únicamente al o los responsables de ese día.
   if (ESTADOS_ACTIVOS_TAREA.has(tarea.estado)) {
     const fechaRef = parsearFechaLocal(tarea.fechaVencimiento ?? tarea.horaEjecucion);
     if (fechaRef && !esMismoDiaCalendario(fechaRef, hoy)) {
       return false;
     }
-    const responsableHoy = responsableEnDia(
+    const responsablesHoy = responsablesEnDia(
       config,
       hoy,
       tarea.anclaFecha ?? tarea.fechaVencimiento
     );
-    if (responsableHoy !== Number(usuarioId)) {
+    if (!responsablesHoy.includes(Number(usuarioId))) {
       return false;
     }
   }
@@ -368,7 +413,17 @@ export function describirRotacion(rawConfig: RotacionConfig | unknown): string |
   if (!config) return null;
 
   if (config.modo === "dias_semana") {
-    return "Rotativa · días asignados";
+    const mapa = config.diasPorUsuario ?? {};
+    const conteoPorDia: Record<number, number> = {};
+    for (const dias of Object.values(mapa)) {
+      if (Array.isArray(dias)) {
+        for (const d of dias) {
+          conteoPorDia[d] = (conteoPorDia[d] ?? 0) + 1;
+        }
+      }
+    }
+    const hayGrupal = Object.values(conteoPorDia).some((c) => c > 1);
+    return hayGrupal ? "Rotativa · días asignados (en grupo)" : "Rotativa · días asignados";
   }
 
   const cada = config.cada ?? 1;
@@ -381,3 +436,4 @@ export function describirRotacion(rawConfig: RotacionConfig | unknown): string |
   }
   return cada === 1 ? "Rotativa · cada mes" : `Rotativa · cada ${cada} meses`;
 }
+

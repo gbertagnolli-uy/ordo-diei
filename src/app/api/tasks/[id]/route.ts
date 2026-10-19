@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { esDificultad } from "@/lib/recompensaTarea";
+import { calcularPrimerVencimientoRecurrente } from "@/lib/recurrenceUtils";
 import {
   formatearFechaLocalISO,
   normalizarRotacionConfig,
@@ -41,27 +42,20 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         if (body.hora) {
           horaEjecucion = new Date(`${body.fecha}T${body.hora}:00`);
         }
-    } else if (body.tipoRecurrencia && body.tipoRecurrencia !== "Unica" && body.hora) {
-        // Dynamic deadline recalculation for recurring tasks
-        const now = new Date();
-        const [h, m] = body.hora.split(":");
-        const horaLimite = Number(h);
-        const minLimite = Number(m);
-  
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-  
-        if (now.getHours() < horaLimite || (now.getHours() === horaLimite && now.getMinutes() < minLimite)) {
-          fechaVencimiento = hoy;
-        } else {
-          const manana = new Date(hoy);
-          manana.setDate(manana.getDate() + 1);
-          fechaVencimiento = manana;
-        }
-  
-        const dtHora = new Date(fechaVencimiento);
-        dtHora.setHours(horaLimite, minLimite, 0, 0);
-        horaEjecucion = dtHora;
+    } else if (body.tipoRecurrencia && body.tipoRecurrencia !== "Unica") {
+        const calculo = calcularPrimerVencimientoRecurrente(
+          {
+            tipoRecurrencia: body.tipoRecurrencia,
+            diaDelMes: body.diaDelMes !== undefined ? (body.diaDelMes ? Number(body.diaDelMes) : null) : currentTask.diaDelMes,
+            ordinalSemana: body.ordinalSemana !== undefined ? (body.ordinalSemana ? Number(body.ordinalSemana) : null) : currentTask.ordinalSemana,
+            diaDeLaSemana: body.diaDeLaSemana !== undefined ? (body.diaDeLaSemana !== null ? Number(body.diaDeLaSemana) : null) : currentTask.diaDeLaSemana,
+            intervalo: body.intervalo !== undefined ? Math.max(1, Math.min(365, Math.round(Number(body.intervalo)) || 1)) : currentTask.intervalo,
+          },
+          new Date(),
+          body.hora
+        );
+        fechaVencimiento = calculo.fechaVencimiento;
+        horaEjecucion = calculo.horaEjecucion;
     }
 
     const updatedData = {
