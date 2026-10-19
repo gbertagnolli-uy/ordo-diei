@@ -70,7 +70,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
     isEdit
       ? rotacionInicial
         ? rotacionInicial.responsablesIds
-        : (task.asignadoIds ?? [task.asignadoId])
+        : (task.asignadoIds ?? (Array.isArray(task._assignees) && task._assignees.length > 0 ? task._assignees.map((a: any) => Number(a.id)) : (Array.isArray(task.asignados) && task.asignados.length > 0 ? task.asignados.map((a: any) => Number(a.id)) : [task.asignadoId])))
       : []
   );
   const [isGlobal, setIsGlobal] = useState(false);

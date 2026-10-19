@@ -93,25 +93,70 @@ export function MissionCalendar({
 
   const CustomEvent = ({ event }: any) => {
     const task = event.resource;
+    const asignados: any[] =
+      Array.isArray(task.asignados) && task.asignados.length > 0
+        ? task.asignados
+        : task.asignado
+        ? [task.asignado]
+        : [];
+
+    const nombresAsignados = asignados.map((a: any) => a.nombre).filter(Boolean).join(", ");
+
     return (
-      <div className="flex items-center gap-1 text-[11px] leading-tight px-1 py-0.5 font-semibold text-white overflow-hidden w-full h-full">
-        {task.asignado?.fotoUrl ? (
-          <img
-            src={task.asignado.fotoUrl}
-            alt="Avatar"
-            className="w-4 h-4 rounded-full flex-shrink-0 border border-white/50 object-cover"
-          />
+      <div
+        className="flex items-center gap-1.5 text-[11px] leading-tight px-1 py-0.5 font-semibold text-white overflow-hidden w-full h-full"
+        title={`${event.title}${nombresAsignados ? ` (${nombresAsignados})` : ""}`}
+      >
+        {/* En el día que un solo usuario la tiene asignada se muestra solo su foto; si hay varios, las fotos chiquitas de los asignados ese día */}
+        {asignados.length > 0 ? (
+          <div className="flex -space-x-1.5 shrink-0 items-center">
+            {asignados.slice(0, 3).map((u: any, idx: number) =>
+              u.fotoUrl ? (
+                <img
+                  key={u.id ?? idx}
+                  src={u.fotoUrl}
+                  alt={u.nombre || "Avatar"}
+                  title={u.nombre}
+                  className="w-4 h-4 rounded-full border border-white/70 object-cover ring-1 ring-black/20"
+                />
+              ) : (
+                <div
+                  key={u.id ?? idx}
+                  title={u.nombre}
+                  className="w-4 h-4 rounded-full bg-white/30 border border-white/70 flex items-center justify-center text-[9px] font-bold ring-1 ring-black/20"
+                >
+                  {u.nombre?.charAt(0) ?? "?"}
+                </div>
+              )
+            )}
+            {asignados.length > 3 && (
+              <div
+                title={nombresAsignados}
+                className="w-4 h-4 rounded-full bg-white/40 border border-white/70 flex items-center justify-center text-[8px] font-bold ring-1 ring-black/20"
+              >
+                +{asignados.length - 3}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0 text-[9px]">
-            {task.asignado?.nombre?.charAt(0) ?? "?"}
+            ?
           </div>
         )}
+
         <span className="truncate">{event.title}</span>
-        {task.asignado?.nombre && (
+
+        {asignados.length === 1 && asignados[0]?.nombre && (
           <span className="text-[10px] text-white/80 shrink-0 font-normal">
-            ({task.asignado.nombre})
+            ({asignados[0].nombre})
           </span>
         )}
+        {asignados.length > 1 && (
+          <span className="text-[10px] text-white/80 shrink-0 font-normal truncate max-w-[110px]">
+            ({nombresAsignados})
+          </span>
+        )}
+
         {task.rotacionConfig ? (
           <span title="Rotativa">
             <Repeat className="w-3 h-3 text-white/90 flex-shrink-0" />
@@ -215,8 +260,23 @@ export function MissionCalendar({
           scrollToTime={new Date(1970, 0, 1, 7)}
           onSelectEvent={(e: any) => {
             const res = e.resource;
-            const base = res?.parentTaskId ? tasks.find((t) => t.id === res.parentTaskId) : null;
-            onSelect(base ?? res);
+            let base = res?.parentTaskId ? tasks.find((t) => t.id === res.parentTaskId) : res;
+            if (!base) base = res;
+            if (base.grupoTareaId && !base.asignadoIds) {
+              const coTasks = tasks.filter((t) => t.grupoTareaId === base.grupoTareaId);
+              base = {
+                ...base,
+                asignadoIds: [...new Set(coTasks.map((t) => t.asignadoId))],
+                _assignees: coTasks.map((t) => t.asignado).filter(Boolean),
+              };
+            } else if (res.asignadosIds && !base.asignadoIds) {
+              base = {
+                ...base,
+                asignadoIds: res.asignadosIds,
+                _assignees: res.asignados,
+              };
+            }
+            onSelect(base);
           }}
           components={{ event: CustomEvent }}
           eventPropGetter={eventPropGetter}
