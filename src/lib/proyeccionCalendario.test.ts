@@ -243,3 +243,56 @@ test("filtros de calendario por dificultad, recurrencia y recompensas", () => {
   assert.equal(proyectarEventosCalendario(lista, usuarios, rangoInicio, rangoFin, { recompensa: "con_recompensa" }).length, 1);
   assert.equal(proyectarEventosCalendario(lista, usuarios, rangoInicio, rangoFin, { recompensa: "sin_recompensa" }).length, 1);
 });
+
+test("plantilla base recurrente o rotativa no proyecta evento espurio en su fecha de creación", () => {
+  // Supongamos que la regla semanal se creó el viernes 2 de octubre de 2026
+  const fechaCreacion = new Date(2026, 9, 2); // 2 oct 2026 (viernes)
+  // Rango de visualización: lunes 12 a domingo 18 de octubre de 2026
+  const rangoInicio = new Date(2026, 9, 12);
+  const rangoFin = new Date(2026, 9, 18);
+
+  const plantillaSemanalViernes = {
+    id: 50,
+    titulo: "Limpieza semanal",
+    asignadoId: 1,
+    tipoRecurrencia: "Semanal",
+    diaDeLaSemana: 5, // Viernes
+    fechaVencimiento: fechaCreacion,
+    anclaFecha: fechaCreacion,
+    generadaPorCron: false,
+    parentTaskId: null,
+  };
+
+  const eventos = proyectarEventosCalendario([plantillaSemanalViernes], usuarios, rangoInicio, rangoFin);
+  // En la semana del 12 al 18 oct, solo debe proyectarse el viernes 16 de octubre
+  assert.equal(eventos.length, 1);
+  assert.equal(eventos[0].start.getDate(), 16);
+  assert.equal(eventos[0].start.getMonth(), 9);
+
+  // Y si la tarea rotativa se creó un viernes pero le toca los sábados:
+  const rotacionSabados: RotacionConfig = {
+    modo: "dias_semana",
+    responsablesIds: [1],
+    diasPorUsuario: { "1": [6] }, // Solo sábados (6)
+    fechaInicio: "2026-10-02", // Viernes 2 oct
+  };
+  const plantillaRotativaSabado = {
+    id: 51,
+    titulo: "Lavar auto",
+    asignadoId: 1,
+    tipoRecurrencia: "Unica",
+    rotacionConfig: rotacionSabados,
+    fechaVencimiento: new Date(2026, 9, 2), // Viernes 2 oct (fecha de creación, no es sábado)
+    generadaPorCron: false,
+    parentTaskId: null,
+  };
+
+  // Rango del 2 al 4 de octubre
+  const rangoOct = new Date(2026, 9, 2);
+  const rangoOctFin = new Date(2026, 9, 4);
+  const evs = proyectarEventosCalendario([plantillaRotativaSabado], usuarios, rangoOct, rangoOctFin);
+  // NO debe aparecer el viernes 2 oct (día de creación); SOLO debe aparecer el sábado 3 oct
+  assert.equal(evs.length, 1);
+  assert.equal(evs[0].start.getDay(), 6); // Sábado
+  assert.equal(evs[0].start.getDate(), 3);
+});

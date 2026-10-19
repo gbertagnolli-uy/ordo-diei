@@ -50,11 +50,13 @@ export function TaskWorkspace({
   coResponsables,
   isAdmin,
   family,
+  currentUserId,
 }: {
   tasks: any[];
   coResponsables: CoResponsableMap;
   isAdmin: boolean;
   family: { parents: any[]; children: any[] };
+  currentUserId?: number;
 }) {
   const section = sectionFromParams(useSearchParams());
   const [filter, setFilter] = useState<Filter>("all");
@@ -72,16 +74,16 @@ export function TaskWorkspace({
     // En tablero y calendario cada estado tiene su lugar: solo aplican atajos y filtros
     const spread = isBoard || isCalendar;
     let list = tasks.filter((t) =>
-      section === "today" ? isDueToday(t)
+      section === "today" ? isDueToday(t, currentUserId)
         : section === "late" ? isLate(t)
         : spread ? true
-        : section === "todo" ? isActionable(t)
+        : section === "todo" ? (isActionable(t) && (!t.rotacionConfig || isDueToday(t, currentUserId)))
         : taskGroup(t) === section
     );
     if (filter === "points") list = list.filter((t) => t.generaPuntosYRecompensa);
     if (filter === "checklist") list = list.filter((t) => t.isChecklist);
     return sortTasks(list, section === "done" ? "done" : null);
-  }, [tasks, section, filter, isTaskSection, isBoard, isCalendar]);
+  }, [tasks, section, filter, isTaskSection, isBoard, isCalendar, currentUserId]);
 
   const selected = tasks.find((t) => t.id === selectedId) ?? null;
   const group = NAV.find((g) => g.items.some((i) => i.id === section))!;
@@ -101,7 +103,7 @@ export function TaskWorkspace({
   const panel = selected ? (
     <TaskDetailPanel key={selected.id} task={selected} coResponsables={coResponsables[selected.id] || []} onBack={() => setSelectedId(null)} />
   ) : (
-    <SchedulePanel tasks={tasks} onSelect={selectTask} onClose={() => setPanelPref(false)} />
+    <SchedulePanel tasks={tasks} currentUserId={currentUserId} onSelect={selectTask} onClose={() => setPanelPref(false)} />
   );
 
   const layouts: [Layout, string, LucideIcon][] = [

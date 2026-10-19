@@ -287,7 +287,7 @@ export function ocurreRotacionEn(
   }
 
   // modo === "frecuencia"
-  if (regla.tipoRecurrencia === "Unica" || regla.tipoRecurrencia === "Diaria") {
+  if (!regla.tipoRecurrencia || regla.tipoRecurrencia === "Unica" || regla.tipoRecurrencia === "Diaria") {
     const intervalo = Math.max(1, regla.intervalo ?? 1);
     if (intervalo <= 1 || !base) return true;
     return diasCalendarioEntre(base, diaLocal) % intervalo === 0;
@@ -376,18 +376,45 @@ export function esTareaVisibleParaUsuarioEnDia(
     horaEjecucion?: Date | string | null;
     anclaFecha?: Date | string | null;
     rotacionConfig?: unknown;
+    generadaPorCron?: boolean;
+    parentTaskId?: number | null;
+    tipoRecurrencia?: string | null;
   },
   usuarioId: number,
   hoy: Date = new Date()
 ): boolean {
-  if (Number(tarea.asignadoId) !== Number(usuarioId)) return false;
-
   const config = normalizarRotacionConfig(tarea.rotacionConfig);
-  if (!config) return true;
+  const esPlantillaRotativa = Boolean(config && !tarea.generadaPorCron && !tarea.parentTaskId);
+
+  if (!config) {
+    if (Number(tarea.asignadoId) !== Number(usuarioId)) return false;
+    return true;
+  }
+
+  // Si tiene rotación:
+  // Si es una instancia generada concreta (no plantilla), debe pertenecer al usuario asignado
+  if (!esPlantillaRotativa && Number(tarea.asignadoId) !== Number(usuarioId)) {
+    return false;
+  }
+
+  // Si es plantilla, el usuario debe al menos ser parte de los responsables de la rotación
+  if (esPlantillaRotativa && !config.responsablesIds.includes(Number(usuarioId))) {
+    return false;
+  }
 
   // Si la tarea está en un estado activo (por hacer / en curso), solo debe aparecer
   // en el día que corresponde y únicamente al o los responsables de ese día.
   if (ESTADOS_ACTIVOS_TAREA.has(tarea.estado)) {
+    if (esPlantillaRotativa) {
+      if (!ocurreRotacionEn(tarea as any, hoy)) return false;
+      const responsablesHoy = responsablesEnDia(
+        config,
+        hoy,
+        tarea.anclaFecha ?? tarea.fechaVencimiento
+      );
+      return responsablesHoy.includes(Number(usuarioId));
+    }
+
     const fechaRef = parsearFechaLocal(tarea.fechaVencimiento ?? tarea.horaEjecucion);
     if (fechaRef && !esMismoDiaCalendario(fechaRef, hoy)) {
       return false;

@@ -84,11 +84,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         });
 
   const myUser = allUsers.find((u) => u.id === session.user.id);
-  const myTasksRaw = myUser?.tareasAsignadas || [];
-  // Regla de rotación: una tarea rotativa solo le aparece al usuario que la tiene asignada en el día en que la tiene asignada
-  const myTasks = myTasksRaw.filter((t: any) =>
-    esTareaVisibleParaUsuarioEnDia(t, Number(session.user.id), ahora)
-  );
+  const myTasks = myUser?.tareasAsignadas || [];
 
   // Co-responsables: otros usuarios con tareas del mismo grupoTareaId o compañeros de rotación
   const coResponsableMap: Record<number, { id: number; nombre: string; fotoUrl: string | null }[]> = {};
@@ -131,6 +127,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         coResponsables={coResponsableMap}
         isAdmin={isCurrentUserAdmin}
         family={{ parents, children }}
+        currentUserId={Number(session.user.id)}
       />
     </div>
   );
