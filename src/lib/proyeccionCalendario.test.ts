@@ -100,11 +100,11 @@ test("proyectarEventosCalendario proyecta rotativas según los días asignados a
   assert.equal(eventosU2[0].resource.asignadoId, 2);
 });
 
-test("proyectarEventosCalendario maneja más de un responsable por día (tareas en grupo)", () => {
+test("proyectarEventosCalendario muestra un solo cuadro por tarea con fotos de los asignados cada día", () => {
   const rangoInicio = new Date(2026, 9, 12); // Lunes
   const rangoFin = new Date(2026, 9, 14); // Miércoles
 
-  // El lunes 12 están asignados TANTO Juan (1) como María (2)
+  // El lunes 12 están asignados TANTO Juan (1) como María (2). El martes solo María (2).
   const rotacionGrupal: RotacionConfig = {
     modo: "dias_semana",
     responsablesIds: [1, 2],
@@ -128,18 +128,80 @@ test("proyectarEventosCalendario maneja más de un responsable por día (tareas 
   };
 
   const eventos = proyectarEventosCalendario([tareaGrupal], usuarios, rangoInicio, rangoFin);
-  // Lunes: 2 eventos (uno para Juan y uno para María). Martes: 1 evento (María). Total = 3
-  assert.equal(eventos.length, 3);
+  // Un cuadro por tarea por día: Lunes (1 cuadro grupal), Martes (1 cuadro para María). Total = 2 cuadros
+  assert.equal(eventos.length, 2);
 
+  // Lunes: un solo cuadro, con ambos responsables
   const eventosLunes = eventos.filter((e) => e.start.getDay() === 1);
-  assert.equal(eventosLunes.length, 2);
-  const asignadosLunes = eventosLunes.map((e) => e.resource.asignadoId).sort();
-  assert.deepEqual(asignadosLunes, [1, 2]);
+  assert.equal(eventosLunes.length, 1);
+  const lunes = eventosLunes[0];
+  assert.equal(lunes.title, "Limpiar el patio juntos");
+  assert.equal(lunes.resource.asignados.length, 2);
+  const idsLunes = lunes.resource.asignados.map((u: any) => u.id).sort();
+  assert.deepEqual(idsLunes, [1, 2]);
 
-  // Filtro por tipo de tarea: grupal
+  // Martes: un solo cuadro, con solo María asignada ese día
+  const eventosMartes = eventos.filter((e) => e.start.getDay() === 2);
+  assert.equal(eventosMartes.length, 1);
+  const martes = eventosMartes[0];
+  assert.equal(martes.title, "Limpiar el patio juntos");
+  assert.equal(martes.resource.asignados.length, 1);
+  assert.equal(martes.resource.asignados[0].id, 2);
+
+  // Filtro por Juan (1): debe aparecer el lunes (porque está asignado) pero NO el martes
+  const soloJuan = proyectarEventosCalendario([tareaGrupal], usuarios, rangoInicio, rangoFin, { usuarioId: 1 });
+  assert.equal(soloJuan.length, 1);
+  assert.equal(soloJuan[0].start.getDay(), 1);
+
+  // Filtro por María (2): aparece el lunes y el martes
+  const soloMaria = proyectarEventosCalendario([tareaGrupal], usuarios, rangoInicio, rangoFin, { usuarioId: 2 });
+  assert.equal(soloMaria.length, 2);
+
+  // Filtro por tipo de tarea: grupal (el lunes tiene 2 responsables)
   const soloGrupales = proyectarEventosCalendario([tareaGrupal], usuarios, rangoInicio, rangoFin, { tipoTarea: "grupal" });
-  // El lunes tiene 2 responsables por lo que es grupal
-  assert.ok(soloGrupales.length >= 2);
+  assert.equal(soloGrupales.length, 1);
+  assert.equal(soloGrupales[0].start.getDay(), 1);
+});
+
+test("proyectarEventosCalendario unifica tareas concretas en base con grupoTareaId en un solo cuadro", () => {
+  const rangoInicio = new Date(2026, 9, 12);
+  const rangoFin = new Date(2026, 9, 12);
+
+  // Dos filas en base de datos para una misma tarea compartida
+  const t1 = {
+    id: 50,
+    grupoTareaId: "grupo-compartido-1",
+    titulo: "Cocinar juntos",
+    asignadoId: 1,
+    fechaVencimiento: new Date(2026, 9, 12),
+    dificultad: "Media",
+    generaPuntosYRecompensa: true,
+  };
+  const t2 = {
+    id: 51,
+    grupoTareaId: "grupo-compartido-1",
+    titulo: "Cocinar juntos",
+    asignadoId: 2,
+    fechaVencimiento: new Date(2026, 9, 12),
+    dificultad: "Media",
+    generaPuntosYRecompensa: true,
+  };
+
+  const eventos = proyectarEventosCalendario([t1, t2], usuarios, rangoInicio, rangoFin);
+  // Debe haber EXACTAMENTE 1 cuadro en vez de 2
+  assert.equal(eventos.length, 1);
+  const ev = eventos[0];
+  assert.equal(ev.title, "Cocinar juntos");
+  assert.equal(ev.resource.asignados.length, 2);
+  assert.deepEqual(ev.resource.asignados.map((u: any) => u.id).sort(), [1, 2]);
+
+  // Si se filtra por usuario 1, se muestra el cuadro con los asignados
+  const porU1 = proyectarEventosCalendario([t1, t2], usuarios, rangoInicio, rangoFin, { usuarioId: 1 });
+  assert.equal(porU1.length, 1);
+
+  // Si se filtra por usuario 3 (Pedro, no asignado), no se muestra
+  const porU3 = proyectarEventosCalendario([t1, t2], usuarios, rangoInicio, rangoFin, { usuarioId: 3 });
+  assert.equal(porU3.length, 0);
 });
 
 test("filtros de calendario por dificultad, recurrencia y recompensas", () => {
