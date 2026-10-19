@@ -20,6 +20,8 @@ export interface DockItem {
   onClick?: () => void;
   badge?: string | number;
   active?: boolean;
+  /** Botón circular que muestra su ícono a todo el tamaño (una foto) */
+  redondo?: boolean;
 }
 
 export const FloatingDock = ({
@@ -70,7 +72,7 @@ const FloatingDockMobile = ({
                       : "text-[var(--on-surface)] hover:bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]"
                   )}
                 >
-                  <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <div className={cn("w-5 h-5 flex items-center justify-center shrink-0", item.redondo && "size-8 overflow-hidden rounded-full")}>
                     {item.icon}
                   </div>
                   <span className="truncate">{item.title}</span>
@@ -154,6 +156,7 @@ function DockIconContainer({
   href,
   onClick,
   active,
+  redondo,
 }: DockItem & { mouseX: MotionValue }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -200,6 +203,7 @@ function DockIconContainer({
       onMouseLeave={() => setHovered(false)}
       className={cn(
         "relative flex aspect-square items-center justify-center rounded-xl transition-colors cursor-pointer select-none",
+        redondo && "rounded-full",
         active
           ? "bg-[var(--primary)] text-[var(--on-primary)] shadow-md [&_svg]:!text-[var(--on-primary)]"
           : "bg-[var(--surface-container)] text-[var(--on-surface)] hover:bg-[color-mix(in_srgb,var(--primary)_15%,transparent)] hover:text-[var(--primary)]"
@@ -219,8 +223,8 @@ function DockIconContainer({
         )}
       </AnimatePresence>
       <motion.div
-        style={{ width: widthIcon, height: heightIcon }}
-        className="flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+        style={redondo ? { width: "100%", height: "100%" } : { width: widthIcon, height: heightIcon }}
+        className={cn("flex items-center justify-center [&>svg]:w-full [&>svg]:h-full", redondo && "overflow-hidden rounded-full")}
       >
         {icon}
       </motion.div>

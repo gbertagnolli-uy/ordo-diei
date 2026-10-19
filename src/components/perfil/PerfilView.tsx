@@ -24,6 +24,7 @@ import { AvisosPush } from "@/components/engagement/AvisosPush";
 import { GraficoAnimo, type RegistroAnimoItem } from "./GraficoAnimo";
 import { ConductaPerfil } from "@/components/conducta/ConductaPerfil";
 import type { ResumenConducta } from "@/lib/conducta/server";
+import type { ResumenRachaApp } from "@/lib/engagement/servidor";
 
 export interface PremioItem {
   id: number;
@@ -51,6 +52,12 @@ interface PerfilViewProps {
     streakDays?: number | null;
     totalTasksCompleted?: number | null;
     completionPercentage?: number | null;
+    rachaApp?: ResumenRachaApp | null;
+    puestoRanking?: number | null;
+    emojiPodio?: string | null;
+    etiquetaPodio?: string | null;
+    aceleradorPct?: number | null;
+    participaRanking?: boolean | null;
   };
   habitos: EstadoHabito[];
   premios: PremioItem[];

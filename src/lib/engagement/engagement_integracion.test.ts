@@ -5,13 +5,22 @@ import assert from "node:assert/strict";
 import { addDays, format, parseISO } from "date-fns";
 import prisma from "../prisma.ts";
 import { aFecha, hoyEnFamilia } from "../habitos/server.ts";
-import { desbloquearCofresDePadres, parteDeHoy, rachaDe, registrarIngreso } from "./servidor.ts";
+import {
+  bienvenidaPendienteHoy,
+  desbloquearCofresDePadres,
+  marcarBienvenidaVista,
+  parteDeHoy,
+  PUNTOS_INGRESO_DIARIO,
+  rachaDe,
+  registrarIngreso,
+  XP_INGRESO_DIARIO,
+} from "./servidor.ts";
 import { PUNTOS_MISION } from "./misiones.ts";
 
 const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base)";
 const haceDias = (n: number) => format(addDays(parseISO(hoyEnFamilia()), -n), "yyyy-MM-dd");
 
-test("ingreso diario: una fila por día, racha y premios por hito sin duplicarse", { skip: sinBase }, async () => {
+test("ingreso diario: una fila por día, +5 XP y +5 puntos, racha y premios por hito sin duplicarse", { skip: sinBase }, async () => {
   const u = await prisma.usuario.create({ data: { nombre: `__test_racha_${Date.now()}__`, pinSecretoHash: "x", fechaNacimiento: new Date("2015-01-01"), rolFamiliar: "Hijo" } });
   try {
     // Entró hace dos días y ayer: hoy son 3 seguidos → hito de 3 días
@@ -19,8 +28,18 @@ test("ingreso diario: una fila por día, racha y premios por hito sin duplicarse
     const a = await registrarIngreso(u.id);
     assert.equal(a.nuevo, true);
     assert.deepEqual(a.hitos.map((h) => h.dias), [3]);
-    // Volver a entrar el mismo día no hace nada
+    const uTrasIngreso = await prisma.usuario.findUniqueOrThrow({ where: { id: u.id } });
+    assert.equal(uTrasIngreso.availablePoints, PUNTOS_INGRESO_DIARIO);
+    assert.equal(uTrasIngreso.experienciaHabitos, XP_INGRESO_DIARIO);
+    assert.equal(await bienvenidaPendienteHoy(u.id), true);
+    await marcarBienvenidaVista(u.id);
+    assert.equal(await bienvenidaPendienteHoy(u.id), false);
+
+    // Volver a entrar el mismo día no hace nada ni vuelve a sumar puntos/XP
     assert.deepEqual(await registrarIngreso(u.id), { nuevo: false, hitos: [] });
+    const uRepetido = await prisma.usuario.findUniqueOrThrow({ where: { id: u.id } });
+    assert.equal(uRepetido.availablePoints, PUNTOS_INGRESO_DIARIO);
+    assert.equal(uRepetido.experienciaHabitos, XP_INGRESO_DIARIO);
     assert.equal(await prisma.actividadDia.count({ where: { usuarioId: u.id } }), 3);
     assert.equal((await rachaDe(u.id)).dias, 3);
 
@@ -58,15 +77,15 @@ test("«Tu parte de hoy»: cada misión se premia una vez y, registrar a los hij
     const comp = antes.misiones.find((m) => m.clave === "comportamiento");
     assert.ok(comp && !comp.hecha);
 
-    // El padre escribe un mensaje: misión «mensaje» hecha, +5 puntos una sola vez
+    // El padre escribe un mensaje: misión «mensaje» hecha, +5 puntos una sola vez (más los 5 del ingreso diario)
     await prisma.mensajeFamilia.create({ data: { deId: padre.id, paraId: hijo.id, texto: "Hola" } });
     const p1 = await parteDeHoy(actor);
     assert.ok(p1);
     assert.equal(p1.misiones.find((m) => m.clave === "mensaje")?.hecha, true);
     const puntos1 = (await prisma.usuario.findUniqueOrThrow({ where: { id: padre.id } })).availablePoints;
-    assert.equal(puntos1, PUNTOS_MISION);
+    assert.equal(puntos1, PUNTOS_INGRESO_DIARIO + PUNTOS_MISION);
     await parteDeHoy(actor);
-    assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id: padre.id } })).availablePoints, PUNTOS_MISION);
+    assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id: padre.id } })).availablePoints, PUNTOS_INGRESO_DIARIO + PUNTOS_MISION);
 
     // Registrar a TODOS los hijos y cargar algo en Estudio (un comentario en el muro) completa las tres
     const hijos = await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Hijo", "Hija"] } }, select: { id: true } });
@@ -87,7 +106,7 @@ test("«Tu parte de hoy»: cada misión se premia una vez y, registrar a los hij
       assert.equal(await prisma.recompensa.count({ where: { usuarioId: padre.id, origen: { startsWith: "Tu parte de hoy" } } }), 1);
     }
     const pts = (await prisma.usuario.findUniqueOrThrow({ where: { id: padre.id } })).availablePoints;
-    assert.equal(pts, fin.hechas * PUNTOS_MISION);
+    assert.equal(pts, PUNTOS_INGRESO_DIARIO + fin.hechas * PUNTOS_MISION);
     await prisma.comentarioEstudio.deleteMany({ where: { autorId: padre.id } });
     await prisma.publicacionFamilia.deleteMany({ where: { autorId: padre.id } });
   } finally {

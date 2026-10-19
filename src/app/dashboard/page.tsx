@@ -7,13 +7,12 @@ import { TaskWorkspace } from "@/components/tasks/TaskWorkspace";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 import { MetaSemanal } from "@/components/engagement/MetaSemanal";
 import { metaDeLaSemana } from "@/lib/engagement/metaServidor";
-import { CompaneroCard } from "@/components/engagement/CompaneroCard";
-import { companeroDe } from "@/lib/engagement/companeroServidor";
-import { eventosDeHoy } from "@/lib/cartas/server";
-import { haySancion } from "@/lib/comportamiento/sancionServer";
+import { ElegirCompaneroCard } from "@/components/engagement/CompaneroCard";
+import { personajeGuardado } from "@/lib/engagement/companero";
 import { AvisosPush } from "@/components/engagement/AvisosPush";
 import { generarTareasRecurrentes } from "@/lib/generarRecurrentes";
 import { esTareaVisibleParaUsuarioEnDia, normalizarRotacionConfig } from "@/lib/rotacionTarea";
+import { enriquecerConRachaYRanking } from "@/lib/engagement/servidor";
 
 const isParent = (role: string) => role === "Padre" || role === "Madre";
 
@@ -44,7 +43,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   });
 
   // Fechas a string para los componentes cliente
-  const allUsers = allUsersRaw.map((u) => ({
+  const allUsersSerializados = allUsersRaw.map((u) => ({
     ...u,
     fechaNacimiento: u.fechaNacimiento ? u.fechaNacimiento.toISOString() : null,
     tareasAsignadas: u.tareasAsignadas.map((t: any) => ({
@@ -54,6 +53,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       timerStartedAt: t.timerStartedAt ? t.timerStartedAt.toISOString() : null,
     })),
   }));
+  const allUsers = await enriquecerConRachaYRanking(allUsersSerializados, ahora);
 
   const parents = allUsers.filter((u) => isParent(u.rolFamiliar));
   const children = allUsers.filter((u) => !isParent(u.rolFamiliar)).sort((a, b) => {
@@ -72,17 +72,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         return null;
       });
 
-  // Compañero «héroe»: es de todos (hijos y padres). Si hay cartas por reclamar, las señala
-  const companero = !enVistaPrincipal
-    ? null
-    : await (async () => {
-        const id = Number(session.user.id);
-        const [cartas, sancionado] = await Promise.all([eventosDeHoy(id).catch(() => null), haySancion(prisma, id)]);
-        return companeroDe(id, new Date(), { cartasNuevas: !!cartas?.hayPendientes, sancionado });
-      })().catch((e) => {
-        console.error("[Companero]", e);
-        return null;
-      });
+  // Compañero «héroe»: es de todos (hijos y padres) y flota en toda la app (layout). Acá sólo se ofrece elegirlo la primera vez
+  const sinCompanero = !enVistaPrincipal
+    ? false
+    : await prisma.companero
+        .findUnique({ where: { usuarioId: Number(session.user.id) }, select: { personaje: true } })
+        .then((c) => personajeGuardado(c?.personaje) === null)
+        .catch((e) => {
+          console.error("[Companero]", e);
+          return false;
+        });
 
   const myUser = allUsers.find((u) => u.id === session.user.id);
   const myTasksRaw = myUser?.tareasAsignadas || [];
@@ -117,9 +116,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <div className="px-4 sm:px-6 empty:hidden [&:has(*)]:pt-3">
         <AvisosPush modo="invitacion" />
       </div>
-      {companero && (
+      {sinCompanero && (
         <div className="px-4 sm:px-6 pt-3">
-          <CompaneroCard datos={companero} />
+          <ElegirCompaneroCard />
         </div>
       )}
       {meta?.meta && (

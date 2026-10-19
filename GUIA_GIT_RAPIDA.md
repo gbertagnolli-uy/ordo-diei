@@ -4,30 +4,30 @@ Instructivo práctico de consulta rápida para sincronizar `dev`, correr comando
 
 ---
 
-## 1. Git: Descargar y subir `dev` (en `ordo-diei/`)
+## 1. Git: mantener `dev` sincronizado (en `ordo-diei/`)
 
-El directorio principal (`ordo-diei/`) **siempre queda en la rama `dev`**.
+El directorio principal (`ordo-diei/`) **siempre queda en la rama `dev`** y es solo un **espejo de `origin/dev`**: no se commitea ni se hace push ahí. Lo único que se le hace es traerle lo nuevo.
 
 ### Bajar cambios nuevos de otros agentes desde GitHub
 ```powershell
 git fetch origin --prune
-git pull --ff-only origin dev
+git merge --ff-only origin/dev
 npx prisma generate
 ```
 
-### Subir tu `dev` local a GitHub
-```powershell
-git fetch origin dev
-git pull --ff-only origin dev
-git push origin dev
-```
+### Qué NO se hace
+- ❌ `git push origin dev` ni `git push origin <rama>:dev`: a `dev` solo se entra por **Pull Request**.
+- ❌ Mergear una lane a `dev` en local.
+- ❌ Empezar una tarea con `dev` desactualizado o con commits locales sin publicar (`scripts/nueva-lane.sh` lo frena).
 
 ### Diagnóstico rápido de Git
 ```powershell
 git status -sb                   # Ver rama actual y si estás ahead/behind origin/dev
 git log -n 5 --oneline           # Últimos 5 commits
 git worktree list                # Ver lanes activas en disco
-git diff dev...origin/dev --stat # Ver qué cambió en GitHub antes de hacer pull
+git log --oneline origin/dev..dev   # Commits locales sin publicar (deberían ser 0)
+git log --oneline dev..origin/dev   # PRs nuevos que todavía no bajaste
+gh pr list --base dev            # PRs abiertos hacia dev
 ```
 
 ---
@@ -132,22 +132,24 @@ npx prisma generate
 
 ---
 
-## 5. Flujo de trabajo en Lanes (`git worktree`)
+## 5. Flujo de trabajo en Lanes (`git worktree` + Pull Request)
 
-Nunca se commitea directo en `ordo-diei/`. Cada cambio va en una lane:
+Nunca se commitea directo en `ordo-diei/`. Cada cambio va en una lane, y **a `dev` se entrega por PR** (ver `AGENTS.md`):
 
 ```powershell
-# 1. Crear worktree desde dev (en ordo-diei/)
-git worktree add -b task/lane-NN-nombre ../ordo-diei-lanes/lane-NN dev
+# 1. EMPEZAR (en ordo-diei/): sincroniza dev (local y origin) y crea rama + worktree
+& "C:\Program Files\Git\bin\bash.exe" ./scripts/nueva-lane.sh NN nombre
+cd ../ordo-diei-lanes/lane-NN; npm install
 
-# 2. Commitear cambios dentro del worktree (../ordo-diei-lanes/lane-NN)
-git add -A
+# 2. TRABAJAR: commitear solo en el worktree (../ordo-diei-lanes/lane-NN)
+git add <archivos>
 git commit -m "feat(modulo): descripcion breve (lane NN)"
 
-# 3. Integrar a dev (corre merge dev + tests + tsc + merge --no-ff)
-& "C:\Program Files\Git\bin\bash.exe" ./scripts/integrar.sh
+# 3. ENTREGAR (en el worktree): trae origin/dev, corre tests + tsc, publica la rama y abre el PR a dev
+& "C:\Program Files\Git\bin\bash.exe" ./scripts/abrir-pr.sh
 
-# 4. Limpiar worktree y rama (en ordo-diei/)
-git worktree remove ../ordo-diei-lanes/lane-NN
-git branch -d task/lane-NN-nombre
+# 4. CERRAR (en ordo-diei/, cuando el usuario ya integró el PR): actualiza dev local, quita worktree y rama
+& "C:\Program Files\Git\bin\bash.exe" ./scripts/limpiar-lane.sh NN
 ```
+
+El PR se integra en GitHub con **«Create a merge commit»** (no squash ni rebase). El agente no mergea su propio PR salvo que el usuario se lo pida.

@@ -19,6 +19,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
 import { useModalStore } from "@/store/modalStore";
 import { nivelDe, xpTotal, badgeDeNivel, PUNTOS_SUBIR_NIVEL } from "@/lib/niveles";
 import { taskGroup } from "@/components/tasks/taskUtils";
+import { toast } from "@/lib/toast";
 
 const ROLE_LABEL: Record<string, string> = { Padre: "Padre", Madre: "Madre", Hijo: "Hijo", Hija: "Hija" };
 
@@ -37,12 +38,14 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
     notificadoRef.current = currentLevel;
     const nivelesSubidos = Math.max(1, currentLevel - Math.max(1, nivelPrevio));
     const puntosPorDefecto = nivelesSubidos * PUNTOS_SUBIR_NIVEL;
-    openModal("LEVEL_UP", {
-      level: currentLevel,
-      title: currentTitle,
-      badgeUrl: badgeDeNivel(currentLevel),
-      puntosRegalo: puntosPorDefecto,
-    });
+    if (useModalStore.getState().type !== "DAILY_WELCOME") {
+      openModal("LEVEL_UP", {
+        level: currentLevel,
+        title: currentTitle,
+        badgeUrl: badgeDeNivel(currentLevel),
+        puntosRegalo: puntosPorDefecto,
+      });
+    }
     fetch("/api/users/subir-nivel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -88,6 +91,27 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, openModal]);
 
+  // Aviso al ascender al 1er puesto del ranking
+  useEffect(() => {
+    if (!user?.id) return;
+    const rankKey = `lastSeenRank_${user.id}`;
+    const currentRank = typeof user.puestoRanking === "number" ? user.puestoRanking : null;
+    try {
+      const prevRankStr = localStorage.getItem(rankKey);
+      const prevRank = prevRankStr ? parseInt(prevRankStr, 10) : null;
+      if (currentRank === 1 && prevRank !== null && prevRank > 1) {
+        toast.success("🥇 ¡Ascendiste al 1er puesto! Ganaste un acelerador de +5% más puntos mientras estés primero.");
+      }
+      if (currentRank !== null) {
+        localStorage.setItem(rankKey, String(currentRank));
+      } else {
+        localStorage.removeItem(rankKey);
+      }
+    } catch {
+      // Ignorar si localStorage no está disponible
+    }
+  }, [user?.id, user?.puestoRanking]);
+
   // Progreso diario (MyTasksBoard original): entregadas / total, 100 % si no hay tareas
   const done = tasks.filter((t) => taskGroup(t) === "review" || taskGroup(t) === "done").length;
   const progress = tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 100;
@@ -105,6 +129,15 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
                   <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
                   <AvatarFallback className="rounded-lg">{user.nombre?.charAt(0)}</AvatarFallback>
                 </Avatar>
+                {user.emojiPodio && (
+                  <span
+                    title={`Puesto #${user.puestoRanking} en la tabla de líderes (+${user.aceleradorPct}% puntos)`}
+                    aria-label={`Puesto ${user.puestoRanking}`}
+                    className="absolute -top-1.5 -left-1.5 text-xs leading-none drop-shadow"
+                  >
+                    {user.emojiPodio}
+                  </span>
+                )}
                 {user.moodEmoji && (
                   <span className="absolute -right-1.5 -bottom-1 text-[11px] leading-none">{user.moodEmoji}</span>
                 )}
@@ -113,6 +146,7 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
                 <span className="truncate font-semibold">{user.nombre}</span>
                 <span className="truncate text-xs text-sidebar-foreground/75">
                   Nivel {level.level} · {user.rolFamiliar ? (ROLE_LABEL[user.rolFamiliar] ?? "") : ""}
+                  {user.aceleradorPct > 0 ? ` · +${user.aceleradorPct}% pts` : ""}
                 </span>
               </span>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -121,19 +155,34 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
           <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-lg" side={isMobile ? "bottom" : "right"} align="end" sideOffset={4}>
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center gap-2 py-1">
-                <Avatar className="size-9 rounded-lg">
-                  <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
-                  <AvatarFallback className="rounded-lg">{user.nombre?.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <span className="relative">
+                  <Avatar className="size-9 rounded-lg">
+                    <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
+                    <AvatarFallback className="rounded-lg">{user.nombre?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  {user.emojiPodio && (
+                    <span
+                      title={`Puesto #${user.puestoRanking} (+${user.aceleradorPct}% puntos)`}
+                      aria-label={`Puesto ${user.puestoRanking}`}
+                      className="absolute -top-1.5 -left-1.5 text-xs leading-none drop-shadow"
+                    >
+                      {user.emojiPodio}
+                    </span>
+                  )}
+                </span>
                 <div className="grid flex-1 leading-tight">
                   <span className="truncate text-sm font-semibold text-foreground">{user.nombre}</span>
-                  <span className="truncate text-xs text-muted-foreground">{level.title}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {level.title}
+                    {user.aceleradorPct > 0 ? ` · ${user.emojiPodio} +${user.aceleradorPct}% pts` : ""}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <div className="grid grid-cols-3 gap-1 px-2 py-1.5 text-center">
-              <Stat icon={<Flame className="size-3.5 text-orange-500" />} value={user.streakDays || 0} label="Racha" />
+            <div className="grid grid-cols-2 gap-1 px-2 py-1.5 text-center">
+              <Stat icon={<Flame className="size-3.5 text-primary" />} value={user.rachaApp?.dias ?? 0} label="Racha app" />
+              <Stat icon={<Flame className="size-3.5 text-orange-500" />} value={user.streakDays || 0} label="Racha tareas" />
               <Stat icon={<Star className="size-3.5 text-secondary" />} value={user.stars || 0} label="Estrellas" />
               <Stat icon={<Gift className="size-3.5 text-primary" />} value={user.surprises || 0} label="Sorpresas" />
             </div>

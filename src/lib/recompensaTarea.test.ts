@@ -59,3 +59,50 @@ test("iniciar tarea y finalizar otorga 100% de los puntos; solo marcar realizada
   assert.equal(soloMarcadaFueraDeHorario.rewardPoints, Math.round(36 * 0.8)); // 29 pts
 });
 
+test("aplica el acelerador de podio (+5% 1ro, +3% 2do, +1% 3ro) sobre los puntos de la tarea", () => {
+  const baseInput = {
+    generaPuntosYRecompensa: true,
+    dificultad: "Ardua" as const,
+    tiempoEjecucionEstimadoSeg: 60 * 60, // 100 pts base (4 * √60 * 3.2 ≈ 99)
+    newStreakDays: 1, // +1 -> 100 pts
+    isChecklist: false,
+    checklistCompletados: 0,
+    isWeekend: false,
+    isHappyHour: false,
+    fueIniciada: true,
+    esATiempo: true, // +15 speed -> 115 pts antes de acelerador
+  };
+
+  const sinPodio = calcularPuntosCompletadoTarea(baseInput);
+  assert.equal(sinPodio.rankingBonus, 0);
+
+  const primero = calcularPuntosCompletadoTarea({
+    ...baseInput,
+    puestoRanking: 1,
+    aceleradorRankingPct: 5,
+  });
+  assert.equal(primero.aceleradorRankingPct, 5);
+  assert.equal(primero.rankingBonus, Math.round(sinPodio.rewardPoints * 0.05));
+  assert.equal(primero.rewardPoints, sinPodio.rewardPoints + primero.rankingBonus);
+  assert.ok(primero.feedback.includes("🥇") && primero.feedback.includes("+5%"));
+
+  const segundo = calcularPuntosCompletadoTarea({
+    ...baseInput,
+    puestoRanking: 2,
+    aceleradorRankingPct: 3,
+  });
+  assert.equal(segundo.aceleradorRankingPct, 3);
+  assert.equal(segundo.rankingBonus, Math.round(sinPodio.rewardPoints * 0.03));
+  assert.equal(segundo.rewardPoints, sinPodio.rewardPoints + segundo.rankingBonus);
+
+  const tercero = calcularPuntosCompletadoTarea({
+    ...baseInput,
+    puestoRanking: 3,
+    aceleradorRankingPct: 1,
+  });
+  assert.equal(tercero.aceleradorRankingPct, 1);
+  assert.equal(tercero.rankingBonus, Math.max(1, Math.round(sinPodio.rewardPoints * 0.01)));
+  assert.equal(tercero.rewardPoints, sinPodio.rewardPoints + tercero.rankingBonus);
+});
+
+

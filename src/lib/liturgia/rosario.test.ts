@@ -1,6 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { misteriosDelDia, GRUPOS_INFO, DEVOCIONARIO_ROSARIO, FUENTE_LECTURAS } from "./rosario.ts";
+import fs from "node:fs";
+import path from "node:path";
+import {
+  misteriosDelDia,
+  GRUPOS_INFO,
+  DEVOCIONARIO_ROSARIO,
+  FUENTE_LECTURAS,
+  obtenerMisteriosParaRezar,
+  obtenerOrdenOracionesRosario,
+} from "./rosario.ts";
 
 test("misteriosDelDia: asignación por días de semana fijos (§10.8)", () => {
   // 2026-10-12 = Lunes -> Gaudiosa
@@ -50,7 +59,7 @@ test("misteriosDelDia: regla dominical tradicional según el tiempo litúrgico (
   assert.equal(misteriosDelDia("2026-10-18", "pentecostes").grupo, "gloriosa");
 });
 
-test("cada grupo contiene exactamente 5 misterios con número romano, fruto y cita bíblica", () => {
+test("cada grupo contiene exactamente 5 misterios con número romano, fruto, cita e imagen de carta", () => {
   for (const grupo of ["gaudiosa", "dolorosa", "gloriosa"] as const) {
     const info = GRUPOS_INFO[grupo];
     assert.equal(info.misterios.length, 5);
@@ -62,6 +71,12 @@ test("cada grupo contiene exactamente 5 misterios con número romano, fruto y ci
       assert.ok(m.castellano.length > 5);
       assert.ok(m.fruto.length > 3);
       assert.ok(m.cita.length > 2);
+      assert.match(m.claveCarta, /^misterio-/);
+      assert.equal(m.imagen, `/cartas/${m.claveCarta}/1.webp`);
+      assert.equal(m.imagenUrl, `/api/cartas/arte?ruta=${encodeURIComponent(m.imagen)}`);
+
+      const archivoArte = path.resolve(process.cwd(), "arte-cartas", m.claveCarta, "1.webp");
+      assert.ok(fs.existsSync(archivoArte), `No existe el arte de carta para ${m.claveCarta}: ${archivoArte}`);
     }
   }
 });
@@ -109,6 +124,11 @@ test("DEVOCIONARIO_ROSARIO: contiene oraciones tradicionales con fuentes (§10.8
     assert.ok(o.fuente.length > 5, `Falta la fuente de ${c}`);
   }
 
+  // Credo Niceno-Constantinopolitano
+  assert.match(oraciones.credo.tituloLa, /Nic[æa]no-Constantinopolitanum/);
+  assert.match(oraciones.credo.textoLa, /^Credo in unum Deum.*consubstantiálem Patri/);
+  assert.match(oraciones.credo.textoEs, /^Creo en un solo Dios.*consubstancial al Padre/);
+
   // Fátima con etiqueta «desde 1917»
   assert.equal(oraciones.fatima.etiqueta, "desde 1917");
 
@@ -123,3 +143,56 @@ test("DEVOCIONARIO_ROSARIO: contiene oraciones tradicionales con fuentes (§10.8
     assert.ok(inv.es.length > 0);
   }
 });
+
+test("obtenerMisteriosParaRezar: modo 'dia' devuelve los 5 misterios del día y 'completo' devuelve los 15", () => {
+  const diaLunes = obtenerMisteriosParaRezar("dia", "2026-10-12");
+  assert.equal(diaLunes.modo, "dia");
+  assert.equal(diaLunes.misterios.length, 5);
+  assert.equal(diaLunes.misterios[0].grupo, "gaudiosa");
+  assert.equal(diaLunes.misterios[0].indiceGlobal, 1);
+  assert.equal(diaLunes.misterios[4].indiceGlobal, 5);
+  assert.ok(diaLunes.misterios[0].textoVulgata.includes("missus est angelus Gabriel"));
+
+  const completo = obtenerMisteriosParaRezar("completo", "2026-10-12");
+  assert.equal(completo.modo, "completo");
+  assert.equal(completo.misterios.length, 15);
+  assert.equal(completo.misterios[0].grupo, "gaudiosa");
+  assert.equal(completo.misterios[0].romanoGlobal, "I");
+  assert.equal(completo.misterios[4].grupo, "gaudiosa");
+  assert.equal(completo.misterios[4].romanoGlobal, "V");
+  assert.equal(completo.misterios[5].grupo, "dolorosa");
+  assert.equal(completo.misterios[5].romanoGlobal, "VI");
+  assert.equal(completo.misterios[9].grupo, "dolorosa");
+  assert.equal(completo.misterios[9].romanoGlobal, "X");
+  assert.equal(completo.misterios[10].grupo, "gloriosa");
+  assert.equal(completo.misterios[10].romanoGlobal, "XI");
+  assert.equal(completo.misterios[14].grupo, "gloriosa");
+  assert.equal(completo.misterios[14].romanoGlobal, "XV");
+  for (let i = 0; i < 15; i++) {
+    assert.equal(completo.misterios[i].indiceGlobal, i + 1);
+    assert.ok(completo.misterios[i].textoVulgata.length > 30);
+    assert.ok(completo.misterios[i].imagenUrl.startsWith("/api/cartas/arte?ruta="));
+  }
+});
+
+test("obtenerOrdenOracionesRosario: devuelve las oraciones iniciales, de cada decena y finales en orden", () => {
+  const orden = obtenerOrdenOracionesRosario();
+  assert.deepEqual(
+    orden.iniciales.map((p) => p.id),
+    ["inicio-signum-crucis", "inicio-credo", "inicio-pater", "inicio-tres-aves", "inicio-gloria"]
+  );
+  assert.equal(orden.iniciales[3].repeticiones, 3);
+
+  assert.deepEqual(
+    orden.decena.map((p) => p.id),
+    ["decena-pater", "decena-aves", "decena-gloria", "decena-fatima"]
+  );
+  assert.equal(orden.decena[1].repeticiones, 10);
+
+  assert.deepEqual(
+    orden.finales.map((p) => p.id),
+    ["final-salve", "final-oremus", "final-signum-crucis"]
+  );
+});
+
+

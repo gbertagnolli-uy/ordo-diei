@@ -1,6 +1,7 @@
 import { AuthPageClient } from "@/components/auth/AuthPageClient";
 import prisma from "@/lib/prisma";
 import { Particles } from "@/components/ui/particles";
+import { enriquecerConRachaYRanking } from "@/lib/engagement/servidor";
 
 export const dynamic = 'force-dynamic';
 
@@ -8,10 +9,11 @@ export default async function Home() {
   // Lógica de DB y reglas de negocio del Backend
   let users: any[] = [];
   try {
-    const rawUsers = await prisma.usuario.findMany();
+    const rawUsers = await prisma.usuario.findMany({ omit: { pinSecretoHash: true } });
+    const conRanking = await enriquecerConRachaYRanking(rawUsers);
     
     // Regla: Orden estricto (Padres primero, Hijos luego ordenados por edad)
-    users = rawUsers.sort((a, b) => {
+    users = conRanking.sort((a, b) => {
       const isParent = (role: string) => role === "Padre" || role === "Madre";
       if (isParent(a.rolFamiliar) && !isParent(b.rolFamiliar)) return -1;
       if (!isParent(a.rolFamiliar) && isParent(b.rolFamiliar)) return 1;
