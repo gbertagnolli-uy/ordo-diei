@@ -7,18 +7,44 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { dueDate, formatDue, isActionable, isSameDay, sortTasks, statusInfo } from "./taskUtils";
+import { dueDate, formatDue, isActionable, sortTasks, statusInfo, taskAppliesOnDay } from "./taskUtils";
 
 const dayLabelFmt = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" });
 
 // Panel "Agenda" del App Shell 4: calendario con marca en los días con vencimientos + lista.
-export function SchedulePanel({ tasks, onSelect, onClose }: { tasks: any[]; onSelect: (task: any) => void; onClose: () => void }) {
+export function SchedulePanel({
+  tasks,
+  onSelect,
+  onClose,
+  currentUserId,
+}: {
+  tasks: any[];
+  onSelect: (task: any) => void;
+  onClose: () => void;
+  currentUserId?: number;
+}) {
   const [selectedDay, setSelectedDay] = useState<Date | undefined>();
-  const scheduled = useMemo(() => tasks.filter((t) => dueDate(t)), [tasks]);
-  const dueDays = useMemo(() => scheduled.map((t) => dueDate(t)!), [scheduled]);
+  const [month, setMonth] = useState<Date>(new Date());
+
+  // Días con tareas efectivas para el período visible del calendario
+  const dueDays = useMemo(() => {
+    const days: Date[] = [];
+    const base = new Date(month.getFullYear(), month.getMonth(), 1);
+    const start = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+    const end = new Date(base.getFullYear(), base.getMonth() + 2, 0);
+
+    const totalDays = Math.round((end.getTime() - start.getTime()) / 86400000);
+    for (let i = 0; i <= totalDays; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      if (tasks.some((t) => taskAppliesOnDay(t, d, currentUserId))) {
+        days.push(d);
+      }
+    }
+    return days;
+  }, [tasks, month, currentUserId]);
 
   const list = selectedDay
-    ? sortTasks(scheduled.filter((t) => isSameDay(dueDate(t)!, selectedDay)), null)
+    ? sortTasks(tasks.filter((t) => taskAppliesOnDay(t, selectedDay, currentUserId)), null)
     : sortTasks(tasks.filter(isActionable), null);
 
   return (
@@ -34,6 +60,8 @@ export function SchedulePanel({ tasks, onSelect, onClose }: { tasks: any[]; onSe
       <Calendar
         mode="single"
         locale={es}
+        month={month}
+        onMonthChange={setMonth}
         selected={selectedDay}
         onSelect={setSelectedDay}
         modifiers={{ due: dueDays }}
@@ -76,7 +104,7 @@ export function SchedulePanel({ tasks, onSelect, onClose }: { tasks: any[]; onSe
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{task.titulo}</span>
                     <span className="block text-xs text-muted-foreground tabular-nums">
-                      {formatDue(task, true) ?? "Sin fecha"} · {status.label}
+                      {formatDue(task, true, selectedDay) ?? "Sin fecha"} · {status.label}
                     </span>
                   </span>
                 </button>

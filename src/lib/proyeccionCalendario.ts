@@ -101,6 +101,14 @@ export function proyectarEventosCalendario(
   >();
 
   for (const t of tasks) {
+    // Si es una regla/plantilla base recurrente o rotativa, su fechaVencimiento/horaEjecucion
+    // representa la fecha de creación de la regla. Solo debe proyectarse en el Paso 2
+    // en los días reales en que ocurre según su frecuencia/días asignados.
+    const esRecurrente = Boolean(t.tipoRecurrencia && t.tipoRecurrencia !== "Unica");
+    const esRotativa = Boolean(t.rotacionConfig && normalizarRotacionConfig(t.rotacionConfig));
+    const esPlantillaBase = (esRecurrente || esRotativa) && !t.parentTaskId && !t.generadaPorCron;
+    if (esPlantillaBase) continue;
+
     const fv = parsearFechaLocal(t.fechaVencimiento ?? t.horaEjecucion);
     if (!fv) continue;
     if (fv < inicioRango || fv > finRangoFinDelDia) continue;
@@ -235,10 +243,11 @@ export function proyectarEventosCalendario(
     });
   }
 
-  // 2. Proyectar ocurrencias futuras / recurrentes / rotativas para cada día del rango
-  const reglasRecurrentes = tasks.filter(
-    (t) => (t.tipoRecurrencia !== "Unica" || t.rotacionConfig) && !t.parentTaskId && !t.generadaPorCron
-  );
+  const reglasRecurrentes = tasks.filter((t) => {
+    const esRecurrente = Boolean(t.tipoRecurrencia && t.tipoRecurrencia !== "Unica");
+    const esRotativa = Boolean(t.rotacionConfig && normalizarRotacionConfig(t.rotacionConfig));
+    return (esRecurrente || esRotativa) && !t.parentTaskId && !t.generadaPorCron;
+  });
 
   // Deduplicamos reglas que pertenecen al mismo grupoTareaId para no proyectar doble
   const reglasUnicasMap = new Map<string, any>();

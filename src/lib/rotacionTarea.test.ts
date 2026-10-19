@@ -217,3 +217,40 @@ test("permite más de un responsable por día en selección de día de la semana
   assert.equal(describirRotacion(configGrupal), "Rotativa · días asignados (en grupo)");
 });
 
+test("visibilidad dinámica de plantilla rotativa no queda atrapada en la fecha de creación", () => {
+  const config: RotacionConfig = {
+    modo: "dias_semana",
+    responsablesIds: [1, 2],
+    diasPorUsuario: {
+      "1": [1], // Lunes
+      "2": [2], // Martes
+    },
+    fechaInicio: "2026-10-11",
+  };
+
+  const plantillaBase = {
+    asignadoId: 1,
+    estado: "Pendiente",
+    fechaVencimiento: new Date(2026, 9, 11), // Domingo 11 (creación)
+    rotacionConfig: config,
+    generadaPorCron: false,
+    parentTaskId: null,
+  };
+
+  const lunes = new Date(2026, 9, 12);
+  const martes = new Date(2026, 9, 13);
+  const domingo = new Date(2026, 9, 11);
+
+  // El domingo 11 no le toca a nadie
+  assert.equal(esTareaVisibleParaUsuarioEnDia(plantillaBase, 1, domingo), false);
+  assert.equal(esTareaVisibleParaUsuarioEnDia(plantillaBase, 2, domingo), false);
+
+  // El lunes 12 le toca al usuario 1 (aunque fechaVencimiento sea domingo 11)
+  assert.equal(esTareaVisibleParaUsuarioEnDia(plantillaBase, 1, lunes), true);
+  assert.equal(esTareaVisibleParaUsuarioEnDia(plantillaBase, 2, lunes), false);
+
+  // El martes 13 le toca al usuario 2 (aunque asignadoId inicial sea 1 y fechaVencimiento sea domingo 11)
+  assert.equal(esTareaVisibleParaUsuarioEnDia(plantillaBase, 2, martes), true);
+  assert.equal(esTareaVisibleParaUsuarioEnDia(plantillaBase, 1, martes), false);
+});
+
