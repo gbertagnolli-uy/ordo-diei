@@ -20,5 +20,8 @@ Rama `task/lane-247-companero-flotante` (worktree `ordo-diei-lanes/lane-247`), b
 - `src/app/dashboard/layout.tsx`: arma los datos con `companeroDe` y monta el flotante para todo `/dashboard/*`.
 - `src/app/dashboard/page.tsx`: se saca `CompaneroCard`; sólo queda la tarjeta de «Elegí quién te acompaña» si todavía no eligió personaje.
 
+## Nota (lane 248)
+Los gestos de esta lane se reemplazaron: tocar abre un menú (cambiar de imagen / abrir panel), dejar presionado arrastra, y la pose «buenos días» ya no se ve flotando. Ver `LANE_248_COMPANERO_MENU_ESCENAS.md`.
+
 ## Estado
 Implementada y con tsc y tests en verde. Pendiente: verificación visual de Gabriel en el navegador (arrastre, ocultar al Dock, toque, presión de 1 s, globo SVG, botones de la tarea) y recién después integrar con `scripts/integrar.sh`.

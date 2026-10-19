@@ -16,6 +16,8 @@ import { eventosDeHoy } from "@/lib/cartas/server";
 import { enriquecerConRachaYRanking, parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
 import { bienvenidaDiariaDe, companeroDe } from "@/lib/engagement/companeroServidor";
 import { CompaneroFlotante } from "@/components/engagement/CompaneroFlotante";
+import { poseFlotante, type EventoApp } from "@/lib/engagement/companeroEscena";
+import { isLate } from "@/components/tasks/taskUtils";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
@@ -74,6 +76,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     fechaVencimiento: t.fechaVencimiento?.toISOString() ?? null,
     horaEjecucion: t.horaEjecucion?.toISOString() ?? null,
   }));
+  // Lo que está pasando en la app, para que el compañero lo comente (lane 248)
+  const eventosCompanero: EventoApp[] = [
+    ...(fichaCompanero?.nivelNuevo ? (["nivel"] as const) : []),
+    ...((premiosPendientes ?? 0) > 0 || sorpresas > 0 || reconocimientos > 0 ? (["premio"] as const) : []),
+    ...(hayEventosCartas ? (["cartas"] as const) : []),
+    ...(tasks.some((t) => isLate(t)) ? (["atrasadas"] as const) : []),
+    ...(habitosPendientes > 0 ? (["habitos"] as const) : []),
+    ...((fichaCompanero?.racha ?? 0) >= 2 ? (["racha"] as const) : []),
+  ];
 
   return (
     <SidebarProvider>
@@ -102,16 +113,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
             quien: fichaCompanero.quien,
             personaje: personajeCompanero,
             nombre: fichaCompanero.nombre,
-            pose: fichaCompanero.pose,
+            pose: poseFlotante(fichaCompanero.pose),
             poses: fichaCompanero.poses.desbloqueadas,
-            saludo: fichaCompanero.nivelNuevo ? `¡Subiste al nivel ${fichaCompanero.nivel.numero}, ${fichaCompanero.nivel.titulo}!` : (fichaCompanero.regreso ?? fichaCompanero.frase),
+            eventos: eventosCompanero,
           }}
         />
       )}
       <MainDock
         currentUser={currentUser}
         allUsers={users}
-        companero={fichaCompanero && personajeCompanero ? { usuarioId: Number(session.user.id), nombre: fichaCompanero.nombre, personaje: personajeCompanero, pose: fichaCompanero.pose } : null}
+        companero={fichaCompanero && personajeCompanero ? { usuarioId: Number(session.user.id), nombre: fichaCompanero.nombre, personaje: personajeCompanero, pose: poseFlotante(fichaCompanero.pose) } : null}
       />
     </SidebarProvider>
   );
