@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 
+export type ModalType = "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD" | "MOOD_SELECTOR" | "LEVEL_UP" | "ORACION" | "HABITO" | "DAILY_WELCOME";
+
 interface ModalState {
   isOpen: boolean;
-  type: "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD" | "MOOD_SELECTOR" | "LEVEL_UP" | "ORACION" | "HABITO" | null;
+  type: ModalType | null;
   data: any;
-  openModal: (type: "CONFIRM_TASK" | "USER_STATS" | "RULES" | "TASK_SUCCESS" | "HISTORY" | "LEADERBOARD" | "SURPRISE_AWARD" | "MOOD_SELECTOR" | "LEVEL_UP" | "ORACION" | "HABITO", data?: any) => void;
+  openModal: (type: ModalType, data?: any) => void;
   closeModal: () => void;
 }
 

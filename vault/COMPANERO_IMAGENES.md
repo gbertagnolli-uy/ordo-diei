@@ -1,6 +1,7 @@
 # Compañero «héroe»: imágenes que hay que generar (fase 1, mientras llegan los modelos 3D)
 
 > Parte de [`COMPANERO_HEROE.md`](COMPANERO_HEROE.md). Este archivo es la **lista de pedido** de arte: cuántas imágenes, de quién, en qué postura y dónde se copian.
+> **Lane 233:** las carpetas de arte ya están importadas (`npm run heroes`) y los personajes son los 26 héroes; esta lista queda como referencia del pedido original. Lo que falta está en [`LANE_233_HEROES_COMPANEROS.md`](LANE_233_HEROES_COMPANEROS.md) §4.
 > La app **ya funciona sin ninguna imagen** (muestra un emoji de reemplazo). Cada imagen que se copia aparece sola, sin tocar código.
 
 ## Resumen: 46 imágenes

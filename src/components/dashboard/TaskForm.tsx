@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2 } from "lucide-react";
+import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2, ArrowUp, ArrowDown, Repeat } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +15,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SelectorNivel } from "@/components/SelectorNivel";
 import Stepper, { Step } from "@/components/Stepper";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, puntosBase, type Dificultad } from "@/lib/recompensaTarea";
+import {
+  DIAS_SEMANA_ORDEN,
+  ETIQUETA_DIA_CORTO,
+  normalizarRotacionConfig,
+  type ModoRotacion,
+  type RotacionConfig,
+  type UnidadFrecuenciaRotacion,
+} from "@/lib/rotacionTarea";
 import { toast } from "@/lib/toast";
 
 // Rampa verde → ámbar → rojo, derivada de los tokens success/warning/destructive de cada tema.
@@ -55,11 +63,29 @@ interface TaskFormProps {
 export default function TaskForm({ users, task, onSuccess, isModal = false }: TaskFormProps) {
   const router = useRouter();
   const isEdit = !!task;
+  const rotacionInicial = isEdit ? normalizarRotacionConfig(task.rotacionConfig) : null;
+
   const [loading, setLoading] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>(
-    isEdit ? (task.asignadoIds ?? [task.asignadoId]) : []
+    isEdit
+      ? rotacionInicial
+        ? rotacionInicial.responsablesIds
+        : (task.asignadoIds ?? [task.asignadoId])
+      : []
   );
   const [isGlobal, setIsGlobal] = useState(false);
+  const [esRotativa, setEsRotativa] = useState<boolean>(Boolean(rotacionInicial));
+  const [modoRotacion, setModoRotacion] = useState<ModoRotacion>(rotacionInicial?.modo ?? "frecuencia");
+  const [rotacionCada, setRotacionCada] = useState<string>(
+    String(rotacionInicial?.modo === "frecuencia" ? (rotacionInicial.cada ?? 1) : 1)
+  );
+  const [rotacionUnidad, setRotacionUnidad] = useState<UnidadFrecuenciaRotacion>(
+    rotacionInicial?.modo === "frecuencia" ? (rotacionInicial.unidad ?? "dias") : "dias"
+  );
+  const [diasPorUsuario, setDiasPorUsuario] = useState<Record<string, number[]>>(
+    rotacionInicial?.modo === "dias_semana" ? (rotacionInicial.diasPorUsuario ?? {}) : {}
+  );
+
   const [intervalo, setIntervalo] = useState<string>(String(isEdit ? (task.intervalo ?? 1) : 1));
   const [anclajeCompletado, setAnclajeCompletado] = useState<boolean>(isEdit ? Boolean(task.anclaCompletado) : false);
   const [tipoRecurrencia, setTipoRecurrencia] = useState(
@@ -87,18 +113,94 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
   const [sorpresa, setSorpresa] = useState<boolean>(isEdit ? Boolean(task.isSurpriseEligible) : false);
   const [paso, setPaso] = useState(1);
 
+  const effectiveUserIds = isGlobal ? users.map((u) => u.id) : selectedUserIds;
+
   const toggleUser = (id: number) => {
-    setSelectedUserIds(prev =>
-      prev.includes(id) ? prev.filter(uid => uid !== id) : [...prev, id]
-    );
+    setSelectedUserIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id];
+      if (next.length < 2) setEsRotativa(false);
+      return next;
+    });
+  };
+
+  const moverResponsable = (idx: number, dir: -1 | 1) => {
+    const base = isGlobal ? users.map((u) => u.id) : [...selectedUserIds];
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= base.length) return;
+    const temp = base[idx];
+    base[idx] = base[targetIdx];
+    base[targetIdx] = temp;
+    if (isGlobal) setIsGlobal(false);
+    setSelectedUserIds(base);
+  };
+
+  const toggleDiaParaUsuario = (userId: number, dia: number) => {
+    setDiasPorUsuario((prev) => {
+      const next: Record<string, number[]> = {};
+      for (const uid of effectiveUserIds) {
+        const actuales = prev[String(uid)] ?? [];
+        if (uid === userId) {
+          next[String(uid)] = actuales.includes(dia)
+            ? actuales.filter((d) => d !== dia)
+            : [...actuales, dia].sort((a, b) => a - b);
+        } else {
+          // Un día pertenece a un único responsable en la rotación
+          next[String(uid)] = actuales.filter((d) => d !== dia);
+        }
+      }
+      return next;
+    });
+  };
+
+  const construirRotacionPayload = (): RotacionConfig | null => {
+    if (!esRotativa || effectiveUserIds.length < 2) return null;
+    const fechaAncla = (fecha ? new Date(`${fecha}T00:00:00.000Z`) : new Date()).toISOString().slice(0, 10);
+    if (modoRotacion === "frecuencia") {
+      return {
+        modo: "frecuencia",
+        responsablesIds: effectiveUserIds,
+        cada: Math.max(1, Math.floor(Number(rotacionCada) || 1)),
+        unidad: rotacionUnidad,
+        fechaAncla,
+      };
+    }
+    const mapaLimpio: Record<string, number[]> = {};
+    for (const uid of effectiveUserIds) {
+      mapaLimpio[String(uid)] = (diasPorUsuario[String(uid)] ?? []).slice().sort((a, b) => a - b);
+    }
+    return {
+      modo: "dias_semana",
+      responsablesIds: effectiveUserIds,
+      diasPorUsuario: mapaLimpio,
+      fechaAncla,
+    };
   };
 
   /** Devuelve el mensaje de error del paso, o null si está completo. */
   const validar = (n: number): string | null => {
     if (n === 1 && !titulo.trim()) return "Ponele un título a la tarea.";
-    if (n === 2 && !isGlobal && selectedUserIds.length === 0) return "Selecciona al menos un usuario o activa la tarea global.";
+    if (n === 2) {
+      if (!isGlobal && selectedUserIds.length === 0) {
+        return "Seleccioná al menos un usuario o activá la tarea global.";
+      }
+      if (esRotativa && effectiveUserIds.length < 2) {
+        return "Para rotar responsables necesitás seleccionar al menos 2 personas.";
+      }
+      if (esRotativa && modoRotacion === "frecuencia" && !(Number(rotacionCada) >= 1)) {
+        return "Indicá cada cuántos días, semanas o meses varía el responsable.";
+      }
+      if (esRotativa && modoRotacion === "dias_semana") {
+        const totalDias = effectiveUserIds.reduce(
+          (acc, uid) => acc + (diasPorUsuario[String(uid)]?.length ?? 0),
+          0
+        );
+        if (totalDias === 0) {
+          return "Seleccioná al menos un día de la semana para los responsables.";
+        }
+      }
+    }
     if (n === 3) {
-      if (tipoRecurrencia === "Unica" && !fecha) return "Elegí la fecha límite.";
+      if (!esRotativa && tipoRecurrencia === "Unica" && !fecha) return "Elegí la fecha límite.";
       if (!hora) return "Elegí la hora límite.";
     }
     if (n === 4 && !(Number(minutos) > 0)) return "Ingresá el tiempo estimado en minutos.";
@@ -107,22 +209,25 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
   const enviar = async () => {
     setLoading(true);
+    const rotacionConfig = construirRotacionPayload();
+    const recurrenciaEfectiva = rotacionConfig && tipoRecurrencia === "Unica" ? "Diaria" : tipoRecurrencia;
     const comun = {
       titulo,
       descripcion,
       tiempoMinutos: minutos,
-      fecha: tipoRecurrencia === "Unica" ? fecha : null,
+      fecha: recurrenciaEfectiva === "Unica" ? fecha : (fecha || null),
       hora,
-      tipoRecurrencia,
-      diaDelMes: tipoRecurrencia === "Mensual_Fecha" ? diaMes : null,
-      ordinalSemana: tipoRecurrencia === "Mensual_Ordinal" ? ordinal : null,
-      diaDeLaSemana: tipoRecurrencia === "Semanal" || tipoRecurrencia === "Mensual_Ordinal" ? diaSemana : null,
+      tipoRecurrencia: recurrenciaEfectiva,
+      diaDelMes: recurrenciaEfectiva === "Mensual_Fecha" ? diaMes : null,
+      ordinalSemana: recurrenciaEfectiva === "Mensual_Ordinal" ? ordinal : null,
+      diaDeLaSemana: recurrenciaEfectiva === "Semanal" || recurrenciaEfectiva === "Mensual_Ordinal" ? diaSemana : null,
       intervalo,
       anclaCompletado: anclajeCompletado,
       generaRecompensa: true,
       dificultad,
       isSurpriseEligible: sorpresa,
       checklistItems: isChecklist ? checklistItems.filter(i => i.trim()) : [],
+      rotacionConfig,
     };
 
     try {
@@ -130,7 +235,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         const res = await fetch(`/api/tasks/${task.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...comun, asignadoIds: selectedUserIds }),
+          body: JSON.stringify({ ...comun, asignadoIds: effectiveUserIds }),
         });
         if (res.ok) {
           if (onSuccess) onSuccess();
@@ -198,9 +303,22 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
             <Globe className="mt-0.5 size-5 shrink-0 text-primary" />
             <FieldContent>
               <FieldLabel htmlFor={fid("global")}>Tarea Global</FieldLabel>
-              <FieldDescription>Se asignará automáticamente a todos los miembros de la familia.</FieldDescription>
+              <FieldDescription>Seleccionar automáticamente a todos los miembros de la familia.</FieldDescription>
             </FieldContent>
-            <Switch id={fid("global")} checked={isGlobal} onCheckedChange={() => { setIsGlobal(!isGlobal); if (!isGlobal) setSelectedUserIds([]); }} />
+            <Switch
+              id={fid("global")}
+              checked={isGlobal}
+              onCheckedChange={() => {
+                const nextGlobal = !isGlobal;
+                setIsGlobal(nextGlobal);
+                if (nextGlobal) {
+                  setSelectedUserIds(users.map((u) => u.id));
+                } else {
+                  setSelectedUserIds([]);
+                  setEsRotativa(false);
+                }
+              }}
+            />
           </Field>
         )}
 
@@ -208,7 +326,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
         {!isGlobal && (
           <FieldSet>
             <FieldLegend variant="label" className="flex items-center gap-2">
-              <Users className="size-4 text-primary" /> Asignar a (selecciona uno o más) *
+              <Users className="size-4 text-primary" /> Responsables (seleccioná uno o más) *
             </FieldLegend>
             <ToggleGroup
               type="multiple"
@@ -234,12 +352,184 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
-            {selectedUserIds.length > 1 && (
-              <FieldDescription className="flex items-center gap-1 text-primary">
-                <Users className="size-3" /> Se creará una copia de la tarea para cada co-responsable seleccionado.
-              </FieldDescription>
-            )}
           </FieldSet>
+        )}
+
+        {/* Configuración de rotación cuando hay 2 o más responsables */}
+        {effectiveUserIds.length >= 2 && (
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+            <Field orientation="horizontal">
+              <Repeat className="mt-0.5 size-5 shrink-0 text-primary" />
+              <FieldContent>
+                <FieldLabel htmlFor={fid("rotar-responsables")}>Rotar responsable por turnos</FieldLabel>
+                <FieldDescription>
+                  {esRotativa
+                    ? "Tarea compartida rotativa: se asigna y muestra únicamente al responsable que le toca en el día correspondiente."
+                    : "Modo simultáneo: se creará una copia independiente de la tarea para cada responsable seleccionado."}
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                id={fid("rotar-responsables")}
+                checked={esRotativa}
+                onCheckedChange={(checked) => {
+                  setEsRotativa(checked);
+                  if (checked && tipoRecurrencia === "Unica") {
+                    setTipoRecurrencia("Diaria");
+                  }
+                }}
+              />
+            </Field>
+
+            {esRotativa && (
+              <div className="space-y-4 pt-2 border-t border-border/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={modoRotacion === "frecuencia" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setModoRotacion("frecuencia")}
+                    className="justify-center"
+                  >
+                    Por frecuencia (días / semanas / meses)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={modoRotacion === "dias_semana" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setModoRotacion("dias_semana")}
+                    className="justify-center"
+                  >
+                    Por días de la semana para cada uno
+                  </Button>
+                </div>
+
+                {modoRotacion === "frecuencia" ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field>
+                        <FieldLabel htmlFor={fid("rotacion-cada")}>Variar responsable cada</FieldLabel>
+                        <Input
+                          id={fid("rotacion-cada")}
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={rotacionCada}
+                          onChange={(e) => setRotacionCada(e.target.value)}
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor={fid("rotacion-unidad")}>Unidad de rotación</FieldLabel>
+                        <NativeSelect
+                          id={fid("rotacion-unidad")}
+                          value={rotacionUnidad}
+                          onChange={(e) => setRotacionUnidad(e.target.value as UnidadFrecuenciaRotacion)}
+                          className="w-full"
+                        >
+                          <NativeSelectOption value="dias">Días</NativeSelectOption>
+                          <NativeSelectOption value="semanas">Semanas</NativeSelectOption>
+                          <NativeSelectOption value="meses">Meses</NativeSelectOption>
+                        </NativeSelect>
+                      </Field>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Orden de rotación de responsables:
+                      </span>
+                      <div className="space-y-1.5">
+                        {effectiveUserIds.map((uid, idx) => {
+                          const u = users.find((usr) => usr.id === uid);
+                          if (!u) return null;
+                          return (
+                            <div
+                              key={uid}
+                              className="flex items-center justify-between rounded-md border bg-card px-3 py-1.5 text-sm"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary tabular-nums">
+                                  {idx + 1}
+                                </span>
+                                <span className="truncate font-medium">{u.nombre}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  disabled={idx === 0}
+                                  onClick={() => moverResponsable(idx, -1)}
+                                  aria-label={`Subir a ${u.nombre}`}
+                                >
+                                  <ArrowUp className="size-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  disabled={idx === effectiveUserIds.length - 1}
+                                  onClick={() => moverResponsable(idx, 1)}
+                                  aria-label={`Bajar a ${u.nombre}`}
+                                >
+                                  <ArrowDown className="size-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Seleccioná qué días de la semana le toca la tarea a cada responsable. La tarea solo le aparecerá a esa persona en sus días asignados:
+                    </p>
+                    <div className="space-y-2.5">
+                      {effectiveUserIds.map((uid) => {
+                        const u = users.find((usr) => usr.id === uid);
+                        if (!u) return null;
+                        const diasUsuario = diasPorUsuario[String(uid)] ?? [];
+                        return (
+                          <div
+                            key={uid}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-md border bg-card p-2.5"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Avatar className="size-7">
+                                <AvatarImage src={u.fotoUrl ?? undefined} alt={u.nombre} className="object-cover" />
+                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                  {u.nombre.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate text-sm font-medium">{u.nombre}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1">
+                              {DIAS_SEMANA_ORDEN.map((dia) => {
+                                const activo = diasUsuario.includes(dia);
+                                return (
+                                  <Button
+                                    key={dia}
+                                    type="button"
+                                    size="xs"
+                                    variant={activo ? "default" : "outline"}
+                                    onClick={() => toggleDiaParaUsuario(uid, dia)}
+                                    className="w-8 px-0 font-semibold"
+                                    title={ETIQUETA_DIA_CORTO[dia]}
+                                  >
+                                    {ETIQUETA_DIA_CORTO[dia]}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
     </FieldGroup>
@@ -247,96 +537,112 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
 
   const seccionCuando = (
     <FieldGroup>
+        {esRotativa && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground flex items-center gap-1.5">
+              <Repeat className="size-3.5 text-primary" /> Rotación de responsables activa
+            </p>
+            <p className="mt-1">
+              {modoRotacion === "dias_semana"
+                ? "La tarea se asignará automáticamente en los días de la semana elegidos para cada responsable y solo le aparecerá a quien le toque ese día."
+                : `El responsable irá rotando cada ${rotacionCada || 1} ${rotacionUnidad} según el orden definido en el paso anterior.`}
+            </p>
+          </div>
+        )}
+
         {/* Recurrence */}
-        <Field className="rounded-lg border bg-muted/40 p-4">
-          <FieldLabel htmlFor={fid("recurrencia")} className="flex items-center gap-2"><RefreshCw className="size-4 text-primary" /> Recurrencia (Auto-Regeneración)</FieldLabel>
-          <NativeSelect
-            id={fid("recurrencia")}
-            name="tipoRecurrencia"
-            value={tipoRecurrencia}
-            onChange={(e) => setTipoRecurrencia(e.target.value)}
-            className="w-full"
-          >
-            <NativeSelectOption value="Unica">Solo una vez (Sin Recreación)</NativeSelectOption>
-            <NativeSelectOption value="Diaria">Diaria (Se regenera cada día)</NativeSelectOption>
-            <NativeSelectOption value="Semanal">Semanal (Día específico de la semana)</NativeSelectOption>
-            <NativeSelectOption value="Mensual_Fecha">Mensual (Día exacto del mes)</NativeSelectOption>
-            <NativeSelectOption value="Mensual_Ordinal">Mensual (Ej: Primer Viernes)</NativeSelectOption>
-          </NativeSelect>
+        {(!esRotativa || modoRotacion === "frecuencia") && (
+          <Field className="rounded-lg border bg-muted/40 p-4">
+            <FieldLabel htmlFor={fid("recurrencia")} className="flex items-center gap-2"><RefreshCw className="size-4 text-primary" /> Recurrencia (Auto-Regeneración)</FieldLabel>
+            <NativeSelect
+              id={fid("recurrencia")}
+              name="tipoRecurrencia"
+              value={esRotativa && tipoRecurrencia === "Unica" ? "Diaria" : tipoRecurrencia}
+              onChange={(e) => setTipoRecurrencia(e.target.value)}
+              className="w-full"
+            >
+              {!esRotativa && <NativeSelectOption value="Unica">Solo una vez (Sin Recreación)</NativeSelectOption>}
+              <NativeSelectOption value="Diaria">Diaria (Se regenera cada día)</NativeSelectOption>
+              <NativeSelectOption value="Semanal">Semanal (Día específico de la semana)</NativeSelectOption>
+              <NativeSelectOption value="Mensual_Fecha">Mensual (Día exacto del mes)</NativeSelectOption>
+              <NativeSelectOption value="Mensual_Ordinal">Mensual (Ej: Primer Viernes)</NativeSelectOption>
+            </NativeSelect>
 
-          {tipoRecurrencia === "Semanal" && (
-            <Field className="mt-2">
-              <FieldLabel htmlFor={fid("dia-semana")}>Día de la semana</FieldLabel>
-              <NativeSelect id={fid("dia-semana")} name="diaDeLaSemana" value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)} className="w-full">
-                    <NativeSelectOption value="1">Lunes</NativeSelectOption>
-                    <NativeSelectOption value="2">Martes</NativeSelectOption>
-                    <NativeSelectOption value="3">Miércoles</NativeSelectOption>
-                    <NativeSelectOption value="4">Jueves</NativeSelectOption>
-                    <NativeSelectOption value="5">Viernes</NativeSelectOption>
-                    <NativeSelectOption value="6">Sábado</NativeSelectOption>
-                    <NativeSelectOption value="0">Domingo</NativeSelectOption>
-              </NativeSelect>
-            </Field>
-          )}
-
-          {tipoRecurrencia === "Mensual_Fecha" && (
-            <Field className="mt-2">
-              <FieldLabel htmlFor={fid("dia-mes")}>Día del mes (1-31)</FieldLabel>
-              <Input id={fid("dia-mes")} name="diaDelMes" type="number" min="1" max="31" value={diaMes} onChange={(e) => setDiaMes(e.target.value)} />
-            </Field>
-          )}
-
-          {tipoRecurrencia === "Mensual_Ordinal" && (
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <Field>
-                <FieldLabel htmlFor={fid("ordinal")}>Orden</FieldLabel>
-                <NativeSelect id={fid("ordinal")} name="ordinalSemana" value={ordinal} onChange={(e) => setOrdinal(e.target.value)} className="w-full">
-                  <NativeSelectOption value="1">Primer</NativeSelectOption>
-                  <NativeSelectOption value="2">Segundo</NativeSelectOption>
-                  <NativeSelectOption value="3">Tercer</NativeSelectOption>
-                  <NativeSelectOption value="4">Cuarto</NativeSelectOption>
-                  <NativeSelectOption value="-1">Último</NativeSelectOption>
+            {tipoRecurrencia === "Semanal" && (
+              <Field className="mt-2">
+                <FieldLabel htmlFor={fid("dia-semana")}>Día de la semana</FieldLabel>
+                <NativeSelect id={fid("dia-semana")} name="diaDeLaSemana" value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)} className="w-full">
+                      <NativeSelectOption value="1">Lunes</NativeSelectOption>
+                      <NativeSelectOption value="2">Martes</NativeSelectOption>
+                      <NativeSelectOption value="3">Miércoles</NativeSelectOption>
+                      <NativeSelectOption value="4">Jueves</NativeSelectOption>
+                      <NativeSelectOption value="5">Viernes</NativeSelectOption>
+                      <NativeSelectOption value="6">Sábado</NativeSelectOption>
+                      <NativeSelectOption value="0">Domingo</NativeSelectOption>
                 </NativeSelect>
               </Field>
-              <Field>
-                <FieldLabel htmlFor={fid("ordinal-dia")}>Día</FieldLabel>
-                <NativeSelect id={fid("ordinal-dia")} name="diaDeLaSemana" value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)} className="w-full">
-                    <NativeSelectOption value="1">Lunes</NativeSelectOption>
-                    <NativeSelectOption value="2">Martes</NativeSelectOption>
-                    <NativeSelectOption value="3">Miércoles</NativeSelectOption>
-                    <NativeSelectOption value="4">Jueves</NativeSelectOption>
-                    <NativeSelectOption value="5">Viernes</NativeSelectOption>
-                    <NativeSelectOption value="6">Sábado</NativeSelectOption>
-                    <NativeSelectOption value="0">Domingo</NativeSelectOption>
-                </NativeSelect>
-              </Field>
-            </div>
-          )}
+            )}
 
-          {tipoRecurrencia !== "Unica" && (
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <Field>
-                <FieldLabel htmlFor={fid("intervalo")}>Repetir cada</FieldLabel>
-                <Input id={fid("intervalo")} type="number" min="1" max="365" value={intervalo} onChange={(e) => setIntervalo(e.target.value)} />
-                <FieldDescription>{tipoRecurrencia === "Diaria" ? "días" : tipoRecurrencia === "Semanal" ? "semanas" : "meses"}</FieldDescription>
+            {tipoRecurrencia === "Mensual_Fecha" && (
+              <Field className="mt-2">
+                <FieldLabel htmlFor={fid("dia-mes")}>Día del mes (1-31)</FieldLabel>
+                <Input id={fid("dia-mes")} name="diaDelMes" type="number" min="1" max="31" value={diaMes} onChange={(e) => setDiaMes(e.target.value)} />
               </Field>
-              <Field>
-                <FieldLabel htmlFor={fid("ancla")}>Contar desde</FieldLabel>
-                <NativeSelect id={fid("ancla")} value={anclajeCompletado ? "completado" : "calendario"} onChange={(e) => setAnclajeCompletado(e.target.value === "completado")} className="w-full">
-                  <NativeSelectOption value="calendario">El calendario</NativeSelectOption>
-                  <NativeSelectOption value="completado">Cuando la completo</NativeSelectOption>
-                </NativeSelect>
-              </Field>
-            </div>
-          )}
-        </Field>
+            )}
 
+            {tipoRecurrencia === "Mensual_Ordinal" && (
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <Field>
+                  <FieldLabel htmlFor={fid("ordinal")}>Orden</FieldLabel>
+                  <NativeSelect id={fid("ordinal")} name="ordinalSemana" value={ordinal} onChange={(e) => setOrdinal(e.target.value)} className="w-full">
+                    <NativeSelectOption value="1">Primer</NativeSelectOption>
+                    <NativeSelectOption value="2">Segundo</NativeSelectOption>
+                    <NativeSelectOption value="3">Tercer</NativeSelectOption>
+                    <NativeSelectOption value="4">Cuarto</NativeSelectOption>
+                    <NativeSelectOption value="-1">Último</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={fid("ordinal-dia")}>Día</FieldLabel>
+                  <NativeSelect id={fid("ordinal-dia")} name="diaDeLaSemana" value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)} className="w-full">
+                      <NativeSelectOption value="1">Lunes</NativeSelectOption>
+                      <NativeSelectOption value="2">Martes</NativeSelectOption>
+                      <NativeSelectOption value="3">Miércoles</NativeSelectOption>
+                      <NativeSelectOption value="4">Jueves</NativeSelectOption>
+                      <NativeSelectOption value="5">Viernes</NativeSelectOption>
+                      <NativeSelectOption value="6">Sábado</NativeSelectOption>
+                      <NativeSelectOption value="0">Domingo</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+              </div>
+            )}
+
+            {tipoRecurrencia !== "Unica" && !esRotativa && (
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <Field>
+                  <FieldLabel htmlFor={fid("intervalo")}>Repetir cada</FieldLabel>
+                  <Input id={fid("intervalo")} type="number" min="1" max="365" value={intervalo} onChange={(e) => setIntervalo(e.target.value)} />
+                  <FieldDescription>{tipoRecurrencia === "Diaria" ? "días" : tipoRecurrencia === "Semanal" ? "semanas" : "meses"}</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={fid("ancla")}>Contar desde</FieldLabel>
+                  <NativeSelect id={fid("ancla")} value={anclajeCompletado ? "completado" : "calendario"} onChange={(e) => setAnclajeCompletado(e.target.value === "completado")} className="w-full">
+                    <NativeSelectOption value="calendario">El calendario</NativeSelectOption>
+                    <NativeSelectOption value="completado">Cuando la completo</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+              </div>
+            )}
+          </Field>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {tipoRecurrencia === 'Unica' && (
+          {(tipoRecurrencia === "Unica" || esRotativa) && (
             <Field>
-              <FieldLabel htmlFor={fid("fecha")} className="flex items-center gap-2"><Calendar className="size-4 text-primary" /> Fecha Límite</FieldLabel>
-              <Input id={fid("fecha")} required name="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+              <FieldLabel htmlFor={fid("fecha")} className="flex items-center gap-2">
+                <Calendar className="size-4 text-primary" /> {esRotativa ? "Fecha de inicio de rotación (opcional)" : "Fecha Límite"}
+              </FieldLabel>
+              <Input id={fid("fecha")} required={!esRotativa} name="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
             </Field>
           )}
 

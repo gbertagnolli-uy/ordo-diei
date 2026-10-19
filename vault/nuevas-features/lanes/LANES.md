@@ -1,6 +1,6 @@
 # Plan de lanes — nuevas features
 
-Numeración definitiva = la siguiente libre en el momento de crear cada lane (usar `git branch --list 'task/lane-*'` **y** `ls vault/LANE_*` antes; ya hubo colisiones). Aquí se usan códigos **N1…N14**. Cada lane = worktree propio desde `dev`, SQL aditivo (nunca `db push`), `scripts/integrar.sh`, registro en el vault, limpieza del worktree (AGENTS.md).
+Numeración definitiva = la siguiente libre en el momento de crear cada lane (usar `git branch --list 'task/lane-*'` **y** `ls vault/LANE_*` antes; ya hubo colisiones). Aquí se usan códigos **N1…N14**. Cada lane = worktree propio desde `dev`, SQL aditivo (nunca `db push`), empezar con `scripts/nueva-lane.sh`, entregar por PR a `dev` con `scripts/abrir-pr.sh`, registro en el vault, limpieza del worktree (AGENTS.md).
 
 ## Orden y dependencias
 

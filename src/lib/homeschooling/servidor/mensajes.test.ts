@@ -12,7 +12,7 @@ test("un mensaje vacío, enorme o a uno mismo se rechaza antes de consultar", as
   await assert.rejects(hilo(a, 5), { status: 400 });
 });
 
-test("la lista de conversaciones se lee sin error y no incluye al propio usuario", async () => {
+test("la lista de conversaciones se lee sin error y no incluye al propio usuario", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const r = await conversaciones({ id: 1, rol: "Padre" });
   assert.ok(r.personas.length > 0 && r.personas.every((p) => p.id !== 1));
   assert.equal(r.sinLeer, r.personas.reduce((n, p) => n + p.sinLeer, 0));

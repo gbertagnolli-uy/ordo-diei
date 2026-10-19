@@ -4,6 +4,7 @@ import {
   CITAS_APTAS,
   CATECISMO_APTO,
   calcularDuracionFraseMs,
+  calcularEscalaFrase,
   esCitaApta,
   esPreguntaApta,
   barajar,
@@ -215,3 +216,49 @@ test("selección de foto con pool pequeño (<= 12 fotos) evita la inmediata ante
     ultimas = res.ultimasActualizadas;
   }
 });
+
+test("calcularEscalaFrase mantiene 1.0 en textos cortos y reduce hasta 0.68 en textos largos", () => {
+  const corta: ItemFrase = {
+    tipo: "biblia",
+    datos: {
+      id: "1",
+      libro: "Ps",
+      capitulo: 1,
+      desde: 1,
+      hasta: 1,
+      la: "Dominus regit me.",
+      es: "El Señor me pastorea.",
+      ref: "Salmo 22, 1",
+    },
+  };
+  assert.equal(calcularEscalaFrase(corta), 1);
+
+  const media: ItemFrase = {
+    tipo: "catecismo",
+    datos: {
+      n: 10,
+      parte: "",
+      capitulo: "",
+      pregunta: "A".repeat(90),
+      respuesta: "B".repeat(200),
+    },
+  };
+  const escalaMedia = calcularEscalaFrase(media);
+  assert.ok(escalaMedia < 1 && escalaMedia > 0.68, `Escala media inesperada: ${escalaMedia}`);
+
+  const larga: ItemFrase = {
+    tipo: "biblia",
+    datos: {
+      id: "2",
+      libro: "Ps",
+      capitulo: 1,
+      desde: 1,
+      hasta: 2,
+      la: "A".repeat(220),
+      es: "B".repeat(300),
+      ref: "Salmo 1, 1-2",
+    },
+  };
+  assert.equal(calcularEscalaFrase(larga), 0.68);
+});
+

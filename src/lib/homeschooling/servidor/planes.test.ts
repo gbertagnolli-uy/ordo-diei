@@ -95,7 +95,7 @@ test("mover y omitir: reglas de orden, y no se toca un día empezado", { skip: s
   await assert.rejects(omitirDia({ actorId: ids.padre, diaId: d.id }), { status: 409 }); // ya no está pendiente
 });
 
-test("un Hijo no cambia ni quita planes", async () => {
+test("un Hijo no cambia ni quita planes", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   await assert.rejects(cambiarPlan({ id: 999999 }, 1, { estado: "pausado" }, "2030-03-12"), { status: 403 });
   await assert.rejects(quitarPlan({ id: 999999 }, 1), { status: 403 });
 });
@@ -128,12 +128,12 @@ test("pausar, reanudar y extender el fin de un plan; quitarlo con días cumplido
 });
 
 // Lectura solamente: un hijo cualquiera no puede ver el reparto de los atrasos, y la vista del padre no falla sobre la base real
-test("ponerse al día: solo padres", async () => {
+test("ponerse al día: solo padres", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   await assert.rejects(vistaPonerseAlDia(999999, 1, "2031-01-01"), (e: { status?: number }) => e.status === 403 || e.status === 404);
   await assert.rejects(ponerseAlDia(999999, 1, "2031-01-01"), (e: { status?: number }) => e.status === 403 || e.status === 404);
 });
 
-test("configurar el año: solo padres y con datos válidos", async () => {
+test("configurar el año: solo padres y con datos válidos", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   const base = { alumnoIds: [3], vacaciones: [{ motivo: "Invierno", desde: "2031-07-07", hasta: "2031-07-18" }], fiestas: [], hoy: "2031-01-01" };
   await assert.rejects(configurarAnio({ ...base, actorId: 999999 }), (e: { status?: number }) => e.status === 403 || e.status === 404);
   const padre = await prisma.usuario.findFirst({ where: { rolFamiliar: { in: ["Padre", "Madre"] } }, select: { id: true } });

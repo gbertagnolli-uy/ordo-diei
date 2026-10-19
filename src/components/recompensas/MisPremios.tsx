@@ -36,7 +36,7 @@ import { mismoDia } from "@/lib/comportamiento/cofreHorario";
 import { ModalAperturaSobre, type ResultadoCompraSobre } from "@/components/cartas/ModalAperturaSobre";
 import { ModalSorpresa, type ResultadoSorpresa, type TipoSorpresa } from "./ModalSorpresa";
 
-type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[]; sancionado: boolean };
+type Datos = { propias: RecompensaVista[]; porEntregar: RecompensaVista[]; sancionado: boolean; conductaHoy?: number | null };
 
 const ESTADOS = {
   disponible: { label: "Para reclamar", icon: Gift },
@@ -92,7 +92,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "No se pudo actualizar el premio");
-      setDatos({ propias: json.propias, porEntregar: json.porEntregar, sancionado: !!json.sancionado });
+      setDatos({ propias: json.propias, porEntregar: json.porEntregar, sancionado: !!json.sancionado, conductaHoy: json.conductaHoy ?? datos.conductaHoy ?? null });
       router.refresh(); // insignia de la barra lateral y banner
       return json.apertura ?? true;
     } catch (err) {
@@ -121,7 +121,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "No se pudo usar el vale");
-      setDatos({ propias: json.propias, porEntregar: json.porEntregar, sancionado: !!json.sancionado });
+      setDatos({ propias: json.propias, porEntregar: json.porEntregar, sancionado: !!json.sancionado, conductaHoy: json.conductaHoy ?? datos.conductaHoy ?? null });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo usar el vale");
     } finally {
@@ -322,6 +322,7 @@ export function MisPremios({ inicial, esPadre }: { inicial: Datos; esPadre: bool
         hayCofre={cofresSinAbrir.length > 0}
         abiertoHoy={abiertoHoy}
         sancionado={datos.sancionado}
+        conductaHoy={datos.conductaHoy ?? null}
         ocupado={ocupadoId !== null}
         abriendo={cofresSinAbrir.length > 0 && ocupadoId === cofresSinAbrir[0].id}
         masPendientes={Math.max(0, cofresSinAbrir.length - 1)}

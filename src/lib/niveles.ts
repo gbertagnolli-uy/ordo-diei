@@ -86,3 +86,19 @@ export function nivelDe(xp: number): NivelInfo {
  * Alias retrocompatible para getLevelInfo(puntos)
  */
 export const getLevelInfo = (xp: number): NivelInfo => nivelDe(xp);
+
+/** Badges disponibles en public/niveles/1.webp … 12.webp */
+export const NIVELES_CON_BADGE = 12;
+
+/** Puntos de regalo por cada subida de nivel */
+export const PUNTOS_SUBIR_NIVEL = 200;
+
+/**
+ * Devuelve la ruta de la imagen del badge correspondiente a un nivel dado.
+ * Niveles superiores al último badge disponible muestran el último badge (12.webp).
+ */
+export function badgeDeNivel(level: number): string {
+  const lvl = Math.min(Math.max(Math.floor(level || 1), 1), NIVELES_CON_BADGE);
+  return `/niveles/${lvl}.webp`;
+}
+

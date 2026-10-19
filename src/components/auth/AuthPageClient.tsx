@@ -149,12 +149,23 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
           >
             <Card className="w-[22rem] max-w-full items-center gap-6 border-white/10 bg-card/70 py-8 backdrop-blur-xl">
               <div className="flex flex-col items-center gap-3">
-                <Avatar className="size-16 ring-2 ring-primary ring-offset-4 ring-offset-card">
-                  <AvatarImage src={selectedUser?.fotoUrl ?? undefined} alt={selectedUser?.nombre} className="object-cover" />
-                  <AvatarFallback className="bg-gradient-to-br from-[#C4956A] to-[#703607] text-xl font-semibold text-white">
-                    {selectedUser?.nombre?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="size-16 ring-2 ring-primary ring-offset-4 ring-offset-card">
+                    <AvatarImage src={selectedUser?.fotoUrl ?? undefined} alt={selectedUser?.nombre} className="object-cover" />
+                    <AvatarFallback className="bg-gradient-to-br from-[#C4956A] to-[#703607] text-xl font-semibold text-white">
+                      {selectedUser?.nombre?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {selectedUser?.emojiPodio && (
+                    <span
+                      title={`Puesto #${selectedUser.puestoRanking} en el ranking`}
+                      aria-label={`Puesto ${selectedUser.puestoRanking}`}
+                      className="absolute -right-1.5 -bottom-1.5 flex size-7 items-center justify-center rounded-full border border-white/20 bg-card text-base leading-none shadow-md"
+                    >
+                      {selectedUser.emojiPodio}
+                    </span>
+                  )}
+                </div>
                 <span className="text-lg font-semibold">Hola, {selectedUser?.nombre}</span>
               </div>
 

@@ -8,11 +8,35 @@ import { APP_TZ } from "../cartas/eventos.ts";
 import { aClave, aFecha } from "../habitos/server.ts";
 import { esPadre } from "../habitos/permisos.ts";
 import { contenidoCofre, elegirRareza } from "../comportamiento/cofre.ts";
+import { otorgarCofreDelDia } from "../comportamiento/server.ts";
 import { rangoDelDia } from "../comportamiento/sancionServer.ts";
 import type { ItemPremio } from "../comportamiento/premios.ts";
-import { calcularRachaApp, type RachaApp } from "./racha.ts";
+import {
+  armarResumenRachaApp,
+  calcularRachaApp,
+  CLAVE_BIENVENIDA_VISTA,
+  PUNTOS_INGRESO_DIARIO,
+  XP_INGRESO_DIARIO,
+  type RachaApp,
+  type ResumenRachaApp,
+} from "./racha.ts";
 import { hitosAlcanzados, origenHito, proximoHito, type Hito } from "./hitos.ts";
 import { cofreGanado, misionesDeHoy, PUNTOS_MISION, type Mision } from "./misiones.ts";
+import {
+  calcularRankingUsuarios,
+  enriquecerUsuariosConRanking,
+  infoRankingPorPuesto,
+  type InfoRankingUsuario,
+} from "../ranking.ts";
+
+export {
+  armarResumenRachaApp,
+  CLAVE_BIENVENIDA_VISTA,
+  PUNTOS_INGRESO_DIARIO,
+  XP_INGRESO_DIARIO,
+  type ResumenRachaApp,
+  type InfoRankingUsuario,
+};
 
 type Cliente = Prisma.TransactionClient | typeof prisma;
 
@@ -32,6 +56,87 @@ async function fechasDeIngreso(cliente: Cliente, usuarioId: number, hoy: string)
 export async function rachaDe(usuarioId: number, ahora: Date = new Date()): Promise<RachaApp> {
   const hoy = diaDeFamilia(ahora);
   return calcularRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
+}
+
+export async function resumenRachaAppDe(usuarioId: number, ahora: Date = new Date()): Promise<ResumenRachaApp> {
+  const hoy = diaDeFamilia(ahora);
+  return armarResumenRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
+}
+
+export async function resumenRachaAppDeUsuarios(usuarioIds: number[], ahora: Date = new Date()): Promise<Map<number, ResumenRachaApp>> {
+  const hoy = diaDeFamilia(ahora);
+  const resultado = new Map<number, ResumenRachaApp>();
+  if (usuarioIds.length === 0) return resultado;
+  const desde = new Date(aFecha(hoy).getTime() - DIAS_HISTORIAL * 86_400_000);
+  const filas = await prisma.actividadDia.findMany({
+    where: { usuarioId: { in: usuarioIds }, fecha: { gte: desde } },
+    select: { usuarioId: true, fecha: true },
+  });
+  const porUsuario = new Map<number, string[]>();
+  for (const uid of usuarioIds) porUsuario.set(uid, []);
+  for (const f of filas) {
+    porUsuario.get(f.usuarioId)?.push(aClave(f.fecha));
+  }
+  for (const [uid, fechas] of porUsuario) {
+    resultado.set(uid, armarResumenRachaApp(fechas, hoy));
+  }
+  return resultado;
+}
+
+/** Mapa de puesto, emoji y acelerador de todos los miembros de la familia según rachaApp >= 2 días */
+export async function mapaRankingDeFamilia(
+  ahora: Date = new Date(),
+  cliente: Cliente = prisma
+): Promise<Map<number, InfoRankingUsuario>> {
+  const hoy = diaDeFamilia(ahora);
+  const usuarios = await cliente.usuario.findMany({
+    select: {
+      id: true,
+      completionPercentage: true,
+      stars: true,
+      puntosAcumulados: true,
+    },
+  });
+  if (usuarios.length === 0) return new Map();
+  const desde = new Date(aFecha(hoy).getTime() - DIAS_HISTORIAL * 86_400_000);
+  const filas = await cliente.actividadDia.findMany({
+    where: { usuarioId: { in: usuarios.map((u) => u.id) }, fecha: { gte: desde } },
+    select: { usuarioId: true, fecha: true },
+  });
+  const fechasPorUsuario = new Map<number, string[]>();
+  for (const u of usuarios) fechasPorUsuario.set(u.id, []);
+  for (const f of filas) {
+    fechasPorUsuario.get(f.usuarioId)?.push(aClave(f.fecha));
+  }
+  const candidatos = usuarios.map((u) => {
+    const racha = calcularRachaApp(fechasPorUsuario.get(u.id) ?? [], hoy);
+    return {
+      ...u,
+      rachaAppDias: racha.dias,
+    };
+  });
+  return calcularRankingUsuarios(candidatos).porUsuarioId;
+}
+
+export async function infoRankingDeUsuario(
+  usuarioId: number,
+  ahora: Date = new Date(),
+  cliente: Cliente = prisma
+): Promise<InfoRankingUsuario> {
+  const mapa = await mapaRankingDeFamilia(ahora, cliente);
+  return mapa.get(usuarioId) ?? infoRankingPorPuesto(0, null);
+}
+
+export async function enriquecerConRachaYRanking<
+  T extends { id: number; completionPercentage?: number | null; stars?: number | null; puntosAcumulados?: number | null }
+>(users: T[], ahora: Date = new Date()): Promise<Array<T & { rachaApp: ResumenRachaApp | null } & InfoRankingUsuario>> {
+  if (users.length === 0) return [];
+  const rachas = await resumenRachaAppDeUsuarios(users.map((u) => u.id), ahora).catch(() => new Map<number, ResumenRachaApp>());
+  const conRacha = users.map((u) => ({
+    ...u,
+    rachaApp: rachas.get(u.id) ?? null,
+  }));
+  return enriquecerUsuariosConRanking(conRacha);
 }
 
 /** Una carta al azar (por rareza, como el cofre) para el fragmento de un premio */
@@ -68,7 +173,8 @@ async function otorgarHitos(cliente: Cliente, usuarioId: number, racha: RachaApp
 }
 
 /**
- * Anota que la persona entró hoy (una sola vez por día) y, si con eso alcanza un hito de racha, deja el premio.
+ * Anota que la persona entró hoy (una sola vez por día), acredita +5 XP y +5 puntos por el primer ingreso del día,
+ * y si con eso alcanza un hito de racha deja el premio sorpresa.
  * Es barato en las visitas repetidas: una lectura por la clave única.
  */
 export async function registrarIngreso(usuarioId: number, ahora: Date = new Date()): Promise<{ nuevo: boolean; hitos: Hito[] }> {
@@ -77,7 +183,16 @@ export async function registrarIngreso(usuarioId: number, ahora: Date = new Date
   const ya = await prisma.actividadDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha } }, select: { id: true } });
   if (ya) return { nuevo: false, hitos: [] };
   try {
-    await prisma.actividadDia.create({ data: { usuarioId, fecha } });
+    await prisma.$transaction([
+      prisma.actividadDia.create({ data: { usuarioId, fecha } }),
+      prisma.usuario.update({
+        where: { id: usuarioId },
+        data: {
+          availablePoints: { increment: PUNTOS_INGRESO_DIARIO },
+          experienciaHabitos: { increment: XP_INGRESO_DIARIO },
+        },
+      }),
+    ]);
   } catch (e) {
     // Dos pestañas a la vez: la otra ya lo anotó
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { nuevo: false, hitos: [] };
@@ -85,6 +200,39 @@ export async function registrarIngreso(usuarioId: number, ahora: Date = new Date
   }
   const racha = calcularRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
   return { nuevo: true, hitos: await otorgarHitos(prisma, usuarioId, racha) };
+}
+
+const leerClaves = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+
+/** Marca que el usuario ya vio el modal de bienvenida diaria de hoy */
+export async function marcarBienvenidaVista(usuarioId: number, ahora: Date = new Date()): Promise<void> {
+  const hoy = diaDeFamilia(ahora);
+  const fecha = aFecha(hoy);
+  await registrarIngreso(usuarioId, ahora);
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${usuarioId}::bigint + 8000000)`;
+    const fila = await tx.actividadDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha } } });
+    if (!fila) return;
+    const claves = leerClaves(fila.misiones);
+    if (!claves.includes(CLAVE_BIENVENIDA_VISTA)) {
+      await tx.actividadDia.update({
+        where: { id: fila.id },
+        data: { misiones: [...claves, CLAVE_BIENVENIDA_VISTA] },
+      });
+    }
+  });
+}
+
+/** ¿Sigue pendiente mostrar el modal de bienvenida del ingreso de hoy? */
+export async function bienvenidaPendienteHoy(usuarioId: number, ahora: Date = new Date()): Promise<boolean> {
+  const hoy = diaDeFamilia(ahora);
+  const fecha = aFecha(hoy);
+  const fila = await prisma.actividadDia.findUnique({
+    where: { usuarioId_fecha: { usuarioId, fecha } },
+    select: { misiones: true },
+  });
+  if (!fila) return true;
+  return !leerClaves(fila.misiones).includes(CLAVE_BIENVENIDA_VISTA);
 }
 
 // ─────────────────────────────── «Tu parte de hoy» (padres) ───────────────────────────────
@@ -101,8 +249,6 @@ export type ParteDeHoy = {
   /** Puntos que sumaron las misiones de hoy */
   puntosHoy: number;
 };
-
-const leerClaves = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
 /** Hijos de la familia y si ya tienen un registro de comportamiento hoy, lo haya cargado el padre que sea */
 async function hijosConRegistroHoy(ahora: Date) {
@@ -135,6 +281,9 @@ async function darCofreDeLaParte(tx: Cliente, usuarioId: number, hoy: string): P
  */
 export async function desbloquearCofresDePadres(ahora: Date = new Date()): Promise<number[]> {
   const hijos = await hijosConRegistroHoy(ahora);
+  await Promise.allSettled(
+    hijos.filter((h) => h.registradoHoy).map((h) => otorgarCofreDelDia(h.id, ahora))
+  );
   if (hijos.length === 0 || hijos.some((h) => !h.registradoHoy)) return [];
   const hoy = diaDeFamilia(ahora);
   const padres = await prisma.usuario.findMany({ where: { rolFamiliar: { in: ["Padre", "Madre"] } }, select: { id: true } });
@@ -172,6 +321,9 @@ export async function parteDeHoy(usuario: { id: number; rol?: string }, ahora: D
     prisma.publicacionFamilia.count({ where: { autorId: usuario.id, createdAt: hoyRango } }),
     fechasDeIngreso(prisma, usuario.id, hoy),
   ]);
+  await Promise.allSettled(
+    hijos.filter((h) => h.registradoHoy).map((h) => otorgarCofreDelDia(h.id, ahora))
+  );
 
   const contexto = {
     hijos,

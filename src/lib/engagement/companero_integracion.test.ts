@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import { addDays, format, parseISO } from "date-fns";
 import prisma from "../prisma.ts";
 import { aFecha, hoyEnFamilia } from "../habitos/server.ts";
-import { comprarAccesorio, companeroDe, elegirPersonaje, equiparAccesorio, festejarNivel, nombrarCompanero } from "./companeroServidor.ts";
+import { bienvenidaDiariaDe, comprarAccesorio, companeroDe, elegirPersonaje, equiparAccesorio, festejarNivel, nombrarCompanero } from "./companeroServidor.ts";
+import { marcarBienvenidaVista, PUNTOS_INGRESO_DIARIO, XP_INGRESO_DIARIO } from "./servidor.ts";
 
 const sinBase = process.env.PERMITIR_TESTS_DB !== "1" && "requiere PERMITIR_TESTS_DB=1 (escribe en la base)";
 const haceDias = (n: number) => aFecha(format(addDays(parseISO(hoyEnFamilia()), -n), "yyyy-MM-dd"));
@@ -25,21 +26,33 @@ test("compañero: elegir, nombre sugerido, días juntos, regreso sin culpa y fes
 
     // Personaje inexistente y nombre en blanco se rechazan; sin personaje no se puede nombrar
     await assert.rejects(elegirPersonaje(u.id, "dragon"), /no existe/);
+    // Un héroe sin ilustraciones todavía no se puede elegir
+    await assert.rejects(elegirPersonaje(u.id, "mariana"), /no existe/);
     await assert.rejects(nombrarCompanero(u.id, "Luz"), /Primero elegí/);
-    await assert.rejects(elegirPersonaje(u.id, "nina", "x".repeat(21)), /20/);
+    await assert.rejects(elegirPersonaje(u.id, "laura", "x".repeat(21)), /20/);
 
-    // Se estrena con el nombre sugerido y el nivel actual ya cuenta como visto
-    await elegirPersonaje(u.id, "nina");
+    // Se estrena con su propio nombre y el nivel actual ya cuenta como visto
+    await elegirPersonaje(u.id, "laura");
     const b = await companeroDe(u.id);
-    assert.equal(b.personaje, "nina");
-    assert.equal(b.nombre, "Sofi");
+    assert.equal(b.personaje, "laura");
+    assert.equal(b.nombre, "Laura");
     assert.equal(b.nivelNuevo, false);
     assert.deepEqual(b.equipados, { fondo: "capilla", objetos: ["veladora"] });
     await nombrarCompanero(u.id, "  Luz  ");
     assert.equal((await companeroDe(u.id)).nombre, "Luz");
     // Cambiar de personaje conserva el nombre
-    await elegirPersonaje(u.id, "monja");
+    await elegirPersonaje(u.id, "madre-isabel");
     assert.equal((await companeroDe(u.id)).nombre, "Luz");
+
+    // Bienvenida diaria: el compañero saluda y felicita, con +5 XP y +5 puntos; una vez vista devuelve null
+    const bienvenida = await bienvenidaDiariaDe(u.id);
+    assert.ok(bienvenida);
+    assert.equal(bienvenida.companero.nombre, "Luz");
+    assert.equal(bienvenida.puntos, PUNTOS_INGRESO_DIARIO);
+    assert.equal(bienvenida.xp, XP_INGRESO_DIARIO);
+    assert.match(bienvenida.companero.felicitacion, /felicito/i);
+    await marcarBienvenidaVista(u.id);
+    assert.equal(await bienvenidaDiariaDe(u.id), null);
 
     // Pasaron los días: entró hace 9 y 8 días (y hoy) → 3 días juntos y abrazo por haber faltado
     await prisma.actividadDia.createMany({ data: [9, 8].map((n) => ({ usuarioId: u.id, fecha: haceDias(n) })) });
@@ -50,7 +63,7 @@ test("compañero: elegir, nombre sugerido, días juntos, regreso sin culpa y fes
     assert.match(c.regreso ?? "", /Luz/);
     assert.doesNotMatch(c.regreso ?? "", /\d/);
 
-    // Sube de nivel con la XP de siempre (400 XP = nivel 3): hay festejo hasta que lo confirma
+    // Sube de nivel con la XP de siempre (400 XP = nivel 3): hay festejo hasta que lo confirma y regala 200 pts por nivel subido (1 -> 3 = 400 pts)
     await prisma.usuario.update({ where: { id: u.id }, data: { experienciaHabitos: 400 } });
     const d = await companeroDe(u.id);
     assert.equal(d.nivel.numero, 3);
@@ -58,7 +71,9 @@ test("compañero: elegir, nombre sugerido, días juntos, regreso sin culpa y fes
     assert.equal(d.pose, "felicitando");
     assert.equal(d.situacion, "festejo");
     await festejarNivel(u.id);
-    assert.equal((await companeroDe(u.id)).nivelNuevo, false);
+    const despuesFestejo = await companeroDe(u.id);
+    assert.equal(despuesFestejo.nivelNuevo, false);
+    assert.equal(despuesFestejo.saldos.puntos, PUNTOS_INGRESO_DIARIO + 400);
   } finally {
     await prisma.usuario.delete({ where: { id: u.id } });
   }

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { DIFICULTAD_DEFAULT, esDificultad } from "@/lib/recompensaTarea";
+import {
+  formatearFechaLocalISO,
+  normalizarRotacionConfig,
+  primeraAsignacionRotativa,
+  type RotacionConfig,
+} from "@/lib/rotacionTarea";
 import { getSession } from "@/lib/session";
-import { TipoRecurrencia } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -39,6 +44,7 @@ export async function POST(req: NextRequest) {
       isChecklist,
       checklistItems,
       dificultad,
+      rotacionConfig: rawRotacionConfig,
     } = body;
 
     const tiempoEjecucionEstimadoSeg = Number(tiempoMinutos) * 60;
@@ -57,8 +63,6 @@ export async function POST(req: NextRequest) {
       }
     } else if (tipoRecurrencia && tipoRecurrencia !== "Unica" && hora) {
       // Recurring task without explicit fecha — calculate dynamically
-      // Business rule: if current time < hora límite → deadline = today
-      //                if current time >= hora límite → deadline = tomorrow
       const now = new Date();
       const [h, m] = hora.split(":");
       const horaLimite = Number(h);
@@ -97,10 +101,108 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Debes seleccionar al menos un usuario" }, { status: 400 });
     }
 
-    // If multiple users, create a group ID to link co-responsable tasks
-    const grupoTareaId = targetIds.length > 1 ? randomUUID() : null;
-
     const hasChecklist = Boolean(isChecklist) && Array.isArray(checklistItems) && checklistItems.length > 0;
+    const intervaloLimpio = Math.max(1, Math.min(365, Math.round(Number(intervalo)) || 1));
+
+    // Verificar si es una tarea compartida con rotación de responsable
+    const rotacionInput = rawRotacionConfig
+      ? normalizarRotacionConfig({
+          ...rawRotacionConfig,
+          responsablesIds:
+            Array.isArray(rawRotacionConfig.responsablesIds) && rawRotacionConfig.responsablesIds.length > 0
+              ? rawRotacionConfig.responsablesIds
+              : targetIds,
+        })
+      : null;
+
+    if (rotacionInput) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const fechaBase =
+        fecha && fecha !== "" && fecha !== "null" ? new Date(fecha + "T00:00:00") : hoy;
+
+      const rotacionFinal: RotacionConfig = {
+        ...rotacionInput,
+        fechaInicio: rotacionInput.fechaInicio ?? formatearFechaLocalISO(fechaBase),
+      };
+
+      const tipoRecEfectivo =
+        !tipoRecurrencia || tipoRecurrencia === "Unica" ? "Diaria" : tipoRecurrencia;
+
+      const primera = primeraAsignacionRotativa(
+        {
+          tipoRecurrencia: tipoRecEfectivo,
+          fechaVencimiento: fechaBase,
+          diaDelMes: diaDelMes ? Number(diaDelMes) : null,
+          ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
+          diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
+          intervalo: intervaloLimpio,
+          anclaFecha: fechaBase,
+          rotacionConfig: rotacionFinal,
+        },
+        fechaBase
+      );
+
+      if (!primera) {
+        return NextResponse.json(
+          { error: "Debes asignar al menos un día o responsable válido para la rotación" },
+          { status: 400 }
+        );
+      }
+
+      const fechaPrimera = new Date(primera.fecha);
+      fechaPrimera.setHours(0, 0, 0, 0);
+      let horaPrimera: Date | null = null;
+      if (hora) {
+        const [h, m] = String(hora).split(":");
+        horaPrimera = new Date(fechaPrimera);
+        horaPrimera.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
+      }
+
+      const createdTasks = await prisma.$transaction(async (tx) => {
+        const task = await tx.tarea.create({
+          data: {
+            titulo,
+            descripcion,
+            creadorId: user.id,
+            asignadoId: primera.asignadoId,
+            tiempoEjecucionEstimadoSeg,
+            generaPuntosYRecompensa: Boolean(generaRecompensa),
+            dificultad: esDificultad(dificultad) ? dificultad : DIFICULTAD_DEFAULT,
+            tipoRecurrencia: tipoRecEfectivo as any,
+            diaDelMes: diaDelMes ? Number(diaDelMes) : null,
+            ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
+            diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
+            intervalo: intervaloLimpio,
+            anclaCompletado: Boolean(anclaCompletado),
+            anclaFecha: fechaBase,
+            fechaVencimiento: fechaPrimera,
+            horaEjecucion: horaPrimera,
+            grupoTareaId: null,
+            rotacionConfig: rotacionFinal as any,
+            isSurpriseEligible: Boolean(isSurpriseEligible),
+            isChecklist: hasChecklist,
+          } as any,
+        });
+
+        if (hasChecklist) {
+          await tx.checklistItem.createMany({
+            data: checklistItems.map((texto: string, index: number) => ({
+              tareaId: task.id,
+              texto,
+              orden: index + 1,
+            })),
+          });
+        }
+
+        return [task];
+      });
+
+      return NextResponse.json(createdTasks, { status: 201 });
+    }
+
+    // If multiple users without rotation, create a group ID to link simultaneous co-responsable tasks
+    const grupoTareaId = targetIds.length > 1 ? randomUUID() : null;
 
     const createdTasks = await prisma.$transaction(async (tx) => {
       const tasks = [];
@@ -118,7 +220,7 @@ export async function POST(req: NextRequest) {
             diaDelMes: diaDelMes ? Number(diaDelMes) : null,
             ordinalSemana: ordinalSemana ? Number(ordinalSemana) : null,
             diaDeLaSemana: diaDeLaSemana !== undefined && diaDeLaSemana !== null ? Number(diaDeLaSemana) : null,
-            intervalo: Math.max(1, Math.min(365, Math.round(Number(intervalo)) || 1)),
+            intervalo: intervaloLimpio,
             anclaCompletado: Boolean(anclaCompletado) && tipoRecurrencia !== "Unica",
             anclaFecha: fechaVencimiento,
             fechaVencimiento,
@@ -151,3 +253,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Error interno creando la tarea" }, { status: 500 });
   }
 }
+

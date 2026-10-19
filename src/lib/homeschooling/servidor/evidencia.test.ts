@@ -7,7 +7,7 @@ import { actuarSobreEvidencia, agregarImagen, borrarEvidencia, crearEvidencia, l
 const hijo = { id: 999999, rol: "Hijo" };
 
 // --- Sin base: permisos que se rechazan antes de consultar, y garantía de que no se tocan saldos ---
-test("un Hijo no aprueba, pide ajuste ni destaca", async () => {
+test("un Hijo no aprueba, pide ajuste ni destaca", { skip: !process.env.DATABASE_URL && "requiere DATABASE_URL" }, async () => {
   for (const accion of [{ accion: "aprobar" as const }, { accion: "ajustar" as const, comentario: "x" }, { accion: "destacar" as const }, { accion: "quitar_destacada" as const }]) {
     await assert.rejects(actuarSobreEvidencia(hijo, 1, accion), (e: { status?: number }) => e.status === 403 || e.status === 404);
   }

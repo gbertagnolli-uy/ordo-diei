@@ -15,6 +15,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ModalAperturaSobre, type ResultadoCompraSobre } from "@/components/cartas/ModalAperturaSobre";
 import { toast } from "@/lib/toast";
 import type { ProductoVista, ResultadoCompra, TiendaVista } from "@/lib/tienda/server";
+import { SeccionComprasCompartidas } from "./CompraCompartida";
 import { DetalleProducto } from "./DetalleProducto";
 import { BarraSaldos, CompraExitosa, DialogoGanar, MetaAhorro, MisCompras, OfertaDelDia } from "./PartesTienda";
 import { TarjetaProducto } from "./TarjetaProducto";
@@ -112,6 +113,13 @@ export function TiendaView({ inicial, esPadre, productoInicial }: { inicial: Tie
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-28 sm:px-6">
         <BarraSaldos saldos={tienda.saldos} onGanar={() => setGanarAbierto(true)} />
 
+        <SeccionComprasCompartidas
+          solicitudes={tienda.comprasCompartidas}
+          usuarioActualId={tienda.usuarioActualId}
+          onActualizado={refrescar}
+          onCompraCompletada={alComprar}
+        />
+
         {tienda.ofertaDia && <OfertaDelDia oferta={tienda.ofertaDia} />}
 
         {meta && <MetaAhorro meta={meta} saldos={tienda.saldos} onAbrir={() => setAbierto(meta.id)} onQuitar={quitarMeta} />}
@@ -169,8 +177,16 @@ export function TiendaView({ inicial, esPadre, productoInicial }: { inicial: Tie
       <DetalleProducto
         p={abiertoProducto}
         saldos={tienda.saldos}
+        usuarioActual={{
+          id: tienda.usuarioActualId,
+          nombre: tienda.usuarioActualNombre,
+          fotoUrl: tienda.usuarioActualFotoUrl,
+          saldos: tienda.saldos,
+        }}
+        familia={tienda.familia}
         onCerrar={() => setAbierto(null)}
         onComprado={alComprar}
+        onSolicitudCreada={refrescar}
         onCambioMeta={refrescar}
         onFragmentos={alComprarFragmentos}
       />

@@ -46,8 +46,8 @@ src/lib/homeschooling/
     guardia.ts              motivoBloqueoTarea(tareaId) — la usa /api/tasks/[id]/complete
     evidencia.ts · quiz.ts · repaso.ts · actividades.ts · horas.ts
 src/app/api/homeschooling/...        rutas finas con conSesion + zod
-src/app/dashboard/homeschooling/     page.tsx (bifurca por rol) + materias/[id] · plan · dias-sin-clase · revision · portafolio · horas · reportes
-src/components/homeschooling/        roost/ (piezas sin datos) · cursos/ · plan/ · hoy/ · evidencia/ · revision/ · portafolio/ · quiz/ · horas/ · reportes/ · sensorial/
+src/app/dashboard/homeschooling/     page.tsx (resumen/notificaciones padre · Hoy aprendo hijo) + materias (PanelMaterias) + materias/[id] (constructor de cursos/clases) + imprimir/quiz/[id] (evaluaciones/clases A4) · plan · dias-sin-clase · revision · portafolio · horas · reportes
+src/components/homeschooling/        roost/ (piezas sin datos) · cursos/ (PanelMaterias, CursoDetalle, LeccionForm, VistaLeccion, EditorPreguntas) · material/ (AgregarMaterial, ListaMaterial, VisorMaterial, HojaImpresion) · plan/ (PanelHomeschooling, PlanCalendario) · hoy/ · evidencia/ · revision/ · portafolio/ · quiz/ (HojaQuizImprimible) · horas/ · reportes/ · sensorial/
 ```
 Permisos: Padre/Madre pueden todo sobre cualquier alumno; Hijo/Hija solo lo suyo. `conSesion` (`src/lib/tienda/http.ts`) y `usuariosObjetivo`/`esPadre` (`src/lib/habitos/permisos.ts`). Los `userId` que manden los services portados se **ignoran** si quien llama es hijo (se usa la sesión).
 

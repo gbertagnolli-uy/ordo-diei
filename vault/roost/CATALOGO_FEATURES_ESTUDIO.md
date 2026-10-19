@@ -40,7 +40,8 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | A6 | Exportar/importar un curso como paquete JSON (plantillas que se guardan, se comparten por archivo o vienen precargadas) | HSPlanet 45-49 | HECHO (lane 170) | M3 |
 | A7 | Adjuntar enlaces, notas y archivos a cada asignación | HSPlanet 6 | HECHO (lane 166) | M1 |
 | A8 | Autoguardado de borradores en formularios del padre | Homeschooler.app 49 | HECHO (lanes 170 y 190) | M3 |
-| A9 | Subida de archivos pequeños a la base (solo como último recurso) | — | DESCARTADO | Se prioriza externo (ver BLOQUEOS B-1) |
+| A9 | Subida de archivos e imágenes de estudio (WebP y documentos hasta 4 MB en `Archivo`) | Circle, Thinkific | HECHO (lane 230) | Lane 230 |
+| A10 | **Constructor multimodal de clases y cursos** (orden 1..N, combinando texto Markdown, imagen, video embebido, archivo descargable y quiz, o de un único tipo) | Circle, Thinkific | HECHO (lane 230) | Lane 230 |
 
 ### B. Imprimir (pedido explícito)
 
@@ -51,7 +52,8 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | B3 | Registro de impresiones (quién, qué, cuándo) | — | HECHO (lane 168) | P1 |
 | B4 | Hoja imprimible con el detalle del día: título, lecciones, instrucciones, espacio para cuaderno, casilla «hecho» | Homeschooler.app 33 | HECHO (lane 178) | P1 |
 | B5 | Checklist semanal imprimible por hijo, en color por materia | HSPlanet 56, 58 | HECHO (lane 173) | P2 |
-| B6 | Clave de respuestas del padre (solo padres, no se imprime al hijo) | — | HECHO (lane 183) | C2 |
+| B6 | Clave de respuestas del padre (solo padres, no se imprime al hijo) | — | HECHO (lanes 183 y 230) | C2 |
+| B7 | **Quizzes, Evaluaciones (Assessments) y Clases imprimibles en A4** (`?modo=alumno`, `?modo=clave` con respuestas y explicaciones, `?modo=clase` hoja completa) | Circle, Thinkific, Time4Learning | HECHO (lane 230) | Lane 230 |
 
 ### C. Programar (planificación)
 
@@ -110,6 +112,7 @@ Estado: **HECHO** (ya en `dev`) · **PARCIAL** · **NUEVO**. `Lane` = identifica
 | F6 | Estados vacíos, esqueletos de carga y errores útiles en todas las pantallas | — | HECHO (lanes 186 y 195: carga, error y vacíos revisados en navegador) | V3 |
 | F7 | Accesible por teclado y legible en tablet (≥44 px de toque) | HSPlanet 62 | HECHO (lanes 195 y 199: axe-core WCAG A/AA sin violaciones en padres e hijos, teléfono y tablet) | V3 |
 | F8 | Colores por materia/hijo consistentes | HSPlanet 36 | HECHO (colores por materia y por hijo, revisados en navegador) | R2 |
+| F9 | **Separación de «Panel» (resumen y notificaciones) y «Materias»** (`/dashboard/homeschooling/materias`) en la navegación de Estudio | Circle, Thinkific | HECHO (lane 230) | Lane 230 |
 
 ### G. Familia como comunidad
 

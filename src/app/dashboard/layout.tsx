@@ -10,10 +10,14 @@ import { ActualizarPremios } from "@/components/dashboard/ActualizarPremios";
 import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
 import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
+import { contarComprasCompartidasPendientes } from "@/lib/tienda/server";
 import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
-import { nivelDe, xpTotal } from "@/lib/niveles";
-import { parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
+import { enriquecerConRachaYRanking, parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
+import { bienvenidaDiariaDe, companeroDe } from "@/lib/engagement/companeroServidor";
+import { CompaneroFlotante } from "@/components/engagement/CompaneroFlotante";
+import { poseFlotante, type EventoApp } from "@/lib/engagement/companeroEscena";
+import { isLate } from "@/components/tasks/taskUtils";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
 
@@ -25,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/");
 
   // Desde las 18:00 el cofre del día llega al entrar (si los padres evaluaron bien el día)
-  // y se anota el ingreso del día para la racha en la app (lane 201)
+  // y se anota el ingreso del día para la racha en la app (lane 201 + lane 243: +5 XP y +5 puntos)
   await Promise.all([
     otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e)),
     registrarIngreso(Number(session.user.id)).catch((e) => console.error("[Ingreso]", e)),
@@ -35,7 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [users, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos] = await Promise.all([
+  const [usersRaw, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes, bienvenidaHoy, fichaCompanero] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -47,20 +51,40 @@ export default async function DashboardLayout({ children }: { children: React.Re
     eventosDeHoy(Number(session.user.id)).catch(() => null),
     contarSorpresasSinAbrir(Number(session.user.id)),
     contarReconocimientosSinAbrir(Number(session.user.id)),
+    contarComprasCompartidasPendientes(Number(session.user.id)).catch(() => 0),
+    bienvenidaDiariaDe(Number(session.user.id)).catch((e) => {
+      console.error("[Bienvenida]", e);
+      return null;
+    }),
+    // El compañero flotante (lane 247) aparece en todas las pantallas de /dashboard
+    companeroDe(Number(session.user.id)).catch((e) => {
+      console.error("[Companero]", e);
+      return null;
+    }),
   ]);
+  const users = await enriquecerConRachaYRanking(usersRaw);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
   const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
   // El compañero llama la atención hasta que se lo elige y cada vez que sube de nivel
-  const fichaCompanero = await prisma.companero.findUnique({ where: { usuarioId: Number(session.user.id) }, select: { personaje: true, nivelVisto: true } }).catch(() => null);
-  const companeroPendiente = !fichaCompanero?.personaje || nivelDe(xpTotal(currentUser)).level > fichaCompanero.nivelVisto;
+  const companeroPendiente = !fichaCompanero?.personaje || fichaCompanero.nivelNuevo;
+  const personajeCompanero = fichaCompanero?.personaje ?? null;
   const tasks = myTasks.map((t) => ({
     ...t,
     timerStartedAt: t.timerStartedAt?.toISOString() ?? null,
     fechaVencimiento: t.fechaVencimiento?.toISOString() ?? null,
     horaEjecucion: t.horaEjecucion?.toISOString() ?? null,
   }));
+  // Lo que está pasando en la app, para que el compañero lo comente (lane 248)
+  const eventosCompanero: EventoApp[] = [
+    ...(fichaCompanero?.nivelNuevo ? (["nivel"] as const) : []),
+    ...((premiosPendientes ?? 0) > 0 || sorpresas > 0 || reconocimientos > 0 ? (["premio"] as const) : []),
+    ...(hayEventosCartas ? (["cartas"] as const) : []),
+    ...(tasks.some((t) => isLate(t)) ? (["atrasadas"] as const) : []),
+    ...(habitosPendientes > 0 ? (["habitos"] as const) : []),
+    ...((fichaCompanero?.racha ?? 0) >= 2 ? (["racha"] as const) : []),
+  ];
 
   return (
     <SidebarProvider>
@@ -72,6 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         premiosPendientes={premiosPendientes}
         hayEventosCartas={hayEventosCartas}
         companeroPendiente={companeroPendiente}
+        tiendaCompartidasPendientes={tiendaCompartidasPendientes}
       />
       <SidebarInset className="min-w-0">
         <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />
@@ -80,8 +105,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </SidebarInset>
       <ModoRelajado activo={modoRelajado} />
       <ActualizarPremios />
-      <ModalManager />
-      <MainDock currentUser={currentUser} allUsers={users} />
+      <ModalManager bienvenidaHoy={bienvenidaHoy} />
+      {fichaCompanero && personajeCompanero && (
+        <CompaneroFlotante
+          datos={{
+            usuarioId: Number(session.user.id),
+            quien: fichaCompanero.quien,
+            personaje: personajeCompanero,
+            nombre: fichaCompanero.nombre,
+            pose: poseFlotante(fichaCompanero.pose),
+            poses: fichaCompanero.poses.desbloqueadas,
+            eventos: eventosCompanero,
+          }}
+        />
+      )}
+      <MainDock
+        currentUser={currentUser}
+        allUsers={users}
+        companero={fichaCompanero && personajeCompanero ? { usuarioId: Number(session.user.id), nombre: fichaCompanero.nombre, personaje: personajeCompanero, pose: poseFlotante(fichaCompanero.pose) } : null}
+      />
     </SidebarProvider>
   );
 }

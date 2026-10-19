@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flame, Frame, Heart, LayoutGrid, Lock, Palette, Sparkles, UserRound } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +15,10 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ElegirCompanero, enviarCompanero, FestejarNivel, NombrarCompanero } from "@/components/engagement/CompaneroAcciones";
-import { EscenaCompanero, rutaDePose } from "@/components/engagement/EscenaCompanero";
+import { EscenaCompanero, rutaDeObjeto, rutaDePose } from "@/components/engagement/EscenaCompanero";
 import { ImagenConRespaldo } from "@/components/engagement/ImagenConRespaldo";
 import { ACCESORIOS, motivoNoCompra, RAREZAS, RUTA_IMAGEN, textoPrecio, type Accesorio } from "@/lib/engagement/accesorios";
-import { datosDePersonaje, POSES, type Personaje, type Pose } from "@/lib/engagement/companero";
+import { datosDePersonaje, POSES, tieneFondo, type Personaje, type Pose } from "@/lib/engagement/companero";
 import type { CompaneroVista } from "@/lib/engagement/companeroServidor";
 import { toast } from "@/lib/toast";
 
@@ -185,7 +186,7 @@ function Album({ datos, personaje, onVer }: { datos: CompaneroVista; personaje: 
                 <ImagenConRespaldo
                   srcs={[rutaDePose(personaje, p.clave)]}
                   alt=""
-                  className={abierta ? "h-full w-auto object-contain" : "h-full w-auto object-contain opacity-30 brightness-0"}
+                  className={cn("h-full w-auto object-contain", !abierta && "opacity-30 grayscale", tieneFondo(p.clave) && "mix-blend-multiply")}
                   respaldo={<span aria-hidden className={abierta ? "self-center text-5xl" : "self-center text-5xl opacity-30 grayscale"}>{datosDePersonaje(personaje).emoji}</span>}
                 />
               </button>
@@ -199,6 +200,22 @@ function Album({ datos, personaje, onVer }: { datos: CompaneroVista; personaje: 
           </Card>
         );
       })}
+    </div>
+  );
+}
+
+/** El objeto que identifica a este héroe (public/companeros/<clave>/objeto.webp); con su emoji hasta que esté la imagen */
+function SuObjeto({ personaje }: { personaje: Personaje }) {
+  const { nombre, objeto, titulo } = datosDePersonaje(personaje);
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-2">
+      <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background">
+        <ImagenConRespaldo srcs={[rutaDeObjeto(personaje)]} alt={objeto.nombre} className="size-full object-contain" respaldo={<span aria-hidden className="text-3xl">{objeto.emoji}</span>} />
+      </span>
+      <p className="min-w-0 text-sm">
+        <span className="block font-medium">{objeto.nombre}</span>
+        <span className="block text-xs text-muted-foreground">{nombre} · {titulo}</span>
+      </p>
     </div>
   );
 }
@@ -238,9 +255,9 @@ export function CompaneroView({ datos }: { datos: CompaneroVista }) {
               </div>
               <div className="flex flex-col items-end gap-1">
                 <Badge variant="secondary">Nivel {nivel.numero}</Badge>
-                {racha > 1 && (
+                {racha >= 1 && (
                   <Badge>
-                    <Flame className="size-3" /> {racha} días
+                    <Flame className="size-3" /> {racha} {racha === 1 ? "día" : "días"} en la app
                   </Badge>
                 )}
               </div>
@@ -259,6 +276,7 @@ export function CompaneroView({ datos }: { datos: CompaneroVista }) {
                 <FestejarNivel />
               </div>
             )}
+            <SuObjeto personaje={personaje} />
             <ElegirCompanero actual={personaje} nombreActual={nombre} etiqueta="Cambiar de compañero" />
           </CardContent>
         </Card>

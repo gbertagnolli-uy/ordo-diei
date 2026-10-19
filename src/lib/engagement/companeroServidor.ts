@@ -10,10 +10,13 @@ import { aClave, aFecha } from "../habitos/server.ts";
 import { exigirSinSancion } from "../comportamiento/sancionServer.ts";
 import { MONEDAS, type Saldos } from "../tienda/monedas.ts";
 import { nivelDe, xpTotal } from "../niveles.ts";
-import { registrarIngreso, rachaDe } from "./servidor.ts";
+import { reclamarSubidaNivel } from "../nivelesServidor.ts";
+import { bienvenidaPendienteHoy, PUNTOS_INGRESO_DIARIO, rachaDe, registrarIngreso, XP_INGRESO_DIARIO } from "./servidor.ts";
+import { HITOS_RACHA, type Hito } from "./hitos.ts";
 import {
   datosDePersonaje,
-  esPersonaje,
+  esElegible,
+  personajeGuardado,
   mensajeDeRegreso,
   NOMBRE_POR_DEFECTO,
   poseDelMomento,
@@ -29,7 +32,7 @@ import {
   type Pose,
   type Situacion,
 } from "./companero.ts";
-import { fraseDe } from "./companeroFrases.ts";
+import { fraseDe, primerNombre } from "./companeroFrases.ts";
 import { ACCESORIOS, accesorioDe, cambiarEquipado, EQUIPADOS_INICIALES, esDeRegalo, leerEquipados, tieneAccesorio, type Equipados } from "./accesorios.ts";
 
 export type CompaneroVista = {
@@ -81,7 +84,7 @@ export async function companeroDe(usuarioId: number, ahora: Date = new Date(), o
   const xp = xpTotal(usuario);
   const info = nivelDe(xp);
   const inicioDelNivel = (info.level - 1) ** 2 * 100;
-  const personaje = fila && esPersonaje(fila.personaje) ? fila.personaje : null;
+  const personaje = personajeGuardado(fila?.personaje);
   const nombre = fila?.nombre ?? NOMBRE_POR_DEFECTO;
   const clavesCompradas = comprados.map((c) => c.clave);
   const desdeLaUltimaVez = previa ? differenceInCalendarDays(parseISO(hoy), parseISO(aClave(previa.fecha))) : null;
@@ -123,11 +126,11 @@ async function nivelActual(usuarioId: number) {
 
 /** Elige (o cambia) quién lo acompaña. La primera vez se estrena con un nombre sugerido y el nivel actual ya cuenta como visto. */
 export async function elegirPersonaje(usuarioId: number, personaje: unknown, nombre?: unknown) {
-  if (!esPersonaje(personaje)) throw new Error("Ese compañero no existe");
+  if (!esElegible(personaje)) throw new Error("Ese compañero no existe");
   const nivel = await nivelActual(usuarioId);
   const actual = await prisma.companero.findUnique({ where: { usuarioId }, select: { nombre: true } });
   // Si ya tenía nombre, se queda; si no, el que propone el personaje o el que escribió
-  const elegido = nombre === undefined || nombre === "" ? (actual?.nombre ?? datosDePersonaje(personaje).nombreSugerido) : validarNombre(nombre);
+  const elegido = nombre === undefined || nombre === "" ? (actual?.nombre ?? datosDePersonaje(personaje).nombre) : validarNombre(nombre);
   await prisma.companero.upsert({
     where: { usuarioId },
     create: { usuarioId, personaje, nombre: elegido, nivelVisto: nivel, equipados: EQUIPADOS_INICIALES },
@@ -142,10 +145,9 @@ export async function nombrarCompanero(usuarioId: number, entrada: unknown) {
   if (r.count === 0) throw new Error("Primero elegí quién te acompaña");
 }
 
-/** Festejó el nivel nuevo: no se vuelve a mostrar */
+/** Festejó el nivel nuevo: regala los puntos de subida de nivel (si aún no se reclamaron) y marca el nivel como visto */
 export async function festejarNivel(usuarioId: number) {
-  const nivel = await nivelActual(usuarioId);
-  await prisma.companero.updateMany({ where: { usuarioId }, data: { nivelVisto: nivel } });
+  await reclamarSubidaNivel(usuarioId);
 }
 
 /**
@@ -184,3 +186,92 @@ export async function equiparAccesorio(usuarioId: number, clave: unknown, puesto
   const nuevo = cambiarEquipado(leerEquipados(fila.equipados, claves, nivel), clave, puesto !== false, claves, nivel);
   await prisma.companero.update({ where: { usuarioId }, data: { equipados: nuevo } });
 }
+
+export type BienvenidaDiariaDatos = {
+  usuarioId: number;
+  fecha: string;
+  quien: string;
+  companero: {
+    personaje: Personaje;
+    nombre: string;
+    emoji: string;
+    pose: Pose;
+    equipados: Equipados;
+    marco: number;
+    saludo: string;
+    felicitacion: string;
+  };
+  rachaApp: number;
+  diasJuntos: number;
+  puntos: number;
+  xp: number;
+  hitoHoy: Hito | null;
+};
+
+/**
+ * Datos para el modal automático de bienvenida diaria:
+ * El compañero saluda al usuario y lo felicita por haber vuelto, y enseguida muestra los premios (+5 XP y +5 puntos).
+ * Devuelve `null` si ya vio la bienvenida de hoy.
+ */
+export async function bienvenidaDiariaDe(usuarioId: number, ahora: Date = new Date()): Promise<BienvenidaDiariaDatos | null> {
+  const hoy = format(ahora, "yyyy-MM-dd", { in: tz(APP_TZ) });
+  const hora = Number(format(ahora, "H", { in: tz(APP_TZ) }));
+  await registrarIngreso(usuarioId, ahora);
+  if (!(await bienvenidaPendienteHoy(usuarioId, ahora))) return null;
+
+  const [usuario, fila, comprados, diasJuntos, previa, racha] = await Promise.all([
+    prisma.usuario.findUnique({ where: { id: usuarioId }, select: { nombre: true, puntosAcumulados: true, experienciaHabitos: true } }),
+    prisma.companero.findUnique({ where: { usuarioId } }),
+    prisma.companeroAccesorio.findMany({ where: { usuarioId }, select: { clave: true } }),
+    prisma.actividadDia.count({ where: { usuarioId } }),
+    prisma.actividadDia.findFirst({ where: { usuarioId, fecha: { lt: aFecha(hoy) } }, orderBy: { fecha: "desc" }, select: { fecha: true } }),
+    rachaDe(usuarioId, ahora),
+  ]);
+  if (!usuario) return null;
+
+  const xp = xpTotal(usuario);
+  const info = nivelDe(xp);
+  const personaje = personajeGuardado(fila?.personaje) ?? "angelito";
+  const datosHeroe = datosDePersonaje(personaje);
+  const nombre = fila?.nombre ?? datosHeroe.nombre;
+  const clavesCompradas = comprados.map((c) => c.clave);
+  const desdeLaUltimaVez = previa ? differenceInCalendarDays(parseISO(hoy), parseISO(aClave(previa.fecha))) : null;
+  const semilla = Number(hoy.replaceAll("-", "")) + usuarioId;
+  const nombreCorto = primerNombre(usuario.nombre);
+
+  const esRegresoTrasFalta = desdeLaUltimaVez !== null && desdeLaUltimaVez >= 2;
+  const pose: Pose = esRegresoTrasFalta ? "abrazo" : hora >= 5 && hora < 12 ? "buenos-dias" : "felicitando";
+  const tipoSaludo = esRegresoTrasFalta ? "regreso" : hora >= 5 && hora < 12 ? "manana" : hora >= 19 || hora < 5 ? "noche" : "tarde";
+  const saludo = fraseDe(personaje, tipoSaludo, usuario.nombre, semilla);
+
+  const felicitacion =
+    racha.dias > 1
+      ? `¡Qué alegría que volviste hoy, ${nombreCorto}! Te felicito por tu constancia: ya llevamos ${racha.dias} días seguidos en la app.`
+      : diasJuntos > 1
+      ? `¡Qué bueno tenerte de vuelta hoy, ${nombreCorto}! Te felicito por volver a encontrarnos un día más.`
+      : `¡Qué alegría recibirte hoy, ${nombreCorto}! Te felicito por dar este primer paso juntos en la app.`;
+
+  const hitoHoy = HITOS_RACHA.find((h) => h.dias === racha.dias) ?? null;
+
+  return {
+    usuarioId,
+    fecha: hoy,
+    quien: usuario.nombre,
+    companero: {
+      personaje,
+      nombre,
+      emoji: datosHeroe.emoji,
+      pose,
+      equipados: leerEquipados(fila?.equipados, clavesCompradas, info.level),
+      marco: marcoDeNivel(info.level),
+      saludo,
+      felicitacion,
+    },
+    rachaApp: racha.dias,
+    diasJuntos,
+    puntos: PUNTOS_INGRESO_DIARIO,
+    xp: XP_INGRESO_DIARIO,
+    hitoHoy,
+  };
+}
+

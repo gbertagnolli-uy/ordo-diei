@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { nivelDe, xpTotal } from "@/lib/niveles";
+import { reclamarSubidaNivel } from "@/lib/nivelesServidor";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -28,9 +30,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
     }
 
-    let asignado = tarea.asignado;
+    const asignado = tarea.asignado;
     if (!asignado) return NextResponse.json({ error: "Usuario asignado no encontrado" }, { status: 404 });
 
+    const nivelAntes = nivelDe(xpTotal(asignado)).level;
     const pointsGained = tarea.puntosGenerados || 0;
     const bonusStars = Math.floor(pointsGained / 100);
 
@@ -58,19 +61,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     // Get the updated user for level calculations and response
     const asignadoActualizado = await prisma.usuario.findUnique({ where: { id: tarea.asignadoId } });
-
-    // We need nivelAntes. Calculate it from points before addition
-    const puntosAntes = (asignadoActualizado?.puntosAcumulados || 0) - pointsGained;
-    const nivelAntes = Math.floor(Math.sqrt(Math.max(0, puntosAntes) / 100)) + 1;
-
-    // Calcular nivel después
-    const nivelDespues = Math.floor(Math.sqrt(((asignadoActualizado?.puntosAcumulados || 0)) / 100)) + 1;
+    const infoDespues = nivelDe(xpTotal(asignadoActualizado));
+    const nivelDespues = infoDespues.level;
     const leveledUp = nivelDespues > nivelAntes;
+
+    if (leveledUp) {
+      await reclamarSubidaNivel(tarea.asignadoId, nivelAntes);
+    }
 
     return NextResponse.json({
       ok: true,
       mensaje: "Tarea aprobada y puntos acreditados",
-      leveledUp: false, // Cannot reliably determine leveled up without level tracking
+      leveledUp: false, // La notificación la ve el propio usuario al entrar (NavUser)
       newLevel: nivelDespues,
       userName: asignadoActualizado?.nombre
     });

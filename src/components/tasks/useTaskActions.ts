@@ -19,8 +19,26 @@ export function useTaskActions(task: any) {
 
   const [isPlaying, setIsPlaying] = useState(!!task.timerStartedAt);
   const [elapsed, setElapsed] = useState(getInitialElapsed);
+  const [startedInSession, setStartedInSession] = useState(
+    Boolean(task.timerStartedAt) ||
+      (task.tiempoAcumuladoTimer || 0) > 0 ||
+      task.estado === "En_progreso" ||
+      task.estado === "Pausada"
+  );
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setIsPlaying(!!task.timerStartedAt);
+    setElapsed(getInitialElapsed());
+    setStartedInSession(
+      Boolean(task.timerStartedAt) ||
+        (task.tiempoAcumuladoTimer || 0) > 0 ||
+        task.estado === "En_progreso" ||
+        task.estado === "Pausada"
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task.id, task.timerStartedAt, task.tiempoAcumuladoTimer, task.estado]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -41,6 +59,7 @@ export function useTaskActions(task: any) {
   const togglePlay = async () => {
     if (!isPlaying) {
       try { await syncTimer("start"); } catch {}
+      setStartedInSession(true);
       setIsPlaying(true);
     } else {
       try {
@@ -51,19 +70,24 @@ export function useTaskActions(task: any) {
     }
   };
 
+  const fueIniciada = startedInSession || isPlaying || elapsed > 0;
+
   // Al abrir una confirmación se pausa el timer (en cliente y servidor)
   const pauseForConfirm = () => {
-    setIsPlaying(false);
-    syncTimer("pause").catch(() => {});
+    if (isPlaying) {
+      setIsPlaying(false);
+      syncTimer("pause").catch(() => {});
+    }
   };
 
-  const finishTask = async () => {
+  const finishTask = async (modoOverride?: "iniciada_finalizada" | "realizada_directa") => {
     setLoading(true);
+    const modoCompletado = modoOverride ?? (fueIniciada ? "iniciada_finalizada" : "realizada_directa");
     try {
       const res = await fetch(`/api/tasks/${task.id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ elapsedSeconds: elapsed }),
+        body: JSON.stringify({ elapsedSeconds: elapsed, modoCompletado }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -72,6 +96,9 @@ export function useTaskActions(task: any) {
           puntos: data.puntos,
           basePoints: data.basePoints,
           streakBonus: data.streakBonus,
+          checklistBonus: data.checklistBonus,
+          porcentajePuntos: data.porcentajePuntos,
+          fueIniciada: data.fueIniciada,
           isNewStreak: data.isNewStreak,
           streakDays: data.streakDays,
           isHappyHour: data.isHappyHour,
@@ -117,5 +144,16 @@ export function useTaskActions(task: any) {
 
   const remaining = (task.tiempoEjecucionEstimadoSeg || 0) - elapsed;
 
-  return { isPlaying, elapsed, remaining, isOvertime: remaining < 0, loading, togglePlay, pauseForConfirm, finishTask, markAsNotDone };
+  return {
+    isPlaying,
+    elapsed,
+    remaining,
+    isOvertime: remaining < 0,
+    fueIniciada,
+    loading,
+    togglePlay,
+    pauseForConfirm,
+    finishTask,
+    markAsNotDone,
+  };
 }

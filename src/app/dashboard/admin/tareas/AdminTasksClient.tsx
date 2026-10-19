@@ -38,6 +38,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { SelectorNivel } from "@/components/SelectorNivel";
 import { DIFICULTADES, DIFICULTAD_DEFAULT, DIFICULTAD_INFO, esDificultad, type Dificultad } from "@/lib/recompensaTarea";
+import { describirRotacion, normalizarRotacionConfig } from "@/lib/rotacionTarea";
 import { toast } from "@/lib/toast";
 import {
   filtrarYOrdenarTareas,
@@ -117,11 +118,15 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
     [tasks, personaId, dificultadFiltro, checklistFiltro, recurrenciaFiltro, busqueda, orden]
   );
 
-  const miembrosDe = (t: any): number[] => [
-    ...new Set<number>(
-      (t.grupoTareaId ? tasks.filter((g) => g.grupoTareaId === t.grupoTareaId) : [t]).map((g) => g.asignadoId)
-    ),
-  ];
+  const miembrosDe = (t: any): number[] => {
+    const rot = normalizarRotacionConfig(t.rotacionConfig);
+    if (rot) return rot.responsablesIds;
+    return [
+      ...new Set<number>(
+        (t.grupoTareaId ? tasks.filter((g) => g.grupoTareaId === t.grupoTareaId) : [t]).map((g) => g.asignadoId)
+      ),
+    ];
+  };
 
   const visibleIds = useMemo(() => filteredTasks.map((t) => t.id as number), [filteredTasks]);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
@@ -615,13 +620,25 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
                           {formatVencimiento(t)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {t.tipoRecurrencia === "Unica" ? (
-                            <span className="text-muted-foreground">Única</span>
-                          ) : (
-                            <span className="flex items-center gap-1 font-medium text-primary">
-                              <Repeat className="size-3" /> {t.tipoRecurrencia.replace("_", " ")}
-                            </span>
-                          )}
+                          {(() => {
+                            const rot = normalizarRotacionConfig(t.rotacionConfig);
+                            if (rot) {
+                              const desc = describirRotacion(rot) ?? "Rotativa";
+                              return (
+                                <span className="flex items-center gap-1 font-medium text-primary" title={desc}>
+                                  <Repeat className="size-3 shrink-0" /> {desc}
+                                </span>
+                              );
+                            }
+                            if (t.tipoRecurrencia === "Unica") {
+                              return <span className="text-muted-foreground">Única</span>;
+                            }
+                            return (
+                              <span className="flex items-center gap-1 font-medium text-primary">
+                                <Repeat className="size-3" /> {t.tipoRecurrencia.replace("_", " ")}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="gap-1.5">

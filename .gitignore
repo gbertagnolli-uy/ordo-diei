@@ -48,10 +48,14 @@ next-env.d.ts
 # Fotos originales de los hábitos (129 MB): solo fuente de `npm run imagenes`, que genera public/habitos/*.avif
 /public/Imagenes/
 
-# Credenciales: nunca en git (el repo es público)
+# Credenciales y volcados locales: nunca en git (el repo es público)
 SUPABASE_INFO.md
 .env.backup*
+dump_*.sql
+cambio.sql
 
 # Divinum Officium (lanes L1–L9): motor descargado y dependencias Perl locales
 /vendor/divinum-officium/
 /.cache/
+.venv-rembg/
+__pycache__/

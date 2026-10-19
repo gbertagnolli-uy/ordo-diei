@@ -5,6 +5,8 @@ import { NoAutorizadoError, NoEncontradoError } from "../habitos/server.ts";
 import { leerItems, textoItem } from "../comportamiento/premios.ts";
 import { cofreDeHoy } from "../comportamiento/cofreHorario.ts";
 import { haySancion } from "../comportamiento/sancionServer.ts";
+import { otorgarCofreDelDia } from "../comportamiento/server.ts";
+import { hoyDia } from "../conducta/server.ts";
 
 export type EstadoRecompensa = "disponible" | "reclamado" | "entregado";
 
@@ -67,7 +69,8 @@ const aVista = (r: Fila): RecompensaVista => ({
 
 /** Los premios propios y, para padres, los reclamos de la familia que esperan entrega */
 export async function getRecompensas(usuarioId: number, rol?: string) {
-  const [propias, porEntregar, sancionado] = await Promise.all([
+  await otorgarCofreDelDia(usuarioId).catch((e) => console.error("[Cofre]", e));
+  const [propias, porEntregar, sancionado, conducta] = await Promise.all([
     prisma.recompensa.findMany({
       where: { usuarioId },
       include: INCLUDE,
@@ -82,14 +85,24 @@ export async function getRecompensas(usuarioId: number, rol?: string) {
       : Promise.resolve([]),
     // Día con sanción: «Mis premios» avisa que el cofre se perdió y que todo vale la mitad
     haySancion(prisma, usuarioId),
+    prisma.conductaDia.findUnique({
+      where: { usuarioId_fecha: { usuarioId, fecha: new Date(`${hoyDia()}T00:00:00Z`) } },
+      select: { nivel: true },
+    }),
   ]);
-  return { propias: propias.map(aVista), porEntregar: porEntregar.map(aVista), sancionado };
+  return { propias: propias.map(aVista), porEntregar: porEntregar.map(aVista), sancionado, conductaHoy: conducta?.nivel ?? null };
 }
 
 /** Insignia de la barra lateral: premios por reclamar y, para padres, reclamos por entregar */
-export async function contarRecompensasPendientes(usuarioId: number, rol?: string) {
+export async function contarRecompensasPendientes(usuarioId: number, rol?: string, ahora = Date.now()) {
   const [porReclamar, porEntregar] = await Promise.all([
-    prisma.recompensa.count({ where: { usuarioId, estado: "disponible" } }),
+    prisma.recompensa.count({
+      where: {
+        usuarioId,
+        estado: "disponible",
+        ...(ahora < cofreDeHoy(ahora) ? { tipo: { not: "cofre" } } : {}),
+      },
+    }),
     esPadre(rol) ? prisma.recompensa.count({ where: { estado: "reclamado" } }) : Promise.resolve(0),
   ]);
   return porReclamar + porEntregar;

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ImagenConRespaldo } from "@/components/engagement/ImagenConRespaldo";
 import { accesorioDe, RUTA_IMAGEN, type Equipados } from "@/lib/engagement/accesorios";
-import { datosDePersonaje, type Personaje, type Pose } from "@/lib/engagement/companero";
+import { datosDePersonaje, tieneFondo, type Personaje, type Pose } from "@/lib/engagement/companero";
 import { fraseDe } from "@/lib/engagement/companeroFrases";
 
 const MARCOS = [
@@ -29,6 +29,8 @@ const FONDOS: Record<string, string> = {
 const LUGARES = ["bottom-[4%] left-[4%]", "bottom-[4%] right-[4%]", "bottom-[30%] right-[3%]"];
 
 export const rutaDePose = (personaje: Personaje, pose: Pose) => `/companeros/${personaje}/${pose}.webp`;
+/** La imagen del objeto que identifica al héroe */
+export const rutaDeObjeto = (personaje: Personaje) => `/companeros/${personaje}/objeto.webp`;
 
 type Props = {
   personaje: Personaje;
@@ -50,7 +52,7 @@ export function EscenaCompanero({ personaje, pose, equipados, marco, quien, fras
   return (
     <button
       type="button"
-      aria-label={`${datos.titulo}: tocalo para que te diga algo`}
+      aria-label={`${datos.nombre}: tocalo para que te diga algo`}
       onClick={() => setDice(fraseDe(personaje, "toque", quien, Math.floor(Math.random() * 1000)))}
       className={cn(
         "relative block aspect-[3/4] w-full overflow-hidden rounded-xl bg-gradient-to-b text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
@@ -76,8 +78,9 @@ export function EscenaCompanero({ personaje, pose, equipados, marco, quien, fras
       })}
       <ImagenConRespaldo
         srcs={[rutaDePose(personaje, pose), rutaDePose(personaje, "neutral")]}
-        alt={`${datos.titulo}, ${pose.replace("-", " ")}`}
-        className="absolute inset-x-0 bottom-0 mx-auto h-[92%] w-auto max-w-full object-contain"
+        alt={`${datos.nombre}, ${pose.replace("-", " ")}`}
+        // «multiply» hace desaparecer el blanco de las poses que quedaron con fondo (buenos días)
+        className={cn("absolute inset-x-0 bottom-0 mx-auto h-[92%] w-auto max-w-full object-contain", tieneFondo(pose) && "mix-blend-multiply")}
         respaldo={<span aria-hidden className="absolute inset-x-0 bottom-[12%] text-center text-7xl">{datos.emoji}</span>}
       />
       {dice && (

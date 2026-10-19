@@ -2,7 +2,7 @@
 
 import { useModalStore } from "@/store/modalStore";
 import { Modal } from "@/components/ui/Modal";
-import { Save } from "lucide-react";
+import { CheckCircle2, Flame, Gift, Save, Sparkles, Star } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { PerfilResumen } from "@/components/perfil/PerfilResumen";
@@ -11,7 +11,11 @@ import { LeaderboardModal } from "./LeaderboardModal";
 import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import { MoodSelector } from "./MoodSelector";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EscenaCompanero } from "@/components/engagement/EscenaCompanero";
+import type { BienvenidaDiariaDatos } from "@/lib/engagement/companeroServidor";
 import { toast } from "@/lib/toast";
+import { badgeDeNivel, PUNTOS_SUBIR_NIVEL, tituloDeNivel } from "@/lib/niveles";
 
 
 // Único confeti de la app (MagicUI). Los popups lo disparan vía contexto.
@@ -24,7 +28,7 @@ const HABITO_POPUP = (nombre = "este hábito") => ({
 });
 const CelebrateContext = createContext<(opts?: Parameters<ConfettiRef["fire"]>[0]) => void>(() => {});
 
-export function ModalManager() {
+export function ModalManager({ bienvenidaHoy }: { bienvenidaHoy?: BienvenidaDiariaDatos | null }) {
   const { isOpen, type, data, closeModal, openModal } = useModalStore();
   const confettiRef = useRef<ConfettiRef>(null);
   const celebrate = useCallback((opts?: Parameters<ConfettiRef["fire"]>[0]) => {
@@ -34,12 +38,30 @@ export function ModalManager() {
   }, []);
 
   useEffect(() => {
+    if (!bienvenidaHoy) return;
+    const storageKey = `bienvenida_vista_${bienvenidaHoy.usuarioId}_${bienvenidaHoy.fecha}`;
+    try {
+      if (localStorage.getItem(storageKey) === "1") return;
+      localStorage.setItem(storageKey, "1");
+    } catch {
+      // Si localStorage no está disponible, se muestra igual y el servidor lo persiste
+    }
+    fetch("/api/companero", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accion: "bienvenida" }),
+    }).catch(() => {});
+    openModal("DAILY_WELCOME", bienvenidaHoy);
+  }, [bienvenidaHoy, openModal]);
+
+  useEffect(() => {
     // Check for level up notification from previous page load
     const levelUpInfo = sessionStorage.getItem("levelUpNotification");
     if (levelUpInfo) {
       sessionStorage.removeItem("levelUpNotification");
       const info = JSON.parse(levelUpInfo);
       setTimeout(() => {
+        if (useModalStore.getState().type === "DAILY_WELCOME") return;
         openModal("LEVEL_UP", info);
       }, 500); // Small delay to let the page load
     }
@@ -69,29 +91,44 @@ export function ModalManager() {
         </Modal>
       )}
 
-      {type === "LEVEL_UP" && (
-        <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
-          <div className="flex flex-col items-center text-center py-6">
-            <img
-              src="/winners-animate.svg"
-              alt="¡Subiste de Nivel!"
-              className="w-48 h-48 mb-6 drop-shadow-xl animate-bounce"
-            />
-            <h3 className="text-3xl font-headline font-bold text-[var(--on-surface)] mb-2">
-              ¡Nivel {data?.level}!
-            </h3>
-            <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
-              Nuevo Rango: <span className="text-[var(--primary)]">{data?.title}</span>
-            </p>
-            <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
-              ¡Tu esfuerzo está dando frutos! Sigue completando tareas para alcanzar el siguiente rango.
-            </p>
-            <Button size="lg" onClick={closeModal} className="w-full">
-              ¡A seguir subiendo!
-            </Button>
-          </div>
-        </Modal>
-      )}
+      {type === "LEVEL_UP" && (() => {
+        const lvl = Number(data?.level ?? data?.newLevel ?? 1);
+        const badgeSrc = data?.badgeUrl ?? badgeDeNivel(lvl);
+        const titulo = data?.title ?? tituloDeNivel(lvl);
+        const puntosRegalo = Number(data?.puntosRegalo ?? PUNTOS_SUBIR_NIVEL);
+        return (
+          <Modal isOpen={isOpen} onClose={closeModal} title="🎉 ¡Subiste de Nivel!">
+            <div className="flex flex-col items-center text-center py-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={badgeSrc}
+                alt={`Insignia del nivel ${lvl}`}
+                className="size-36 mb-4 object-contain drop-shadow-xl"
+              />
+              <p className="text-[var(--on-surface-variant)] text-xl mb-4 font-body font-bold">
+                Nuevo Rango: <span className="text-[var(--primary)]">{titulo}</span>
+              </p>
+              <div className="bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] border border-[color-mix(in_srgb,var(--warning)_20%,transparent)] rounded-md px-6 py-3 flex items-center gap-3 mb-5">
+                <span className="text-3xl" aria-hidden>⭐</span>
+                <div className="text-left">
+                  <div className="text-[var(--warning)] font-headline font-bold text-2xl tabular-nums">
+                    +{puntosRegalo} Puntos
+                  </div>
+                  <div className="text-[var(--warning)] opacity-80 text-xs font-title font-bold uppercase tracking-wider">
+                    Regalo por subir de nivel
+                  </div>
+                </div>
+              </div>
+              <p className="text-[var(--on-surface-variant)] text-md mb-6 px-4">
+                ¡Tu esfuerzo está dando frutos! Seguí completando tareas y hábitos para alcanzar el siguiente rango.
+              </p>
+              <Button size="lg" onClick={closeModal} className="w-full">
+                ¡A seguir subiendo!
+              </Button>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {(type === "ORACION" || type === "HABITO") && (() => {
         const popup = HABITO_POPUP(data?.habito || "este hábito")[data?.tipo as "ascenso" | "completo" | "regreso" | "libro"] ?? {
@@ -129,8 +166,24 @@ export function ModalManager() {
             </h3>
 
             {data?.puntos > 0 && (
-              <div className="text-4xl font-display font-bold text-[var(--warning)] mb-4 animate-bounce">
+              <div className="text-4xl font-display font-bold text-[var(--warning)] mb-2 animate-bounce">
                 +{data.puntos} Pts
+              </div>
+            )}
+
+            {(data?.porcentajePuntos === 100 || data?.porcentajePuntos === 80) && (
+              <div className="mb-3">
+                <span
+                  className={
+                    data.porcentajePuntos === 100
+                      ? "inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--success)_15%,transparent)] border border-[color-mix(in_srgb,var(--success)_35%,transparent)] px-3 py-1 text-xs font-bold text-[var(--success)]"
+                      : "inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] border border-[color-mix(in_srgb,var(--warning)_35%,transparent)] px-3 py-1 text-xs font-bold text-[var(--warning)]"
+                  }
+                >
+                  {data.porcentajePuntos === 100
+                    ? "⏱️ 100% de puntos (iniciada y finalizada)"
+                    : "✓ 80% de puntos (marcada como realizada)"}
+                </span>
               </div>
             )}
 
@@ -190,30 +243,36 @@ export function ModalManager() {
               </div>
 
               {/* Detailed Gamification Breakdown */}
-              {(data?.basePoints > 0 || data?.streakBonus > 0 || data?.speedBonus > 0 || data?.checklistBonus > 0) && (
+              {(data?.basePoints > 0 || data?.streakBonus > 0 || data?.speedBonus > 0 || data?.checklistBonus > 0 || data?.rankingBonus > 0) && (
                 <div className="flex flex-col gap-2 mt-1 text-sm">
                   {data?.basePoints > 0 && (
-                    <div className="flex justify-between items-center text-[var(--warning)] font-medium">
+                    <div className="flex justify-between items-center text-[var(--warning)] font-medium gap-2">
                       <span>✓ Base por dificultad</span>
                       <span>+{data.basePoints}</span>
                     </div>
                   )}
                   {data?.streakBonus > 0 && (
-                    <div className="flex justify-between items-center text-orange-500 font-bold">
+                    <div className="flex justify-between items-center text-orange-500 font-bold gap-2">
                       <span>🔥 Bono de racha</span>
                       <span>+{data.streakBonus}</span>
                     </div>
                   )}
                   {data?.speedBonus > 0 && (
-                    <div className="flex justify-between items-center text-blue-500 font-bold">
+                    <div className="flex justify-between items-center text-blue-500 font-bold gap-2">
                       <span>⚡ Bono de velocidad</span>
                       <span>+{data.speedBonus}</span>
                     </div>
                   )}
                   {data?.checklistBonus > 0 && (
-                    <div className="flex justify-between items-center text-[var(--success)] font-bold">
+                    <div className="flex justify-between items-center text-[var(--success)] font-bold gap-2">
                       <span>📝 Bono checklist perfecto</span>
                       <span>+{data.checklistBonus}</span>
+                    </div>
+                  )}
+                  {data?.rankingBonus > 0 && (
+                    <div className="flex justify-between items-center text-[var(--primary)] font-bold gap-2">
+                      <span>{data?.emojiPodio ?? "🏆"} Acelerador #{data?.puestoRanking} (+{data?.aceleradorRankingPct}%)</span>
+                      <span>+{data.rankingBonus}</span>
                     </div>
                   )}
                 </div>
@@ -260,7 +319,119 @@ export function ModalManager() {
           </div>
         </Modal>
       )}
+
+      {type === "DAILY_WELCOME" && data && (
+        <Modal
+          isOpen={isOpen}
+          onClose={closeModal}
+          title={`✨ ¡Bienvenido de vuelta, ${data.quien}!`}
+          width="md"
+        >
+          <BienvenidaDiariaPopup data={data as BienvenidaDiariaDatos} onClose={closeModal} />
+        </Modal>
+      )}
     </CelebrateContext.Provider>
+  );
+}
+
+function BienvenidaDiariaPopup({ data, onClose }: { data: BienvenidaDiariaDatos; onClose: () => void }) {
+  const celebrate = useContext(CelebrateContext);
+  const [mostrarPremios, setMostrarPremios] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setMostrarPremios(true);
+      celebrate({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: GOLD });
+    }, 450);
+    return () => clearTimeout(t);
+  }, [celebrate]);
+
+  const { companero, quien, rachaApp, diasJuntos, puntos, xp, hitoHoy } = data;
+
+  return (
+    <div className="flex flex-col items-center text-center py-2 space-y-4">
+      {/* 1. El compañero saluda y felicita por volver */}
+      <div className="flex flex-col sm:flex-row items-center gap-4 w-full rounded-xl border bg-muted/30 p-4 text-left">
+        <EscenaCompanero
+          personaje={companero.personaje}
+          pose={companero.pose}
+          equipados={companero.equipados}
+          marco={companero.marco}
+          quien={quien}
+          className="w-28 sm:w-32 shrink-0 shadow-sm"
+        />
+        <div className="flex-1 space-y-2 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <span className="font-heading text-lg font-bold text-foreground">
+              {companero.nombre}
+            </span>
+            <Badge variant="default" className="gap-1">
+              <Flame className="size-3.5" />
+              Racha en la app: {rachaApp} {rachaApp === 1 ? "día" : "días"}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {diasJuntos} {diasJuntos === 1 ? "día juntos" : "días juntos"}
+            </Badge>
+          </div>
+          <p className="text-sm font-medium text-foreground italic">
+            «{companero.saludo}»
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {companero.felicitacion}
+          </p>
+        </div>
+      </div>
+
+      {/* 2. Enseguida se muestran los premios por haber ingresado hoy */}
+      <div
+        className={`w-full space-y-3 transition-all duration-500 ${
+          mostrarPremios ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+        }`}
+      >
+        <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center justify-center gap-1.5">
+          <Sparkles className="size-3.5" />
+          Premios por tu primer ingreso de hoy
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-primary/25 bg-primary/10 p-3 flex flex-col items-center justify-center">
+            <div className="flex items-center gap-1 text-2xl font-headline font-bold text-primary tabular-nums">
+              <Sparkles className="size-5" /> +{xp} XP
+            </div>
+            <span className="text-xs font-medium text-muted-foreground mt-0.5">
+              Experiencia ganada
+            </span>
+          </div>
+
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] p-3 flex flex-col items-center justify-center">
+            <div className="flex items-center gap-1 text-2xl font-headline font-bold text-[var(--warning)] tabular-nums">
+              <Star className="size-5 fill-current" /> +{puntos} Puntos
+            </div>
+            <span className="text-xs font-medium text-muted-foreground mt-0.5">
+              Puntos disponibles
+            </span>
+          </div>
+        </div>
+
+        {hitoHoy && (
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--success)_35%,transparent)] bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-[var(--success)]">
+            <Gift className="size-4 shrink-0" />
+            <span>
+              ¡Alcanzaste el hito «{hitoHoy.titulo}»! Tenés un premio sorpresa en Mis premios.
+            </span>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+          <CheckCircle2 className="size-3.5 text-[var(--success)]" />
+          Registrado en tu perfil · 1 vez por día
+        </p>
+      </div>
+
+      <Button size="lg" onClick={onClose} className="w-full">
+        ¡Gracias, a empezar el día!
+      </Button>
+    </div>
   );
 }
 
