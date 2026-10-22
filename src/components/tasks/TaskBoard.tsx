@@ -3,7 +3,7 @@
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
-import { GripVertical, ListChecks, Timer } from "lucide-react";
+import { GripVertical, Camera, ListChecks, Timer } from "lucide-react";
 import { useModalStore } from "@/store/modalStore";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
+import { fotoPruebaPendiente } from "@/lib/tareas/fotoPrueba";
 import { Avatar } from "./primitives";
 import {
   CoResponsable,
@@ -127,6 +128,11 @@ export function TaskBoard({
   };
 
   const move = (task: any, from: TaskGroup, to: TaskGroup) => {
+    if (to === "review" && fotoPruebaPendiente(task)) {
+      setMessage("Esta tarea necesita una foto de prueba antes de enviarse a revisión.");
+      onSelect(task);
+      return;
+    }
     startTransition(async () => {
       applyMove({ id: task.id, to });
       try {
@@ -273,6 +279,15 @@ function BoardCard({ task, team, active, onSelect, overlay }: { task: any; team:
             </>
           )}
           {task.generaPuntosYRecompensa && <span className="font-medium text-secondary">{pointsLabel(task)}</span>}
+          {task.requiereFotoPrueba && (
+            <Badge
+              variant="outline"
+              className={cn("h-5 gap-1", fotoPruebaPendiente(task) && "text-[var(--warning)]")}
+              title={fotoPruebaPendiente(task) ? "Falta la foto de prueba" : "Foto de prueba cargada"}
+            >
+              <Camera className="size-3" /> Foto
+            </Badge>
+          )}
           {team.length > 0 && (
             <AvatarGroup className="ml-auto">
               {team.slice(0, 3).map((u) => (

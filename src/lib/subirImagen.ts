@@ -56,3 +56,13 @@ export async function subirArchivoEstudio(file: File): Promise<ArchivoEstudioSub
   if (!res.ok) throw new Error(json?.error ?? "No se pudo subir el archivo");
   return json as ArchivoEstudioSubido;
 }
+
+/** Sube la foto de prueba de una tarea: la comprime, la guarda en la app y la asocia a la tarea */
+export async function subirFotoPruebaTarea(tareaId: number, file: File): Promise<ImagenSubida> {
+  const fd = new FormData();
+  fd.append("file", await comprimirImagen(file, "general"), file.name);
+  const res = await fetch(`/api/tasks/${tareaId}/foto-prueba`, { method: "POST", body: fd });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.error ?? "No se pudo subir la foto de prueba");
+  return json as ImagenSubida;
+}

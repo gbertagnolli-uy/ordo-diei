@@ -5,6 +5,7 @@ import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
 import { nivelDe, xpTotal } from "@/lib/niveles";
 import { reclamarSubidaNivel } from "@/lib/nivelesServidor";
+import { claveDeUrl } from "@/lib/archivos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -28,6 +29,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Verificamos que la tarea esté en espera
     if (tarea.estado !== "Esperando_Aprobacion") {
       return NextResponse.json({ error: "La tarea no está en revisión" }, { status: 400 });
+    }
+
+    // Defensivo: una tarea con foto obligatoria no se aprueba sin la foto
+    if (tarea.requiereFotoPrueba && !claveDeUrl(tarea.fotoPruebaUrl)) {
+      return NextResponse.json({ error: "La tarea no tiene la foto de prueba obligatoria" }, { status: 400 });
     }
 
     const asignado = tarea.asignado;

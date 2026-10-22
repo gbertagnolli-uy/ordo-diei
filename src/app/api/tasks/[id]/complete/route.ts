@@ -6,6 +6,7 @@ import { updateUserCompletionPercentage } from "@/lib/userUtils";
 import { calcularPuntosCompletadoTarea } from "@/lib/recompensaTarea";
 import { estrellasPorRacha } from "@/lib/cartas/racha";
 import { puedeCompletarTarea } from "@/lib/tareas/permisos";
+import { claveDeUrl } from "@/lib/archivos";
 import { motivoBloqueoTarea } from "@/lib/homeschooling/servidor/guardia";
 import { haySancion } from "@/lib/comportamiento/sancionServer";
 import { AVISO_MITAD, mitad } from "@/lib/comportamiento/sancion";
@@ -45,6 +46,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Homeschooling: la Tarea de un día lectivo exige haber hecho sus lecciones
     const motivoHs = await motivoBloqueoTarea(taskId);
     if (motivoHs) return NextResponse.json({ error: motivoHs }, { status: 400 });
+
+    // Foto de prueba: no se puede completar sin la imagen cuando la tarea la exige
+    if (task.requiereFotoPrueba && !claveDeUrl(task.fotoPruebaUrl)) {
+      return NextResponse.json({
+        error: "Esta tarea necesita una foto de prueba. Subila antes de marcarla como completada.",
+      }, { status: 400 });
+    }
 
     // Business Rule: Checklist completion is COMPUTED (100% required)
     if (task.isChecklist && task.checklistItems.length > 0) {

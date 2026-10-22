@@ -143,6 +143,39 @@ test("generarTareasRecurrentes rota responsable día por día y cierra turnos pa
   assert.equal(mock.tareas[2].asignadoId, 3);
 });
 
+test("las instancias recurrentes heredan la foto de prueba obligatoria sin copiar la foto anterior", async () => {
+  const ayer = new Date(2026, 9, 11, 0, 0, 0);
+  const hoy = new Date(2026, 9, 12, 9, 0, 0);
+  const regla = {
+    id: 70,
+    titulo: "Ordenar la pieza",
+    descripcion: null,
+    creadorId: 1,
+    asignadoId: 5,
+    tiempoEjecucionEstimadoSeg: 900,
+    generaPuntosYRecompensa: true,
+    dificultad: "Media",
+    tipoRecurrencia: "Diaria",
+    fechaVencimiento: ayer,
+    horaEjecucion: new Date(2026, 9, 11, 19, 0, 0),
+    estado: "Pendiente",
+    generadaPorCron: false,
+    intervalo: 1,
+    anclaCompletado: false,
+    requiereFotoPrueba: true,
+    fotoPruebaUrl: "/api/archivos/foto-de-ayer",
+  };
+
+  const mock = crearMockPrisma([regla]);
+  const generadas = await generarTareasRecurrentes(mock, hoy);
+  assert.equal(generadas, 1);
+
+  const nueva = mock.tareas.find((t: any) => t.parentTaskId === regla.id);
+  assert.ok(nueva);
+  assert.equal(nueva.requiereFotoPrueba, true);
+  assert.equal(nueva.fotoPruebaUrl, undefined);
+});
+
 test("generarTareasRecurrentes genera tareas para múltiples responsables el mismo día (tareas en grupo)", async () => {
   const rotacionGrupal: RotacionConfig = {
     modo: "dias_semana",

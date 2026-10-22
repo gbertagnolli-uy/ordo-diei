@@ -10,6 +10,7 @@ import {
   type RotacionConfig,
 } from "@/lib/rotacionTarea";
 import { getSession } from "@/lib/session";
+import { limpiarFotoPruebaHuerfana } from "@/lib/tareas/fotoPruebaServidor";
 import { randomUUID } from "crypto";
 
 export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -68,6 +69,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         generaPuntosYRecompensa: body.generaRecompensa !== undefined ? Boolean(body.generaRecompensa) : currentTask.generaPuntosYRecompensa,
         dificultad: esDificultad(body.dificultad) ? body.dificultad : currentTask.dificultad,
         isSurpriseEligible: body.isSurpriseEligible !== undefined ? Boolean(body.isSurpriseEligible) : currentTask.isSurpriseEligible,
+        requiereFotoPrueba: body.requiereFotoPrueba !== undefined ? Boolean(body.requiereFotoPrueba) : currentTask.requiereFotoPrueba,
         diaDelMes: body.diaDelMes !== undefined ? (body.diaDelMes ? Number(body.diaDelMes) : null) : currentTask.diaDelMes,
         ordinalSemana: body.ordinalSemana !== undefined ? (body.ordinalSemana ? Number(body.ordinalSemana) : null) : currentTask.ordinalSemana,
         diaDeLaSemana: body.diaDeLaSemana !== undefined ? (body.diaDeLaSemana !== null ? Number(body.diaDeLaSemana) : null) : currentTask.diaDeLaSemana,
@@ -96,6 +98,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
           : null
         : normalizarRotacionConfig((currentTask as any).rotacionConfig);
 
+    let fotoDescartada: string | null = null;
     const updatedTask = await prisma.$transaction(async (tx) => {
         if (rotacionInput) {
             const hoy = new Date();
@@ -151,6 +154,9 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
             }
 
             const esActiva = ["Pendiente", "En_progreso", "Pausada"].includes(currentTask.estado);
+            const asignadoSiguiente = esActiva && proxima ? proxima.asignadoId : currentTask.asignadoId;
+            const cambiaAsignado = asignadoSiguiente !== currentTask.asignadoId;
+            if (cambiaAsignado) fotoDescartada = currentTask.fotoPruebaUrl;
             await tx.tarea.update({
                 where: { id: currentTask.id },
                 data: {
@@ -158,11 +164,12 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                     tipoRecurrencia: currentTask.generadaPorCron ? "Unica" : (tipoRecEfectivo as any),
                     fechaVencimiento: esActiva ? fechaAsignada : updatedData.fechaVencimiento,
                     horaEjecucion: esActiva ? horaAsignada : updatedData.horaEjecucion,
-                    asignadoId: esActiva && proxima ? proxima.asignadoId : currentTask.asignadoId,
+                    asignadoId: asignadoSiguiente,
                     anclaFecha: anclaBase,
                     grupoTareaId: null,
                     rotacionConfig: rotacionFinal as any,
                     isChecklist,
+                    ...(cambiaAsignado ? { fotoPruebaUrl: null, fotoPruebaSubidaEn: null } : {}),
                 } as any,
             });
 
@@ -178,6 +185,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                         rotacionConfig: rotacionFinal as any,
                         isChecklist,
                         isSurpriseEligible: updatedData.isSurpriseEligible,
+                        requiereFotoPrueba: updatedData.requiereFotoPrueba,
                     } as any,
                 });
             }
@@ -214,14 +222,26 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         if (currentTask.grupoTareaId) {
             await tx.tarea.updateMany({ where: { grupoTareaId: currentTask.grupoTareaId }, data: { ...updatedData, ...limpiarRotacion, isChecklist } as any });
         } else {
+            const asignadoSiguiente = !asignadoIds && body.asignadoId ? parseInt(body.asignadoId) : currentTask.asignadoId;
+            const cambiaAsignado = asignadoSiguiente !== currentTask.asignadoId;
+            if (cambiaAsignado) fotoDescartada = currentTask.fotoPruebaUrl;
             await tx.tarea.update({
                 where: { id: currentTask.id },
                 data: {
                     ...updatedData,
                     ...limpiarRotacion,
                     isChecklist,
-                    asignadoId: !asignadoIds && body.asignadoId ? parseInt(body.asignadoId) : currentTask.asignadoId,
+                    asignadoId: asignadoSiguiente,
+                    ...(cambiaAsignado ? { fotoPruebaUrl: null, fotoPruebaSubidaEn: null } : {}),
                 } as any,
+            });
+        }
+
+        // Si es una instancia generada, la regla también conserva la exigencia de foto
+        if (currentTask.parentTaskId) {
+            await tx.tarea.update({
+                where: { id: currentTask.parentTaskId },
+                data: { requiereFotoPrueba: updatedData.requiereFotoPrueba },
             });
         }
 
@@ -272,6 +292,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                         anclaFecha: currentTask.anclaFecha ?? currentTask.fechaVencimiento,
                         isSurpriseEligible: updatedData.isSurpriseEligible,
                         isChecklist,
+                        requiereFotoPrueba: updatedData.requiereFotoPrueba,
                         grupoTareaId,
                     },
                 });
@@ -309,6 +330,13 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         return tx.tarea.findUnique({ where: { id: currentTask.id } });
     });
 
+    // Si el cambio de responsable descartó la foto, liberamos el archivo si quedó huérfano
+    if (fotoDescartada) {
+      await limpiarFotoPruebaHuerfana(fotoDescartada).catch((error) => {
+        console.error("No se pudo limpiar la foto de prueba descartada:", error);
+      });
+    }
+
     return NextResponse.json({ ok: true, task: updatedTask });
   } catch (error) {
     console.error("PUT Task Error:", error);
@@ -334,13 +362,25 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
 
     // HistorialAccion.tareaId no tiene cascade: sin borrar antes el historial, Postgres rechaza (FK) eliminar
     // cualquier tarea que ya se empezó, completó o revisó. Checklist cae por cascade y DiaLectivo/clones por SetNull.
+    const fotosADescartar: string[] = [];
     await prisma.$transaction(async (tx) => {
       const filtro = grupoTareaId ? { grupoTareaId } : { id: parseInt(id) };
-      const ids = (await tx.tarea.findMany({ where: filtro, select: { id: true } })).map((t) => t.id);
+      const tareas = await tx.tarea.findMany({ where: filtro, select: { id: true, fotoPruebaUrl: true } });
+      const ids = tareas.map((t) => t.id);
       if (ids.length === 0) return;
+      for (const tarea of tareas) {
+        if (tarea.fotoPruebaUrl) fotosADescartar.push(tarea.fotoPruebaUrl);
+      }
       await tx.historialAccion.deleteMany({ where: { tareaId: { in: ids } } });
       await tx.tarea.deleteMany({ where: { id: { in: ids } } });
     });
+
+    // Las fotos de prueba de las tareas eliminadas ya no se usan
+    for (const url of fotosADescartar) {
+      await limpiarFotoPruebaHuerfana(url).catch((error) => {
+        console.error("No se pudo limpiar la foto de prueba de una tarea eliminada:", error);
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
