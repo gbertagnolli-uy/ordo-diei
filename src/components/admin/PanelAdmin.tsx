@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";
+import { PanelHistoriaAcciones } from "./PanelHistoriaAcciones";
 
 export type PendientesAdmin = { solicitudesHabitos: number; premiosPorEntregar: number; comprasPorAprobar?: number };
 
@@ -159,6 +160,10 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
         <Button variant="outline" onClick={simularDia} disabled={simulando}>
           {simulando ? <Spinner /> : <Sunset className="size-4 text-destructive" />} Simular día (cron)
         </Button>
+      </section>
+
+      <section className="space-y-3 pt-6 border-t border-white/10">
+        <PanelHistoriaAcciones />
       </section>
     </div>
   );

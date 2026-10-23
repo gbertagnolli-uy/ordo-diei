@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       isSurpriseEligible,
       isChecklist,
       checklistItems,
+      requiereFotoPrueba,
       dificultad,
       rotacionConfig: rawRotacionConfig,
     } = body;
@@ -180,6 +181,7 @@ export async function POST(req: NextRequest) {
               rotacionConfig: rotacionFinal as any,
               isSurpriseEligible: Boolean(isSurpriseEligible),
               isChecklist: hasChecklist,
+              requiereFotoPrueba: Boolean(requiereFotoPrueba),
             } as any,
           });
 
@@ -228,6 +230,7 @@ export async function POST(req: NextRequest) {
             grupoTareaId,
             isSurpriseEligible: Boolean(isSurpriseEligible),
             isChecklist: hasChecklist,
+            requiereFotoPrueba: Boolean(requiereFotoPrueba),
           }
         });
 

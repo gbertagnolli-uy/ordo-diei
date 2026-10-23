@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ModoAuth = "REPOSO" | "SELECTOR" | "PIN";
@@ -106,20 +107,6 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
   // 2. Estado SELECTOR o PIN (Auth clásico)
   return (
     <div className="relative z-10 flex w-full max-w-4xl flex-col items-center px-4 py-12">
-      {modo === "SELECTOR" && (
-        <>
-          <span className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-primary font-heading text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
-            OD
-          </span>
-          <h1 className="bg-gradient-to-b from-[#F3E3CC] to-[#C4956A] bg-clip-text text-center font-heading text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
-            Ordo Diei
-          </h1>
-          <p className="mt-3 mb-12 max-w-xl px-4 text-center font-heading text-base leading-relaxed text-muted-foreground italic">
-            Sancta rutina diei ad animam fovendam et Deum laudandum. Omnis dies incipit cum oratione et finitur cum examine conscientiae.
-          </p>
-        </>
-      )}
-
       <AnimatePresence mode="wait">
         {modo === "SELECTOR" ? (
           <motion.div
@@ -128,14 +115,20 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className="flex w-full flex-col items-center gap-6"
+            className="flex w-full flex-col items-center gap-8"
           >
             {initialUsers.length === 0 ? (
               <FirstSetupForm />
             ) : (
               <>
-                <p className="text-sm font-medium text-muted-foreground">¿Quién eres?</p>
                 <UserSelector users={initialUsers} onSelect={handleSelectUser} />
+                <Button
+                  onClick={() => router.push("/agenda")}
+                  className="mt-2 gap-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-600/20 via-amber-500/20 to-amber-600/20 px-7 py-5 font-heading text-base font-semibold text-amber-200 shadow-xl shadow-black/40 backdrop-blur-md transition-all hover:scale-105 hover:border-amber-400 hover:bg-amber-500/30 hover:text-white active:scale-95"
+                >
+                  <CalendarDays className="size-5 text-amber-400" />
+                  Agenda del Día
+                </Button>
               </>
             )}
           </motion.div>

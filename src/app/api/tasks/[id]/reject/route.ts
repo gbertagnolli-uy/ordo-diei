@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { registrarAccion } from "@/lib/historial";
 import { updateUserCompletionPercentage } from "@/lib/userUtils";
+import { limpiarFotoPruebaHuerfana } from "@/lib/tareas/fotoPruebaServidor";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -33,7 +34,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: { 
           estado: "Rechazada",
           puntosGenerados: 0,
-          fechaCompletado: null
+          fechaCompletado: null,
+          // Se pide una foto nueva si vuelve a completarse
+          fotoPruebaUrl: null,
+          fotoPruebaSubidaEn: null,
         }
       }),
       prisma.usuario.update({
@@ -47,6 +51,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     // Recalcular porcentaje de éxito (bajará porque ahora hay una rechazada)
     await updateUserCompletionPercentage(task.asignadoId);
+
+    // La foto rechazada ya no se usa: se limpia el archivo si quedó huérfano
+    await limpiarFotoPruebaHuerfana(task.fotoPruebaUrl).catch((error) => {
+      console.error("No se pudo limpiar la foto de prueba rechazada:", error);
+    });
 
     return NextResponse.json({ ok: true, mensaje: "Tarea rechazada. El usuario deberá re-hacerla." });
   } catch (error) {

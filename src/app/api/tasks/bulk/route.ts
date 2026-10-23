@@ -210,6 +210,7 @@ export async function POST(req: NextRequest) {
                 anclaFecha: repr.anclaFecha ?? repr.fechaVencimiento,
                 isSurpriseEligible: repr.isSurpriseEligible,
                 isChecklist: repr.isChecklist,
+                requiereFotoPrueba: repr.requiereFotoPrueba,
                 grupoTareaId,
               },
             });

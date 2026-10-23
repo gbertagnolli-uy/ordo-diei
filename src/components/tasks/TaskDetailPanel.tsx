@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, CalendarClock, Check, Clock, ListChecks, Pause, Play, Repeat, Star, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CalendarClock, Camera, Check, Clock, ListChecks, Pause, Play, Repeat, Star, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { ChecklistModal } from "@/components/dashboard/ChecklistModal";
 import { cn } from "@/lib/utils";
 import { describirRotacion, normalizarRotacionConfig } from "@/lib/rotacionTarea";
+import { fotoPruebaPendiente, pideFotoPrueba } from "@/lib/tareas/fotoPrueba";
+import { FotoPruebaTarea } from "./FotoPruebaTarea";
 import { useTaskActions } from "./useTaskActions";
 import {
   CoResponsable,
@@ -46,12 +49,23 @@ export function TaskDetailPanel({
   onBack: () => void;
 }) {
   const actions = useTaskActions(task);
+  const router = useRouter();
   const [confirm, setConfirm] = useState<null | "finish" | "finishDirect" | "notDone">(null);
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const [fotoSubida, setFotoSubida] = useState<{ tareaId: number; base: string | null; url: string } | null>(null);
+  const [fotoAmpliada, setFotoAmpliada] = useState(false);
   const canAct = isActionable(task);
   const checklist = checklistProgress(task);
   const status = statusInfo(task);
   const rotacion = normalizarRotacionConfig(task.rotacionConfig);
+  // La foto recién subida se muestra al instante; cuando el servidor confirma (o la borra), manda su valor
+  const fotoServidor = task.fotoPruebaUrl ?? null;
+  const fotoUrl =
+    fotoSubida && fotoSubida.tareaId === task.id && fotoSubida.base === fotoServidor
+      ? fotoSubida.url
+      : fotoServidor;
+  const faltaFoto = fotoPruebaPendiente({ requiereFotoPrueba: task.requiereFotoPrueba, fotoPruebaUrl: fotoUrl });
+  const muestraFoto = pideFotoPrueba({ requiereFotoPrueba: task.requiereFotoPrueba, fotoPruebaUrl: fotoUrl });
 
   const openConfirm = (kind: "finish" | "finishDirect" | "notDone") => {
     actions.pauseForConfirm();
@@ -68,6 +82,11 @@ export function TaskDetailPanel({
           {rotacion && (
             <Badge variant="outline" className="h-5 gap-1 text-primary border-primary/40">
               <Repeat className="size-3" /> Turno de hoy
+            </Badge>
+          )}
+          {muestraFoto && (
+            <Badge variant="outline" className="h-5 gap-1" title="Tarea con foto de prueba">
+              <Camera className="size-3" />
             </Badge>
           )}
           {isUrgent(task) && !isLate(task) && <Badge variant="secondary" className="h-5">Urgente</Badge>}
@@ -123,6 +142,19 @@ export function TaskDetailPanel({
             </button>
           )}
 
+          {muestraFoto && (
+            <FotoPruebaTarea
+              tareaId={task.id}
+              url={fotoUrl}
+              puedeEditar={canAct && Boolean(task.requiereFotoPrueba)}
+              onSubida={(url) => {
+                setFotoSubida({ tareaId: task.id, base: fotoServidor, url });
+                router.refresh();
+              }}
+              onVer={() => setFotoAmpliada(true)}
+            />
+          )}
+
           {canAct && (
             <Card className="py-4">
               <CardContent className="space-y-3 px-4">
@@ -172,6 +204,8 @@ export function TaskDetailPanel({
             {actions.fueIniciada ? (
               <Button
                 className="flex-1 bg-[var(--success)] text-[var(--on-success)] hover:bg-[var(--success-container)]"
+                disabled={faltaFoto}
+                title={faltaFoto ? "Subí la foto de prueba para poder completar la tarea" : undefined}
                 onClick={() => openConfirm("finish")}
               >
                 <Check /> Finalizar (100% pts)
@@ -184,8 +218,9 @@ export function TaskDetailPanel({
                 <Button
                   variant="secondary"
                   className="flex-1"
+                  disabled={faltaFoto}
                   onClick={() => openConfirm("finishDirect")}
-                  title="Marcar como realizada sin haber iniciado el cronómetro (otorga 80% de los puntos)"
+                  title={faltaFoto ? "Subí la foto de prueba para poder completar la tarea" : "Marcar como realizada sin haber iniciado el cronómetro (otorga 80% de los puntos)"}
                 >
                   <Check /> Marcar realizada (80%)
                 </Button>
@@ -200,6 +235,11 @@ export function TaskDetailPanel({
               <X /> No realizada
             </Button>
           </div>
+          {faltaFoto && (
+            <p className="px-3 pb-3 text-xs text-muted-foreground">
+              Subí la foto de prueba para poder marcar la tarea como completada.
+            </p>
+          )}
         </>
       )}
 
@@ -209,7 +249,14 @@ export function TaskDetailPanel({
         title={confirm === "finishDirect" ? "¿Marcar tarea como realizada?" : "¿Finalizar la tarea?"}
       >
         <div className="flex flex-col items-center gap-4 text-center">
-          <img src="/time-machine-animate.svg" alt="Time Machine" className="mb-2 size-48 drop-shadow-sm" />
+          {fotoUrl ? (
+            <button type="button" onClick={() => setFotoAmpliada(true)} className="w-full" aria-label="Ver la foto de prueba en grande">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={fotoUrl} alt="Foto de prueba de la tarea" className="mx-auto max-h-44 rounded-lg border object-cover" />
+            </button>
+          ) : (
+            <img src="/time-machine-animate.svg" alt="Time Machine" className="mb-2 size-48 drop-shadow-sm" />
+          )}
           {confirm === "finishDirect" ? (
             <p className="text-base leading-relaxed text-muted-foreground">
               Como no iniciaste el cronómetro antes de hacerla, marcarla directamente como realizada otorga el{" "}
@@ -284,6 +331,15 @@ export function TaskDetailPanel({
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal isOpen={fotoAmpliada} onClose={() => setFotoAmpliada(false)} title="Foto de prueba" width="lg">
+        {fotoUrl && (
+          <div className="flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={fotoUrl} alt="Foto de prueba de la tarea" className="max-h-[75vh] w-auto rounded-lg object-contain" />
+          </div>
+        )}
       </Modal>
 
       {task.isChecklist && (

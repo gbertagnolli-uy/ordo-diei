@@ -183,6 +183,11 @@ model Tarea {
   isChecklist    Boolean         @default(false) @map("Is_Checklist")
   checklistItems ChecklistItem[]
 
+  // Foto de prueba: si está activa, el asignado debe subir una foto antes de completar
+  requiereFotoPrueba Boolean   @default(false) @map("Requiere_Foto_Prueba")
+  fotoPruebaUrl      String?   @map("Foto_Prueba_URL")
+  fotoPruebaSubidaEn DateTime? @map("Foto_Prueba_Subida_En")
+
   // Homeschooling: día lectivo que esta tarea materializa
   diaLectivo DiaLectivo? @relation("DiaLectivoTarea")
 

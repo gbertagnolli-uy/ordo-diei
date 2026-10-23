@@ -23,10 +23,12 @@ export function UserSelector({ users, onSelect }: Props) {
         <button
           key={user.id}
           onClick={() => onSelect(user)}
-          className="group flex w-28 flex-col items-center gap-3 rounded-2xl p-2 outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
+          title={user.nombre}
+          aria-label={user.nombre}
+          className="group flex flex-col items-center rounded-2xl p-2 outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
         >
           <div className="relative">
-            <Avatar className="size-24 ring-2 ring-white/10 ring-offset-4 ring-offset-transparent transition-all duration-300 group-hover:ring-primary group-hover:shadow-[0_0_32px_-4px] group-hover:shadow-primary/60">
+            <Avatar className="size-24 sm:size-28 ring-2 ring-white/10 ring-offset-4 ring-offset-transparent transition-all duration-300 group-hover:ring-primary group-hover:shadow-[0_0_32px_-4px] group-hover:shadow-primary/60">
               <AvatarImage src={user.fotoUrl ?? undefined} alt={user.nombre} className="object-cover" />
               <AvatarFallback className="bg-gradient-to-br from-[#C4956A] to-[#703607] text-3xl font-semibold text-white">
                 {user.nombre.charAt(0).toUpperCase()}
@@ -42,7 +44,7 @@ export function UserSelector({ users, onSelect }: Props) {
               </span>
             )}
           </div>
-          <span className="text-sm font-medium text-foreground/80 transition-colors group-hover:text-foreground">{user.nombre}</span>
+          <span className="sr-only">{user.nombre}</span>
         </button>
       ))}
     </div>
