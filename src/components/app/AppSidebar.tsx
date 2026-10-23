@@ -8,6 +8,7 @@ import {
   AlarmClock,
   CalendarCheck,
   CalendarClock,
+  CalendarDays,
   CheckCircle2,
   Church,
   Gift,
@@ -140,6 +141,18 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>Rutina</SidebarGroupLabel>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/agenda" || pathname === "/agenda-del-dia"}
+                tooltip="Agenda del Día"
+              >
+                <Link href="/agenda">
+                  <CalendarDays />
+                  <span>Agenda del Día</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
