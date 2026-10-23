@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2, ArrowUp, ArrowDown, Repeat } from "lucide-react";
+import { Clock, Calendar, Trophy, Gift, RefreshCw, Globe, Users, ListChecks, Plus, Trash2, ArrowUp, ArrowDown, Repeat, Camera } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,6 +96,9 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
     isEdit && task.checklistItems ? task.checklistItems.map((ci: any) => ci.texto) : []
   );
   const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [requiereFotoPrueba, setRequiereFotoPrueba] = useState<boolean>(
+    isEdit ? Boolean(task.requiereFotoPrueba) : false
+  );
   const [dificultad, setDificultad] = useState<Dificultad>(isEdit ? (task.dificultad || DIFICULTAD_DEFAULT) : DIFICULTAD_DEFAULT);
   const [minutos, setMinutos] = useState<string>(isEdit ? String(Math.floor(task.tiempoEjecucionEstimadoSeg / 60)) : "");
 
@@ -222,6 +225,7 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
       dificultad,
       isSurpriseEligible: sorpresa,
       checklistItems: isChecklist ? checklistItems.filter(i => i.trim()) : [],
+      requiereFotoPrueba,
       rotacionConfig,
     };
 
@@ -732,6 +736,24 @@ export default function TaskForm({ users, task, onSuccess, isModal = false }: Ta
               </div>
             </div>
           )}
+        </div>
+
+        {/* Foto de prueba */}
+        <div className="rounded-lg border bg-muted/40 p-4">
+          <Field orientation="horizontal">
+            <Camera className="size-5 shrink-0 text-primary" />
+            <FieldContent>
+              <FieldLabel htmlFor={fid("foto-prueba")}>¿Exige foto de prueba?</FieldLabel>
+              <FieldDescription>
+                Quien haga la tarea deberá sacar o subir una foto antes de marcarla como completada.
+              </FieldDescription>
+            </FieldContent>
+            <Switch
+              id={fid("foto-prueba")}
+              checked={requiereFotoPrueba}
+              onCheckedChange={setRequiereFotoPrueba}
+            />
+          </Field>
         </div>
 
         {/* Surprise toggle */}

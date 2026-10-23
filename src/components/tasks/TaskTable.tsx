@@ -1,10 +1,11 @@
 "use client";
 
-import { ListChecks, Repeat } from "lucide-react";
+import { Camera, ListChecks, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { normalizarRotacionConfig } from "@/lib/rotacionTarea";
+import { fotoPruebaPendiente } from "@/lib/tareas/fotoPrueba";
 import { StatusBadge } from "./primitives";
 import { checklistProgress, formatDue, formatDuration, isLate, isUrgent, pointsLabel, statusInfo } from "./taskUtils";
 
@@ -43,7 +44,7 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
                   >
                     {task.titulo}
                   </button>
-                  {(esRotativa || (task.isChecklist && checklist.total > 0)) && (
+                  {(esRotativa || (task.isChecklist && checklist.total > 0) || task.requiereFotoPrueba) && (
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
                       {esRotativa && (
                         <span className="inline-flex items-center gap-1 text-primary">
@@ -53,6 +54,11 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
                       {task.isChecklist && checklist.total > 0 && (
                         <span className="inline-flex items-center gap-1">
                           <ListChecks className="size-3" /> {checklist.done}/{checklist.total}
+                        </span>
+                      )}
+                      {task.requiereFotoPrueba && (
+                        <span className={cn("inline-flex items-center gap-1", fotoPruebaPendiente(task) && "text-[var(--warning)]")}>
+                          <Camera className="size-3" /> {fotoPruebaPendiente(task) ? "Falta foto" : "Foto"}
                         </span>
                       )}
                     </div>
@@ -97,6 +103,11 @@ export function TaskTable({ tasks, selectedId, onSelect }: { tasks: any[]; selec
                     </span>
                   )}
                   {isUrgent(task) && !isLate(task) && <Badge variant="secondary" className="h-5">Urgente</Badge>}
+                  {task.requiereFotoPrueba && (
+                    <span className={cn("inline-flex items-center gap-1", fotoPruebaPendiente(task) && "font-medium text-[var(--warning)]")}>
+                      <Camera className="size-3" /> {fotoPruebaPendiente(task) ? "Falta foto" : "Foto"}
+                    </span>
+                  )}
                   <span className={cn("tabular-nums", isLate(task) && "font-medium text-destructive")}>{formatDue(task) ?? "Sin fecha"}</span>
                   {task.generaPuntosYRecompensa && <span className="font-medium text-secondary tabular-nums">{pointsLabel(task)}</span>}
                 </div>

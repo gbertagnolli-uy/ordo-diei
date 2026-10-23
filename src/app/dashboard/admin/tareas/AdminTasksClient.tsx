@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Plus,
   ListChecks,
+  Camera,
   Trash2,
   Users,
   Trophy,
@@ -662,6 +663,11 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
                                 {Array.isArray(t.checklistItems) && t.checklistItems.length > 0
                                   ? t.checklistItems.length
                                   : ""}
+                              </Badge>
+                            )}
+                            {t.requiereFotoPrueba && (
+                              <Badge variant="outline" className="h-5 gap-1 px-1.5 text-[11px]" title="Exige foto de prueba">
+                                <Camera className="size-3 text-primary" /> Foto
                               </Badge>
                             )}
                             {!t.generaPuntosYRecompensa && (
