@@ -195,4 +195,23 @@ test("obtenerOrdenOracionesRosario: devuelve las oraciones iniciales, de cada de
   );
 });
 
+test("RosariumFullscreen: imagen del misterio con brillo pleno, sin velos ni reducción de opacidad", () => {
+  const rutaComponente = path.resolve(
+    process.cwd(),
+    "src/components/liturgia/RosariumFullscreen.tsx"
+  );
+  assert.ok(fs.existsSync(rutaComponente), "RosariumFullscreen.tsx debe existir");
+  const codigo = fs.readFileSync(rutaComponente, "utf-8");
+
+  // No debe tener velos o gradientes oscuros que cubran la imagen quitándole brillo
+  assert.ok(!codigo.includes("bg-gradient-to-t from-black"), "No debe tener gradientes oscuros sobre la imagen");
+  assert.ok(!codigo.includes("radial-gradient(ellipse_at"), "No debe tener máscara radial oscura sobre la imagen");
+  assert.ok(!codigo.includes("opacity-50"), "No debe tener reducción de opacidad sobre la imagen");
+
+  // Debe usar el formato de carta estándar sin deformar y con proporción exacta
+  assert.ok(codigo.includes("aspect-[63/88]"), "Debe respetar la proporción exacta de carta (63:88)");
+  assert.ok(codigo.includes("object-contain"), "Debe mostrarse sin recortes (object-contain)");
+  assert.ok(codigo.includes("soloArte"), "Debe soportar alternar modo de contemplación de solo arte");
+});
+
 
