@@ -3,7 +3,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Minimize2, RotateCcw } from "lucide-react";
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
+  Minimize2,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Particles } from "@/components/ui/particles";
 import { FUENTE_LECTURAS, type MisterioEnSecuencia } from "@/lib/liturgia/rosario";
@@ -19,12 +27,13 @@ interface RosariumFullscreenProps {
 }
 
 /**
- * Vista en pantalla completa del Santo Rosario (inspirada en ReposoPantalla / salvapantallas):
+ * Vista en pantalla completa del Santo Rosario:
  * - Se monta en `document.body` con `z-[9999]` y pide Fullscreen nativo sobre su propio nodo para cubrir el Dock y toda la interfaz.
- * - Imagen de la carta del misterio actual de fondo con transición suave.
- * - Título del misterio en latín en tipografía destacada.
- * - Debajo, la cita y lectura de la Vulgata Clementina en texto más chico.
- * - Botón para avanzar al siguiente misterio (tanto en el modo de 5 misterios del día como en el de 15 misterios completos).
+ * - La imagen de la carta del misterio se muestra destacada, con 100% de opacidad, sin ningún velo,
+ *   gradiente oscuro ni superposición que le quite brillo o presencia a la obra de arte.
+ * - En pantallas panorámicas/escritorio, se organiza en dos columnas (imagen destacada + textos de contemplación).
+ * - En móviles/verticales, se organiza en una columna con la imagen arriba y las lecturas debajo sin taparla.
+ * - Incluye toggle para contemplar "Solo arte" maximizado o "Con lecturas" (atajo tecla I).
  */
 export function RosariumFullscreen({
   misterios,
@@ -39,6 +48,7 @@ export function RosariumFullscreen({
   const [indice, setIndice] = useState(() =>
     Math.max(0, Math.min(misterios.length - 1, indiceInicial)),
   );
+  const [soloArte, setSoloArte] = useState(false);
   const [imagenesConError, setImagenesConError] = useState<Record<string, boolean>>({});
 
   const misterioActual = misterios[indice] ?? misterios[0];
@@ -61,6 +71,10 @@ export function RosariumFullscreen({
   const irAnterior = useCallback(() => {
     irA(indice - 1);
   }, [indice, irA]);
+
+  const alternarSoloArte = useCallback(() => {
+    setSoloArte((prev) => !prev);
+  }, []);
 
   const salir = useCallback(() => {
     if (typeof document !== "undefined" && document.fullscreenElement) {
@@ -94,9 +108,13 @@ export function RosariumFullscreen({
     };
   }, [onSalir]);
 
-  // Navegación por teclado (Flechas, Espacio, Escape)
+  // Navegación por teclado (Flechas, Espacio, Escape, I para alternar solo imagen)
   useEffect(() => {
     const alPresionarTecla = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
       if (e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
         irSiguiente();
@@ -106,12 +124,15 @@ export function RosariumFullscreen({
       } else if (e.key === "Escape") {
         e.preventDefault();
         salir();
+      } else if (e.key === "i" || e.key === "I") {
+        e.preventDefault();
+        alternarSoloArte();
       }
     };
 
     window.addEventListener("keydown", alPresionarTecla);
     return () => window.removeEventListener("keydown", alPresionarTecla);
-  }, [irSiguiente, irAnterior, salir]);
+  }, [irSiguiente, irAnterior, salir, alternarSoloArte]);
 
   if (!misterioActual || typeof document === "undefined") return null;
 
@@ -125,82 +146,46 @@ export function RosariumFullscreen({
       aria-label={`Contemplación en pantalla completa: ${misterioActual.latino}`}
       className="fixed inset-0 z-[9999] flex flex-col justify-between overflow-hidden bg-black text-white select-none"
     >
-      {/* 1. Fondo con la imagen de la carta del misterio (estilo screensaver) */}
-      <div className="absolute inset-0 overflow-hidden bg-black pointer-events-none">
-        <AnimatePresence mode="popLayout">
-          {urlImagen && !falloImagen ? (
-            <motion.div
-              key={`${misterioActual.claveCarta}-${indice}`}
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: 1,
-                scale: reduceMotion ? 1 : [1, 1.06],
-                transition: {
-                  opacity: { duration: reduceMotion ? 0.25 : 1.1, ease: "easeInOut" },
-                  scale: { duration: 22, ease: "linear" },
-                },
-              }}
-              exit={{
-                opacity: 0,
-                transition: { duration: reduceMotion ? 0.2 : 0.8, ease: "easeInOut" },
-              }}
-              className="absolute inset-0 size-full"
-            >
-              {/* Capa atmosférica difuminada para cubrir monitores panorámicos */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={urlImagen}
-                alt=""
-                role="presentation"
-                className="absolute inset-0 size-full object-cover blur-2xl scale-110 opacity-50"
-                onError={() =>
-                  setImagenesConError((prev) => ({ ...prev, [misterioActual.claveCarta]: true }))
-                }
-              />
-
-              {/* Ilustración completa de la carta */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={urlImagen}
-                alt={misterioActual.latino}
-                className="relative z-10 size-full object-cover sm:object-contain sm:object-right lg:pr-[6%] drop-shadow-[0_12px_40px_rgba(0,0,0,0.9)]"
-                onError={() =>
-                  setImagenesConError((prev) => ({ ...prev, [misterioActual.claveCarta]: true }))
-                }
-              />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-
-        {/* Respaldo de partículas doradas si falla la imagen */}
-        {(!urlImagen || falloImagen) && (
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#352216_0%,#1A1410_55%,#0A0604_100%)]">
-            <Particles className="absolute inset-0" quantity={90} ease={80} color="#C9A84C" refresh />
-          </div>
-        )}
-
-        {/* Velos de legibilidad idénticos al salvapantallas */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/85 via-black/40 to-black/65 pointer-events-none" />
-        <div className="absolute inset-0 z-20 bg-[radial-gradient(ellipse_at_24%_50%,rgba(0,0,0,0.78)_0%,transparent_75%)] pointer-events-none" />
-      </div>
-
-      {/* 2. Contenido superpuesto (Cabecera, Misterio + Vulgata, Controles) */}
-      <div className="relative z-30 flex size-full flex-col justify-between px-6 py-7 sm:px-10 sm:py-9">
-        {/* Cabecera: Logo e información de la corona a la izquierda, botón salir a la derecha */}
-        <div className="flex w-full shrink-0 items-start justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-primary font-heading text-sm font-bold text-primary-foreground shadow-md">
-              OD
+      {/* 1. Cabecera fija superior: información y acciones */}
+      <header className="relative z-30 flex w-full shrink-0 items-center justify-between gap-4 px-5 py-4 sm:px-8 sm:py-5 border-b border-white/10 bg-black/80 backdrop-blur-md">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-xs sm:text-sm font-bold text-primary-foreground shadow-md">
+            OD
+          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-heading text-xs sm:text-sm md:text-base font-semibold tracking-wide text-white/95 truncate">
+              {tituloModo}
             </span>
-            <div className="flex flex-col">
-              <span className="font-heading text-sm sm:text-base font-semibold tracking-wide text-white/95 drop-shadow">
-                {tituloModo}
-              </span>
-              <span className="text-xs text-white/70 font-serif italic">
-                {misterioActual.grupoLatino} · Mysterium {misterioActual.numeroRomano} ({indice + 1} de {misterios.length})
-              </span>
-            </div>
+            <span className="text-[11px] sm:text-xs text-amber-300/80 font-serif italic truncate">
+              {misterioActual.grupoLatino} · Mysterium {misterioActual.numeroRomano} ({indice + 1} de {misterios.length})
+            </span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={alternarSoloArte}
+            aria-label={soloArte ? "Mostrar lecturas del misterio" : "Ver solo la imagen del misterio"}
+            title="Atajo: tecla I"
+            className="rounded-full border-white/20 bg-white/5 px-3 sm:px-4 text-xs font-medium text-white hover:bg-white/20 hover:text-white cursor-pointer"
+          >
+            {soloArte ? (
+              <>
+                <BookOpen className="size-3.5 mr-1.5 text-amber-300" />
+                <span className="hidden sm:inline">Con lecturas</span>
+                <span className="sm:hidden">Lecturas</span>
+              </>
+            ) : (
+              <>
+                <ImageIcon className="size-3.5 mr-1.5 text-amber-300" />
+                <span className="hidden sm:inline">Solo imagen</span>
+                <span className="sm:hidden">Imagen</span>
+              </>
+            )}
+          </Button>
 
           <Button
             type="button"
@@ -208,111 +193,189 @@ export function RosariumFullscreen({
             size="sm"
             onClick={salir}
             aria-label="Salir de pantalla completa"
-            className="rounded-full border-white/30 bg-black/45 px-4 text-xs font-medium text-white backdrop-blur-md hover:bg-white/20 hover:text-white cursor-pointer"
+            title="Atajo: Escape"
+            className="rounded-full border-white/20 bg-white/5 px-3.5 sm:px-4 text-xs font-medium text-white hover:bg-white/20 hover:text-white cursor-pointer"
           >
-            <Minimize2 className="size-3.5 mr-1.5" />
-            Salir
+            <Minimize2 className="size-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline">Salir</span>
           </Button>
         </div>
+      </header>
 
-        {/* Zona central: Título del misterio en latín y debajo la cita de la Vulgata en texto más chico */}
-        <div className="my-auto flex min-h-0 flex-1 items-center w-full max-w-4xl py-4 pl-[2%] sm:pl-[6%]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`texto-${misterioActual.claveCarta}-${indice}`}
-              initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
-              animate={{ opacity: 1, y: 0, transition: { duration: reduceMotion ? 0.25 : 0.6, ease: "easeOut" } }}
-              exit={{ opacity: 0, transition: { duration: reduceMotion ? 0.2 : 0.35, ease: "easeIn" } }}
-              className="flex flex-col text-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] max-h-full overflow-y-auto pr-2"
+      {/* 2. Zona central de contemplación */}
+      <main className="relative z-20 flex min-h-0 flex-1 w-full items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${misterioActual.claveCarta}-${indice}-${soloArte ? "solo" : "completo"}`}
+            initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              transition: { duration: reduceMotion ? 0.2 : 0.45, ease: "easeOut" },
+            }}
+            exit={{
+              opacity: 0,
+              scale: reduceMotion ? 1 : 1.01,
+              transition: { duration: reduceMotion ? 0.15 : 0.3, ease: "easeIn" },
+            }}
+            className={cn(
+              "size-full flex items-center justify-center min-h-0",
+              soloArte
+                ? "flex-col"
+                : "flex-col md:flex-row gap-6 md:gap-10 lg:gap-14 max-w-7xl mx-auto",
+            )}
+          >
+            {/* Panel de la Imagen de la Carta: 100% de brillo, sin velos ni superposiciones */}
+            <div
+              className={cn(
+                "relative flex items-center justify-center shrink-0 min-h-0",
+                soloArte
+                  ? "h-full max-h-[82vh] w-auto max-w-full"
+                  : "h-auto max-h-[44vh] md:max-h-[75vh] lg:max-h-[80vh] w-auto max-w-full md:max-w-[48%]",
+              )}
             >
-              {/* Corona y número romano */}
-              <div className="mb-2 flex flex-wrap items-center gap-2 font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-amber-300/90 font-semibold">
-                <span>
-                  {misterioActual.grupoLatino} · {misterioActual.numeroRomano}
-                </span>
-                {misterios.length > 5 && (
-                  <span className="text-white/60">
-                    ({misterioActual.romanoGlobal} / XV)
-                  </span>
-                )}
-              </div>
+              {urlImagen && !falloImagen ? (
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center h-full aspect-[63/88] max-h-full",
+                  )}
+                >
+                  {/* Resplandor cálido detrás de la carta (nunca encima) para resaltar su presencia */}
+                  <div className="absolute -inset-2 sm:-inset-4 rounded-3xl bg-amber-500/15 blur-2xl pointer-events-none" />
 
-              {/* N1: Título del misterio en latín */}
-              <h2
-                lang="la"
-                className="font-serif italic text-white text-balance leading-tight max-w-[38ch] text-[clamp(1.65rem,min(1.15rem+2.3vw,4.4dvh),3.1rem)] font-semibold"
-              >
-                {misterioActual.numeroRomano}. {misterioActual.latino}
-              </h2>
-
-              {/* N2: Debajo, la cita de la Vulgata en texto más chico */}
-              <div className="mt-4 sm:mt-5 space-y-2.5 max-w-[60ch]">
-                {misterioActual.lecturas.map((lectura) => (
-                  <p
-                    key={lectura.ref}
-                    lang="la"
-                    className="font-serif not-italic text-white/90 text-balance leading-relaxed text-[clamp(0.95rem,min(0.8rem+0.85vw,2.2dvh),1.25rem)]"
-                  >
-                    {lectura.la}
+                  {/* Ilustración de la carta: 100% opacidad, brillo pleno, sin velos ni máscaras oscuras */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={urlImagen}
+                    alt={`${misterioActual.latino} - ${misterioActual.castellano}`}
+                    className="relative z-10 size-full object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] ring-1 ring-amber-400/30 select-none"
+                    onError={() =>
+                      setImagenesConError((prev) => ({
+                        ...prev,
+                        [misterioActual.claveCarta]: true,
+                      }))
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-amber-500/30 rounded-2xl bg-amber-950/20 max-w-sm aspect-[63/88]">
+                  <Sparkles className="size-12 text-amber-400/60 mb-3" />
+                  <p className="text-amber-200/80 font-serif italic text-sm">
+                    {misterioActual.latino}
                   </p>
-                ))}
+                  <Particles className="absolute inset-0" quantity={40} color="#C9A84C" />
+                </div>
+              )}
+            </div>
+
+            {/* Panel de Textos Contemplativos (se oculta en modo soloArte) */}
+            {!soloArte && (
+              <div className="flex-1 min-w-0 max-w-2xl flex flex-col justify-center min-h-0 max-h-full overflow-y-auto pr-1 sm:pr-3 text-left">
+                {/* Corona y número romano */}
+                <div className="mb-2 flex flex-wrap items-center gap-2 font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-amber-300 font-semibold">
+                  <span>
+                    {misterioActual.grupoLatino} · Mysterium {misterioActual.numeroRomano}
+                  </span>
+                  {misterios.length > 5 && (
+                    <span className="text-white/60">
+                      ({misterioActual.romanoGlobal} / XV)
+                    </span>
+                  )}
+                </div>
+
+                {/* Título en latín */}
+                <h2
+                  lang="la"
+                  className="font-serif italic text-white font-semibold leading-tight text-balance text-2xl sm:text-3xl lg:text-4xl drop-shadow-md"
+                >
+                  {misterioActual.numeroRomano}. {misterioActual.latino}
+                </h2>
+
+                {/* Título en castellano y fruto espiritual */}
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm sm:text-base font-sans font-medium text-amber-100/90">
+                    {misterioActual.castellano}
+                  </p>
+                  <p className="text-xs sm:text-sm font-serif italic text-amber-300/85">
+                    Fructus mysterii: {misterioActual.fruto}
+                  </p>
+                </div>
+
+                {/* Lecturas de la Vulgata Clementina */}
+                <div className="mt-4 sm:mt-5 space-y-2.5">
+                  {misterioActual.lecturas.map((lectura) => (
+                    <p
+                      key={lectura.ref}
+                      lang="la"
+                      className="font-serif not-italic text-white/95 leading-relaxed text-sm sm:text-base lg:text-lg text-balance drop-shadow-xs"
+                    >
+                      {lectura.la}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Referencia bíblica de la Vulgata */}
+                <div
+                  lang="la"
+                  className="mt-3 sm:mt-4 font-sans uppercase tracking-[0.18em] text-white/60 text-xs sm:text-sm font-semibold"
+                >
+                  {misterioActual.cita} · {FUENTE_LECTURAS}
+                </div>
               </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
-              {/* N3: Referencia bíblica de la Vulgata */}
-              <div
-                lang="la"
-                className="mt-3 sm:mt-4 font-sans uppercase tracking-[0.18em] text-white/70 text-xs sm:text-sm font-semibold"
-              >
-                {misterioActual.cita} · {FUENTE_LECTURAS}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Zona inferior: Botones para cambiar de misterio */}
-        <div className="flex w-full shrink-0 flex-wrap items-center justify-center gap-3 sm:gap-4 mb-1 sm:mb-2">
-          {indice > 0 && (
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              onClick={irAnterior}
-              aria-label="Misterio anterior"
-              className="min-h-[48px] rounded-full border-white/25 bg-black/40 px-6 py-3 text-sm font-medium text-white shadow-xl backdrop-blur-md transition-all hover:bg-white/15 hover:text-white cursor-pointer"
-            >
-              <ChevronLeft className="size-4 mr-1" />
-              Anterior
-            </Button>
-          )}
-
-          <span className="px-3 font-mono text-xs sm:text-sm text-white/80 tabular-nums">
-            {indice + 1} / {misterios.length}
-          </span>
-
+      {/* 3. Barra inferior de navegación */}
+      <footer className="relative z-30 flex w-full shrink-0 flex-wrap items-center justify-center gap-3 sm:gap-4 px-4 py-3 sm:py-4 border-t border-white/10 bg-black/80 backdrop-blur-md">
+        {indice > 0 && (
           <Button
             type="button"
             size="lg"
             variant="outline"
-            onClick={irSiguiente}
-            aria-label={esUltimo ? "Volver al primer misterio" : "Siguiente misterio"}
-            className={cn(
-              "min-h-[48px] min-w-[190px] rounded-full border-white/35 bg-black/50 px-8 py-3 text-base font-medium text-white shadow-2xl backdrop-blur-md transition-all hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer",
-            )}
+            onClick={irAnterior}
+            aria-label="Misterio anterior"
+            className="min-h-[44px] rounded-full border-white/20 bg-white/5 px-5 py-2.5 text-xs sm:text-sm font-medium text-white shadow-xl backdrop-blur-md transition-all hover:bg-white/20 hover:text-white cursor-pointer"
           >
-            {esUltimo ? (
-              <>
-                <RotateCcw className="size-4 mr-2" />
-                Volver al I misterio
-              </>
-            ) : (
-              <>
-                Siguiente misterio
-                <ChevronRight className="size-4 ml-1.5" />
-              </>
-            )}
+            <ChevronLeft className="size-4 mr-1 text-amber-300" />
+            Anterior
           </Button>
+        )}
+
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs sm:text-sm font-mono text-white/90 tabular-nums">
+          <span className="text-amber-300 font-semibold font-serif">
+            {misterioActual.numeroRomano}
+          </span>
+          <span className="text-white/40">·</span>
+          <span>
+            {indice + 1} / {misterios.length}
+          </span>
         </div>
-      </div>
+
+        <Button
+          type="button"
+          size="lg"
+          variant="outline"
+          onClick={irSiguiente}
+          aria-label={esUltimo ? "Volver al primer misterio" : "Siguiente misterio"}
+          className={cn(
+            "min-h-[44px] min-w-[170px] sm:min-w-[190px] rounded-full border-amber-400/40 bg-amber-500/10 px-6 sm:px-8 py-2.5 text-xs sm:text-sm font-medium text-white shadow-2xl backdrop-blur-md transition-all hover:bg-amber-500/25 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer",
+          )}
+        >
+          {esUltimo ? (
+            <>
+              <RotateCcw className="size-4 mr-2 text-amber-300" />
+              Volver al I misterio
+            </>
+          ) : (
+            <>
+              Siguiente misterio
+              <ChevronRight className="size-4 ml-1.5 text-amber-300" />
+            </>
+          )}
+        </Button>
+      </footer>
     </div>
   );
 
