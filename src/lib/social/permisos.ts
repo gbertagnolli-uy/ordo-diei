@@ -29,22 +29,31 @@ export function puedeFijar(actor: Actor): boolean {
   return esPadre(actor.rol);
 }
 
-const normalizar = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+/** El «username» de OpenCircle para un integrante de Ordo (D12): «Ana Prueba» → «ana_prueba». */
+export function usernameDe(nombre: string): string {
+  const u = nombre
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return u || "usuario";
+}
 
 /**
- * Ids de los usuarios mencionados con `@Nombre` (sin distinguir mayúsculas ni tildes).
- * Gana el nombre más largo («@Juan Pablo» antes que «@Juan»), sin duplicados y sin el autor.
+ * Ids de los usuarios mencionados con `@username` (como en OpenCircle: `@(\w+)`, D12), en el orden en que
+ * aparecen, sin duplicados y sin el autor. Si dos integrantes tienen el mismo username, gana el de id menor.
  */
 export function extraerMenciones(texto: string, usuarios: { id: number; nombre: string }[], autorId: number): number[] {
-  let resto = normalizar(texto);
+  const porUsername = new Map<string, number>();
+  for (const u of [...usuarios].sort((a, b) => a.id - b.id)) {
+    const clave = usernameDe(u.nombre);
+    if (!porUsername.has(clave)) porUsername.set(clave, u.id);
+  }
   const ids: number[] = [];
-  const porLargo = [...usuarios].sort((a, b) => b.nombre.length - a.nombre.length);
-  for (const u of porLargo) {
-    const nombre = normalizar(u.nombre).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`@${nombre}(?![\\p{L}\\p{N}_])`, "gu");
-    if (!re.test(resto)) continue;
-    resto = resto.replace(re, " ");
-    if (u.id !== autorId && !ids.includes(u.id)) ids.push(u.id);
+  for (const m of texto.matchAll(/@(\w+)/g)) {
+    const id = porUsername.get(m[1].toLowerCase());
+    if (id !== undefined && id !== autorId && !ids.includes(id)) ids.push(id);
   }
   return ids;
 }

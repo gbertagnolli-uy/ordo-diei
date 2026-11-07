@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { extraerMenciones, puedeBorrarPost, puedeEditarPost, puedeFijar, puedeVerCanal } from "./permisos.ts";
+import { extraerMenciones, puedeBorrarPost, puedeEditarPost, puedeFijar, puedeVerCanal, usernameDe } from "./permisos.ts";
 
 const papa = { id: 1, rol: "Padre" };
 const mama = { id: 2, rol: "Madre" };
@@ -36,18 +36,27 @@ test("puedeFijar: solo padres", () => {
   assert.equal(puedeFijar({ id: 9 }), false);
 });
 
-test("extraerMenciones: nombres, tildes, más largo primero, sin duplicados ni autor", () => {
+test("usernameDe: sin tildes, minúsculas, guiones bajos", () => {
+  assert.equal(usernameDe("Ana Prueba"), "ana_prueba");
+  assert.equal(usernameDe("Mamá"), "mama");
+  assert.equal(usernameDe("  José-María  Núñez "), "jose_maria_nunez");
+  assert.equal(usernameDe("¡¿?!"), "usuario");
+});
+
+test("extraerMenciones: @username en orden, sin duplicados ni autor", () => {
   const usuarios = [
     { id: 3, nombre: "Juan" },
     { id: 5, nombre: "Juan Pablo" },
     { id: 4, nombre: "Ana" },
     { id: 2, nombre: "Mamá" },
+    { id: 9, nombre: "Ána" },
   ];
-  assert.deepEqual(extraerMenciones("Hola @Ana y @ana otra vez", usuarios, 1), [4]);
-  assert.deepEqual(extraerMenciones("@Juan Pablo vino", usuarios, 1), [5]);
-  assert.deepEqual(extraerMenciones("@Juan Pablo y @Juan", usuarios, 1).sort(), [3, 5]);
+  assert.deepEqual(extraerMenciones("Hola @ana y @Ana otra vez", usuarios, 1), [4]);
+  assert.deepEqual(extraerMenciones("@juan_pablo y @juan", usuarios, 1), [5, 3]);
   assert.deepEqual(extraerMenciones("Gracias @mama!", usuarios, 1), [2]);
-  assert.deepEqual(extraerMenciones("Yo @Ana", usuarios, 4), []);
-  assert.deepEqual(extraerMenciones("@Anabel no existe", usuarios, 1), []);
+  assert.deepEqual(extraerMenciones("Yo @ana", usuarios, 4), []);
+  assert.deepEqual(extraerMenciones("@anabel no existe", usuarios, 1), []);
+  assert.deepEqual(extraerMenciones("correo a@ana.com", usuarios, 1), [4]); // igual que OpenCircle
+  assert.deepEqual(extraerMenciones("@ana", [{ id: 9, nombre: "Ána" }, { id: 4, nombre: "Ana" }], 1), [4]); // mismo username: id menor
   assert.deepEqual(extraerMenciones("sin menciones", usuarios, 1), []);
 });
