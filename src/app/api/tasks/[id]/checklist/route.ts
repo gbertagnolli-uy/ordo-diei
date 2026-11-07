@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { puedeCambiarItem } from "@/lib/tareas/checklistCompartido";
 
 // GET /api/tasks/[id]/checklist — Get all checklist items
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,16 +14,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const taskId = Number(id);
 
-    const items = await prisma.checklistItem.findMany({
-      where: { tareaId: taskId },
-      orderBy: { orden: "asc" }
-    });
+    const [tarea, items] = await Promise.all([
+      prisma.tarea.findUnique({ where: { id: taskId }, select: { grupoTareaId: true } }),
+      prisma.checklistItem.findMany({
+        where: { tareaId: taskId },
+        orderBy: { orden: "asc" },
+        include: { completadoPor: { select: { id: true, nombre: true, fotoUrl: true } } },
+      }),
+    ]);
 
     const total = items.length;
     const completados = items.filter(i => i.completado).length;
     const porcentaje = total > 0 ? Math.round((completados / total) * 100) : 0;
 
-    return NextResponse.json({ items, total, completados, porcentaje });
+    return NextResponse.json({ items, total, completados, porcentaje, compartida: Boolean(tarea?.grupoTareaId) });
   } catch (error) {
     console.error("Checklist GET Error:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
@@ -70,17 +75,35 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     if (action === "toggle" && itemId) {
-      // Toggle completion of an item
-      const updated = await prisma.checklistItem.update({
-        where: { id: Number(itemId) },
-        data: { completado: completado !== undefined ? Boolean(completado) : undefined }
+      const item = await prisma.checklistItem.findFirst({ where: { id: Number(itemId), tareaId: taskId } });
+      if (!item) return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
+      const pedido = completado !== undefined ? Boolean(completado) : !item.completado;
+      const compartida = Boolean(task.grupoTareaId);
+      const decision = puedeCambiarItem({ compartida, completadoActual: item.completado, completadoPedido: pedido });
+      if (!decision.ok) return NextResponse.json({ error: decision.error }, { status: decision.status });
+
+      if (!decision.sinCambios) {
+        const autor = pedido ? { completadoPorId: Number(session.user.id), completadoEn: new Date() } : { completadoPorId: null, completadoEn: null };
+        if (compartida && pedido) {
+          // Global (lane 265): se marca en todas las copias del grupo; el primero que marca queda como autor
+          const copias = await prisma.tarea.findMany({ where: { grupoTareaId: task.grupoTareaId }, select: { id: true } });
+          await prisma.checklistItem.updateMany({
+            where: { tareaId: { in: copias.map((c) => c.id) }, orden: item.orden, texto: item.texto, completado: false },
+            data: { completado: true, ...autor },
+          });
+        } else {
+          await prisma.checklistItem.update({ where: { id: item.id }, data: { completado: pedido, ...autor } });
+        }
+      }
+
+      const allItems = await prisma.checklistItem.findMany({
+        where: { tareaId: taskId },
+        orderBy: { orden: "asc" },
+        include: { completadoPor: { select: { id: true, nombre: true, fotoUrl: true } } },
       });
-
-      // Check if all items are completed (business rule: computed completion)
-      const allItems = await prisma.checklistItem.findMany({ where: { tareaId: taskId } });
-      const allDone = allItems.length > 0 && allItems.every(i => i.completado);
-
-      return NextResponse.json({ ok: true, item: updated, allCompleted: allDone, total: allItems.length, completados: allItems.filter(i => i.completado).length });
+      const updated = allItems.find((i) => i.id === item.id);
+      const allDone = allItems.length > 0 && allItems.every((i) => i.completado);
+      return NextResponse.json({ ok: true, item: updated, items: allItems, allCompleted: allDone, total: allItems.length, completados: allItems.filter((i) => i.completado).length });
     }
 
     if (action === "delete" && itemId) {
