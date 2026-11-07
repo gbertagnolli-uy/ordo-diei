@@ -2,7 +2,7 @@
 //   src/data/reposo/citas-biblicas.json   latín (Vulgata Clementina) + español (Torres Amat) + referencia
 //   src/data/reposo/catecismo-pio-x.json  Catecismo Mayor de San Pío X completo (el filtro de largo es del mazo)
 // Nunca se tipea un versículo a mano: salen de las fuentes descargadas (`scripts/reposo/descargar-fuentes.sh`) y de
-// dos archivos curados en vault/nuevas-features/idle-marco-fotos/ref/:
+// dos archivos curados en scripts/reposo/ref/:
 //   seleccion-citas.txt          las referencias elegidas (D51)
 //   torres-amat-correcciones.txt «Libro cap,vers | texto»: corrige el OCR de un pasaje (reemplaza al extraído)
 //
@@ -28,7 +28,8 @@ import { cargarLibro, limpiarLatin, textoLatin, type LibroVulgata } from "./vulg
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const CACHE = join(RAIZ, ".cache", "reposo");
-const REF = join(RAIZ, "vault", "nuevas-features", "idle-marco-fotos", "ref");
+// Insumos curados (antes en el vault; el vault es global y fuera de git desde la lane 256)
+const REF = join(RAIZ, "scripts", "reposo", "ref");
 const SALIDA = join(RAIZ, "src", "data", "reposo");
 
 /** Largos máximos para que nada se corte ni haga scroll en el reposo (SPEC §4.3). */

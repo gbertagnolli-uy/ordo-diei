@@ -67,11 +67,14 @@ model Usuario {
   lastTaskCompletedDate DateTime? @map("Last_Task_Completed_Date")
   totalTasksCompleted   Int       @default(0) @map("Total_Tasks_Completed")
 
-  tareasCreadas     Tarea[]           @relation("TareasCreadas")
-  tareasAsignadas   Tarea[]           @relation("TareasAsignadas")
-  historialAcciones HistorialAccion[]
-  registrosAnimo    RegistroAnimo[]
-  premiosEntregados PremioEntregado[]
+  tareasCreadas        Tarea[]           @relation("TareasCreadas")
+  tareasAsignadas      Tarea[]           @relation("TareasAsignadas")
+  historialAcciones    HistorialAccion[]
+  checklistCompletados ChecklistItem[]   @relation("ChecklistCompletadoPor")
+  notasEspacio         NotaEspacio?      @relation("NotasEspacio")
+  notasPaginas         NotaPagina[]      @relation("NotasPaginas")
+  registrosAnimo       RegistroAnimo[]
+  premiosEntregados    PremioEntregado[]
 
   experienciaHabitos         Int                  @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
@@ -84,6 +87,7 @@ model Usuario {
   registrosHabito            RegistroHabito[]     @relation("RegistrosHabito")
   registrosHabitoHechos      RegistroHabito[]     @relation("RegistrosHabitoHechos")
   libros                     Libro[]
+  bibliotecaEstados          BibliotecaEstado[]   @relation("BibliotecaEstados")
   recompensas                Recompensa[]         @relation("Recompensas")
   recompensasEntregadas      Recompensa[]         @relation("RecompensasEntregadas")
   comportamientos            Comportamiento[]     @relation("ComportamientosHijo")
@@ -247,13 +251,17 @@ model ReglaHogar {
 }
 
 model ChecklistItem {
-  id         Int     @id @default(autoincrement())
-  tareaId    Int     @map("Tarea_ID")
-  texto      String
-  completado Boolean @default(false)
-  orden      Int     @default(0)
+  id              Int       @id @default(autoincrement())
+  tareaId         Int       @map("Tarea_ID")
+  texto           String
+  completado      Boolean   @default(false)
+  orden           Int       @default(0)
+  // Quién lo marcó (lane 265): en tareas compartidas se ve su foto y ya no se desmarca
+  completadoPorId Int?      @map("Completado_Por_ID")
+  completadoEn    DateTime? @map("Completado_En")
 
-  tarea Tarea @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  tarea         Tarea    @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  completadoPor Usuario? @relation("ChecklistCompletadoPor", fields: [completadoPorId], references: [id], onDelete: SetNull)
 
   @@map("Checklist_Items")
 }
@@ -306,6 +314,7 @@ enum CategoriaHabito {
   oracion
   orden
   cuidado
+  virtud // lane 257: práctica de virtudes
 }
 
 enum FranjaHabito {
@@ -414,6 +423,91 @@ model Libro {
 
   @@index([usuarioId, habitoId])
   @@map("Libros")
+}
+
+// ← Lane 270: Biblioteca (modelo de bookorbit/bookorbit@6ad1445 server/src/db/schema/{books,reader,collections}.ts, simplificado)
+enum EstadoBiblioteca {
+  sin_empezar
+  leyendo
+  leido
+}
+
+model BibliotecaLibro {
+  id           Int      @id @default(autoincrement())
+  titulo       String   @map("Titulo")
+  autor        String?  @map("Autor")
+  sinopsis     String?  @map("Sinopsis")
+  portadaUrl   String?  @map("Portada_URL")
+  esAudiolibro Boolean  @default(false) @map("Es_Audiolibro")
+  cargadoPorId Int?     @map("Cargado_Por_ID")
+  createdAt    DateTime @default(now()) @map("Created_At")
+  updatedAt    DateTime @updatedAt @map("Updated_At")
+
+  archivos BibliotecaArchivo[]
+  estantes BibliotecaEstanteLibro[]
+  estados  BibliotecaEstado[]
+
+  @@index([titulo])
+  @@map("Biblioteca_Libros")
+}
+
+model BibliotecaArchivo {
+  id          Int     @id @default(autoincrement())
+  libroId     Int     @map("Libro_ID")
+  url         String  @map("URL") // /api/archivos/<uuid> (≤ 4 MB) o /api/almacen/<clave> (LANE_277)
+  formato     String  @map("Formato") // epub | pdf | mp3 | m4b | m4a | ogg
+  bytes       Int?    @map("Bytes")
+  orden       Int     @default(0) @map("Orden") // pistas de audiolibro
+  titulo      String? @map("Titulo") // título de la pista / capítulo
+  duracionSeg Int?    @map("Duracion_Seg")
+
+  libro BibliotecaLibro @relation(fields: [libroId], references: [id], onDelete: Cascade)
+
+  @@index([libroId, orden])
+  @@map("Biblioteca_Archivos")
+}
+
+model BibliotecaEstante {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique @map("Nombre")
+  orden  Int    @default(0) @map("Orden")
+
+  libros BibliotecaEstanteLibro[]
+
+  @@map("Biblioteca_Estantes")
+}
+
+model BibliotecaEstanteLibro {
+  estanteId Int @map("Estante_ID")
+  libroId   Int @map("Libro_ID")
+
+  estante BibliotecaEstante @relation(fields: [estanteId], references: [id], onDelete: Cascade)
+  libro   BibliotecaLibro   @relation(fields: [libroId], references: [id], onDelete: Cascade)
+
+  @@id([estanteId, libroId])
+  @@map("Biblioteca_Estantes_Libros")
+}
+
+/// Estado y posición de lectura/escucha de un usuario en un libro (user_book_status + reading_progress + audiobook_progress)
+model BibliotecaEstado {
+  usuarioId   Int              @map("Usuario_ID")
+  libroId     Int              @map("Libro_ID")
+  estado      EstadoBiblioteca @default(sin_empezar) @map("Estado")
+  porcentaje  Float            @default(0) @map("Porcentaje")
+  cfi         String?          @map("CFI") // ePub
+  pagina      Int?             @map("Pagina") // PDF
+  archivoId   Int?             @map("Archivo_ID") // pista actual del audiolibro
+  posicionSeg Float?           @map("Posicion_Seg")
+  empezadoEn  DateTime?        @map("Empezado_En")
+  terminadoEn DateTime?        @map("Terminado_En")
+  updatedAt   DateTime         @updatedAt @map("Updated_At")
+
+  usuario Usuario         @relation("BibliotecaEstados", fields: [usuarioId], references: [id], onDelete: Cascade)
+  libro   BibliotecaLibro @relation(fields: [libroId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, libroId])
+  @@index([usuarioId, estado])
+  @@map("Biblioteca_Estados")
 }
 
 model Recompensa {
@@ -1546,6 +1640,19 @@ model ConfigReposo {
   @@map("Config_Reposo")
 }
 
+// ← Lane 259: rutina base de la familia, compartida por todos los dispositivos (una sola fila, id = 1).
+// Lo propio de cada dispositivo (sonido, ajuste del día, etapas cumplidas, metas) sigue en localStorage.
+model RutinaFamiliar {
+  id               Int      @id @default(1)
+  etapas           Json     @map("Etapas")
+  semanalConfig    Json     @map("Semanal_Config")
+  version          Int      @default(1) @map("Version")
+  actualizadoPorId Int?     @map("Actualizado_Por_ID")
+  actualizadoEn    DateTime @updatedAt @map("Actualizado_En")
+
+  @@map("Rutina_Familiar")
+}
+
 // ← Reposo v2 (R2): pool de fotos de Unsplash (se refresca en el cron diario)
 model FotoUnsplash {
   id              String   @id @map("Unsplash_ID")
@@ -1601,6 +1708,25 @@ model MetaSemanal {
   @@map("Metas_Semanales")
 }
 
+// Premio grupal (lane 274, Plane #33): si los hijos completan el % meta de sus tareas del período, cada uno recibe un vale.
+model PremioGrupal {
+  id              Int       @id @default(autoincrement())
+  titulo          String    @map("Titulo") // texto del vale: «Vale por …»
+  descripcion     String?   @map("Descripcion")
+  porcentajeMeta  Int       @map("Porcentaje_Meta")
+  desde           DateTime  @map("Desde") @db.Date
+  hasta           DateTime  @map("Hasta") @db.Date
+  activo          Boolean   @default(true) @map("Activo")
+  evaluadoEn      DateTime? @map("Evaluado_En")
+  cumplido        Boolean?  @map("Cumplido")
+  porcentajeFinal Int?      @map("Porcentaje_Final")
+  creadoPorId     Int?      @map("Creado_Por_ID")
+  createdAt       DateTime  @default(now()) @map("Created_At")
+
+  @@index([activo, desde])
+  @@map("Premios_Grupales")
+}
+
 // Compañero que evoluciona (vault/ENGAGEMENT_PLAN.md, lane 203): crece con los DÍAS DE USO (no con la racha),
 // así que faltar nunca lo achica. Solo guarda lo que elige el niño; la etapa se calcula con `ActividadDia`.
 model Companero {
@@ -1649,4 +1775,29 @@ model SuscripcionPush {
 
   @@index([usuarioId])
   @@map("Suscripciones_Push")
+}
+
+// ← Lane 271: bloc de notas (migrado de dovli). Página entera en JSON; `rev` crece por usuario (protocolo de sync de dovli).
+model NotaEspacio {
+  usuarioId Int @id @map("Usuario_ID")
+  ultimaRev Int @default(0) @map("Ultima_Rev")
+
+  usuario Usuario @relation("NotasEspacio", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("Notas_Espacios")
+}
+
+model NotaPagina {
+  id        String   @map("ID") // id de página de dovli (nanoid)
+  usuarioId Int      @map("Usuario_ID")
+  rev       Int      @map("Rev")
+  datos     Json?    @map("Datos") // Page de dovli; null = borrada para siempre
+  purgada   Boolean  @default(false) @map("Purgada")
+  updatedAt DateTime @updatedAt @map("Updated_At")
+
+  usuario Usuario @relation("NotasPaginas", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, id])
+  @@index([usuarioId, rev])
+  @@map("Notas_Paginas")
 }

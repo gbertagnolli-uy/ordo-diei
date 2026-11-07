@@ -140,8 +140,11 @@ type StatusInfo = { label: string; color: string };
 
 export function statusInfo(task: any): StatusInfo {
   const g = taskGroup(task);
+  // Rechazada por un padre: volvió como pendiente con la marca de lib/tareas/rechazo.ts (lane 268)
+  if (g === "todo" && (task.estado === "Rechazada" || task.retroalimentacionAlgoritmo === "Rechazada: rehacer")) {
+    return { label: "Rehacer", color: "var(--error)" };
+  }
   if (g === "todo" && isLate(task)) return { label: "Atrasada", color: "var(--error)" };
-  if (g === "todo" && task.estado === "Rechazada") return { label: "Rehacer", color: "var(--error)" };
   if (g === "todo" && task.estado === "Pausada") return { label: "Pausada", color: "var(--secondary)" };
   if (g === "todo" && task.estado === "Expirada") return { label: "Expirada", color: "var(--error)" };
   if (g === "todo" && task.estado === "No_Realizada") return { label: "No realizada", color: "var(--error)" };
