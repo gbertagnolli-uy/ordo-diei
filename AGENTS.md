@@ -6,7 +6,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Varios agentes trabajan **a la vez y en paralelo** sobre este repo. Por eso:
 
 - **Siempre se trabaja en una rama/lane propia**, nunca en `dev` ni en `main`.
-- **A `dev` se entrega por Pull Request. No se mergea a `dev` en local y no se hace `push` a `dev`.**
+- **A `dev` se entrega por Pull Request, y el agente lo integra él mismo en GitHub con merge commit** (`gh pr merge N --merge`). No se mergea a `dev` en local, no se hace `push` a `dev` y nunca se fuerza.
+- **A `main` solo se llega por Pull Request desde `dev`**, que integra Gabriel.
 - **Antes de empezar cualquier trabajo se sincroniza `dev`** (el local y el de `origin`), para que cada tarea arranque con todo lo que hizo antes cualquier otro agente.
 
 Los tres scripts de `scripts/` hacen cumplir esto: `nueva-lane.sh` (empezar), `abrir-pr.sh` (entregar) y `limpiar-lane.sh` (cerrar). Usalos; si no podés, seguí los pasos manuales de más abajo.
@@ -24,8 +25,12 @@ git add <paths> && git commit -m "feat(modulo): descripcion (lane 250)"
 # 3. ENTREGAR (desde el worktree, todo commiteado): trae origin/dev, valida, publica y abre el PR a dev
 bash scripts/abrir-pr.sh                      # opcional: -t "titulo" -b archivo-con-el-cuerpo.md
 
-# 4. El PR lo integra el usuario en GitHub. Después, CERRAR (desde ordo-diei/):
+# 4. INTEGRAR a dev (merge commit en GitHub, nunca squash/rebase/force) y CERRAR (desde ordo-diei/):
+gh pr merge <N> --merge
 bash scripts/limpiar-lane.sh 250
+
+# 5. PUBLICAR a main: PR de dev a main, lo integra Gabriel
+gh pr create --base main --head dev
 ```
 
 ## Reglas
@@ -43,8 +48,9 @@ bash scripts/limpiar-lane.sh 250
    ```
 4. **Commits solo en la rama `task/...`**, nunca directo en `dev` ni en `main`. Agregá solo los archivos de tu lane (`git add <paths>`), nunca `git add -A` a ciegas.
 5. **Entregar = Pull Request con base `dev`**, siempre con `scripts/abrir-pr.sh` (desde tu worktree, con todo commiteado). El script, en este orden: trae `origin/dev` a tu rama (`git merge origin/dev`; los conflictos se resuelven en tu lane, **conservando el trabajo de ambos lados**) → corre `npm test` y `tsc --noEmit` con `dev` ya incluido → `git push -u origin <tu-rama>` → `gh pr create --base dev`. Si el PR ya existe, solo actualiza la rama.
-   - **Prohibido**: merge local a `dev`, `git push origin dev`, `git push origin <rama>:dev`, push forzado, PR a `main`, y en `dev`: `git reset`, `git rebase`, `git commit --amend`, `git revert` de merges ajenos, `git checkout <rama> -- <archivo>` o cualquier reescritura de historia. El único `push` permitido es el de tu rama `task/...`.
-   - **El agente no mergea su propio PR** salvo que el usuario se lo pida. Lo integra el usuario (o quien él indique) en GitHub con **«Create a merge commit»** (no squash, no rebase), para que la rama quede como ancestro de `dev` y la limpieza y las sincronizaciones sean exactas.
+   - **Prohibido**: merge local a `dev`, `git push origin dev`, `git push origin <rama>:dev`, push forzado, PR de una rama `task/...` directo a `main`, y en `dev`: `git reset`, `git rebase`, `git commit --amend`, `git revert` de merges ajenos, `git checkout <rama> -- <archivo>` o cualquier reescritura de historia. El único `push` permitido es el de tu rama `task/...`.
+   - **El agente integra su PR a `dev`** (decisión de Gabriel, 2026-11-07) con `gh pr merge N --merge` (**«Create a merge commit»**, no squash, no rebase, nunca `--admin` ni force), para que la rama quede como ancestro de `dev` y la limpieza y las sincronizaciones sean exactas. Solo con `abrir-pr.sh` verde y sin conflictos; si GitHub dice que hay conflicto, se vuelve a correr `abrir-pr.sh` en la lane, se resuelve conservando ambos lados y recién ahí se integra.
+   - **`dev` → `main`**: por Pull Request (`gh pr create --base main --head dev`). Ese lo integra Gabriel.
    - Si el script falla, **no lo esquives**: arreglá lo que dice (conflicto, test roto) y reintentalo.
    - **Si resolviste un conflicto, no descartes líneas del otro lado "para que compile"**: mirá `git log origin/dev -p -- <archivo>` y mantené sus cambios. Ante la duda, no abras el PR y avisá al usuario.
 6. **Mientras tu lane está abierta**, si otro PR entra a `origin/dev`, traelo a tu rama cuando te toque tocar lo mismo (`git fetch origin && git merge origin/dev`); `abrir-pr.sh` lo vuelve a hacer siempre antes de publicar.
