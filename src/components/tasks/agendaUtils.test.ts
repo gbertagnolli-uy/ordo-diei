@@ -57,5 +57,9 @@ test("un día futuro sin instancia muestra la plantilla «Programada»", () => {
   const lista = tareasDeAgenda(tareas, dia10, 3);
   assert.deepEqual(lista.map((t) => t.id), [22]);
   assert.equal(estadoEnAgenda(lista[0]).label, "Programada");
-  assert.equal(estadoEnAgenda(unica).label, "Pendiente");
+  // El vencimiento se calcula contra el reloj real: con la fecha fija del 7/11 a las 18:00, el test
+  // cambiaba de resultado según la hora a la que se corriera (lane 280).
+  const manana = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const futura = { ...unica, fechaVencimiento: manana, horaEjecucion: manana };
+  assert.equal(estadoEnAgenda(futura).label, "Pendiente");
 });

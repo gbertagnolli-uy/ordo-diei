@@ -8,5 +8,7 @@
   - `server/src/db/schema/{books,reader,collections}.ts`, `server/src/db/audio-track-order.ts`
   - `server/src/modules/{reading-state,user-book-status,audiobook,search}/`
   - `client/src/features/reader/audiobook/`
+  - `client/public/assets/foliate/` (motor foliate-js del lector de ePub; copiado en la lane 280,
+    ver `public/lector/foliate/ORIGEN.md`)
 - Lo portado a `src/` lleva la cabecera `// Portado de vendor/bookorbit/<ruta> (bookorbit/bookorbit@6ad1445)`.
 - `THIRD_PARTY_NOTICES.md` se actualiza al final de la lane (D6 de `vault/LANE_270_BIBLIOTECA_BOOKORBIT.md`).
