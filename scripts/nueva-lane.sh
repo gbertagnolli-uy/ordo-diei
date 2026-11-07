@@ -52,8 +52,16 @@ fi
 if git -C "$MAIN_DIR" for-each-ref --format='%(refname:short)' "refs/heads/task/lane-$NN-*" "refs/remotes/origin/task/lane-$NN-*" | grep -q .; then
   die "Ya existe una rama para la lane $NN. Elegí el siguiente número libre."
 fi
-if compgen -G "$MAIN_DIR/vault/LANE_${NN}_*" >/dev/null; then
-  die "Ya existe vault/LANE_${NN}_*. Elegí el siguiente número libre."
+# El vault es global, en la raíz del proyecto (al lado del repo), fuera de git: ver AGENTS.md › Vault
+VAULT_DIR="$(cd "$MAIN_DIR/.." && pwd)/vault"
+[[ -d "$VAULT_DIR" ]] || die "No existe el vault global en $VAULT_DIR (ver AGENTS.md, sección «Vault»)."
+if compgen -G "$VAULT_DIR/LANE_${NN}_*" >/dev/null; then
+  # Una lane planificada de antemano (BACKLOG_PLANE.md) ya tiene su archivo con «estado: reservada»: esa sí se puede empezar
+  if grep -qE '^estado:[[:space:]]*reservada[[:space:]]*$' "$VAULT_DIR"/LANE_${NN}_*; then
+    echo "→ La lane $NN estaba reservada ($VAULT_DIR/LANE_${NN}_*): se empieza"
+  else
+    die "Ya existe $VAULT_DIR/LANE_${NN}_*. Elegí el siguiente número libre."
+  fi
 fi
 if command -v gh >/dev/null 2>&1; then
   if gh pr list --base dev --state open --json headRefName --jq '.[].headRefName' 2>/dev/null | grep -q "^task/lane-$NN-"; then
