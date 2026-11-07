@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronsUpDown, Flame, Gift, Smile, Star, UserRound } from "lucide-react";
+import { ChevronsUpDown, Flame, Gift, Smile, Star, Trophy, UserRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -195,6 +195,11 @@ export function NavUser({ user, tasks }: { user: any; tasks: any[] }) {
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/perfil">
                   <UserRound /> Mi perfil
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/logros">
+                  <Trophy /> Mis logros
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openModal("MOOD_SELECTOR", { user })}>

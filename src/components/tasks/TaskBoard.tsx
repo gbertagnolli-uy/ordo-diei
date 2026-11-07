@@ -51,7 +51,9 @@ function canMove(from: TaskGroup, to: TaskGroup, isParent: boolean) {
 function optimisticPatch(to: TaskGroup, task: any) {
   switch (to) {
     case "progress": return { estado: "En_progreso", timerStartedAt: new Date().toISOString() };
-    case "todo": return { estado: task.estado === "Esperando_Aprobacion" ? "Rechazada" : "Pausada", timerStartedAt: null };
+    case "todo": return task.estado === "Esperando_Aprobacion"
+      ? { estado: "Pendiente", timerStartedAt: null, tiempoAcumuladoTimer: 0, retroalimentacionAlgoritmo: "Rechazada: rehacer" }
+      : { estado: "Pausada", timerStartedAt: null };
     case "review": return { estado: "Esperando_Aprobacion", timerStartedAt: null };
     case "done": return { estado: "Aprobada" };
   }

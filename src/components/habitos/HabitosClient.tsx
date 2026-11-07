@@ -28,6 +28,7 @@ import { AdminItem } from "@/components/AdminItem";
 import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";
 import { toast } from "@/lib/toast";
+import { requiereResumen } from "@/lib/habitos/pruebaRealizacion";
 
 const SECCIONES_FRANJA: { franja: Franja; titulo: string; icono: LucideIcon }[] = [
   { franja: "manana", titulo: "Mañana", icono: Sun },
@@ -354,6 +355,7 @@ export function HabitosClient({
                       }}
                       onArchivar={handleArchivar}
                       onCargarLibro={handleCargarLibro}
+                      pideResumen={!esPadre && requiereResumen(h.clave)}
                     />
                     </AdminItem>
                   ))}

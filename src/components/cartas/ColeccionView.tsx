@@ -38,6 +38,7 @@ import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
 import { BordeReclamable } from "@/components/cartas/BordeReclamable";
 import { useReclamoCarta, claveReclamo } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
+import { progresoSiguienteGrado } from "@/lib/cartas/fragmentos";
 import type { CartaListada } from "@/lib/cartas/server";
 
 interface ColeccionViewProps {
@@ -388,6 +389,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {coleccionDesbloqueadas.map((carta) => {
                   const romano = TEXTOS_CARTAS.gradosRomanos[carta.grado] || "I";
+                  const progreso = progresoSiguienteGrado(carta.fragmentos, carta.fragmentosRequeridos);
                   return (
                     <div key={carta.clave} className="flex flex-col gap-1.5">
                       <Link
@@ -419,6 +421,20 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
                           <span className="text-[11px] text-muted-foreground truncate">
                             {carta.subtitulo || TEXTOS_CARTAS.rarezas[carta.rareza]}
                           </span>
+                          {progreso.siguienteGrado ? (
+                            <>
+                              <span className="text-[11px] text-muted-foreground tabular-nums">
+                                {carta.fragmentos}/{progreso.meta} fragmentos · Grado {TEXTOS_CARTAS.gradosRomanos[progreso.siguienteGrado]}
+                              </span>
+                              <Progress
+                                value={progreso.porcentaje}
+                                className="h-1"
+                                aria-label={`Progreso hacia el Grado ${TEXTOS_CARTAS.gradosRomanos[progreso.siguienteGrado]}`}
+                              />
+                            </>
+                          ) : (
+                            <span className="text-[11px] font-medium text-primary">Grado IV glorioso</span>
+                          )}
                         </div>
                       </Link>
                       {accionReclamo(carta)}
