@@ -73,6 +73,7 @@ model Usuario {
   checklistCompletados ChecklistItem[]   @relation("ChecklistCompletadoPor")
   notasEspacio         NotaEspacio?      @relation("NotasEspacio")
   notasPaginas         NotaPagina[]      @relation("NotasPaginas")
+  diarioEntradas       DiarioEntrada[]   @relation("DiarioEntradas")
   registrosAnimo       RegistroAnimo[]
   premiosEntregados    PremioEntregado[]
 
@@ -1775,6 +1776,42 @@ model SuscripcionPush {
 
   @@index([usuarioId])
   @@map("Suscripciones_Push")
+}
+
+// ← Lane 272: diario personal (solo el autor) y familiar (toda la familia). Ánimo 1–5 (escala de Daily You).
+enum TipoDiario {
+  personal
+  familiar
+}
+
+model DiarioEntrada {
+  id        Int        @id @default(autoincrement())
+  tipo      TipoDiario @map("Tipo")
+  autorId   Int        @map("Autor_ID")
+  fecha     DateTime   @map("Fecha") @db.Date // día de la entrada en la zona de la familia
+  titulo    String?    @map("Titulo")
+  texto     String     @map("Texto")
+  animo     Int?       @map("Animo") // 1 muy mal … 5 muy bien
+  creadaEn  DateTime   @default(now()) @map("Creada_En")
+  editadaEn DateTime   @updatedAt @map("Editada_En")
+
+  autor Usuario      @relation("DiarioEntradas", fields: [autorId], references: [id], onDelete: Cascade)
+  fotos DiarioFoto[]
+
+  @@index([tipo, fecha])
+  @@index([autorId, fecha])
+  @@map("Diario_Entradas")
+}
+
+model DiarioFoto {
+  id        Int    @id @default(autoincrement())
+  entradaId Int    @map("Entrada_ID")
+  url       String @map("URL") // /api/archivos/<uuid>
+  orden     Int    @default(0) @map("Orden")
+
+  entrada DiarioEntrada @relation(fields: [entradaId], references: [id], onDelete: Cascade)
+
+  @@map("Diario_Fotos")
 }
 
 // ← Lane 271: bloc de notas (migrado de dovli). Página entera en JSON; `rev` crece por usuario (protocolo de sync de dovli).
