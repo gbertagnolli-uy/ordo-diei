@@ -9,6 +9,21 @@ set -euo pipefail
 
 die() { echo "✗ $*" >&2; exit 1; }
 
+# Quita los junctions/symlinks del worktree COMO ENLACE, sin entrar en ellos.
+# En Windows `git worktree remove` sigue los junctions y borra su destino: el 2026-11-07 vació
+# ordo-diei/node_modules (lanes con junction node_modules, y Turbopack crea más en .next/). Ver vault LANE_279.
+quitar_enlaces() {
+  command -v powershell >/dev/null 2>&1 || return 0
+  local win; win=$(cygpath -w "$1")
+  powershell -NoProfile -Command "
+    function Enlaces(\$p) { foreach (\$c in Get-ChildItem -LiteralPath \$p -Force -ErrorAction SilentlyContinue) {
+      if (\$c.Attributes -band [IO.FileAttributes]::ReparsePoint) { \$c } elseif (\$c.PSIsContainer) { Enlaces \$c.FullName } } }
+    foreach (\$e in @(Enlaces '$win')) {
+      if (\$e.PSIsContainer) { [IO.Directory]::Delete(\$e.FullName, \$false) } else { [IO.File]::Delete(\$e.FullName) } }
+    if (@(Enlaces '$win').Count -gt 0) { exit 1 }
+  " || die "No pude quitar los enlaces de $1. No borro el worktree: revisalo."
+}
+
 [[ $# -eq 1 && "$1" =~ ^[0-9]+$ ]] || die "Uso: scripts/limpiar-lane.sh NN"
 NN=$1
 
@@ -39,6 +54,7 @@ git -C "$MAIN_DIR" merge --ff-only origin/dev
 # --- quitar worktree y rama -------------------------------------------------
 if [[ -d "$LANE_DIR" ]]; then
   [[ -z "$(git -C "$LANE_DIR" status --porcelain)" ]] || die "El worktree $LANE_DIR tiene cambios sin commitear. No lo fuerzo: revisalo."
+  quitar_enlaces "$LANE_DIR"
   git -C "$MAIN_DIR" worktree remove "$LANE_DIR"
 fi
 git -C "$MAIN_DIR" worktree prune
