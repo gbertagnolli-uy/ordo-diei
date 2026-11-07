@@ -28,7 +28,7 @@ test("rechaza hora mal formada, id repetido, categoría desconocida y sin etapas
   assert.equal(validarRutinaFamiliar(repetido).ok, false);
 
   const cat = base();
-  (cat.etapas[0] as any).categoria = "inventada";
+  (cat.etapas[0] as unknown as { categoria: string }).categoria = "inventada";
   assert.equal(validarRutinaFamiliar(cat).ok, false);
 
   assert.equal(validarRutinaFamiliar({ etapas: [], semanalConfig: base().semanalConfig }).ok, false);
