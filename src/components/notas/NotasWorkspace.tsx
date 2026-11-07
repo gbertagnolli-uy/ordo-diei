@@ -47,6 +47,7 @@ function Inicio() {
 export default function NotasWorkspace({ usuarioId }: { usuarioId: string }) {
   const ready = useStore((s) => s.ready);
   const route = useStore((s) => s.route);
+  const cantidad = useStore((s) => Object.keys(s.pages).length);
   const nav = useUI((s) => s.nav);
   const sidebarHidden = useSettings((s) => s.sidebarHidden);
 
@@ -66,6 +67,13 @@ export default function NotasWorkspace({ usuarioId }: { usuarioId: string }) {
       window.removeEventListener("hashchange", onHash);
     };
   }, []);
+
+  // Enlace #p-<id> abierto en un dispositivo que todavía no tenía la página: se abre cuando llega con el sync.
+  useEffect(() => {
+    if (!ready || route.name !== "home" || !location.hash.startsWith("#p-")) return;
+    const r = routeFromHash(store.get().pages);
+    if (r.name === "page") store.navigate(r, { replace: true });
+  }, [ready, route, cantidad]);
 
   // Al cambiar de página se cierra el cajón del celular.
   useEffect(() => ui.set({ nav: false }), [route]);
