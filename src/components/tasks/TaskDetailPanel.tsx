@@ -172,10 +172,12 @@ export function TaskDetailPanel({
                       {formatClock(actions.remaining)}
                     </p>
                   </div>
-                  <Button variant={actions.isPlaying ? "secondary" : "default"} onClick={actions.togglePlay}>
-                    {actions.isPlaying ? <Pause /> : <Play />}
-                    {actions.isPlaying ? "Pausar" : actions.fueIniciada ? "Reanudar" : "Iniciar"}
-                  </Button>
+                  {actions.fueIniciada && (
+                    <Button variant={actions.isPlaying ? "secondary" : "default"} onClick={actions.togglePlay}>
+                      {actions.isPlaying ? <Pause /> : <Play />}
+                      {actions.isPlaying ? "Pausar" : "Reanudar"}
+                    </Button>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {actions.fueIniciada
