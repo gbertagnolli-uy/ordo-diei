@@ -34,6 +34,7 @@ import {
   obtenerConfiguracionRutina,
   guardarConfiguracionRutina,
   restablecerRutinaDefault,
+  sincronizarDesdeServidor,
 } from "@/lib/rutina/storageRutina";
 import {
   reproducirAlarma,
@@ -124,6 +125,11 @@ function RutinaContenido({ currentUser }: RutinaClientPageProps) {
     },
     [aplicarConfig]
   );
+
+  // Rutina base de la familia (lane 259): se trae del servidor al abrir; el evento de abajo la aplica
+  useEffect(() => {
+    void sincronizarDesdeServidor(esPadre);
+  }, [esPadre]);
 
   // Mantener sincronizada la config si otra parte de la app la guarda
   useEffect(() => {
