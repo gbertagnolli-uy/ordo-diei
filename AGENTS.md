@@ -35,7 +35,7 @@ bash scripts/limpiar-lane.sh 250
    - `origin/dev` tiene commits nuevos (otro agente integró un PR) → se actualiza el local con `--ff-only`.
    - El `dev` local tiene commits que no están en `origin/dev` → **hay trabajo sin publicar**; el script se detiene. Publicalo primero con un PR (ver «Trabajo local sin publicar») y recién después empezá otra tarea.
    - Recién con ambos iguales se crea la rama y el worktree.
-3. **Cada tarea es una lane con su propia rama y su propio worktree**, creados desde `dev` ya sincronizado. Esto vale para todo cambio, también los chicos (docs, una línea) y también para quien orquesta. El número de lane es el siguiente libre: mirá `git branch -a --list '*task/lane-*'`, `ls vault/LANE_*` y `gh pr list --base dev` (ya hubo colisiones). Manual:
+3. **Cada tarea es una lane con su propia rama y su propio worktree**, creados desde `dev` ya sincronizado. Esto vale para todo cambio, también los chicos (docs, una línea) y también para quien orquesta. El número de lane es el siguiente libre: mirá `git branch -a --list '*task/lane-*'`, `ls ../vault/LANE_*` (o `bash scripts/tablero.sh --todas`) y `gh pr list --base dev` (ya hubo colisiones). Manual:
    ```bash
    git fetch origin --prune && git merge --ff-only origin/dev   # en ordo-diei/
    git worktree add -b task/lane-NN-descripcion ../ordo-diei-lanes/lane-NN dev
@@ -57,8 +57,23 @@ bash scripts/limpiar-lane.sh 250
    - Si solo agrega (`CREATE`, `ADD COLUMN`), aplicalo con `npx prisma db execute --file /tmp/cambio.sql` y después `npx prisma generate`.
    - Si no estás seguro, **no toques la base**: dejá anotado en el vault qué SQL falta y avisá al orquestador.
    - Los tests que escriben en la base real se saltean salvo `PERMITIR_TESTS_DB=1`; no lo actives sin que lo pida el usuario.
-8. Al terminar, registrá la lane en el vault (`vault/LANE_NN_*.md`, dentro de la misma rama para que viaje con el PR).
+8. **Registrá en el vault global al empezar y al terminar** (`../vault/LANE_NN_*.md` desde `ordo-diei/`, fuera de git: no se commitea). El protocolo está en la sección «Vault» de abajo y en `../vault/README.md`.
 9. **Después de que el PR se integró**, limpiá (lo hace quien lo abrió, desde `ordo-diei/`): `bash scripts/limpiar-lane.sh NN`. Verifica que tu rama ya está en `origin/dev`, actualiza el `dev` local con `--ff-only`, quita el worktree y borra la rama con `-d` (no `-D`: si git dice que no está mergeada, no la borres). Si el worktree tiene cambios sin commitear, no lo fuerces: avisá.
+
+## Vault: dónde se documenta y cómo se registra (OBLIGATORIO)
+
+El vault es **una sola carpeta global, fuera de git**, en la raíz del proyecto:
+`C:\Users\evoxu\Downloads\Agencia\Dev\18_OrdoDiei\vault\` (desde `ordo-diei/`: `../vault/`; desde un worktree `ordo-diei-lanes/lane-NN/`: `../../vault/`).
+Es la **fuente única de conocimiento** del proyecto para todos los agentes y para Gabriel: proceso de trabajo, pendientes, decisiones e información. No vive en ninguna rama ni worktree (los worktrees se limpian; el vault no): se escribe directo ahí y lo ven todos al instante. El repo **no** tiene carpeta `vault/` (está en `.gitignore`); cuando un documento o un comentario del código dice `vault/<algo>`, se refiere a la carpeta global. Protocolo completo: `../vault/README.md`. Lo mínimo:
+
+- **Leé antes de empezar**: `README.md`, `BACKLOG_PLANE.md` (lanes planificadas y su orden) y el `LANE_NN_*.md` de tu lane si ya existe (puede traer la especificación y las microtareas que dejó el orquestador). Si delegás a agy: `PROTOCOLO_AGY.md`.
+- **Una lane = un archivo** `LANE_NN_TEMA.md` con frontmatter (`lane`, `titulo`, `plane`, `estado`, `rama`, `agente`, `actualizado`). Solo lo edita quien trabaja esa lane; así varios agentes escriben a la vez sin pisarse. Para una lane nueva copiá `_PLANTILLA_LANE.md`.
+- **Al EMPEZAR** (antes de tocar el repo): `bash scripts/tablero.sh` para ver qué está en curso y no pisar archivos de otra lane; en tu archivo `estado: en-curso`, `agente: <vos>` y línea `INICIO` en `## Bitácora`.
+- **Mientras**: microtareas tildadas, `## Hallazgos` y `## Pendientes` al día. Si algo no cierra, `estado: bloqueada` con el motivo; no inventes.
+- **Al TERMINAR** (o al cortar): línea `FIN` en `## Bitácora` con lo hecho y el resultado de los gates, `estado: en-revision` (con el link del PR) o `bloqueada`. Tras el merge y `limpiar-lane.sh`: `estado: integrada`.
+- Los documentos de tema (`HABITOS_Y_NIVELES.md`, etc.) se actualizan cuando una lane cambia ese tema. Un tema, un documento: antes de crear uno nuevo, buscá el que ya existe.
+- `BACKLOG_PLANE.md`, `README.md` y `PROTOCOLO_AGY.md` los mantiene el orquestador.
+- Nada del vault se commitea. Datos que necesita el código (ej. insumos de un script) van en el repo, no en el vault.
 
 ## Trabajo local sin publicar (caso excepcional)
 
