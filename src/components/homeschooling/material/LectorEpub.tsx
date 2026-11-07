@@ -9,11 +9,39 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Capitulo = { label: string; href: string };
-type Rend = { display: (t?: string) => Promise<unknown>; next: () => Promise<unknown>; prev: () => Promise<unknown>; themes: { fontSize: (s: string) => void }; destroy: () => void };
+type Ubicacion = { start: { cfi: string } };
+type Rend = {
+  display: (t?: string) => Promise<unknown>;
+  next: () => Promise<unknown>;
+  prev: () => Promise<unknown>;
+  themes: { fontSize: (s: string) => void };
+  on: (evento: "relocated", f: (u: Ubicacion) => void) => void;
+  currentLocation: () => Ubicacion | null;
+  destroy: () => void;
+};
+type Ubicaciones = { generate: (n: number) => Promise<unknown>; length: () => number; percentageFromCfi: (cfi: string) => number };
 
-export default function LectorEpub({ origen, titulo }: { origen: string; titulo: string }) {
+/**
+ * `cfiInicial` y `onPosicion` (lane 270, D4): abrir donde se dejó y avisar cada cambio de página con el CFI y el
+ * porcentaje (0–100; 0 hasta que epub.js termina de calcular las ubicaciones del libro).
+ */
+export default function LectorEpub({
+  origen,
+  titulo,
+  cfiInicial,
+  onPosicion,
+}: {
+  origen: string;
+  titulo: string;
+  cfiInicial?: string | null;
+  onPosicion?: (cfi: string, porcentaje: number) => void;
+}) {
   const zona = useRef<HTMLDivElement>(null);
   const rend = useRef<Rend | null>(null);
+  const avisar = useRef(onPosicion);
+  useEffect(() => {
+    avisar.current = onPosicion;
+  }, [onPosicion]);
   const [estado, setEstado] = useState<"cargando" | "listo" | "error">("cargando");
   const [error, setError] = useState("");
   const [capitulos, setCapitulos] = useState<Capitulo[]>([]);
@@ -35,10 +63,23 @@ export default function LectorEpub({ origen, titulo }: { origen: string; titulo:
         const r = b.renderTo(zona.current, { width: "100%", height: "100%", flow: "paginated", spread: "none", allowScriptedContent: false }) as unknown as Rend;
         rend.current = r;
         r.themes.fontSize(`${tamano}%`);
-        await r.display();
+        const ubicaciones = b.locations as unknown as Ubicaciones;
+        const porcentaje = (cfi: string) => (ubicaciones.length() > 0 ? Math.round(ubicaciones.percentageFromCfi(cfi) * 1000) / 10 : 0);
+        r.on("relocated", (u) => avisar.current?.(u.start.cfi, porcentaje(u.start.cfi)));
+        try {
+          await r.display(cfiInicial ?? undefined);
+        } catch {
+          await r.display(); // un CFI viejo que ya no existe: se abre al principio
+        }
         const nav = await b.loaded.navigation;
         if (vivo) setCapitulos(nav.toc.map((t) => ({ label: t.label.trim(), href: t.href })));
         if (vivo) setEstado("listo");
+        if (avisar.current) {
+          // Las ubicaciones (para el porcentaje) se calculan después de mostrar el libro, sin trabar la lectura.
+          await ubicaciones.generate(1600);
+          const actual = vivo ? r.currentLocation() : null;
+          if (actual?.start) avisar.current?.(actual.start.cfi, porcentaje(actual.start.cfi));
+        }
       } catch (e) {
         if (!vivo) return;
         setError(e instanceof Error ? e.message : "No se pudo abrir el libro");
