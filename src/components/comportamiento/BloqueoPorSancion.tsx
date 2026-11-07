@@ -16,7 +16,7 @@ export function BloqueoPorSancion({ que }: { que: Exclude<Bloqueo, "cofre"> }) {
   return (
     <div className="flex flex-col">
       <PageHeader group="Rutina" title={CABECERA[que]} />
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col pt-4">
         <Empty className="border bg-card py-12">
           <EmptyHeader>
             <EmptyMedia variant="icon">

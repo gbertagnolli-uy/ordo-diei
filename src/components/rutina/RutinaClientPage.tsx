@@ -75,7 +75,7 @@ export function RutinaClientPage(props: RutinaClientPageProps) {
   const enCliente = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   if (!enCliente) {
     return (
-      <div className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 w-full max-w-6xl mx-auto">
         <div className="h-9 w-64 animate-pulse rounded-xl bg-muted" />
         <div className="mt-6 h-96 animate-pulse rounded-3xl bg-muted/60" />
       </div>
@@ -457,7 +457,7 @@ function RutinaContenido({ currentUser }: RutinaClientPageProps) {
   );
 
   return (
-    <div className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="flex-1 w-full max-w-6xl mx-auto space-y-6">
       {/* Alerta / Banner de inicio de etapa */}
       <BarraAlarmaActiva
         etapa={avisoVisible}

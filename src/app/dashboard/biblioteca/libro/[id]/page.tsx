@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { esPadre } from "@/lib/habitos/permisos";
 import { NoEncontradoError } from "@/lib/habitos/server";
 import { detalleLibro } from "@/lib/biblioteca/servidor";
+import { PageHeader } from "@/components/app/PageHeader";
 import { DetalleLibro } from "@/components/biblioteca/DetalleLibro";
 
 // Ficha de un libro con el estado de lectura de quien mira (lane 270).
@@ -19,5 +20,10 @@ export default async function LibroPage({ params }: { params: Promise<{ id: stri
     throw e;
   });
   if (!libro) notFound();
-  return <DetalleLibro libro={libro} />;
+  return (
+    <>
+      <PageHeader group="Biblioteca" groupHref="/dashboard/biblioteca" title={libro.titulo} />
+      <DetalleLibro libro={libro} />
+    </>
+  );
 }

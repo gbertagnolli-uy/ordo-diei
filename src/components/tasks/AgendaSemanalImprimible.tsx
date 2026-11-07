@@ -32,7 +32,7 @@ export function AgendaSemanalImprimible({
     setLunes((l) => new Date(l.getFullYear(), l.getMonth(), l.getDate() + delta * 7));
 
   return (
-    <div className="hoja-agenda-semanal mx-auto max-w-[1400px] p-4 print:max-w-none print:p-0">
+    <div className="hoja-agenda-semanal mx-auto max-w-[1400px] print:max-w-none print:p-0">
       <div className="mb-4 flex flex-wrap items-center gap-2 print:hidden">
         <Button variant="outline" size="sm" onClick={() => moverSemana(-1)}>
           <ChevronLeft /> Semana anterior

@@ -67,7 +67,7 @@ export default function PanelMaterias({
   const totalQuizzes = panel.reduce((n, m) => n + m.cursos.reduce((c, x) => c + (x.quizzes ?? 0), 0), 0);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">

@@ -35,7 +35,7 @@ export default function BoletinVista({ boletin, periodos, alumnos, anio }: { bol
   };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 p-4 sm:p-6 print:max-w-none print:space-y-3 print:p-0">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 print:max-w-none print:space-y-3 print:p-0">
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <GestionPeriodos periodos={periodos} anio={anio} />
         {periodos.length > 0 && boletin && (

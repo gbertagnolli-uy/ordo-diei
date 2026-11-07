@@ -61,7 +61,7 @@ export default function MuroFamilia({ muro, esPadre }: { muro: Muro; esPadre: bo
   const liturgia = muro.hoyEnLaIglesia;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-5 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-5">
       <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
         <Megaphone className="size-6" /> Nuestra familia
       </h1>

@@ -188,7 +188,7 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
   return (
     <div className="flex flex-col">
       <PageHeader group="Colección" title="Cartas" />
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
       {/* Encabezado Principal y Recursos */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>

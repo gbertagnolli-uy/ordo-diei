@@ -24,7 +24,7 @@ export function LogrosView({ datos }: { datos: DatosLogros }) {
   const abierta = grupos.find((g) => g.logros.some((l) => !l.obtenido))?.id ?? grupos[0]?.id;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 p-4 sm:p-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
       <p className="text-sm text-muted-foreground tabular-nums">
         {total} de {logros.length} logros obtenidos
       </p>
