@@ -1,0 +1,112 @@
+// Diario (lane 272), lado servidor. La privacidad del personal se hace cumplir acá, en cada consulta (D1).
+import type { Prisma } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
+import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, type TipoDiario } from "./reglas";
+
+type Actor = { id: number; esPadre: boolean };
+
+export type EntradaVista = {
+  id: number;
+  tipo: TipoDiario;
+  fecha: string;
+  titulo: string | null;
+  texto: string;
+  animo: number | null;
+  creadaEn: string;
+  fotos: string[];
+  autor: { id: number; nombre: string; fotoUrl: string | null };
+  puedoEditar: boolean;
+  puedoBorrar: boolean;
+};
+
+const incluir = {
+  fotos: { orderBy: { orden: "asc" as const }, select: { url: true } },
+  autor: { select: { id: true, nombre: true, fotoUrl: true } },
+};
+
+type EntradaConFotos = Prisma.DiarioEntradaGetPayload<{ include: typeof incluir }>;
+
+function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
+  return {
+    id: e.id,
+    tipo: e.tipo,
+    fecha: aClave(e.fecha),
+    titulo: e.titulo,
+    texto: e.texto,
+    animo: e.animo,
+    creadaEn: e.creadaEn.toISOString(),
+    fotos: e.fotos.map((f: { url: string }) => f.url),
+    autor: e.autor,
+    puedoEditar: puedeEditar(e, actor),
+    puedoBorrar: puedeBorrar(e, actor),
+  };
+}
+
+/** Entradas de un mes ("YYYY-MM"). Personal: solo las propias. */
+export async function listarMes(actor: Actor, tipo: TipoDiario, mes: string): Promise<EntradaVista[]> {
+  if (!/^\d{4}-\d{2}$/.test(mes)) throw new Error("Mes inválido");
+  const [y, m] = mes.split("-").map(Number);
+  const desde = aFecha(`${mes}-01`);
+  const hasta = new Date(Date.UTC(y, m, 1));
+  const filas = await prisma.diarioEntrada.findMany({
+    where: { tipo, fecha: { gte: desde, lt: hasta }, ...(tipo === "personal" ? { autorId: actor.id } : {}) },
+    orderBy: [{ fecha: "desc" }, { creadaEn: "desc" }],
+    include: incluir,
+  });
+  return filas.map((e) => aVista(e, actor));
+}
+
+export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<string, unknown>): Promise<EntradaVista> {
+  const v = validarEntrada(body, hoyEnFamilia());
+  const fecha = aFecha(v.fecha);
+  const delDia = await prisma.diarioEntrada.count({ where: { autorId: actor.id, fecha } });
+  if (delDia >= MAX_ENTRADAS_DIA) throw new Error("Llegaste al máximo de entradas de este día");
+  const e = await prisma.diarioEntrada.create({
+    data: {
+      tipo,
+      autorId: actor.id,
+      fecha,
+      titulo: v.titulo,
+      texto: v.texto,
+      animo: v.animo,
+      fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
+    },
+    include: incluir,
+  });
+  return aVista(e, actor);
+}
+
+async function buscarVisible(actor: Actor, id: number) {
+  const e = await prisma.diarioEntrada.findUnique({ where: { id }, include: incluir });
+  // Una entrada personal ajena responde «no existe» (no se revela que existe)
+  if (!e || (e.tipo === "personal" && e.autorId !== actor.id)) throw new NoEncontradoError("La entrada no existe");
+  return e;
+}
+
+export async function editarEntrada(actor: Actor, id: number, body: Record<string, unknown>): Promise<EntradaVista> {
+  const e = await buscarVisible(actor, id);
+  if (!puedeEditar(e, actor)) throw new NoAutorizadoError("Solo quien la escribió puede editarla");
+  const v = validarEntrada({ ...body, fecha: body.fecha ?? aClave(e.fecha) }, hoyEnFamilia());
+  const nueva = await prisma.$transaction(async (tx) => {
+    await tx.diarioFoto.deleteMany({ where: { entradaId: id } });
+    return tx.diarioEntrada.update({
+      where: { id },
+      data: {
+        fecha: aFecha(v.fecha),
+        titulo: v.titulo,
+        texto: v.texto,
+        animo: v.animo,
+        fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
+      },
+      include: incluir,
+    });
+  });
+  return aVista(nueva, actor);
+}
+
+export async function borrarEntrada(actor: Actor, id: number): Promise<void> {
+  const e = await buscarVisible(actor, id);
+  if (!puedeBorrar(e, actor)) throw new NoAutorizadoError("No podés borrar esta entrada");
+  await prisma.diarioEntrada.delete({ where: { id } });
+}

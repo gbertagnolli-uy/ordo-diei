@@ -122,6 +122,29 @@ export function AppSidebar({
     return c;
   }, [tasks]);
 
+  // Un grupo de NAV (Mis tareas, Atajos, Hogar) con sus contadores
+  const grupoTareas = (group: (typeof NAV)[number]) => (
+    <SidebarGroup key={group.heading}>
+      <SidebarGroupLabel>{group.heading}</SidebarGroupLabel>
+      <SidebarMenu>
+        {group.items.map((item) => {
+          const count = counts[item.id];
+          return (
+            <SidebarMenuItem key={item.id}>
+              <SidebarMenuButton asChild isActive={active === item.id} tooltip={item.label}>
+                <Link href={sectionHref(item.id)}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+              {!!count && <SidebarMenuBadge className="tabular-nums">{count}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
@@ -143,6 +166,8 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Los atajos van arriba de todo (Plane #26) */}
+        {NAV.filter((g) => g.heading === "Atajos").map(grupoTareas)}
         <SidebarGroup>
           <SidebarGroupLabel>Rutina</SidebarGroupLabel>
           <SidebarMenu>
@@ -312,27 +337,7 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroup>
         )}
-        {NAV.map((group) => (
-          <SidebarGroup key={group.heading}>
-            <SidebarGroupLabel>{group.heading}</SidebarGroupLabel>
-            <SidebarMenu>
-              {group.items.map((item) => {
-                const count = counts[item.id];
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton asChild isActive={active === item.id} tooltip={item.label}>
-                      <Link href={sectionHref(item.id)}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    {!!count && <SidebarMenuBadge className="tabular-nums">{count}</SidebarMenuBadge>}
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-        ))}
+        {NAV.filter((g) => g.heading !== "Atajos").map(grupoTareas)}
       </SidebarContent>
 
       <SidebarFooter>

@@ -43,6 +43,43 @@ export function gradoDe(fragmentos: number, requeridos: number): GradoCarta {
 }
 
 /**
+ * Fragmentos totales desde los que rige cada grado (D14), con el mismo redondeo que `gradoDe`:
+ * I = 100 %, II = 150 % (redondeado hacia arriba), III = 200 %, IV = 300 %.
+ */
+export function umbralGrado(grado: 1 | 2 | 3 | 4, requeridos: number): number {
+  if (grado === 1) return requeridos;
+  if (grado === 2) return Math.ceil(requeridos * 1.5);
+  if (grado === 3) return requeridos * 2;
+  return requeridos * 3;
+}
+
+export interface ProgresoSiguienteGrado {
+  /** Grado que alcanzan hoy los fragmentos (puede no estar reclamado todavía) */
+  gradoActual: GradoCarta;
+  /** null si ya es Grado IV */
+  siguienteGrado: 1 | 2 | 3 | 4 | null;
+  /** Fragmentos totales que pide el siguiente grado (0 si no hay) */
+  meta: number;
+  /** Fragmentos que faltan para el siguiente grado (0 si no hay) */
+  faltan: number;
+  /** Avance de 0 a 100 entre el umbral del grado actual y el del siguiente */
+  porcentaje: number;
+}
+
+export function progresoSiguienteGrado(fragmentos: number, requeridos: number): ProgresoSiguienteGrado {
+  const gradoActual = gradoDe(fragmentos, requeridos);
+  if (requeridos <= 0 || gradoActual === 4) {
+    return { gradoActual, siguienteGrado: null, meta: 0, faltan: 0, porcentaje: 100 };
+  }
+  const siguienteGrado = (gradoActual + 1) as 1 | 2 | 3 | 4;
+  const meta = umbralGrado(siguienteGrado, requeridos);
+  const desde = gradoActual === 0 ? 0 : umbralGrado(gradoActual as 1 | 2 | 3, requeridos);
+  const tramo = Math.max(1, meta - desde);
+  const porcentaje = Math.max(0, Math.min(100, Math.floor(((fragmentos - desde) / tramo) * 100)));
+  return { gradoActual, siguienteGrado, meta, faltan: Math.max(0, meta - fragmentos), porcentaje };
+}
+
+/**
  * Grado con el que se muestra la carta (D20): el que el usuario ya reclamó, sin pasar
  * del que alcanzan sus fragmentos. Si la diferencia es positiva, hay un grado por reclamar.
  */

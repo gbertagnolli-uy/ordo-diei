@@ -7,7 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { dueDate, formatDue, isActionable, sortTasks, statusInfo, taskAppliesOnDay } from "./taskUtils";
+import { formatDue, sortTasks, taskAppliesOnDay } from "./taskUtils";
+import { estadoEnAgenda, tareasDeAgenda } from "./agendaUtils";
 
 const dayLabelFmt = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" });
 
@@ -43,9 +44,7 @@ export function SchedulePanel({
     return days;
   }, [tasks, month, currentUserId]);
 
-  const list = selectedDay
-    ? sortTasks(tasks.filter((t) => taskAppliesOnDay(t, selectedDay, currentUserId)), null)
-    : sortTasks(tasks.filter(isActionable), null);
+  const list = sortTasks(tareasDeAgenda(tasks, selectedDay, currentUserId), null);
 
   return (
     <div className="flex h-full flex-col">
@@ -92,7 +91,7 @@ export function SchedulePanel({
             </li>
           )}
           {list.map((task) => {
-            const status = statusInfo(task);
+            const status = estadoEnAgenda(task);
             return (
               <li key={task.id}>
                 <button

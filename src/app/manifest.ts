@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Ordo Diei",
     short_name: "Ordo Diei",
     description: "Sancta rutina diei ad animam fovendam et Deum laudandum.",
-    start_url: "/dashboard",
+    start_url: "/dashboard?s=today",
     scope: "/",
     display: "standalone",
     background_color: "#FBF9F5",
