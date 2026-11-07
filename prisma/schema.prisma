@@ -311,6 +311,7 @@ enum CategoriaHabito {
   oracion
   orden
   cuidado
+  virtud // lane 257: práctica de virtudes
 }
 
 enum FranjaHabito {
