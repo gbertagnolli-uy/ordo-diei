@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   AlarmClock,
+  BookHeart,
+  BookUser,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
@@ -16,12 +18,15 @@ import {
   History,
   Hourglass,
   Layers,
+  Library,
   ListTodo,
   Network,
+  NotebookPen,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
   Sprout,
+  Target,
   Timer,
 } from "lucide-react";
 import {
@@ -216,6 +221,14 @@ export function AppSidebar({
               </SidebarMenuButton>
               {!!premiosPendientes && <SidebarMenuBadge className="tabular-nums">{premiosPendientes}</SidebarMenuBadge>}
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/premio-grupal"} tooltip="Premio grupal">
+                <Link href="/dashboard/premio-grupal">
+                  <Target />
+                  <span>Premio grupal</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
@@ -226,6 +239,44 @@ export function AppSidebar({
                 <Link href="/dashboard/liturgia">
                   <Church />
                   <span>Liturgia</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        {/* Lane 278 (ola 3): enlaces de las lanes 270, 271 y 272 */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Lectura y escritura</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/biblioteca")} tooltip="Biblioteca">
+                <Link href="/dashboard/biblioteca">
+                  <Library />
+                  <span>Biblioteca</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname?.startsWith("/dashboard/notas")} tooltip="Notas">
+                <Link href="/dashboard/notas">
+                  <NotebookPen />
+                  <span>Notas</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/diario"} tooltip="Mi diario">
+                <Link href="/dashboard/diario">
+                  <BookHeart />
+                  <span>Mi diario</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/diario/familia"} tooltip="Diario familiar">
+                <Link href="/dashboard/diario/familia">
+                  <BookUser />
+                  <span>Diario familiar</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
