@@ -3,12 +3,18 @@
 // vendor/bookorbit/server/src/common/utils/book-media.utils.ts (compareAudioTracks) (bookorbit/bookorbit@6ad1445).
 // Los estados de lectura son los de BookOrbit reducidos a tres (vault LANE_270, D3).
 
-export type Formato = "epub" | "pdf" | "mp3" | "m4b" | "m4a" | "ogg";
+export type Formato = "epub" | "pdf" | "mobi" | "azw" | "azw3" | "cbz" | "cbr" | "fb2" | "mp3" | "m4b" | "m4a" | "ogg";
 export type EstadoBiblioteca = "sin_empezar" | "leyendo" | "leido";
 
 export const FORMATOS: Record<Formato, { audio: boolean; mimes: string[] }> = {
   epub: { audio: false, mimes: ["application/epub+zip"] },
   pdf: { audio: false, mimes: ["application/pdf"] },
+  mobi: { audio: false, mimes: ["application/x-mobipocket-ebook"] },
+  azw: { audio: false, mimes: ["application/vnd.amazon.ebook"] },
+  azw3: { audio: false, mimes: ["application/vnd.amazon.mobi8-ebook", "application/x-mobi8-ebook"] },
+  cbz: { audio: false, mimes: ["application/vnd.comicbook+zip", "application/x-cbz"] },
+  cbr: { audio: false, mimes: ["application/vnd.comicbook-rar", "application/x-cbr", "application/vnd.rar", "application/x-rar-compressed"] },
+  fb2: { audio: false, mimes: ["application/x-fictionbook+xml", "application/x-fb2", "text/fb2+xml"] },
   mp3: { audio: true, mimes: ["audio/mpeg", "audio/mp3"] },
   m4b: { audio: true, mimes: ["audio/x-m4b", "audio/m4b"] },
   m4a: { audio: true, mimes: ["audio/mp4", "audio/x-m4a", "audio/m4a"] },
@@ -148,7 +154,7 @@ export function validarLibro(entrada: Record<string, unknown>, { conArchivos }: 
   const archivos: ArchivoValido[] = lista.map((a, i) => {
     const o = (a ?? {}) as Record<string, unknown>;
     if (!esUrlArchivo(o.url)) throw new Error("Archivo inválido");
-    if (!esFormato(o.formato)) throw new Error("Formato no admitido (ePub, PDF, mp3, m4b, m4a u ogg)");
+    if (!esFormato(o.formato)) throw new Error("Formato no admitido (ePub, PDF, mobi, azw, azw3, cbz, cbr, fb2, mp3, m4b, m4a u ogg)");
     const bytes = Number.isInteger(o.bytes) && (o.bytes as number) >= 0 ? (o.bytes as number) : null;
     const duracionSeg = Number.isInteger(o.duracionSeg) && (o.duracionSeg as number) >= 0 ? (o.duracionSeg as number) : null;
     return { url: o.url, formato: o.formato, bytes, orden: i, titulo: texto(o.titulo, "el título de la pista", 200), duracionSeg };

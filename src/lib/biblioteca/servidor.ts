@@ -2,9 +2,13 @@
 // padres cargan, editan y borran (D2). El estado y la posición de lectura son de cada usuario.
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { guardarImagen, leerArchivo } from "@/lib/archivos";
 import { NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
+import { extraerMetadatosLibro, parsearNombreArchivo } from "./metadatos";
 import {
   esEstado,
+  esFormato,
+  esUrlArchivo,
   ordenarPistas,
   porcentajeValido,
   siguienteEstado,
@@ -96,7 +100,43 @@ async function estantesExistentes(ids: number[]) {
 
 export async function crearLibro(actor: Actor, body: Record<string, unknown>): Promise<LibroDetalle> {
   soloPadres(actor);
-  const v = validarLibro(body, { conArchivos: true });
+  const enriquecido: Record<string, unknown> = { ...body };
+  const listaArchivos = Array.isArray(body.archivos) ? body.archivos : [];
+  const primero = (listaArchivos[0] ?? null) as Record<string, unknown> | null;
+
+  if (primero && esUrlArchivo(primero.url) && esFormato(primero.formato)) {
+    const leido = await leerArchivo(primero.url).catch(() => null);
+    if (leido) {
+      const nombreOrigen =
+        typeof body.nombreArchivo === "string" && body.nombreArchivo.trim()
+          ? body.nombreArchivo.trim()
+          : leido.nombreOrigen;
+      const meta = await extraerMetadatosLibro(leido.datos, primero.formato, nombreOrigen);
+      const tituloActual = typeof body.titulo === "string" ? body.titulo.trim() : "";
+      const stemOrigen = nombreOrigen ? parsearNombreArchivo(nombreOrigen).titulo : "";
+      const rawStem = nombreOrigen ? nombreOrigen.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim() : "";
+
+      if ((!tituloActual || tituloActual === stemOrigen || tituloActual === rawStem) && meta.titulo) {
+        enriquecido.titulo = meta.titulo;
+      }
+      if (!enriquecido.autor && meta.autor) {
+        enriquecido.autor = meta.autor;
+      }
+      if (!enriquecido.sinopsis && meta.sinopsis) {
+        enriquecido.sinopsis = meta.sinopsis;
+      }
+      if (!enriquecido.portadaUrl && meta.portada) {
+        const img = await guardarImagen(meta.portada, {
+          subidoPorId: actor.id,
+          perfil: "portada",
+          nombreOrigen: `${meta.titulo ?? "portada"}.webp`,
+        }).catch(() => null);
+        if (img) enriquecido.portadaUrl = img.url;
+      }
+    }
+  }
+
+  const v = validarLibro(enriquecido, { conArchivos: true });
   await estantesExistentes(v.estanteIds);
   const l = await prisma.bibliotecaLibro.create({
     data: {

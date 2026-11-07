@@ -17,13 +17,13 @@ type Estado = "pendiente" | "subiendo" | "agregado" | "fallo";
 type Fila = { nombre: string; estado: Estado; error?: string };
 
 const MAX_BYTES = 4 * 1024 * 1024;
-const ACEPTA = ".epub,.pdf";
+const ACEPTA = ".epub,.pdf,.mobi,.azw,.azw3,.cbz,.cbr,.fb2";
 
 const tituloDe = (nombre: string) => nombre.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim() || nombre;
 
 async function subirUno(archivo: File) {
   const formato = formatoDe(archivo.name, archivo.type);
-  if (!formato || esAudio(formato)) throw new Error("Por ahora solo ePub y PDF (los audiolibros llegan con archivos grandes)");
+  if (!formato || esAudio(formato)) throw new Error("Formato no admitido (ePub, PDF, MOBI, AZW, AZW3, CBZ, CBR o FB2)");
   if (archivo.size > MAX_BYTES) throw new Error("El archivo supera los 4 MB");
   const form = new FormData();
   form.append("modo", "estudio");
@@ -34,7 +34,11 @@ async function subirUno(archivo: File) {
   const res = await fetch("/api/biblioteca/libros", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ titulo: tituloDe(archivo.name), archivos: [{ url: subida.url, formato, bytes: archivo.size }] }),
+    body: JSON.stringify({
+      titulo: tituloDe(archivo.name),
+      nombreArchivo: archivo.name,
+      archivos: [{ url: subida.url, formato, bytes: archivo.size }],
+    }),
   });
   const datos = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(datos.error || "No se pudo agregar el libro");
