@@ -3,7 +3,8 @@
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
-import { CalendarDays, Columns3, List, PanelRight } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Columns3, List, PanelRight, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/app/PageHeader";
 import { NAV, SectionId, sectionFromParams } from "@/components/app/AppSidebar";
@@ -140,12 +141,24 @@ export function TaskWorkspace({
               </TooltipTrigger>
               <TooltipContent>Agenda</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" asChild>
+                  <Link href="/dashboard/imprimir/agenda-semanal" aria-label="Imprimir agenda semanal">
+                    <Printer />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Imprimir agenda semanal</TooltipContent>
+            </Tooltip>
           </>
         )}
       </PageHeader>
 
       {isTaskSection ? (
-        <div className="flex h-[calc(100svh-10.5rem-var(--notice-h,0px))] min-h-[480px]">
+        // Lista y calendario crecen con su contenido (una sola barra de scroll, la de la página);
+        // el tablero mantiene alto fijo porque cada columna scrollea por dentro (lane 261)
+        <div className={cn("flex", isBoard ? "h-[calc(100svh-10.5rem-var(--notice-h,0px))] min-h-[480px]" : "min-h-[480px] items-start")}>
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="flex items-center gap-2 px-4 py-3">
               <ToggleGroup type="single" size="sm" value={filter} onValueChange={(v) => v && setFilter(v as Filter)} aria-label="Filtrar" className="overflow-x-auto">
@@ -158,7 +171,7 @@ export function TaskWorkspace({
               </span>
             </div>
 
-            <div className={cn("relative min-h-0 flex-1", isBoard ? "overflow-hidden" : "overflow-y-auto")}>
+            <div className={cn("relative min-h-0 flex-1", isBoard && "overflow-hidden")}>
               {isCalendar ? (
                 <div className="px-4 pb-4">
                   <MissionCalendar
@@ -181,6 +194,8 @@ export function TaskWorkspace({
             aria-label={selected ? "Detalle de la tarea" : "Agenda"}
             className={cn(
               "hidden shrink-0 overflow-hidden border-l transition-[width,opacity] duration-300 lg:block",
+              // Fijo a la vista mientras la lista scrollea con la página (debajo del encabezado h-14)
+              !isBoard && "lg:sticky lg:top-14 lg:h-[calc(100svh-3.5rem)]",
               panelInline ? "w-80 opacity-100" : "w-0 border-l-0 opacity-0"
             )}
           >

@@ -1,0 +1,10 @@
+/* Agenda semanal imprimible (lane 273, D5): A4 apaisada con una página CSS con nombre,
+   sin tocar el A4 vertical de los reportes de Homeschooling (globals.css). */
+.hoja-agenda-semanal {
+  page: agenda-semanal;
+}
+
+@page agenda-semanal {
+  size: A4 landscape;
+  margin: 1cm;
+}
