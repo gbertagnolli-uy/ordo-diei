@@ -30,6 +30,7 @@ import { CLAVE_LIBRO, ETAPAS, type Marca } from "@/lib/habitos/catalogo";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import { HabitoIcon } from "./HabitoIcon";
 import { LibroProgreso, PaginasHecho, type DatosLibro } from "./LibroLectura";
+import { MIN_RESUMEN } from "@/lib/habitos/pruebaRealizacion";
 
 const pct = (n: number) => `${Math.round(n * 100)} %`;
 
@@ -44,8 +45,11 @@ export function HabitoCard({
   onEditar,
   onArchivar,
   onCargarLibro,
+  pideResumen = false,
 }: {
   h: EstadoHabito;
+  /** Lane 257: al marcar «hecho» pide un resumen de lo leído (hijo + lectura/libro) */
+  pideResumen?: boolean;
   misterios: readonly string[];
   ocupado: boolean;
   puedeEditar: boolean;
@@ -66,6 +70,19 @@ export function HabitoCard({
   const [motivoSeleccionado, setMotivoSeleccionado] = useState<"justificado" | "no" | null>(null);
   const [motivoTexto, setMotivoTexto] = useState("");
   const [notaOpcional, setNotaOpcional] = useState("");
+  // Resumen de lectura (lane 257): null = cerrado; { paginas } = esperando el texto para marcar «hecho»
+  const [resumenPara, setResumenPara] = useState<{ paginas?: number } | null>(null);
+  const [resumen, setResumen] = useState("");
+
+  const pedirHecho = (paginas?: number) => {
+    if (!pideResumen) {
+      handleMarcar("hecho", undefined, paginas);
+      return;
+    }
+    setResumen("");
+    // Igual que el popover de nota: esperar a que se cierre el popover de páginas
+    setTimeout(() => setResumenPara({ paginas }), 150);
+  };
 
   const hecho = h.hoy === "hecho";
   const justificado = h.hoy === "justificado";
@@ -273,13 +290,13 @@ export function HabitoCard({
               <PaginasHecho
                 meta={h.pasoActual.meta ?? 1}
                 ocupado={ocupado}
-                onConfirmar={(paginas) => handleMarcar("hecho", undefined, paginas)}
+                onConfirmar={(paginas) => pedirHecho(paginas)}
               />
             ) : (
               <Button
                 className="flex-1"
                 disabled={ocupado}
-                onClick={() => handleMarcar("hecho")}
+                onClick={() => pedirHecho()}
               >
                 {ocupado ? <Spinner /> : <Check className="size-4" />} Hecho
               </Button>
@@ -313,6 +330,43 @@ export function HabitoCard({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Resumen de lo leído (lane 257) */}
+            <Dialog open={resumenPara !== null} onOpenChange={(abierto) => !abierto && setResumenPara(null)}>
+              <DialogContent className="sm:max-w-md space-y-3">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">¿Qué leíste hoy?</DialogTitle>
+                  <DialogDescription className="text-xs">
+                    Contalo con tus palabras. Tus padres lo leen antes de aprobar.
+                  </DialogDescription>
+                </DialogHeader>
+                <Textarea
+                  placeholder="Hoy leí sobre..."
+                  value={resumen}
+                  onChange={(e) => setResumen(e.target.value)}
+                  rows={5}
+                />
+                <p className={cn("text-xs tabular-nums", resumen.trim().length < MIN_RESUMEN ? "text-muted-foreground" : "text-[var(--success)]")}>
+                  {resumen.trim().length}/{MIN_RESUMEN} caracteres como mínimo
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setResumenPara(null)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={ocupado || resumen.trim().length < MIN_RESUMEN}
+                    onClick={() => {
+                      const paginas = resumenPara?.paginas;
+                      setResumenPara(null);
+                      handleMarcar("hecho", resumen.trim(), paginas);
+                    }}
+                  >
+                    Enviar a mis padres
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Modal centrado para nota opcional */}
             <Dialog open={popoverOpen} onOpenChange={setPopoverOpen}>

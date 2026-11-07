@@ -1,7 +1,7 @@
 // Catálogo de hábitos: datos sin dependencias de base de datos ni XState, seguros para el cliente.
 import { getDay, parseISO } from "date-fns";
 
-export type Categoria = "oracion" | "orden" | "cuidado";
+export type Categoria = "oracion" | "orden" | "cuidado" | "virtud";
 export type Franja = "manana" | "tarde" | "noche";
 export type Marca = "hecho" | "justificado" | "no";
 /** Resultado de un día: libre = no programado; no y falta cuentan igual en el motor */
@@ -265,6 +265,7 @@ export const CATEGORIAS: Record<Categoria, string> = {
   oracion: "Oración",
   orden: "Orden",
   cuidado: "Cuidado personal",
+  virtud: "Virtudes",
 };
 
 export const FRANJAS: Record<Franja, string> = {
