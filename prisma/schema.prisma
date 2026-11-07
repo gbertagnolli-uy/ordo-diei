@@ -1620,6 +1620,25 @@ model MetaSemanal {
   @@map("Metas_Semanales")
 }
 
+// Premio grupal (lane 274, Plane #33): si los hijos completan el % meta de sus tareas del período, cada uno recibe un vale.
+model PremioGrupal {
+  id              Int       @id @default(autoincrement())
+  titulo          String    @map("Titulo") // texto del vale: «Vale por …»
+  descripcion     String?   @map("Descripcion")
+  porcentajeMeta  Int       @map("Porcentaje_Meta")
+  desde           DateTime  @map("Desde") @db.Date
+  hasta           DateTime  @map("Hasta") @db.Date
+  activo          Boolean   @default(true) @map("Activo")
+  evaluadoEn      DateTime? @map("Evaluado_En")
+  cumplido        Boolean?  @map("Cumplido")
+  porcentajeFinal Int?      @map("Porcentaje_Final")
+  creadoPorId     Int?      @map("Creado_Por_ID")
+  createdAt       DateTime  @default(now()) @map("Created_At")
+
+  @@index([activo, desde])
+  @@map("Premios_Grupales")
+}
+
 // Compañero que evoluciona (vault/ENGAGEMENT_PLAN.md, lane 203): crece con los DÍAS DE USO (no con la racha),
 // así que faltar nunca lo achica. Solo guarda lo que elige el niño; la etapa se calcula con `ActividadDia`.
 model Companero {
