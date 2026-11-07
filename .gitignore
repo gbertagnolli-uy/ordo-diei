@@ -59,3 +59,6 @@ cambio.sql
 /.cache/
 .venv-rembg/
 __pycache__/
+
+# Vault: carpeta global en la raíz del proyecto (../vault), fuera de git (AGENTS.md › Vault, lane 256)
+/vault/

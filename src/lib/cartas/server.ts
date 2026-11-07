@@ -28,6 +28,7 @@ import {
   gradoDe,
   gradoVisible,
   imagenDeGrado,
+  progresoSiguienteGrado,
   type CartaConImagenes,
 } from "./fragmentos.ts";
 import {
@@ -319,25 +320,10 @@ export async function obtenerDetalleCarta(
   // Progreso hacia el siguiente grado
   const req = cartaDb.fragmentosRequeridos;
   const topeFragmentos = req * 3;
-  let siguienteGrado: number | null = null;
-  let fragmentosParaSiguienteGrado = 0;
-
-  if (fragmentos < req) {
-    siguienteGrado = 1;
-    fragmentosParaSiguienteGrado = req - fragmentos;
-  } else if (fragmentos < Math.floor(req * 1.5)) {
-    siguienteGrado = 2;
-    fragmentosParaSiguienteGrado = Math.floor(req * 1.5) - fragmentos;
-  } else if (fragmentos < req * 2) {
-    siguienteGrado = 3;
-    fragmentosParaSiguienteGrado = req * 2 - fragmentos;
-  } else if (fragmentos < req * 3) {
-    siguienteGrado = 4;
-    fragmentosParaSiguienteGrado = req * 3 - fragmentos;
-  } else {
-    siguienteGrado = null;
-    fragmentosParaSiguienteGrado = 0;
-  }
+  // Misma regla que gradoDe (D14): una sola fuente para los umbrales (lane 260)
+  const progresoGrado = progresoSiguienteGrado(fragmentos, req);
+  const siguienteGrado: number | null = progresoGrado.siguienteGrado;
+  const fragmentosParaSiguienteGrado = progresoGrado.faltan;
 
   const detalleEnriquecido = {
     ...visible,
