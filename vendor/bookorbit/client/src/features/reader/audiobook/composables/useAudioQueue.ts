@@ -1,0 +1,274 @@
+import { ref } from 'vue'
+import { Howl } from 'howler'
+import { refreshAccessToken } from '@/lib/api'
+
+export interface AudioFile {
+  assetId: string
+  format: string
+  durationMs: number | null
+}
+
+const RECOVERY_COOLDOWN_MS = 5_000
+
+function serveUrl(bookId: number, assetId: string): string {
+  return `/api/v1/audiobooks/${bookId}/assets/${assetId}/content`
+}
+
+export function useAudioQueue(bookId: number, files: AudioFile[], onFileEnd: (assetId: string) => void) {
+  const currentIndex = ref(0)
+  const isPlaying = ref(false)
+  const currentPosition = ref(0)
+  const duration = ref(0)
+  const loadError = ref<string | null>(null)
+
+  // Only the active Howl and its immediate neighbours are kept alive.
+  const howls = new Map<string, Howl>()
+
+  // Pending seek to apply when the current Howl finishes loading.
+  // Using a single variable prevents stacking multiple once('load') seek handlers.
+  let pendingSeek: number | null = null
+  let playRequested = false
+  let recoveryPending = false
+  let destroyed = false
+  let activationEpoch = 0
+  let playbackRate = 1
+  let playbackVolume = 1
+  let lastRecoveryAt: number | null = null
+
+  function buildHowl(index: number, allowRecovery = true): Howl {
+    const file = files[index]!
+    const fmt = file.format?.toLowerCase() ?? 'm4b'
+    let recovering = false
+    const howl = new Howl({
+      src: [serveUrl(bookId, file.assetId)],
+      format: [fmt],
+      html5: true,
+      preload: false,
+      rate: playbackRate,
+      volume: playbackVolume,
+      onend() {
+        if (recoveryPending || destroyed || howls.get(file.assetId) !== howl) return
+        playRequested = false
+        onFileEnd(file.assetId)
+      },
+      onplay() {
+        if (recoveryPending || destroyed || howls.get(file.assetId) !== howl) return
+        playRequested = true
+        isPlaying.value = true
+      },
+      onpause() {
+        isPlaying.value = false
+      },
+      onstop() {
+        isPlaying.value = false
+      },
+      onload() {
+        allowRecovery = true
+        if (index === currentIndex.value) {
+          duration.value = howl.duration()
+        }
+      },
+      onloaderror(_id: number, err: unknown) {
+        if (index !== currentIndex.value || howls.get(file.assetId) !== howl || destroyed || recovering) return
+        isPlaying.value = false
+        const message = typeof err === 'string' ? err : 'Failed to load audio file'
+        if (!allowRecovery || (lastRecoveryAt !== null && Date.now() - lastRecoveryAt < RECOVERY_COOLDOWN_MS)) {
+          recoveryPending = false
+          playRequested = false
+          loadError.value = message
+          return
+        }
+        allowRecovery = false
+        lastRecoveryAt = Date.now()
+        recovering = true
+        recoveryPending = true
+        const epoch = activationEpoch
+        void refreshAccessToken()
+          .then(() => {
+            if (destroyed || epoch !== activationEpoch || index !== currentIndex.value || howls.get(file.assetId) !== howl) return
+            howl.unload()
+            howls.delete(file.assetId)
+            const retry = buildHowl(index, false)
+            howls.set(file.assetId, retry)
+            retry.once('load', () => {
+              if (destroyed || index !== currentIndex.value || howls.get(file.assetId) !== retry) return
+              const position = currentPosition.value
+              retry.seek(position)
+              recoveryPending = false
+              if (playRequested) retry.play()
+            })
+            retry.load()
+          })
+          .catch(() => {
+            if (destroyed || epoch !== activationEpoch || index !== currentIndex.value || howls.get(file.assetId) !== howl) return
+            recoveryPending = false
+            playRequested = false
+            loadError.value = message
+          })
+          .finally(() => {
+            recovering = false
+          })
+      },
+    })
+    return howl
+  }
+
+  function getOrCreate(index: number): Howl {
+    const file = files[index]!
+    if (!howls.has(file.assetId)) {
+      howls.set(file.assetId, buildHowl(index))
+    }
+    return howls.get(file.assetId)!
+  }
+
+  function evictDistant(activeIndex: number) {
+    for (const [assetId, howl] of howls) {
+      const idx = files.findIndex((f) => f.assetId === assetId)
+      if (Math.abs(idx - activeIndex) > 1) {
+        howl.stop()
+        howl.unload()
+        howls.delete(assetId)
+      }
+    }
+  }
+
+  function activateIndex(index: number, positionSeconds = 0) {
+    const clamped = Math.max(0, Math.min(index, files.length - 1))
+    if (clamped !== currentIndex.value) {
+      const prev = howls.get(files[currentIndex.value]!.assetId)
+      prev?.stop()
+      currentIndex.value = clamped
+      pendingSeek = null
+      activationEpoch++
+      recoveryPending = false
+    }
+
+    const howl = getOrCreate(clamped)
+    if (clamped + 1 < files.length) getOrCreate(clamped + 1)
+    if (clamped - 1 >= 0) getOrCreate(clamped - 1)
+    evictDistant(clamped)
+
+    loadError.value = null
+    duration.value = (files[clamped]!.durationMs ?? 0) / 1000
+    currentPosition.value = positionSeconds
+
+    if (howl.state() === 'loaded') {
+      duration.value = howl.duration()
+      howl.seek(positionSeconds)
+      currentPosition.value = positionSeconds
+    } else {
+      pendingSeek = positionSeconds
+      howl.once('load', () => {
+        duration.value = howl.duration()
+        const seekTo = pendingSeek ?? positionSeconds
+        pendingSeek = null
+        howl.seek(seekTo)
+        currentPosition.value = seekTo
+      })
+      howl.load()
+    }
+  }
+
+  function currentHowl(): Howl | undefined {
+    const assetId = files[currentIndex.value]?.assetId
+    return assetId !== undefined ? howls.get(assetId) : undefined
+  }
+
+  function play() {
+    const h = currentHowl()
+    if (!h) return
+    playRequested = true
+    if (recoveryPending) return
+    if (h.state() === 'unloaded') {
+      h.once('load', () => h.play())
+      h.load()
+    } else {
+      h.play()
+    }
+  }
+
+  function pause() {
+    playRequested = false
+    currentHowl()?.pause()
+  }
+
+  function seek(seconds: number) {
+    const h = currentHowl()
+    if (!h) return
+    const fileDurationMs = files[currentIndex.value]?.durationMs
+    const fileDur = fileDurationMs === null || fileDurationMs === undefined ? null : fileDurationMs / 1000
+    const upper = duration.value || (fileDur != null ? fileDur : Infinity)
+    const s = Math.max(0, Math.min(seconds, upper))
+    if (h.state() === 'loaded') {
+      h.seek(s)
+    } else {
+      // Store as pending; the activateIndex load handler will apply the latest value.
+      pendingSeek = s
+    }
+    currentPosition.value = s
+  }
+
+  function position(): number {
+    if (loadError.value || recoveryPending) return currentPosition.value
+    const h = currentHowl()
+    if (!h) return currentPosition.value
+    const p = h.seek()
+    if (typeof p === 'number' && Number.isFinite(p)) currentPosition.value = p
+    return currentPosition.value
+  }
+
+  function setSpeed(rate: number) {
+    playbackRate = rate
+    for (const h of howls.values()) h.rate(rate)
+  }
+
+  function setVolume(vol: number) {
+    playbackVolume = vol
+    for (const h of howls.values()) h.volume(vol)
+  }
+
+  function goToAsset(assetId: string, positionSeconds = 0) {
+    const idx = files.findIndex((f) => f.assetId === assetId)
+    if (idx === -1) return
+    activateIndex(idx, positionSeconds)
+  }
+
+  function nextFile() {
+    if (currentIndex.value < files.length - 1) activateIndex(currentIndex.value + 1, 0)
+  }
+
+  function prevFile() {
+    if (currentIndex.value > 0) activateIndex(currentIndex.value - 1, 0)
+  }
+
+  function destroy() {
+    destroyed = true
+    playRequested = false
+    recoveryPending = false
+    for (const h of howls.values()) {
+      h.stop()
+      h.unload()
+    }
+    howls.clear()
+  }
+
+  return {
+    currentIndex,
+    isPlaying,
+    currentPosition,
+    duration,
+    loadError,
+    files,
+    activateIndex,
+    play,
+    pause,
+    seek,
+    position,
+    setSpeed,
+    setVolume,
+    goToAsset,
+    nextFile,
+    prevFile,
+    destroy,
+  }
+}
