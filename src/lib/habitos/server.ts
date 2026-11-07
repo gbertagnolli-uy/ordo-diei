@@ -29,6 +29,7 @@ import {
   type Evento,
 } from "./engine.ts";
 import { puedeEditarHabito } from "./permisos.ts";
+import { errorResumen } from "./pruebaRealizacion.ts";
 import { haySancion } from "../comportamiento/sancionServer.ts";
 import { mitad } from "../comportamiento/sancion.ts";
 import { claveDeUrl } from "../archivos.ts";
@@ -354,7 +355,7 @@ export async function crearHabito(
   if (!nombre || nombre.length > 80) throw new Error("Nombre debe tener entre 1 y 80 caracteres");
   if (!ancla || ancla.length > 120) throw new Error("Ancla debe tener entre 1 y 120 caracteres");
   if (minimo && minimo.length > 120) throw new Error("Mínimo no puede exceder 120 caracteres");
-  if (!["oracion", "orden", "cuidado"].includes(datos.categoria)) throw new Error("Categoría no válida");
+  if (!["oracion", "orden", "cuidado", "virtud"].includes(datos.categoria)) throw new Error("Categoría no válida");
   if (!["manana", "tarde", "noche"].includes(datos.franja)) throw new Error("Franja no válida");
 
   if (!esPadre) {
@@ -434,7 +435,7 @@ export async function editarHabito(
     data.minimo = minimo;
   }
   if (datos.categoria !== undefined) {
-    if (!["oracion", "orden", "cuidado"].includes(datos.categoria)) throw new Error("Categoría no válida");
+    if (!["oracion", "orden", "cuidado", "virtud"].includes(datos.categoria)) throw new Error("Categoría no válida");
     data.categoria = datos.categoria;
   }
   if (datos.franja !== undefined) {
@@ -738,6 +739,10 @@ export async function registrar(input: {
   const categoria = habito.categoria as Categoria;
   const pasos = pasosDe(habito);
   const esLibro = habito.clave === CLAVE_LIBRO;
+
+  // Prueba de realización (lane 257): el «hecho» de una lectura lleva resumen para los padres
+  const faltaResumen = errorResumen({ clave: habito.clave, marca, esPadre, nota });
+  if (faltaResumen) throw new Error(faltaResumen);
 
   // Páginas: obligatorias al marcar "hecho" en "Leer un libro"; en el resto no se guardan
   let paginas: number | null = null;

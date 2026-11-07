@@ -1,0 +1,701 @@
+"use client";
+
+// The landing page at "/". It uses the app's own tokens, logo, buttons and glass pills, plus the
+// folded sheet from the mark, so the landing page, the sign-in page and the app read as one
+// product. The sections live in Platforms.tsx, Sections.tsx and Android.tsx, the product pictures in
+// Pictures.tsx, the colours in tones.ts, and the motion in landing.css (all of it off when motion
+// is reduced).
+
+import Link from "next/link";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { DEFAULT_THEME_PREFERENCE, type ThemePreference } from "@dovli/theme";
+import { DovliLogo, DovliMark, Icon, Kbd, Segmented, buttonStyles, cn, type IconName } from "@dovli/ui";
+import { WindowsIcon } from "@/features/download/DesktopPicture";
+import { APP_PATH, LOGIN_PATH, SIGNUP_PATH } from "@/lib/authGate";
+import { trackEvent } from "@/lib/analytics";
+import { settings } from "@/lib/settings";
+import { Android, GooglePlayBadge, HeroPhone, PLAY_STORE_URL, usePlayCountdown } from "./Android";
+import { CHROME_STORE_URL } from "./chromeStore";
+import { prefersLessMotion, useScrollMotion } from "./motion";
+import { HeroPicture } from "./Pictures";
+import { Platforms } from "./Platforms";
+import { Scene } from "./Scene";
+import { Ai, Extension, Features, Templates, container, leadClass } from "./Sections";
+import { Sheet } from "./Sheet";
+import { tone, type Tone } from "./tones";
+
+type Start = { href: string; label: string };
+
+/** Counts clicks on the main button, by where it sits on the page (see lib/analytics.ts). */
+const startClick = (start: Start, place: string) => () =>
+  trackEvent(start.href === SIGNUP_PATH ? "Sign-up click" : "Open app click", { place });
+
+/**
+ * `accounts`: sign-in is set up. Without it, Dovli runs on this device only, so the buttons open the app.
+ * `signedIn`: this visitor already has a session, so the buttons go straight into the app.
+ */
+export function Landing({ accounts = true, signedIn = false, desktop = null }: { accounts?: boolean; signedIn?: boolean; desktop?: string | null }) {
+  // One name for the main action everywhere on the page.
+  const start: Start = accounts && !signedIn ? { href: SIGNUP_PATH, label: "Create free account" } : { href: APP_PATH, label: "Open Dovli" };
+  const showSignIn = accounts && !signedIn;
+
+  // Page links from before the app moved to /app ("/#p-abc") still open the page.
+  useEffect(() => {
+    if (window.location.hash.startsWith("#p-")) window.location.replace(APP_PATH + window.location.hash);
+  }, []);
+  const motionRoot = useScrollMotion<HTMLDivElement>();
+
+  return (
+    <div ref={motionRoot} className="lp-root relative isolate min-h-dvh overflow-x-clip bg-bg text-ink">
+      <Glow />
+      <Header showSignIn={showSignIn} start={start} desktop={desktop} />
+      <main id="main">
+        <Hero free={showSignIn} start={start} desktop={desktop} />
+        <Platforms desktop={desktop} />
+        <div className="flex flex-col gap-24 py-24 sm:gap-28 sm:py-28">
+          <Features />
+          <Android />
+          <Templates start={start} />
+          <Ai />
+          <Extension />
+        </div>
+        <Closing free={showSignIn} start={start} desktop={desktop} />
+      </main>
+      <Footer showSignIn={showSignIn} start={start} desktop={desktop} />
+    </div>
+  );
+}
+
+/* ---------- Header: a floating glass pill, like the app's own top bar ---------- */
+
+type ProductItemData = { href: string; icon: IconName; t: Tone; title: string; text: string; tag?: "New" | "Soon"; soon?: "desktop" };
+
+// Everything in Dovli, for the Product menu (and the phone menu). Each part keeps its page colour.
+// `desktop`: the newest Mac and Windows version, or null before the first release.
+const productItems = (desktop: string | null): ProductItemData[] => [
+  { href: "#features", icon: "pencil", t: "blue", title: "Pages and blocks", text: "Type / for to-dos, tables, callouts and more" },
+  { href: "#features", icon: "board", t: "mint", title: "Whiteboards", text: "Sketch and flowchart beside your notes" },
+  { href: "#templates", icon: "templates", t: "butter", title: "Templates", text: "Meeting notes, briefs, reviews and boards" },
+  { href: "#mcp", icon: "sparkles", t: "lilac", title: "AI", text: "An assistant in the page, and your AI apps through MCP" },
+  { href: "#android", icon: "device", t: "pink", title: "Android app", text: "Your pages on your phone, offline too", tag: "New" },
+  { href: "/download", icon: "monitor", t: "butter", title: "Mac and Windows", text: "Its own window, offline too", tag: desktop ? "New" : "Soon", soon: desktop ? undefined : "desktop" },
+  { href: "#extension", icon: "paperclip", t: "sky", title: "Browser extension", text: "Clip what you read on the web", tag: "New" },
+];
+
+// The links in the bar, and which sections light each one up.
+const navLinks: { href: string; label: string; sections: string[]; menu?: boolean; fresh?: boolean }[] = [
+  { href: "#features", label: "Product", sections: ["features", "extension"], menu: true },
+  { href: "#templates", label: "Templates", sections: ["templates"] },
+  { href: "#mcp", label: "AI", sections: ["mcp"] },
+  { href: "#android", label: "Android", sections: ["android"], fresh: true },
+];
+const watched = ["features", "android", "templates", "mcp", "extension"];
+
+function ProductItem({ item, onPick, large }: { item: ProductItemData; onPick: () => void; large?: boolean }) {
+  const c = tone(item.t);
+  return (
+    <a
+      href={item.href}
+      onClick={() => {
+        if (item.soon) trackEvent("Coming soon click", { app: item.soon });
+        onPick();
+      }}
+      className="group flex items-start gap-3 rounded-[12px] p-2.5 transition-colors hover:bg-hover focus-visible:outline-offset-[-2px]">
+      <span
+        className={cn("grid flex-none place-items-center rounded-[10px] transition-transform duration-300 group-hover:-rotate-6", large ? "size-11" : "size-10")}
+        style={{ background: c.bg, color: c.ink }}
+        aria-hidden="true"
+      >
+        <Icon name={item.icon} size={large ? 19 : 18} />
+      </span>
+      <span className="min-w-0 pt-0.5">
+        <span className="flex items-center gap-2 text-base font-semibold text-ink">
+          {item.title}
+          {item.tag && (
+            <span
+              className={cn("rounded-full px-1.5 py-px text-2xs font-semibold", item.tag === "Soon" && "bg-well text-ink-2")}
+              style={item.tag === "New" ? { background: tone("mint").bg, color: tone("mint").ink } : undefined}
+            >
+              {item.tag}
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 block text-sm leading-snug text-ink-2">{item.text}</span>
+      </span>
+    </a>
+  );
+}
+
+function Header({ showSignIn, start, desktop }: { showSignIn: boolean; start: Start; desktop: string | null }) {
+  const { launched } = usePlayCountdown();
+  const [menu, setMenu] = useState(false); // the phone menu
+  const [product, setProduct] = useState(false); // the Product dropdown on wide screens
+  const [scrolled, setScrolled] = useState(false);
+  const [current, setCurrent] = useState(""); // the section on screen
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [mark, setMark] = useState<{ left: number; width: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const productButton = useRef<HTMLButtonElement>(null);
+  const hoverTimer = useRef<number>(0);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Which section is on screen.
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) setCurrent(e.target.id);
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    watched.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+    const top = new IntersectionObserver(([e]) => e?.isIntersecting && setCurrent(""), { rootMargin: "0px 0px -60% 0px" });
+    const hero = document.getElementById("hero-title");
+    if (hero) top.observe(hero);
+    return () => {
+      io.disconnect();
+      top.disconnect();
+    };
+  }, []);
+
+  const activeHref = navLinks.find((l) => l.sections.includes(current))?.href ?? null;
+
+  // One soft highlight glides to the link you point at, or rests on the section you're reading.
+  useEffect(() => {
+    const target = hovered ?? (product ? "#features" : activeHref);
+    const el = target ? navRef.current?.querySelector<HTMLElement>(`[data-nav="${target}"]`) : null;
+    setMark(el ? { left: el.offsetLeft, width: el.offsetWidth } : null);
+  }, [hovered, activeHref, product]);
+
+  // Menus close on Escape (focus goes back to the button that opened them), on a click outside,
+  // and when keyboard focus leaves the header.
+  useEffect(() => {
+    if (!menu && !product) return;
+    const close = (refocus: boolean) => {
+      if (refocus) (menu ? menuButton : productButton).current?.focus();
+      setMenu(false);
+      setProduct(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close(true);
+    const outside = (e: Event) => !wrapRef.current?.contains(e.target as Node) && close(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", outside);
+    window.addEventListener("focusin", outside);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", outside);
+      window.removeEventListener("focusin", outside);
+    };
+  }, [menu, product]);
+
+  // On a mouse, the Product menu opens on hover too, with a short grace period when leaving.
+  const hoverProduct = (on: boolean) => {
+    window.clearTimeout(hoverTimer.current);
+    if (on) setProduct(true);
+    else hoverTimer.current = window.setTimeout(() => setProduct(false), 160);
+  };
+
+  const raised = scrolled || menu || product;
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:pt-4">
+      <div
+        ref={wrapRef}
+        className={cn("relative mx-auto transition-[max-width] duration-500 ease-out", scrolled ? "max-w-[1060px]" : "max-w-[1160px]")}
+      >
+        <div className={cn("relative flex h-14 items-center gap-1 pl-4 pr-2 transition-[box-shadow,background-color] duration-300", raised ? "chrome-pill" : "rounded-full")}>
+          <Link href="/" aria-label="Dovli home" className="mr-4 rounded-md">
+            <DovliLogo size={28} />
+          </Link>
+
+          <div ref={navRef} className="relative hidden items-center lg:flex" onPointerLeave={() => setHovered(null)}>
+            <span
+              aria-hidden="true"
+              className="absolute top-1/2 h-8 -translate-y-1/2 rounded-full bg-active transition-[left,width,opacity] duration-300 ease-out"
+              style={{ left: mark?.left ?? 0, width: mark?.width ?? 0, opacity: mark ? 1 : 0 }}
+            />
+            <nav aria-label="Main" className="relative flex items-center">
+              {navLinks.map((l) =>
+                l.menu ? (
+                  <div key={l.href} onPointerEnter={(e) => e.pointerType === "mouse" && hoverProduct(true)} onPointerLeave={(e) => e.pointerType === "mouse" && hoverProduct(false)}>
+                    <button
+                      ref={productButton}
+                      type="button"
+                      data-nav={l.href}
+                      aria-expanded={product}
+                      aria-controls="product-menu"
+                      onPointerEnter={() => setHovered(l.href)}
+                      onClick={() => setProduct((p) => !p)}
+                      className={cn(
+                        "relative flex h-8 items-center gap-1 rounded-full px-3 text-base font-semibold transition-colors",
+                        activeHref === l.href || product ? "text-active-ink" : "text-ink-2 hover:text-ink",
+                      )}
+                    >
+                      {l.label}
+                      <Icon name="chevronDown" size={13} className={cn("transition-transform duration-300", product && "rotate-180")} aria-hidden="true" />
+                    </button>
+                    {product && (
+                      <div
+                        id="product-menu"
+                        className="absolute left-0 top-[calc(100%+14px)] grid w-[620px] animate-pop-in grid-cols-2 gap-1 p-2 chrome-panel"
+                        // Nearly solid glass, so the page behind never competes with the menu's text.
+                        style={{ transformOrigin: "top left", background: "var(--c-pill)" }}
+                      >
+                        {/* An invisible bridge so the mouse can travel from the button to the menu. */}
+                        <span aria-hidden="true" className="absolute inset-x-0 -top-4 h-4" />
+                        {productItems(desktop).map((it) => (
+                          <ProductItem key={it.title} item={it} onPick={() => setProduct(false)} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <a
+                    key={l.href}
+                    href={l.href}
+                    data-nav={l.href}
+                    aria-current={activeHref === l.href ? "location" : undefined}
+                    onPointerEnter={() => setHovered(l.href)}
+                    className={cn(
+                      "relative flex h-8 items-center gap-1.5 rounded-full px-3 text-base font-semibold transition-colors",
+                      activeHref === l.href ? "text-active-ink" : "text-ink-2 hover:text-ink",
+                    )}
+                  >
+                    {l.label}
+                    {l.fresh && <span className="size-1.5 rounded-full" style={{ background: tone("mint").ink }} aria-label="New" role="img" />}
+                  </a>
+                ),
+              )}
+            </nav>
+          </div>
+
+          <div className="ml-auto flex items-center gap-1.5">
+            {showSignIn && (
+              <Link href={LOGIN_PATH} className={cn(buttonStyles({ variant: "ghost", size: "md" }), "hidden rounded-full sm:inline-flex")}>
+                Sign in
+              </Link>
+            )}
+            <Link href={start.href} onClick={startClick(start, "header")} className={cn(buttonStyles({ variant: "primary", size: "md" }), "rounded-full px-4")}>
+              {start.label}
+            </Link>
+            <button
+              ref={menuButton}
+              type="button"
+              aria-expanded={menu}
+              aria-controls="landing-menu"
+              aria-label={menu ? "Close menu" : "Open menu"}
+              onClick={() => setMenu((o) => !o)}
+              className="grid size-11 place-items-center rounded-full text-ink-2 hover:bg-hover hover:text-ink lg:hidden"
+            >
+              <Icon name={menu ? "close" : "menu"} size={18} />
+            </button>
+          </div>
+
+          {/* How far down the page you are, in the mark's colours (browsers that can tie it to scrolling). */}
+          <span aria-hidden="true" className={cn("lp-progress pointer-events-none absolute inset-x-6 bottom-0 h-[2px] rounded-full transition-opacity duration-300", raised ? "opacity-100" : "opacity-0")} />
+        </div>
+
+        {menu && (
+          <nav
+            id="landing-menu"
+            aria-label="Menu"
+            className="absolute inset-x-0 top-[calc(100%+8px)] max-h-[calc(100dvh-6rem)] animate-pop-in overflow-y-auto p-2 chrome-panel lg:hidden"
+            style={{ background: "var(--c-pill)" }}
+          >
+            <div className="grid gap-0.5 sm:grid-cols-2">
+              {productItems(desktop).map((it) => (
+                <ProductItem key={it.title} item={it} large onPick={() => setMenu(false)} />
+              ))}
+            </div>
+            <div className="mt-2 flex flex-col gap-3 border-t border-line p-2 pt-3">
+              <div className="flex items-center gap-3">
+                <GooglePlayBadge place="menu" className="h-11" onClick={() => setMenu(false)} />
+                <span className="text-sm leading-snug text-ink-2">{launched ? "Dovli for Android is here" : "Coming to Google Play soon, or get the APK now"}</span>
+              </div>
+              <div className="flex gap-2">
+                {showSignIn && (
+                  <Link href={LOGIN_PATH} className={cn(buttonStyles({ variant: "secondary", size: "lg" }), "flex-1 rounded-full")}>
+                    Sign in
+                  </Link>
+                )}
+                <Link href={start.href} onClick={startClick(start, "menu")} className={cn(buttonStyles({ variant: "primary", size: "lg" }), "flex-1 rounded-full")}>
+                  {start.label}
+                </Link>
+              </div>
+            </div>
+          </nav>
+        )}
+      </div>
+    </header>
+  );
+}
+
+/* ---------- Hero ---------- */
+
+// The headline, with the three things Dovli is for in their own colours (used again further down).
+const heroLines: { text: string; verb?: { t: Tone; icon: IconName } }[][] = [
+  [{ text: "A" }, { text: "calm" }, { text: "place" }, { text: "to" }],
+  [{ text: "write", verb: { t: "blue", icon: "pencil" } }, { text: "," }, { text: "plan", verb: { t: "mint", icon: "checkbox" } }],
+  [{ text: "and" }, { text: "sketch", verb: { t: "pink", icon: "brush" } }, { text: "." }],
+];
+
+function Hero({ free, start, desktop }: { free: boolean; start: Start; desktop: string | null }) {
+  const { launched } = usePlayCountdown();
+  let i = 0;
+  return (
+    <section aria-labelledby="hero-title" className="relative px-2 pt-2 sm:px-4 sm:pt-4">
+      {/* Sky and ruled paper behind the headline. */}
+      <div aria-hidden="true" className="lp-sky absolute inset-x-2 top-2 -z-10 h-[min(1020px,116vh)] overflow-hidden rounded-[28px] sm:inset-x-4 sm:top-4 sm:rounded-[44px]">
+        <div className="lp-ruled absolute inset-0" />
+        <Scene kind="paper" />
+      </div>
+      <div className={cn(container, "flex flex-col items-center pt-24 text-center sm:pt-28")}>
+        {/* The newest app gets the announcement: Mac and Windows once released, Android until then. */}
+        <Link
+          href={desktop ? "/download" : "#android"}
+          className="lp-fade group inline-flex h-9 items-center gap-2.5 rounded-full bg-panel/85 pl-1.5 pr-3.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-line transition-colors hover:bg-panel"
+          style={{ "--d": "0s" } as CSSProperties}
+        >
+          <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: tone("mint").bg, color: tone("mint").ink }}>
+            New
+          </span>
+          {desktop ? (
+            <>
+              <span aria-hidden="true" className="-mr-0.5 flex items-center gap-1.5 text-ink-2">
+                <Icon name="apple" size={14} />
+                <WindowsIcon size={12} />
+              </span>
+              <span>
+                Dovli for Mac and Windows<span className="hidden sm:inline"> is here</span>
+              </span>
+            </>
+          ) : launched ? (
+            "Dovli for Android is on Google Play"
+          ) : (
+            "Dovli for Android is coming to Google Play"
+          )}
+          <Icon name="arrowRight" size={14} className="text-ink-3 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
+        </Link>
+        <h1 id="hero-title" className="m-0 mt-7 font-serif text-[44px] font-semibold leading-[1.04] tracking-[-0.035em] text-ink sm:text-[72px] lg:text-[88px]">
+          <span className="sr-only">A calm place to write, plan and sketch.</span>
+          {heroLines.map((line, li) => (
+            <span key={li} className="lp-line" aria-hidden="true">
+              {line.map((w, wi) => {
+                const style = { "--i": i++ } as CSSProperties;
+                const next = line[wi + 1];
+                // A space after each word, except before a comma or full stop and at the end of a line.
+                // It sits between the words, not inside them: the words become inline-blocks while
+                // they rise, and an inline-block drops a space at its end.
+                const space = next && next.text !== "," && next.text !== "." ? " " : "";
+                const c = w.verb && tone(w.verb.t);
+                const glue = w.text === "," || w.text === ".";
+                return (
+                  <Fragment key={w.text}>
+                    <span className={cn("lp-word", glue && "-ml-[0.12em]")} style={style}>
+                      {w.verb && c ? (
+                        <span className="lp-verb" style={{ background: c.bg, color: c.ink }}>
+                          <Icon name={w.verb.icon} size={16} />
+                          {w.text}
+                        </span>
+                      ) : (
+                        w.text
+                      )}
+                    </span>
+                    {space}
+                  </Fragment>
+                );
+              })}
+            </span>
+          ))}
+        </h1>
+        <p className={cn(leadClass, "lp-fade mt-7 max-w-[580px] text-balance sm:text-xl sm:leading-relaxed")} style={{ "--d": "0.55s" } as CSSProperties}>
+          Your notes, docs and whiteboards, together in one place. Free on the web{desktop ? ", Android, Mac and Windows" : " and on Android"}, with AI that helps when you ask.
+        </p>
+        <div className="lp-fade mt-8 flex flex-wrap items-center justify-center gap-3" style={{ "--d": "0.7s" } as CSSProperties}>
+          <Link href={start.href} onClick={startClick(start, "hero")} className={cn(buttonStyles({ variant: "primary", size: "lg" }), "h-12 rounded-full px-6 text-md")}>
+            {start.label}
+          </Link>
+          <GooglePlayBadge place="hero" />
+        </div>
+        {free && (
+          <p className="lp-fade m-0 mt-4 text-sm text-ink-2" style={{ "--d": "0.8s" } as CSSProperties}>
+            Free to use. Sign in with Google or an email code, no password.
+          </p>
+        )}
+      </div>
+
+      <div className={cn(container, "mt-12")}>
+        <div className="relative">
+          <div className="lp-fade" style={{ "--d": "0.85s" } as CSSProperties}>
+            <div className="lp-tilt origin-top">
+              <HeroPicture />
+            </div>
+          </div>
+          {/* Only where the picture leaves room for it beside the page's text. */}
+          <HeroPhone className="absolute -bottom-16 right-14 z-10 hidden xl:block" />
+        </div>
+        <p className="m-0 mt-5 text-center text-base text-ink-2">Go on, tick a to-do.</p>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Closing: one last invitation, written as a blank page ---------- */
+
+// What Dovli promises, as a checklist on that page: every one ticked, since each is true today.
+const pledges: { title: string; text: string }[] = [
+  { title: "Works offline", text: "Pages save on your device first, then sync when you're back online." },
+  { title: "Private by default", text: "Each account sees only its own workspace. Nothing is shared until you share it." },
+  { title: "Share your way", text: "Send a link people can read, or let the people you pick edit with you." },
+  { title: "Take it with you", text: "Bring pages in from Notion, Evernote or Obsidian, and export to Word, PDF or Markdown." },
+];
+
+function Closing({ free, start, desktop }: { free: boolean; start: Start; desktop: string | null }) {
+  const where = desktop ? "on the web, on Android, and on Mac and Windows" : "on the web and on Android";
+  return (
+    <section aria-labelledby="cta-title" className="px-2 pb-8 sm:px-4 sm:pb-12">
+      {/* The hero's sky again, so the page ends where it began. */}
+      <div className="lp-sky relative overflow-hidden rounded-[28px] sm:rounded-[44px]">
+        <div aria-hidden="true" className="lp-ruled absolute inset-0" />
+        <Scene kind="paper" count={10} />
+        <div className={cn(container, "relative py-10 sm:py-16")}>
+          <Sheet fold={72} sheetClassName="rounded-[32px] bg-panel">
+            <div className="grid grid-cols-1 gap-12 px-6 py-10 sm:px-14 sm:py-14 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14">
+              <div className="flex flex-col items-start">
+                <DovliMark size={40} />
+                <h2 id="cta-title" className="m-0 mt-6 max-w-[760px] text-balance font-serif text-[40px] font-semibold leading-[1.02] tracking-[-0.035em] text-ink sm:text-[60px]">
+                  Start with a blank page.
+                  <span aria-hidden="true" className="lp-caret ml-1.5 inline-block h-[0.8em] w-[3px] translate-y-[0.1em] rounded-full bg-accent" />
+                </h2>
+                {/* The empty page's own hint, the way the editor shows it. */}
+                <p aria-hidden="true" className="m-0 mt-4 text-lg leading-relaxed text-ink-4">
+                  Type <Kbd className="mx-0.5 h-6 min-w-6 align-[0.1em] text-sm">/</Kbd> for to-dos, tables, whiteboards and more
+                </p>
+                <p className={cn(leadClass, "mt-8 max-w-[500px]")}>
+                  {free
+                    ? `Free ${where}. Sign in with Google or an email code, no password.`
+                    : `Your pages are waiting where you left them, on the web, your phone${desktop ? " and your computer" : ""}.`}
+                </p>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <Link href={start.href} onClick={startClick(start, "closing")} className={cn(buttonStyles({ variant: "primary", size: "lg" }), "h-12 rounded-full px-6 text-md")}>
+                    {start.label}
+                  </Link>
+                  <GooglePlayBadge place="closing" />
+                </div>
+                {/* A third way in, kept quieter than the two buttons. */}
+                <Link
+                  href="/download"
+                  onClick={desktop ? undefined : () => trackEvent("Coming soon click", { app: "desktop" })}
+                  className="group mt-5 inline-flex items-center gap-2.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
+                >
+                  <span aria-hidden="true" className="flex items-center gap-1.5 text-ink-3 transition-colors group-hover:text-ink">
+                    <Icon name="apple" size={15} />
+                    <WindowsIcon size={13} />
+                  </span>
+                  <span className="whitespace-nowrap">
+                    {desktop ? "Also for Mac and Windows" : "Mac and Windows"}
+                    {!desktop && <span className="hidden sm:inline"> app</span>}
+                  </span>
+                  <span className="whitespace-nowrap rounded-full bg-well px-2 py-0.5 text-xs font-semibold text-ink-2">{desktop ? `v${desktop}` : "Coming soon"}</span>
+                  <Icon name="arrowRight" size={13} aria-hidden="true" className="-ml-0.5 text-ink-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              <div className="border-t border-line pt-10 lg:border-l lg:border-t-0 lg:pl-14 lg:pt-1">
+                <h3 className="m-0 text-sm font-semibold text-ink-3">Private, offline, and yours</h3>
+                <ul className="m-0 mt-5 flex list-none flex-col gap-5 p-0">
+                  {pledges.map((p) => (
+                    <li key={p.title} className="flex gap-3">
+                      <span aria-hidden="true" className="mt-[3px] grid size-[18px] flex-none place-items-center rounded-[5px] bg-accent text-accent-ink">
+                        <Icon name="check" size={12} />
+                      </span>
+                      <span>
+                        <span className="block text-md font-semibold text-ink">{p.title}</span>
+                        <span className="mt-0.5 block text-base leading-relaxed text-ink-2">{p.text}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Sheet>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Footer: a last panel, with the name rising out of its bottom edge ---------- */
+
+const themeChoices = [
+  { value: "soft-studio", label: "Light", icon: "sun" },
+  { value: "night-desk", label: "Dark", icon: "moon" },
+  { value: "system", label: "Auto", icon: "monitor" },
+] as const;
+
+/** Light, dark or follow the device: the same setting as in the app, so the choice carries over. */
+function ThemeSwitch() {
+  const theme = useSyncExternalStore(settings.subscribe, () => settings.get().theme, () => DEFAULT_THEME_PREFERENCE);
+  return (
+    <Segmented
+      label="Colour theme"
+      value={theme}
+      onValueChange={(v) => settings.set({ theme: v as ThemePreference })}
+      options={themeChoices.map((c) => ({ value: c.value, label: c.label, icon: c.icon }))}
+      className="rounded-full [&>*]:rounded-full"
+    />
+  );
+}
+
+function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <nav aria-label={title} className="flex flex-col">
+      <h2 className="m-0 mb-2 text-sm font-semibold text-ink">{title}</h2>
+      <ul className="m-0 flex list-none flex-col p-0">{children}</ul>
+    </nav>
+  );
+}
+
+function FooterLink({ href, children, tag, onClick }: { href: string; children: ReactNode; tag?: "New" | "Soon"; onClick?: () => void }) {
+  const cls = "group inline-flex items-center gap-2 rounded-sm py-1.5 text-base text-ink-2 transition-colors hover:text-ink";
+  const body = (
+    <>
+      <span className="bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-left-bottom bg-no-repeat pb-px transition-[background-size] duration-300 group-hover:bg-[length:100%_1px]">{children}</span>
+      {tag && (
+        <span
+          className={cn("rounded-full px-2 py-0.5 text-2xs font-semibold", tag === "Soon" && "bg-well text-ink-2")}
+          style={tag === "New" ? { background: tone("mint").bg, color: tone("mint").ink } : undefined}
+        >
+          {tag}
+        </span>
+      )}
+    </>
+  );
+  return (
+    <li>
+      {href.startsWith("/") ? (
+        <Link href={href} onClick={onClick} className={cls}>
+          {body}
+        </Link>
+      ) : (
+        <a href={href} onClick={onClick} className={cls}>
+          {body}
+        </a>
+      )}
+    </li>
+  );
+}
+
+function Footer({ showSignIn, start, desktop }: { showSignIn: boolean; start: Start; desktop: string | null }) {
+  const { launched } = usePlayCountdown();
+  const toTop = () => {
+    window.scrollTo({ top: 0, behavior: prefersLessMotion() ? "auto" : "smooth" });
+    // Keep keyboard users in step with the scroll: focus lands back at the top of the page.
+    document.querySelector<HTMLElement>('header a[aria-label="Dovli home"]')?.focus({ preventScroll: true });
+  };
+  return (
+    <footer className="px-2 pb-2 sm:px-4 sm:pb-4">
+      <div className="relative overflow-hidden rounded-[28px] bg-panel shadow-sm sm:rounded-[44px]">
+        <div className={cn(container, "pt-14 sm:pt-20")}>
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+            <div className="flex flex-col items-start gap-5">
+              <Link href="/" aria-label="Dovli home" className="rounded-md">
+                <DovliLogo size={34} />
+              </Link>
+              <p className="m-0 max-w-[340px] text-md leading-relaxed text-ink-2">A calm place to write, plan and sketch. Free on the web and on Android.</p>
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <Link href={start.href} onClick={startClick(start, "footer")} className={cn(buttonStyles({ variant: "primary", size: "lg" }), "h-10 rounded-full px-5")}>
+                  {start.label}
+                </Link>
+                <GooglePlayBadge place="footer" className="h-10" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
+              <FooterColumn title="Product">
+                <FooterLink href="#features">Features</FooterLink>
+                <FooterLink href="#templates">Templates</FooterLink>
+                <FooterLink href="#mcp">AI and MCP</FooterLink>
+              </FooterColumn>
+              <FooterColumn title="Get Dovli">
+                <FooterLink href={APP_PATH}>Web app</FooterLink>
+                <FooterLink href={launched ? PLAY_STORE_URL : "#android"} tag="New" onClick={() => trackEvent("Play Store click", { place: "footer-link" })}>
+                  Android app
+                </FooterLink>
+                <FooterLink href="/download" tag={desktop ? "New" : "Soon"} onClick={desktop ? undefined : () => trackEvent("Coming soon click", { app: "desktop" })}>
+                  Mac and Windows
+                </FooterLink>
+                <FooterLink href={CHROME_STORE_URL} tag="New" onClick={() => trackEvent("Chrome Web Store click", { place: "footer-link" })}>
+                  Chrome extension
+                </FooterLink>
+              </FooterColumn>
+              <FooterColumn title="Compare">
+                <FooterLink href="/vs/notion">Dovli vs Notion</FooterLink>
+                <FooterLink href="/vs/craft">Dovli vs Craft</FooterLink>
+                <FooterLink href="/vs/evernote">Dovli vs Evernote</FooterLink>
+                <FooterLink href="/compare">All side by side</FooterLink>
+              </FooterColumn>
+              <FooterColumn title="Account">
+                {showSignIn && <FooterLink href={LOGIN_PATH}>Sign in</FooterLink>}
+                <FooterLink href={start.href} onClick={startClick(start, "footer-account")}>
+                  {start.label}
+                </FooterLink>
+              </FooterColumn>
+            </div>
+          </div>
+
+          <div className="mt-14 flex flex-col-reverse gap-5 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-3">
+              <span>© {new Date().getFullYear()} Dovli</span>
+              <Link href="/privacy" className="hover:text-ink">
+                Privacy
+              </Link>
+              <Link href="/delete-account" className="hover:text-ink">
+                Delete your account
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <ThemeSwitch />
+              <button type="button" onClick={toTop} className={cn(buttonStyles({ variant: "ghost", size: "md" }), "rounded-full")}>
+                <Icon name="arrowUp" size={15} aria-hidden="true" />
+                Back to top
+              </button>
+            </div>
+          </div>
+          {/* Google asks for this line wherever its badge appears. */}
+          <p className="m-0 mt-4 text-xs text-ink-3">Google Play and the Google Play logo are trademarks of Google LLC.</p>
+        </div>
+
+        {/* The name in the mark's colours, rising out of the panel's bottom edge. */}
+        <div aria-hidden="true" className="lp-giant mt-6 select-none text-center font-display text-[29vw] font-bold leading-[0.74] tracking-[-0.06em] lg:text-[320px]">
+          <span
+            className="inline-block translate-y-[16%] bg-clip-text pr-[0.07em] text-transparent"
+            style={{ backgroundImage: "linear-gradient(100deg, #7DB4FF 0%, #A592FF 35%, #B57CF6 62%, #E39AEC 85%, #F6B9EE 100%)" }}
+          >
+            Dovli
+          </span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/** The soft colour behind glass themes (Frost and friends). Solid themes set these to nothing. */
+function Glow() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[1100px] overflow-hidden">
+      <div className="absolute -left-[200px] -top-[240px] h-[600px] w-[720px] rounded-full bg-[var(--d-glow-1)] opacity-[var(--d-glow-1-o)] blur-[120px]" />
+      <div className="absolute -right-[180px] top-[320px] h-[520px] w-[600px] rounded-full bg-[var(--d-glow-2)] opacity-[var(--d-glow-2-o)] blur-[130px]" />
+    </div>
+  );
+}

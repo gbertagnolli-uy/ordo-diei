@@ -19,7 +19,7 @@ export type SolicitudesUsuario = {
   /** Hábitos existentes que quieren empezar */
   adopciones: { id: number; nombre: string; icono: string }[];
   /** Días marcados como hecho */
-  registros: { id: number; nombre: string; icono: string; fecha: string }[];
+  registros: { id: number; nombre: string; icono: string; fecha: string; nota: string | null }[];
 };
 
 export type Solicitudes = { usuarios: SolicitudesUsuario[]; total: number };
@@ -38,7 +38,7 @@ export async function getSolicitudes(): Promise<Solicitudes> {
     }),
     prisma.registroHabito.findMany({
       where: { aprobado: false, marca: "hecho" },
-      select: { id: true, usuarioId: true, fecha: true, habito: { select: { nombre: true, icono: true } } },
+      select: { id: true, usuarioId: true, fecha: true, nota: true, habito: { select: { nombre: true, icono: true } } },
       orderBy: [{ fecha: "asc" }, { id: "asc" }],
     }),
   ]);
@@ -66,7 +66,7 @@ export async function getSolicitudes(): Promise<Solicitudes> {
         .map((a) => ({ id: a.id, nombre: a.habito.nombre, icono: a.habito.icono })),
       registros: registros
         .filter((x) => x.usuarioId === usuario.id)
-        .map((x) => ({ id: x.id, nombre: x.habito.nombre, icono: x.habito.icono, fecha: aClave(x.fecha) })),
+        .map((x) => ({ id: x.id, nombre: x.habito.nombre, icono: x.habito.icono, fecha: aClave(x.fecha), nota: x.nota })),
     };
     total += r.habitos.length + r.adopciones.length + r.registros.length;
     return r;

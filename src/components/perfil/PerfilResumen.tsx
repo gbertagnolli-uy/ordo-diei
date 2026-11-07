@@ -13,7 +13,6 @@ import {
   Star,
   Trophy,
   CheckCircle2,
-  Lock,
   Loader2,
   Plus,
 } from "lucide-react";
@@ -22,12 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nivelDe, xpTotal, TITULOS, badgeDeNivel } from "@/lib/niveles";
-import { evaluarLogros, type CategoriaLogro } from "@/lib/logros";
+import { evaluarLogros } from "@/lib/logros";
 import type { EstadoHabito } from "@/lib/habitos/server";
 import type { ResumenRachaApp } from "@/lib/engagement/servidor";
-import { LogroIcon } from "./LogroIcon";
 import { subirImagen } from "@/lib/subirImagen";
 
 
@@ -124,7 +121,6 @@ export function PerfilResumen({
   }
 
   const [habitosCargados, setHabitosCargados] = useState<EstadoHabito[]>([]);
-  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
 
   const habitos = habitosIniciales ?? habitosCargados;
 
@@ -178,11 +174,6 @@ export function PerfilResumen({
     habitos,
     cartas: cartasUsuario,
   });
-
-  const logrosFiltrados =
-    categoriaFiltro === "todas"
-      ? todosLogros
-      : todosLogros.filter((l) => l.categoria === (categoriaFiltro as CategoriaLogro));
 
   const totalObtenidos = todosLogros.filter((l) => l.obtenido).length;
 
@@ -422,94 +413,21 @@ export function PerfilResumen({
         </CardContent>
       </Card>
 
-      {/* 3. Logros con filtro */}
+      {/* 3. Logros: tienen su propia pantalla (lane 275) */}
       <Card>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="font-heading text-base">
-              Logros ({totalObtenidos} de {todosLogros.length})
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Medallas por tareas, constancia, oración y virtudes cotidianas.
-            </p>
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div className="flex items-center gap-3">
+            <Trophy className="size-5 text-primary" />
+            <div>
+              <p className="font-heading text-base font-semibold">Logros</p>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {totalObtenidos} de {todosLogros.length} obtenidos
+              </p>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Tabs value={categoriaFiltro} onValueChange={setCategoriaFiltro} className="w-full">
-            <TabsList className="w-full flex-wrap justify-start h-auto gap-1 p-1">
-              <TabsTrigger value="todas" className="text-xs">
-                Todas ({todosLogros.length})
-              </TabsTrigger>
-              <TabsTrigger value="habitos" className="text-xs">
-                Hábitos
-              </TabsTrigger>
-              <TabsTrigger value="oracion" className="text-xs">
-                Oración
-              </TabsTrigger>
-              <TabsTrigger value="tareas" className="text-xs">
-                Tareas
-              </TabsTrigger>
-              <TabsTrigger value="constancia" className="text-xs">
-                Constancia
-              </TabsTrigger>
-              <TabsTrigger value="nivel" className="text-xs">
-                Nivel
-              </TabsTrigger>
-              <TabsTrigger value="cartas" className="text-xs">
-                Cartas
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {logrosFiltrados.map((logro) => (
-              <div
-                key={logro.id}
-                className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
-                  logro.obtenido
-                    ? "bg-card border-border shadow-xs"
-                    : "bg-muted/30 border-dashed opacity-65"
-                }`}
-              >
-                <div
-                  className={`flex size-10 shrink-0 items-center justify-center rounded-lg border ${
-                    logro.obtenido
-                      ? "bg-primary/10 border-primary/30 text-primary"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  <LogroIcon name={logro.icono} className="size-5" />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-sm truncate">{logro.titulo}</span>
-                    {logro.obtenido ? (
-                      <Badge
-                        variant="secondary"
-                        className="gap-1 text-[10px] py-0 bg-[color-mix(in_srgb,var(--success)_15%,transparent)] text-[var(--success)]"
-                      >
-                        <CheckCircle2 className="size-3" /> Obtenido
-                      </Badge>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground tabular-nums">
-                        <Lock className="size-3" />
-                        {logro.valorActual} / {logro.meta}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                    {logro.descripcion}
-                  </p>
-                  {!logro.obtenido && (
-                    <div className="mt-2">
-                      <Progress value={Math.round(logro.progreso * 100)} className="h-1.5" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <Button asChild size="sm" variant="outline" onClick={onCerrarModal}>
+            <Link href={`/dashboard/logros?usuarioId=${usuario.id}`}>Ver logros</Link>
+          </Button>
         </CardContent>
       </Card>
 
