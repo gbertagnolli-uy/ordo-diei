@@ -70,6 +70,8 @@ model Usuario {
   tareasCreadas     Tarea[]           @relation("TareasCreadas")
   tareasAsignadas   Tarea[]           @relation("TareasAsignadas")
   historialAcciones HistorialAccion[]
+  notasEspacio      NotaEspacio?      @relation("NotasEspacio")
+  notasPaginas      NotaPagina[]      @relation("NotasPaginas")
   registrosAnimo    RegistroAnimo[]
   premiosEntregados PremioEntregado[]
 
@@ -1649,4 +1651,29 @@ model SuscripcionPush {
 
   @@index([usuarioId])
   @@map("Suscripciones_Push")
+}
+
+// ← Lane 271: bloc de notas (migrado de dovli). Página entera en JSON; `rev` crece por usuario (protocolo de sync de dovli).
+model NotaEspacio {
+  usuarioId Int @id @map("Usuario_ID")
+  ultimaRev Int @default(0) @map("Ultima_Rev")
+
+  usuario Usuario @relation("NotasEspacio", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("Notas_Espacios")
+}
+
+model NotaPagina {
+  id        String   @map("ID") // id de página de dovli (nanoid)
+  usuarioId Int      @map("Usuario_ID")
+  rev       Int      @map("Rev")
+  datos     Json?    @map("Datos") // Page de dovli; null = borrada para siempre
+  purgada   Boolean  @default(false) @map("Purgada")
+  updatedAt DateTime @updatedAt @map("Updated_At")
+
+  usuario Usuario @relation("NotasPaginas", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, id])
+  @@index([usuarioId, rev])
+  @@map("Notas_Paginas")
 }
