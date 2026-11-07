@@ -105,13 +105,13 @@ export default function NotasWorkspace({ usuarioId }: { usuarioId: string }) {
 
   if (!ready)
     return (
-      <div className="notas-dovli grid h-[calc(100dvh-6rem)] place-items-center bg-bg">
+      <div className="notas-dovli grid h-[calc(100dvh-9.5rem)] place-items-center bg-bg">
         <Spinner label="Abriendo tus notas" />
       </div>
     );
 
   return (
-    <div className="notas-dovli h-[calc(100dvh-6rem)] bg-bg">
+    <div className="notas-dovli h-[calc(100dvh-9.5rem)] bg-bg">
       <TooltipProvider>
         <div
           className={cn(

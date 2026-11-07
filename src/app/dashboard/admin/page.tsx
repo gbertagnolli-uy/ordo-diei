@@ -37,7 +37,7 @@ export default async function AdminPage() {
   return (
     <div className="flex flex-col">
       <PageHeader group="Administración" groupHref="/dashboard/admin" title="Panel de administración" />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
         {(parte || meta) && (
           <div className="mb-8 flex flex-col gap-4">
             {parte && <ParteDeHoy datos={parte} />}

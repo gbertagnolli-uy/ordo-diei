@@ -54,7 +54,7 @@ export function AdminTiendaView({ productos, compras, opciones }: { productos: P
       <PageHeader group="Administración" groupHref="/dashboard/admin" title="Tienda">
         <Button size="sm" className="gap-1.5" onClick={() => setEditando({ producto: null, copia: false })}><Plus className="size-4" />Nuevo producto</Button>
       </PageHeader>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 pt-6 pb-28 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 pb-28">
         <Tabs defaultValue={porAprobar.length > 0 ? "compras" : "productos"}>
           <TabsList>
             <TabsTrigger value="productos">Productos <Badge variant="secondary" className="tabular-nums">{productos.length}</Badge></TabsTrigger>

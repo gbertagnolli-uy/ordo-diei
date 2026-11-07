@@ -18,7 +18,7 @@ export default async function CompaneroPage() {
   return (
     <div className="flex flex-col">
       <PageHeader group="Colección" title="Compañero" subtitle="Tu héroe: crece con tu nivel" />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1">
         <CompaneroView datos={datos} />
       </main>
     </div>

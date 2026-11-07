@@ -63,7 +63,7 @@ export default function Recitado({ cola, alumno }: { cola: MemoriaVista[]; alumn
   }
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-5 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-5">
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="icon-sm" aria-label="Volver a la memoria">
           <Link href={volver}>

@@ -13,7 +13,7 @@ export default function HojaCopia({ titulo, texto, alumno }: { titulo: string; t
   }, []);
   const lineas = texto.split("\n").flatMap((l) => (l.length > 70 ? (l.match(/.{1,70}(\s|$)/g) ?? [l]) : [l]));
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4 p-4 sm:p-6 print:max-w-none print:p-0">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4 print:max-w-none print:p-0">
       <div className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3 print:hidden">
         <p className="text-sm text-muted-foreground">Hoja para copiar a mano. Si no se abrió la impresión, tocá el botón.</p>
         <Button onClick={() => window.print()}>

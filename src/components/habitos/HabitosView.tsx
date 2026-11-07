@@ -47,7 +47,7 @@ export function HabitosView({
         </Button>
       </PageHeader>
 
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 sm:px-6">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col">
         {esPadre && miembros.length > 0 ? (
           <Tabs defaultValue="propio" className="gap-6">
             <TabsList>

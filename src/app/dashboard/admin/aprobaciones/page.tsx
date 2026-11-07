@@ -33,7 +33,7 @@ export default async function AdminAprobacionesPage() {
   return (
     <div className="flex flex-col">
       <PageHeader group="Administración" groupHref="/dashboard/admin" title="Aprobaciones" />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col">
+      <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col">
         <SolicitudesHabitos inicial={solicitudes} />
         <ParentReviewPanel tasks={tareasSerialized} />
       </main>

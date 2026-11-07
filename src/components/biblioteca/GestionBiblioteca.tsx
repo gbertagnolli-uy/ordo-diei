@@ -100,7 +100,7 @@ export function GestionBiblioteca({ libros, estantes }: { libros: LibroResumen[]
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <Button asChild variant="ghost" className="min-h-11 self-start">
         <Link href="/dashboard/biblioteca">
           <ArrowLeft /> Biblioteca

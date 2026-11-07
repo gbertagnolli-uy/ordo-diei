@@ -15,7 +15,7 @@ export default async function ImprimirPage({ params }: { params: Promise<{ token
   const hoja = await hojaPorToken(actor, token).catch((e: unknown) => (e instanceof Error ? e : new Error("Error")));
   if (hoja instanceof Error) {
     return (
-      <div className="mx-auto w-full min-w-0 max-w-md space-y-3 p-6 text-center">
+      <div className="mx-auto w-full min-w-0 max-w-md space-y-3 text-center">
         <p className="text-lg font-semibold text-foreground">No se puede mostrar esta hoja</p>
         <p className="text-sm text-muted-foreground">{hoja.message}</p>
         <Link href="/dashboard/homeschooling" className="text-sm font-medium text-primary underline underline-offset-2">

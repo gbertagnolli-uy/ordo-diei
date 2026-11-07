@@ -7,6 +7,12 @@ test("formatoDe: por extensión y, si no, por MIME", () => {
   assert.equal(formatoDe("capitulo 1.mp3"), "mp3");
   assert.equal(formatoDe("sin-extension", "application/pdf"), "pdf");
   assert.equal(formatoDe("libro", "audio/mp4; codecs=mp4a"), "m4a");
+  assert.equal(formatoDe("Novela.mobi"), "mobi");
+  assert.equal(formatoDe("Novela.azw"), "azw");
+  assert.equal(formatoDe("Novela.azw3"), "azw3");
+  assert.equal(formatoDe("Comic.cbz"), "cbz");
+  assert.equal(formatoDe("Comic.cbr"), "cbr");
+  assert.equal(formatoDe("Libro.fb2"), "fb2");
   assert.equal(formatoDe("foto.jpg", "image/jpeg"), null);
 });
 

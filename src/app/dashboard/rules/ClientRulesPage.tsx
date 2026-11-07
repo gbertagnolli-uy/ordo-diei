@@ -44,7 +44,7 @@ export default function ClientRulesPage({
   };
 
   return (
-    <div className="flex justify-center p-4 sm:p-6">
+    <div className="flex justify-center">
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardDescription>Las reglas son para vivir juntos y felices.</CardDescription>

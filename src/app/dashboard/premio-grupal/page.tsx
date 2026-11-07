@@ -13,7 +13,7 @@ export default async function PremioGrupalPage() {
   return (
     <div className="flex flex-col">
       <PageHeader title="Premio grupal" />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
         <PremioGrupalVista premio={premio} />
       </main>
     </div>

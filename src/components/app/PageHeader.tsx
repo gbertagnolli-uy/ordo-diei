@@ -1,20 +1,19 @@
-import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+"use client";
 
-// Cabecera de cada página dentro del SidebarInset: trigger, ruta y acciones a la derecha.
+import { createPortal } from "react-dom";
+import { Migas, useRanurasBarra } from "./MarcoDashboard";
+
+/**
+ * Título y botones de una página dentro de la barra global de /dashboard (lane 280).
+ * La barra (botón de colapsar + migas) la dibuja el layout siempre; esto es opcional y solo sirve para
+ * pisar el título que sale de rutasDashboard.ts, sumar botones a la derecha o una fila de secciones (pestañas).
+ */
 export function PageHeader({
   group,
   groupHref,
   title,
   subtitle,
+  secciones,
   children,
 }: {
   group?: string;
@@ -22,29 +21,24 @@ export function PageHeader({
   groupHref?: string;
   title: string;
   subtitle?: string;
+  /** Segunda fila de la barra, debajo de las migas (p. ej. las pestañas de Estudio). */
+  secciones?: React.ReactNode;
   children?: React.ReactNode;
 }) {
+  const ranuras = useRanurasBarra();
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
-      <Breadcrumb className="min-w-0 flex-1">
-        <BreadcrumbList className="flex-nowrap">
-          {group && (
-            <>
-              <BreadcrumbItem className="hidden md:block">
-                {groupHref ? <Link href={groupHref} className="transition-colors hover:text-foreground">{group}</Link> : group}
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-            </>
-          )}
-          <BreadcrumbItem className="min-w-0">
-            <BreadcrumbPage className="truncate font-medium">{title}</BreadcrumbPage>
-          </BreadcrumbItem>
-          {subtitle && <li className="hidden truncate pl-2 text-xs text-muted-foreground lg:block">{subtitle}</li>}
-        </BreadcrumbList>
-      </Breadcrumb>
-      {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
-    </header>
+    <>
+      {ranuras.titulo &&
+        createPortal(
+          <>
+            <div data-titulo-pagina className="flex min-w-0 flex-1">
+              <Migas group={group} groupHref={groupHref} title={title} subtitle={subtitle} />
+            </div>
+            {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
+          </>,
+          ranuras.titulo,
+        )}
+      {ranuras.secciones && secciones && createPortal(secciones, ranuras.secciones)}
+    </>
   );
 }

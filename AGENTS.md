@@ -65,6 +65,7 @@ gh pr create --base main --head dev
    - Los tests que escriben en la base real se saltean salvo `PERMITIR_TESTS_DB=1`; no lo actives sin que lo pida el usuario.
 8. **Registrá en el vault global al empezar y al terminar** (`../vault/LANE_NN_*.md` desde `ordo-diei/`, fuera de git: no se commitea). El protocolo está en la sección «Vault» de abajo y en `../vault/README.md`.
 9. **Después de que el PR se integró**, limpiá (lo hace quien lo abrió, desde `ordo-diei/`): `bash scripts/limpiar-lane.sh NN`. Verifica que tu rama ya está en `origin/dev`, actualiza el `dev` local con `--ff-only`, quita el worktree y borra la rama con `-d` (no `-D`: si git dice que no está mergeada, no la borres). Si el worktree tiene cambios sin commitear, no lo fuerces: avisá.
+10. **PROHIBIDO levantar servidores sin permiso explícito de Gabriel** (decisión de Gabriel, 2026-11-07): ni `next dev`, ni `next start`, ni `next build`, ni la base local de verificación (`verif-db/iniciar.mjs`), ni navegadores de prueba (Playwright/Chromium). Consumen toda la RAM de la máquina. **Las pruebas visuales las hace Gabriel**; los gates del agente son `npm test`, `npx tsc --noEmit` y `npx eslint <archivos>`. Si una tarea parece necesitar un servidor, preguntá antes.
 
 ## Vault: dónde se documenta y cómo se registra (OBLIGATORIO)
 

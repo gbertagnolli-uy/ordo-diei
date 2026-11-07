@@ -34,7 +34,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const noLectivos = todos ? [...new Map(noLectivosPorHijo.flat().map((n) => [`${n.fecha}|${n.motivo}`, n])).values()] : noLectivosPorHijo[0];
   const actividades = todas.filter((a) => todos || a.participantes.some((p) => p.id === alumnoId)).map((a) => ({ id: a.id, titulo: a.title, inicio: a.start_time, fin: a.end_time }));
   return (
-    <div className="mx-auto w-full min-w-0 max-w-6xl p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-6xl">
       <PlanCalendario dias={dias} noLectivos={noLectivos} actividades={actividades} alumnos={alumnos} alumnoId={alumnoId} festividades={festividades} rutaCalendario={todos ? undefined : `/api/homeschooling/calendario/${alumnoId}/${tokenDeCalendario(alumnoId)}.ics`} />
     </div>
   );

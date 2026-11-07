@@ -10,6 +10,8 @@ export const PERFILES_IMAGEN = {
   general: { maxLado: 1600, maxBytes: null as number | null, proporcion: null as number | null },
   // Arte de cartas (D19 / LEEME): retrato 63:88 que se muestra a ≤ 400 px; ≤ 300 KB. Se recorta a esa proporción
   carta: { maxLado: 1200, maxBytes: 300 * 1024, proporcion: 63 / 88 },
+  // Miniatura de portada de libro (BookOrbit: fit inside ≤ 600 px de lado, ≤ 150 KB)
+  portada: { maxLado: 600, maxBytes: 150 * 1024, proporcion: null as number | null },
 } as const;
 export type PerfilImagen = keyof typeof PERFILES_IMAGEN;
 /** Límite de lo que llega al servidor: el navegador ya comprime antes (Vercel corta en 4,5 MB) */
@@ -32,6 +34,27 @@ export function claveDeUrl(url: string | null | undefined): string | null {
 const DOCS_MIME: Record<string, { mime: string; categoria: "pdf" | "epub" | "documento" }> = {
   "application/pdf": { mime: "application/pdf", categoria: "pdf" },
   "application/epub+zip": { mime: "application/epub+zip", categoria: "epub" },
+  "application/x-mobipocket-ebook": { mime: "application/x-mobipocket-ebook", categoria: "documento" },
+  "application/vnd.amazon.ebook": { mime: "application/vnd.amazon.ebook", categoria: "documento" },
+  "application/vnd.amazon.mobi8-ebook": { mime: "application/vnd.amazon.mobi8-ebook", categoria: "documento" },
+  "application/x-mobi8-ebook": { mime: "application/x-mobi8-ebook", categoria: "documento" },
+  "application/vnd.comicbook+zip": { mime: "application/vnd.comicbook+zip", categoria: "documento" },
+  "application/x-cbz": { mime: "application/x-cbz", categoria: "documento" },
+  "application/vnd.comicbook-rar": { mime: "application/vnd.comicbook-rar", categoria: "documento" },
+  "application/x-cbr": { mime: "application/x-cbr", categoria: "documento" },
+  "application/vnd.rar": { mime: "application/vnd.rar", categoria: "documento" },
+  "application/x-rar-compressed": { mime: "application/x-rar-compressed", categoria: "documento" },
+  "application/x-fictionbook+xml": { mime: "application/x-fictionbook+xml", categoria: "documento" },
+  "application/x-fb2": { mime: "application/x-fb2", categoria: "documento" },
+  "text/fb2+xml": { mime: "text/fb2+xml", categoria: "documento" },
+  "audio/mpeg": { mime: "audio/mpeg", categoria: "documento" },
+  "audio/mp3": { mime: "audio/mpeg", categoria: "documento" },
+  "audio/x-m4b": { mime: "audio/x-m4b", categoria: "documento" },
+  "audio/m4b": { mime: "audio/x-m4b", categoria: "documento" },
+  "audio/mp4": { mime: "audio/mp4", categoria: "documento" },
+  "audio/x-m4a": { mime: "audio/mp4", categoria: "documento" },
+  "audio/m4a": { mime: "audio/mp4", categoria: "documento" },
+  "audio/ogg": { mime: "audio/ogg", categoria: "documento" },
   "text/plain": { mime: "text/plain; charset=utf-8", categoria: "documento" },
   "text/markdown": { mime: "text/markdown; charset=utf-8", categoria: "documento" },
   "text/csv": { mime: "text/csv; charset=utf-8", categoria: "documento" },
@@ -58,6 +81,16 @@ function detectarDocPorNombre(nombre: string, mime: string): { mime: string; cat
   const n = nombre.toLowerCase();
   if (n.endsWith(".pdf")) return DOCS_MIME["application/pdf"];
   if (n.endsWith(".epub")) return DOCS_MIME["application/epub+zip"];
+  if (n.endsWith(".mobi")) return DOCS_MIME["application/x-mobipocket-ebook"];
+  if (n.endsWith(".azw")) return DOCS_MIME["application/vnd.amazon.ebook"];
+  if (n.endsWith(".azw3")) return DOCS_MIME["application/vnd.amazon.mobi8-ebook"];
+  if (n.endsWith(".cbz")) return DOCS_MIME["application/vnd.comicbook+zip"];
+  if (n.endsWith(".cbr")) return DOCS_MIME["application/vnd.comicbook-rar"];
+  if (n.endsWith(".fb2")) return DOCS_MIME["application/x-fictionbook+xml"];
+  if (n.endsWith(".mp3")) return DOCS_MIME["audio/mpeg"];
+  if (n.endsWith(".m4b")) return DOCS_MIME["audio/x-m4b"];
+  if (n.endsWith(".m4a")) return DOCS_MIME["audio/mp4"];
+  if (n.endsWith(".ogg")) return DOCS_MIME["audio/ogg"];
   if (n.endsWith(".txt")) return DOCS_MIME["text/plain"];
   if (n.endsWith(".md") || n.endsWith(".markdown")) return DOCS_MIME["text/markdown"];
   if (n.endsWith(".csv")) return DOCS_MIME["text/csv"];
@@ -142,7 +175,9 @@ export async function guardarArchivoEstudio(
   }
   const doc = detectarDocPorNombre(nombre, entrada.type);
   if (!doc) {
-    throw new ImagenInvalidaError("Formato no permitido. Podés subir imágenes, PDF, ePub, Word (.docx/.odt), Excel, PowerPoint o texto.");
+    throw new ImagenInvalidaError(
+      "Formato no permitido. Podés subir imágenes, libros (PDF, ePub, MOBI, AZW, AZW3, CBZ, CBR, FB2), audio, Word (.docx/.odt), Excel, PowerPoint o texto.",
+    );
   }
   if (entrada.size > MAX_BYTES_SUBIDA) {
     throw new ImagenInvalidaError("El archivo no puede superar 4 MB (para archivos más grandes pegá un enlace de Drive)");
@@ -161,6 +196,7 @@ export async function guardarArchivoEstudio(
       subidoPorId: opciones.subidoPorId ?? null,
     },
   });
+  cacheMemoria.set(clave, { datos, tipo: doc.mime, nombreOrigen: nombre });
   const params = new URLSearchParams({ tipo: doc.categoria, nombre });
   return { url: `${urlArchivo(clave)}?${params.toString()}`, bytes: datos.length, ancho: null, alto: null, categoria: doc.categoria, nombre };
 }

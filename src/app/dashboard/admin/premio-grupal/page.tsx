@@ -14,7 +14,7 @@ export default async function AdminPremioGrupalPage() {
   return (
     <div className="flex flex-col">
       <PageHeader group="Administración" groupHref="/dashboard/admin" title="Premio grupal" />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
         <PanelPremioGrupal />
       </main>
     </div>

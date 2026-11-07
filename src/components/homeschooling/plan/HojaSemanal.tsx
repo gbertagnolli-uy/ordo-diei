@@ -17,7 +17,7 @@ export default function HojaSemanal({ hoja, alumnos, hoy }: { hoja: HojaSemana; 
   const dias = hoja.dias.filter((d, i) => i < 5 || d.items.length > 0 || d.actividades.length > 0 || d.sueltos.length > 0);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-5 p-4 sm:p-6 print:max-w-none print:space-y-3 print:p-0">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-5 print:max-w-none print:space-y-3 print:p-0">
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <Button asChild variant="outline" size="icon-sm" aria-label="Semana anterior">
           <Link href={`${base}?alumno=${hoja.alumno.id}&desde=${hoja.anterior}`}>
