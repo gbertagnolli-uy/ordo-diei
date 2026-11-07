@@ -7,12 +7,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { Item, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Avatar } from "@/components/tasks/primitives";
+import { toast } from "@/lib/toast";
 
 interface ChecklistItem {
   id: number;
   texto: string;
   completado: boolean;
   orden: number;
+  completadoPor?: { id: number; nombre: string; fotoUrl: string | null } | null;
 }
 
 interface ChecklistModalProps {
@@ -27,6 +30,8 @@ export function ChecklistModal({ isOpen, onClose, taskId, taskTitle, onComplete 
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
+  // Tarea compartida (lane 265): lo marcado es de todos y ya no se desmarca
+  const [compartida, setCompartida] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,6 +42,7 @@ export function ChecklistModal({ isOpen, onClose, taskId, taskTitle, onComplete 
           if (data.items) {
             setItems(data.items.sort((a: ChecklistItem, b: ChecklistItem) => a.orden - b.orden));
           }
+          setCompartida(Boolean(data.compartida));
         })
         .finally(() => setLoading(false));
     }
@@ -50,12 +56,15 @@ export function ChecklistModal({ isOpen, onClose, taskId, taskTitle, onComplete 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "toggle", itemId, completado: !currentState })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        const data = await res.json();
-        setItems(prev => prev.map(i => i.id === itemId ? { ...i, completado: !currentState } : i));
+        if (Array.isArray(data.items)) setItems(data.items);
+        else setItems(prev => prev.map(i => i.id === itemId ? { ...i, completado: !currentState } : i));
         if (data.allCompleted && onComplete) {
           onComplete();
         }
+      } else {
+        toast.error(data.error || "No se pudo guardar el ítem");
       }
     } catch {} finally {
       setToggling(null);
@@ -96,7 +105,11 @@ export function ChecklistModal({ isOpen, onClose, taskId, taskTitle, onComplete 
                 size="sm"
                 className={item.completado ? "border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[color-mix(in_srgb,var(--success)_6%,transparent)]" : "hover:border-primary/40"}
               >
-                <button onClick={() => toggleItem(item.id, item.completado)} disabled={toggling === item.id} className="text-left">
+                <button
+                  onClick={() => toggleItem(item.id, item.completado)}
+                  disabled={toggling === item.id || (compartida && item.completado)}
+                  className="text-left disabled:cursor-default"
+                >
                   <ItemMedia>
                     {toggling === item.id ? (
                       <Spinner className="size-4 text-primary" />
@@ -107,6 +120,11 @@ export function ChecklistModal({ isOpen, onClose, taskId, taskTitle, onComplete 
                   <ItemContent>
                     <ItemTitle className={item.completado ? "text-muted-foreground line-through" : ""}>{item.texto}</ItemTitle>
                   </ItemContent>
+                  {item.completado && item.completadoPor && (
+                    <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground" title={`Lo marcó ${item.completadoPor.nombre}`}>
+                      <Avatar user={item.completadoPor} size="xs" /> {item.completadoPor.nombre}
+                    </span>
+                  )}
                 </button>
               </Item>
             ))}

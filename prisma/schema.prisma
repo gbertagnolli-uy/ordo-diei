@@ -67,11 +67,12 @@ model Usuario {
   lastTaskCompletedDate DateTime? @map("Last_Task_Completed_Date")
   totalTasksCompleted   Int       @default(0) @map("Total_Tasks_Completed")
 
-  tareasCreadas     Tarea[]           @relation("TareasCreadas")
-  tareasAsignadas   Tarea[]           @relation("TareasAsignadas")
-  historialAcciones HistorialAccion[]
-  registrosAnimo    RegistroAnimo[]
-  premiosEntregados PremioEntregado[]
+  tareasCreadas        Tarea[]           @relation("TareasCreadas")
+  tareasAsignadas      Tarea[]           @relation("TareasAsignadas")
+  historialAcciones    HistorialAccion[]
+  checklistCompletados ChecklistItem[]   @relation("ChecklistCompletadoPor")
+  registrosAnimo       RegistroAnimo[]
+  premiosEntregados    PremioEntregado[]
 
   experienciaHabitos         Int                  @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
@@ -247,13 +248,17 @@ model ReglaHogar {
 }
 
 model ChecklistItem {
-  id         Int     @id @default(autoincrement())
-  tareaId    Int     @map("Tarea_ID")
-  texto      String
-  completado Boolean @default(false)
-  orden      Int     @default(0)
+  id              Int       @id @default(autoincrement())
+  tareaId         Int       @map("Tarea_ID")
+  texto           String
+  completado      Boolean   @default(false)
+  orden           Int       @default(0)
+  // Quién lo marcó (lane 265): en tareas compartidas se ve su foto y ya no se desmarca
+  completadoPorId Int?      @map("Completado_Por_ID")
+  completadoEn    DateTime? @map("Completado_En")
 
-  tarea Tarea @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  tarea         Tarea    @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  completadoPor Usuario? @relation("ChecklistCompletadoPor", fields: [completadoPorId], references: [id], onDelete: SetNull)
 
   @@map("Checklist_Items")
 }
