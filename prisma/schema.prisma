@@ -1546,6 +1546,19 @@ model ConfigReposo {
   @@map("Config_Reposo")
 }
 
+// ← Lane 259: rutina base de la familia, compartida por todos los dispositivos (una sola fila, id = 1).
+// Lo propio de cada dispositivo (sonido, ajuste del día, etapas cumplidas, metas) sigue en localStorage.
+model RutinaFamiliar {
+  id               Int      @id @default(1)
+  etapas           Json     @map("Etapas")
+  semanalConfig    Json     @map("Semanal_Config")
+  version          Int      @default(1) @map("Version")
+  actualizadoPorId Int?     @map("Actualizado_Por_ID")
+  actualizadoEn    DateTime @updatedAt @map("Actualizado_En")
+
+  @@map("Rutina_Familiar")
+}
+
 // ← Reposo v2 (R2): pool de fotos de Unsplash (se refresca en el cron diario)
 model FotoUnsplash {
   id              String   @id @map("Unsplash_ID")
