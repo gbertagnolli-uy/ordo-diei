@@ -442,6 +442,7 @@ export function HabitoDialog({
                   <ToggleGroupItem value="oracion" size="sm" className="text-xs">Oración</ToggleGroupItem>
                   <ToggleGroupItem value="orden" size="sm" className="text-xs">Orden</ToggleGroupItem>
                   <ToggleGroupItem value="cuidado" size="sm" className="text-xs">Cuidado</ToggleGroupItem>
+                  <ToggleGroupItem value="virtud" size="sm" className="text-xs">Virtudes</ToggleGroupItem>
                 </ToggleGroup>
               </div>
 
