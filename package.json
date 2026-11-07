@@ -18,7 +18,8 @@
     "liturgia:rosarium-lecturas": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/liturgia/rosarium-lecturas.ts",
     "reposo:frases": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reposo/generar-frases.ts",
     "liturgia:descargar": "bash scripts/liturgia/descargar.sh && bash scripts/liturgia/instalar-perl.sh",
-    "liturgia:generar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/liturgia/generar.ts"
+    "liturgia:generar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/liturgia/generar.ts",
+    "liturgia:auditar-es": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/liturgia/auditar-es.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

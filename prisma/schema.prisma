@@ -67,11 +67,12 @@ model Usuario {
   lastTaskCompletedDate DateTime? @map("Last_Task_Completed_Date")
   totalTasksCompleted   Int       @default(0) @map("Total_Tasks_Completed")
 
-  tareasCreadas     Tarea[]           @relation("TareasCreadas")
-  tareasAsignadas   Tarea[]           @relation("TareasAsignadas")
-  historialAcciones HistorialAccion[]
-  registrosAnimo    RegistroAnimo[]
-  premiosEntregados PremioEntregado[]
+  tareasCreadas        Tarea[]           @relation("TareasCreadas")
+  tareasAsignadas      Tarea[]           @relation("TareasAsignadas")
+  historialAcciones    HistorialAccion[]
+  checklistCompletados ChecklistItem[]   @relation("ChecklistCompletadoPor")
+  registrosAnimo       RegistroAnimo[]
+  premiosEntregados    PremioEntregado[]
 
   experienciaHabitos         Int                  @default(0) @map("Experiencia_Habitos")
   actividadDias              ActividadDia[]
@@ -248,13 +249,17 @@ model ReglaHogar {
 }
 
 model ChecklistItem {
-  id         Int     @id @default(autoincrement())
-  tareaId    Int     @map("Tarea_ID")
-  texto      String
-  completado Boolean @default(false)
-  orden      Int     @default(0)
+  id              Int       @id @default(autoincrement())
+  tareaId         Int       @map("Tarea_ID")
+  texto           String
+  completado      Boolean   @default(false)
+  orden           Int       @default(0)
+  // Quién lo marcó (lane 265): en tareas compartidas se ve su foto y ya no se desmarca
+  completadoPorId Int?      @map("Completado_Por_ID")
+  completadoEn    DateTime? @map("Completado_En")
 
-  tarea Tarea @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  tarea         Tarea    @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  completadoPor Usuario? @relation("ChecklistCompletadoPor", fields: [completadoPorId], references: [id], onDelete: SetNull)
 
   @@map("Checklist_Items")
 }
@@ -307,6 +312,7 @@ enum CategoriaHabito {
   oracion
   orden
   cuidado
+  virtud // lane 257: práctica de virtudes
 }
 
 enum FranjaHabito {
@@ -1632,6 +1638,19 @@ model ConfigReposo {
   @@map("Config_Reposo")
 }
 
+// ← Lane 259: rutina base de la familia, compartida por todos los dispositivos (una sola fila, id = 1).
+// Lo propio de cada dispositivo (sonido, ajuste del día, etapas cumplidas, metas) sigue en localStorage.
+model RutinaFamiliar {
+  id               Int      @id @default(1)
+  etapas           Json     @map("Etapas")
+  semanalConfig    Json     @map("Semanal_Config")
+  version          Int      @default(1) @map("Version")
+  actualizadoPorId Int?     @map("Actualizado_Por_ID")
+  actualizadoEn    DateTime @updatedAt @map("Actualizado_En")
+
+  @@map("Rutina_Familiar")
+}
+
 // ← Reposo v2 (R2): pool de fotos de Unsplash (se refresca en el cron diario)
 model FotoUnsplash {
   id              String   @id @map("Unsplash_ID")
@@ -1685,6 +1704,25 @@ model MetaSemanal {
   creadaPor Usuario? @relation("MetasSemanales", fields: [creadaPorId], references: [id], onDelete: SetNull)
 
   @@map("Metas_Semanales")
+}
+
+// Premio grupal (lane 274, Plane #33): si los hijos completan el % meta de sus tareas del período, cada uno recibe un vale.
+model PremioGrupal {
+  id              Int       @id @default(autoincrement())
+  titulo          String    @map("Titulo") // texto del vale: «Vale por …»
+  descripcion     String?   @map("Descripcion")
+  porcentajeMeta  Int       @map("Porcentaje_Meta")
+  desde           DateTime  @map("Desde") @db.Date
+  hasta           DateTime  @map("Hasta") @db.Date
+  activo          Boolean   @default(true) @map("Activo")
+  evaluadoEn      DateTime? @map("Evaluado_En")
+  cumplido        Boolean?  @map("Cumplido")
+  porcentajeFinal Int?      @map("Porcentaje_Final")
+  creadoPorId     Int?      @map("Creado_Por_ID")
+  createdAt       DateTime  @default(now()) @map("Created_At")
+
+  @@index([activo, desde])
+  @@map("Premios_Grupales")
 }
 
 // Compañero que evoluciona (vault/ENGAGEMENT_PLAN.md, lane 203): crece con los DÍAS DE USO (no con la racha),
