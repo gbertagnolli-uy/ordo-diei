@@ -6,4 +6,5 @@
 - Carpetas copiadas, sin `node_modules` y sin cambios:
   - `packages/core`, `packages/sync`, `packages/editor`, `packages/ui`, `packages/theme`
   - `apps/web/src/lib`, `apps/web/src/features`, `apps/web/src/app/api/sync`
+  - `apps/web/src/components/TopBar.tsx` (agregado el 2026-11-07, M0b: lo usan `PageView` y `TrashView`)
 - `vendor/` está excluido de `tsconfig.json`, de eslint y de `npm test`. Lo portado a `src/` lleva la cabecera `// Portado de vendor/dovli/<ruta> (MayankJha0333/dovli@eb453e0)`.
