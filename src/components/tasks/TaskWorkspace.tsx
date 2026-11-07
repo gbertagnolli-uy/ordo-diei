@@ -3,7 +3,8 @@
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
-import { CalendarDays, Columns3, List, PanelRight } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Columns3, List, PanelRight, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/app/PageHeader";
 import { NAV, SectionId, sectionFromParams } from "@/components/app/AppSidebar";
@@ -139,6 +140,16 @@ export function TaskWorkspace({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Agenda</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" asChild>
+                  <Link href="/dashboard/imprimir/agenda-semanal" aria-label="Imprimir agenda semanal">
+                    <Printer />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Imprimir agenda semanal</TooltipContent>
             </Tooltip>
           </>
         )}
