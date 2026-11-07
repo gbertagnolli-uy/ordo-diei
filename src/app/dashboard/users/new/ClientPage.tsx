@@ -52,7 +52,7 @@ export default function NewUserPage() {
   };
 
   return (
-    <div className="flex justify-center p-4 sm:p-6">
+    <div className="flex justify-center">
       <Card className="w-full max-w-xl">
         <CardContent>
           <form onSubmit={handleSubmit}>

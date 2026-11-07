@@ -65,7 +65,7 @@ export default function HojaQuizImprimible({ datos }: { datos: DatosQuizImprimib
   const mostrarMateriales = modo === "clase";
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-6 p-4 sm:p-6 print:max-w-none print:p-0">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-6 print:max-w-none print:p-0">
       <div className="space-y-3 rounded-xl border bg-card p-4 print:hidden">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button asChild variant="outline" size="sm">

@@ -90,7 +90,7 @@ export default function Mensajeria({ personas: inicial, conInicial }: { personas
   };
 
   return (
-    <div className="mx-auto flex h-[calc(100svh-7.5rem)] min-h-96 w-full min-w-0 max-w-5xl gap-0 overflow-hidden p-0 sm:gap-4 sm:p-6">
+    <div className="mx-auto flex h-[calc(100svh-8rem)] min-h-96 w-full min-w-0 max-w-5xl gap-0 overflow-hidden p-0 sm:gap-4 sm:p-6">
       {/* Lista de personas */}
       <aside aria-label="Personas" className={`w-full shrink-0 overflow-y-auto border-r sm:w-72 sm:rounded-xl sm:border ${con !== null ? "hidden sm:block" : ""}`}>
         <h1 className="border-b p-4 text-lg font-bold text-foreground">Mensajes</h1>

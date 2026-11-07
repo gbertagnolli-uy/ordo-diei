@@ -39,7 +39,7 @@ export default async function DetalleCartaPage({
 
   if (!carta) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 max-w-md mx-auto w-full">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto w-full">
         <Empty className="border rounded-2xl bg-card p-8">
           <EmptyMedia variant="icon">
             <Layers className="size-6 text-muted-foreground" />

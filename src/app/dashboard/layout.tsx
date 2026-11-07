@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/AppSidebar";
+import { MarcoDashboard } from "@/components/app/MarcoDashboard";
 import { MainDock } from "@/components/dashboard/MainDock";
 import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
@@ -128,7 +129,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <SidebarInset className="min-w-0">
         <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />
         <NoticeBar />
-        <div className="flex flex-1 flex-col pb-24">{children}</div>
+        {/* Barra superior (botón de colapsar + migas) y padding para todas las pantallas (lane 280) */}
+        <MarcoDashboard>{children}</MarcoDashboard>
       </SidebarInset>
       <ModoRelajado activo={modoRelajado} />
       <ActualizarPremios />

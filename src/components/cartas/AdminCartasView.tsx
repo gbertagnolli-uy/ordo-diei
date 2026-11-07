@@ -182,7 +182,7 @@ export function AdminCartasView({ cartasIniciales }: AdminCartasViewProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       {/* Barra de navegación superior */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3">

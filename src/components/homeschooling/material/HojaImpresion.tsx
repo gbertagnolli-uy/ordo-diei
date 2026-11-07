@@ -21,7 +21,7 @@ export default function HojaImpresion({ hoja }: { hoja: HojaImpresa }) {
   }, []);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-6 p-4 sm:p-6 print:max-w-none print:p-0">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-6 print:max-w-none print:p-0">
       <div className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3 print:hidden">
         <p className="text-sm text-muted-foreground">Si no se abrió la impresión, tocá el botón. Esta hoja se puede reimprimir durante 15 minutos sin gastar otra.</p>
         <Button onClick={() => window.print()}>

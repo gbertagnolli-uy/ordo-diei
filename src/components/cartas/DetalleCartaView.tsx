@@ -77,7 +77,7 @@ export function DetalleCartaView({ carta }: DetalleCartaViewProps) {
   return (
     <div className="flex flex-col">
       <PageHeader group="Colección" title={carta.nombre} />
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
       {/* Navegación Superior */}
       <div className="flex items-center justify-between gap-4 border-b pb-4">
         <Button variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground hover:text-foreground">

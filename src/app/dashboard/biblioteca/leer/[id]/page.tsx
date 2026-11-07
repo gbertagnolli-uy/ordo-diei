@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { esPadre } from "@/lib/habitos/permisos";
 import { NoEncontradoError } from "@/lib/habitos/server";
 import { detalleLibro } from "@/lib/biblioteca/servidor";
+import { PageHeader } from "@/components/app/PageHeader";
 import { LectorLibro } from "@/components/biblioteca/LectorLibro";
 
 // Lector de un libro (ePub o PDF) que abre donde lo dejó quien lee (lane 270). ?formato=pdf elige el formato.
@@ -20,5 +21,10 @@ export default async function LeerPage({ params, searchParams }: { params: Promi
   });
   if (!libro) notFound();
   if (libro.esAudiolibro) redirect(`/dashboard/biblioteca/libro/${id}`);
-  return <LectorLibro libro={libro} formato={(await searchParams).formato ?? null} />;
+  return (
+    <>
+      <PageHeader group="Biblioteca" groupHref="/dashboard/biblioteca" title={libro.titulo} />
+      <LectorLibro libro={libro} formato={(await searchParams).formato ?? null} />
+    </>
+  );
 }

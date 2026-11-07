@@ -110,7 +110,7 @@ export function TiendaView({ inicial, esPadre, productoInicial }: { inicial: Tie
         )}
       </PageHeader>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-28 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 pb-28">
         <BarraSaldos saldos={tienda.saldos} onGanar={() => setGanarAbierto(true)} />
 
         <SeccionComprasCompartidas

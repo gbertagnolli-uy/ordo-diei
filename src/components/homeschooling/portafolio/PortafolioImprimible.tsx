@@ -25,7 +25,7 @@ export default function PortafolioImprimible({ evidencias, alumno, desde, hasta,
   };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-5 p-4 sm:p-6 print:max-w-none print:p-0">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-5 print:max-w-none print:p-0">
       <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-3 print:hidden">
         <div className="space-y-1">
           <Label htmlFor="imp-desde">Desde</Label>
