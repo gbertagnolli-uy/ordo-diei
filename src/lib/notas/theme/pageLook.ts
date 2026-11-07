@@ -105,6 +105,6 @@ export function resolveLook(styleId: string | null | undefined, look: LookInput 
 
 /** The name to show for a page's look, like "Midnight" or "Plain". */
 export function lookName(r: ResolvedLook): string {
-  if (!r.style) return "Plain";
-  return r.customColors ? (r.style.id === "custom" ? "Custom colours" : `${r.style.name}, customised`) : r.style.name;
+  if (!r.style) return "Simple";
+  return r.customColors ? (r.style.id === "custom" ? "Colores propios" : `${r.style.name}, personalizado`) : r.style.name;
 }
