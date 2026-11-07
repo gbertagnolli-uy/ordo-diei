@@ -117,7 +117,7 @@ export function wordCount(page: Page): number {
 }
 
 export function displayTitle(page: Pick<Page, "title" | "kind">): string {
-  return page.title.trim() || (page.kind === "board" ? "Untitled board" : "Untitled");
+  return page.title.trim() || (page.kind === "board" ? "Pizarra sin título" : "Sin título");
 }
 
 export function timeAgo(ts: number, now = Date.now()): string {

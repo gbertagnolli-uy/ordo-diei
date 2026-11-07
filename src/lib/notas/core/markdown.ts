@@ -190,7 +190,7 @@ export function inlineToMarkdown(content: any): string {
     if (typeof c === "string") out += escapeText(c);
     else if (c.type === "text") out += runToMd(c.text ?? "", c.styles ?? {});
     else if (c.type === "link") out += `[${inlineToMarkdown(c.content) || escapeText(c.href ?? "")}](${c.href ?? ""})`;
-    else if (c.type === "pageLink") out += `[${escapeText(c.props?.title || "Untitled")}](dovli:page/${c.props?.pageId ?? ""})`;
+    else if (c.type === "pageLink") out += `[${escapeText(c.props?.title || "Sin título")}](dovli:page/${c.props?.pageId ?? ""})`;
     else if (typeof c.text === "string") out += escapeText(c.text);
   }
   return out;
@@ -261,7 +261,7 @@ export function markdownToInline(src: string, opts: ToBlocksOptions = {}, styles
           const label = src.slice(i + 1, close);
           const href = src.slice(close + 2, paren).trim().replace(/^<|>$/g, "");
           const page = /^dovli:(?:\/\/)?page\/([A-Za-z0-9_-]{1,128})$/.exec(href);
-          if (page) out.push({ type: "pageLink", props: { pageId: page[1], title: label.replace(/\\(.)/g, "$1") || "Untitled" } });
+          if (page) out.push({ type: "pageLink", props: { pageId: page[1], title: label.replace(/\\(.)/g, "$1") || "Sin título" } });
           else if (/^(https?:|mailto:|tel:)/i.test(href)) {
             const inner = markdownToInline(label, opts, styles).filter((x): x is Extract<Inline, { type: "text" }> => x.type === "text");
             out.push({ type: "link", href, content: inner.length ? inner : [{ type: "text", text: href, styles: {} }] });
