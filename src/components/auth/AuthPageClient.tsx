@@ -71,7 +71,7 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
         login(data.user);
 
         if (data.hasPremioPendiente && data.premioPendiente) {
-          router.push("/dashboard");
+          router.push("/dashboard?s=today");
           setTimeout(() => {
             openModal("SURPRISE_AWARD", {
               entregaId: data.premioPendiente.id,
@@ -80,7 +80,7 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
             });
           }, 500);
         } else {
-          router.push("/dashboard");
+          router.push("/dashboard?s=today");
         }
       } else {
         setErrorPin(true);
