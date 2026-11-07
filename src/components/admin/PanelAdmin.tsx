@@ -19,6 +19,7 @@ import {
   PackageCheck,
   ShoppingCart,
   Sunset,
+  Clock,
   UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,7 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
         { href: "/dashboard/users/pines", titulo: "Restablecer PIN", descripcion: "Cambiá el PIN de un miembro que lo olvidó.", icon: KeyRound },
         { href: "/dashboard/rules", titulo: "Reglas del hogar", descripcion: "Editá las reglas que ve toda la familia.", icon: FilePen },
         { href: "/dashboard/admin/reposo", titulo: "Reposo", descripcion: "Tiempos de la pantalla de reposo, fotos de fondo y referencias.", icon: ImageIcon },
+        { href: "/dashboard/admin/rutina", titulo: "Rutina familiar", descripcion: "Etapas y horarios del día que ve toda la familia.", icon: Clock },
       ],
     },
   ];

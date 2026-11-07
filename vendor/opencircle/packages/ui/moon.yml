@@ -1,0 +1,37 @@
+id: ui-package
+language: typescript
+
+tasks:
+  dev:
+    command: "pnpm dev"
+    description: "Start development server for ui package"
+    options:
+      runInCI: false
+
+  build:
+    command: "pnpm build"
+    description: "Build ui package"
+    options:
+      runInCI: false
+
+  format:
+    command: "pnpm format"
+    description: "Format ui package code"
+    options:
+      runInCI: false
+
+  lint:
+    command: "pnpm lint"
+    description: "Lint ui package code"
+
+  typecheck:
+    command: "tsc --noEmit"
+    description: "Type check ui package code"
+    options:
+      runInCI: false
+
+  test:
+    command: "echo 'No tests configured for ui package yet'"
+    description: "Run tests for ui package"
+    options:
+      runInCI: false

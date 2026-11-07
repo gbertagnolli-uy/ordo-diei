@@ -5,6 +5,7 @@ import { claveEsDeLibro, PREFIJO_CLAVE_LIBRO } from "./parametros.ts";
 import type { TipoLibro } from "./parametros.ts";
 import type { FilaDia, FilaDocumento, RepoLiturgia } from "./repositorio.ts";
 import type { DocumentoResuelto, Hora, SeccionResuelta, TituloDia, VersionLiturgica } from "./tipos.ts";
+import { aplicarCorreccion } from "./correccionesEs.ts";
 
 /** Cuando falta el dato, la pantalla dice «Este día todavía no se generó» y no rompe (SPEC §2). */
 export type Lectura<T> = { estado: "ok"; datos: T } | { estado: "no-generado" };
@@ -36,7 +37,7 @@ export async function resolverDocumento(repo: RepoLiturgia, fila: FilaDocumento)
     ...s,
     bloques: s.bloques.flatMap((h) => {
       const b = mapa.get(h);
-      return b ? [b] : [];
+      return b ? [aplicarCorreccion(h, b)] : [];
     }),
   }));
   return { titulo: (fila.titulo as TituloDia | null) ?? null, secciones };

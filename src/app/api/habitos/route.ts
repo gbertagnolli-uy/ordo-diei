@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (minimo !== undefined && minimo !== null && (typeof minimo !== "string" || minimo.trim().length > 120)) {
       return NextResponse.json({ error: "La versión mínima no puede superar los 120 caracteres" }, { status: 400 });
     }
-    if (!["oracion", "orden", "cuidado"].includes(categoria)) {
+    if (!["oracion", "orden", "cuidado", "virtud"].includes(categoria)) {
       return NextResponse.json({ error: "Categoría no válida" }, { status: 400 });
     }
     if (!["manana", "tarde", "noche"].includes(franja)) {
