@@ -102,6 +102,13 @@ model Usuario {
   movimientosFragmento MovimientoFragmento[]
   reclamosCarta        ReclamoCarta[]
 
+  // Social (lane 276)
+  socialCanales                 SocialCanalMiembro[] @relation("SocialCanales")
+  socialPosts                   SocialPost[]         @relation("SocialPosts")
+  socialReacciones              SocialReaccion[]     @relation("SocialReacciones")
+  socialNotificacionesRecibidas SocialNotificacion[] @relation("SocialNotificacionesRecibidas")
+  socialNotificacionesEnviadas  SocialNotificacion[] @relation("SocialNotificacionesEnviadas")
+
   // Tienda (vault/nuevas-features/marketplace/SPEC.md)
   comprasTienda                 CompraTienda[]
   desbloqueosTienda             DesbloqueoProducto[]
@@ -1499,6 +1506,117 @@ model MensajeFamilia {
   @@index([paraId, leidoEn])
   @@index([deId, paraId, createdAt])
   @@map("Homeschool_Mensajes")
+}
+
+// ← Lane 276: Social (modelo de devscalelabs/opencircle@5a8beada apps/api_v2/prisma/schema.prisma: Post, Media, Channel, ChannelMember, Reaction, Notification)
+enum SocialTipoCanal {
+  publico
+  privado
+}
+
+enum SocialTipoNotificacion {
+  mencion
+  reaccion
+  respuesta
+}
+
+model SocialCanal {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  emoji       String          @default("😊") @map("Emoji")
+  nombre      String          @map("Nombre")
+  descripcion String?         @map("Descripcion")
+  slug        String          @unique @map("Slug")
+  tipo        SocialTipoCanal @default(publico) @map("Tipo")
+  materiaId   Int?            @unique @map("Materia_ID") // canal automático de una materia del LMS (D3)
+  createdAt   DateTime        @default(now()) @map("Created_At")
+  deletedAt   DateTime?       @map("Deleted_At")
+
+  miembros SocialCanalMiembro[]
+  posts    SocialPost[]
+
+  @@map("Social_Canales")
+}
+
+model SocialCanalMiembro {
+  canalId   String   @map("Canal_ID") @db.Uuid
+  usuarioId Int      @map("Usuario_ID")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  canal   SocialCanal @relation(fields: [canalId], references: [id], onDelete: Cascade)
+  usuario Usuario     @relation("SocialCanales", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([canalId, usuarioId])
+  @@index([usuarioId])
+  @@map("Social_Canal_Miembros")
+}
+
+model SocialPost {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contenido String    @map("Contenido")
+  autorId   Int       @map("Autor_ID")
+  canalId   String?   @map("Canal_ID") @db.Uuid
+  padreId   String?   @map("Padre_ID") @db.Uuid // comentario de otro post
+  enlaceLms Json?     @map("Enlace_LMS") // { tipo: "curso" | "leccion", id, titulo }
+  fijado    Boolean   @default(false) @map("Fijado")
+  createdAt DateTime  @default(now()) @map("Created_At")
+  updatedAt DateTime  @updatedAt @map("Updated_At")
+  deletedAt DateTime? @map("Deleted_At")
+
+  autor      Usuario          @relation("SocialPosts", fields: [autorId], references: [id], onDelete: Cascade)
+  canal      SocialCanal?     @relation(fields: [canalId], references: [id], onDelete: SetNull)
+  padre      SocialPost?      @relation("SocialRespuestas", fields: [padreId], references: [id], onDelete: Cascade)
+  respuestas SocialPost[]     @relation("SocialRespuestas")
+  medios     SocialMedio[]
+  reacciones SocialReaccion[]
+
+  @@index([canalId, createdAt])
+  @@index([padreId])
+  @@index([autorId])
+  @@map("Social_Posts")
+}
+
+model SocialMedio {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String?  @map("Post_ID") @db.Uuid
+  autorId   Int      @map("Autor_ID")
+  url       String   @map("URL")
+  tipo      String   @map("Tipo") // imagen | video
+  orden     Int      @default(0) @map("Orden")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  post SocialPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("Social_Medios")
+}
+
+model SocialReaccion {
+  postId    String   @map("Post_ID") @db.Uuid
+  usuarioId Int      @map("Usuario_ID")
+  emoji     String   @map("Emoji")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  post    SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  usuario Usuario    @relation("SocialReacciones", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([postId, usuarioId, emoji])
+  @@map("Social_Reacciones")
+}
+
+model SocialNotificacion {
+  id        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  destinoId Int                    @map("Destino_ID")
+  origenId  Int                    @map("Origen_ID")
+  tipo      SocialTipoNotificacion @map("Tipo")
+  postId    String?                @map("Post_ID") @db.Uuid
+  leida     Boolean                @default(false) @map("Leida")
+  createdAt DateTime               @default(now()) @map("Created_At")
+
+  destino Usuario @relation("SocialNotificacionesRecibidas", fields: [destinoId], references: [id], onDelete: Cascade)
+  origen  Usuario @relation("SocialNotificacionesEnviadas", fields: [origenId], references: [id], onDelete: Cascade)
+
+  @@index([destinoId, leida])
+  @@map("Social_Notificaciones")
 }
 
 // ── Liturgia (Divinum Officium): lo genera scripts/liturgia/generar.ts; la app solo lee ──
