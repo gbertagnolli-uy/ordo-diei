@@ -8,5 +8,5 @@
   - `server/src/db/schema/{books,reader,collections}.ts`, `server/src/db/audio-track-order.ts`
   - `server/src/modules/{reading-state,user-book-status,audiobook,search}/`
   - `client/src/features/reader/audiobook/`
-- Lo portado a `src/` lleva la cabecera `// Portado de vendor/bookorbit/<ruta> (bookorbit/bookorbit@6ad1445)`.
+- Lo portado a `src/` lleva la cabecera `// Portado de vendor/bookorbit/<ruta> (bookorbit/bookorbit@6ad1445)`. En la lane 281 se portaron a `src/lib/biblioteca/metadatos.ts` los extractores de metadatos y portadas de `server/src/modules/metadata/lib/{epub.ts,opf-parser.ts,cover-epub.ts,mobi-parser.ts,fb2-parser.ts,cover-fb2.ts,cbz-metadata.ts,cover-cbz.ts,cover-cbr.ts,pdf-parser.ts,pdf-xmp-reader.ts,filename-parser.ts}` y `server/src/common/{cbz-zip-reader.ts,comic-format-detect.ts,archive-entry-sort.ts,utils/fb2-encoding.utils.ts}`.
 - `THIRD_PARTY_NOTICES.md` se actualiza al final de la lane (D6 de `vault/LANE_270_BIBLIOTECA_BOOKORBIT.md`).
