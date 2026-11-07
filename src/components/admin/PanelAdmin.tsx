@@ -11,6 +11,7 @@ import {
   Gift,
   HeartHandshake,
   PartyPopper,
+  Target,
   UsersRound,
   Image as ImageIcon,
   KeyRound,
@@ -84,6 +85,7 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
           icon: PartyPopper,
         },
         { href: "/dashboard/premios", titulo: "Premios familiares", descripcion: "Premios sorpresa semanales y mensuales por tareas.", icon: Gift },
+        { href: "/dashboard/admin/premio-grupal", titulo: "Premio grupal", descripcion: "Un premio para todos si juntos completan el % de tareas.", icon: Target },
         {
           href: "/dashboard/mis-premios",
           titulo: "Premios para entregar",
