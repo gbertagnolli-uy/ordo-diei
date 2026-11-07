@@ -57,5 +57,5 @@ test("un día futuro sin instancia muestra la plantilla «Programada»", () => {
   const lista = tareasDeAgenda(tareas, dia10, 3);
   assert.deepEqual(lista.map((t) => t.id), [22]);
   assert.equal(estadoEnAgenda(lista[0]).label, "Programada");
-  assert.equal(estadoEnAgenda(unica).label, "Pendiente");
+  assert.equal(estadoEnAgenda({ ...unica, fechaVencimiento: new Date(Date.now() + 86_400_000) }).label, "Pendiente");
 });
