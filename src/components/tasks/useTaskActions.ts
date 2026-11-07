@@ -2,11 +2,15 @@
 
 import { toast } from "@/lib/toast";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useModalStore } from "@/store/modalStore";
+import { useCronometroStore } from "@/store/cronometroStore";
+import { completarTarea } from "./completarTarea";
 
 // Timer persistente y acciones de una tarea (antes vivían dentro de TaskCard).
 export function useTaskActions(task: any) {
   const { openModal } = useModalStore();
+  const router = useRouter();
 
   const getInitialElapsed = () => {
     if (task.timerStartedAt) {
@@ -61,13 +65,18 @@ export function useTaskActions(task: any) {
       try { await syncTimer("start"); } catch {}
       setStartedInSession(true);
       setIsPlaying(true);
+      // Modal grande con la cuenta regresiva; al salir queda la ventana flotante (lane 264)
+      useCronometroStore.getState().abrirGrande(task.id);
     } else {
       try {
         const res = await syncTimer("pause");
         if (res.ok) setElapsed((await res.json()).tiempoAcumulado);
       } catch {}
       setIsPlaying(false);
+      useCronometroStore.getState().minimizar();
     }
+    // El layout vuelve a leer la tarea en curso (cronómetro flotante)
+    router.refresh();
   };
 
   const fueIniciada = startedInSession || isPlaying || elapsed > 0;
@@ -77,43 +86,21 @@ export function useTaskActions(task: any) {
     if (isPlaying) {
       setIsPlaying(false);
       syncTimer("pause").catch(() => {});
+      useCronometroStore.getState().minimizar();
     }
   };
 
   const finishTask = async (modoOverride?: "iniciada_finalizada" | "realizada_directa") => {
     setLoading(true);
     const modoCompletado = modoOverride ?? (fueIniciada ? "iniciada_finalizada" : "realizada_directa");
-    try {
-      const res = await fetch(`/api/tasks/${task.id}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ elapsedSeconds: elapsed, modoCompletado }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        openModal("TASK_SUCCESS", {
-          mensaje: data.mensaje,
-          puntos: data.puntos,
-          basePoints: data.basePoints,
-          streakBonus: data.streakBonus,
-          checklistBonus: data.checklistBonus,
-          porcentajePuntos: data.porcentajePuntos,
-          fueIniciada: data.fueIniciada,
-          isNewStreak: data.isNewStreak,
-          streakDays: data.streakDays,
-          isHappyHour: data.isHappyHour,
-        });
-        return true;
-      }
-      const errData = await res.json().catch(() => ({}));
-      console.error("Error al completar:", res.status, errData);
-      toast.error(errData.error || "Error al completar la tarea. Revisa tu conexión o intenta nuevamente.");
-    } catch (e: any) {
-      console.error("Error de conexión:", e);
-      toast.error("Error de conexión: " + e.message);
-    } finally {
-      setLoading(false);
+    const r = await completarTarea(task.id, elapsed, modoCompletado);
+    setLoading(false);
+    if (r.ok) {
+      useCronometroStore.getState().minimizar();
+      openModal("TASK_SUCCESS", r.exito);
+      return true;
     }
+    toast.error(r.error);
     return false;
   };
 
