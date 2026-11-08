@@ -1,8 +1,8 @@
 "use client";
 // Diario (lane 296): crear o editar un lugar frecuente. Portado de vendor/moodiary/.../presentation/place/place_editor_page.dart (ZhuJHua/moodiary@2c552dd):
-// nombre, ícono y posición. La posición se escribe en coordenadas o se toma de la ubicación actual; el mapa para elegirla llega en la lane 297.
-import { useState } from "react";
-import { LocateFixed, Trash2 } from "lucide-react";
+// nombre, ícono y posición. La posición se elige moviendo el mapa (lane 297, igual que moodiary) o se escribe en coordenadas.
+import { useCallback, useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import type { LugarVista } from "@/lib/diario/servidor-lugares";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { IconoDeLugar } from "./iconos";
-import { obtenerUbicacion } from "./ubicacion";
+import { MapaLugar } from "../mapa/MapaLugar";
 import type { AccionesLugares } from "./useLugares";
 
 const aNumero = (t: string) => (t.trim() === "" ? NaN : Number(t.trim().replace(",", ".")));
@@ -37,25 +37,17 @@ export function EditorLugar({
   const [icono, setIcono] = useState<IconoLugar | null>(lugar?.icono ?? null);
   const [latitud, setLatitud] = useState(String(lugar?.latitud ?? inicial?.latitud ?? ""));
   const [longitud, setLongitud] = useState(String(lugar?.longitud ?? inicial?.longitud ?? ""));
-  const [ubicando, setUbicando] = useState(false);
   const [trabajando, setTrabajando] = useState(false);
 
   const lat = aNumero(latitud);
   const lon = aNumero(longitud);
   const posicionValida = Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
 
-  async function usarMiUbicacion() {
-    setUbicando(true);
-    try {
-      const p = await obtenerUbicacion(true);
-      setLatitud(String(Number(p.latitud.toFixed(6))));
-      setLongitud(String(Number(p.longitud.toFixed(6))));
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo obtener la ubicación");
-    } finally {
-      setUbicando(false);
-    }
-  }
+  const otros = useMemo(() => (lugares.lista ?? []).filter((l) => l.id !== lugar?.id), [lugares.lista, lugar?.id]);
+  const moverA = useCallback((lat: number, lon: number) => {
+    setLatitud(String(lat));
+    setLongitud(String(lon));
+  }, []);
 
   async function guardar() {
     if (!posicionValida) return toast.error("Poné una latitud entre -90 y 90 y una longitud entre -180 y 180");
@@ -121,15 +113,13 @@ export function EditorLugar({
               ))}
             </div>
           </fieldset>
+          <MapaLugar latitud={posicionValida ? lat : null} longitud={posicionValida ? lon : null} icono={icono} otros={otros} onMover={moverA} />
           <div className="flex flex-col gap-1.5">
             <Label>Posición</Label>
             <div className="grid grid-cols-2 gap-3">
               <Input aria-label="Latitud" inputMode="decimal" placeholder="Latitud" value={latitud} onChange={(e) => setLatitud(e.target.value)} />
               <Input aria-label="Longitud" inputMode="decimal" placeholder="Longitud" value={longitud} onChange={(e) => setLongitud(e.target.value)} />
             </div>
-            <Button type="button" variant="outline" size="sm" className="self-start" disabled={ubicando} onClick={() => void usarMiUbicacion()}>
-              <LocateFixed /> {ubicando ? "Buscando…" : "Usar mi ubicación"}
-            </Button>
           </div>
         </div>
         <SheetFooter className="flex-row items-center justify-between gap-2">
