@@ -18,3 +18,6 @@
 
 ## Ampliación (lane 288, 2026-11-08)
 - Se agregan, sin cambios, las fuentes del calendario: `lib/widgets/{vertical_calendar,entry_day_cell,year_month_picker,calendar_view_options_dialog}.dart` y `lib/utils/year_month_range.dart` (celda con portada, ánimo, contador y etiqueta; opciones del calendario; selector de año y mes).
+
+## Ampliación (lane 289, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de recuerdos y línea de tiempo: `lib/{flashback_manager,time_manager}.dart`, `lib/models/flashback.dart`, `lib/widgets/flashback_card.dart`, `lib/pages/{entry_timeline_page,home_page}.dart` y `lib/pages/settings/flashback_settings.dart` (recuerdos «En este día», hace 6 meses, 1 mes y 1 semana, un buen día y un día aleatorio; línea de tiempo con orden ascendente o descendente).

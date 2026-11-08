@@ -14,3 +14,6 @@
 
 ## Ampliación (lane 288, 2026-11-08)
 - Se agregan, sin cambios, las fuentes del calendario de ánimo y de la lista de años: `lib/views/calendar/mood/{mood_calendar_view,mood_calendar_view_model,mood_calendar_content}.dart` y `lib/views/home/years/{home_years_view_model,home_years_content}.dart`.
+
+## Ampliación (lane 289, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de los recuerdos del mismo día: `lib/views/throwback/{throwback_view,throwback_view_model,throwback_content}.dart`, `lib/widgets/sp_throwback_tile.dart` y `lib/views/home/home_view_model.dart` (entradas de ese día y mes en otros años y «responder a tu yo del pasado»).
