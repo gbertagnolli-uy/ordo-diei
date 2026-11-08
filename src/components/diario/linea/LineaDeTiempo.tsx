@@ -99,7 +99,7 @@ function Paginas({ tipo, orden, categoria, catalogo, onIrADia }: { tipo: TipoDia
 }
 
 /** Las categorías como lista plana, con el camino completo («Fe › Misa»), para el selector. */
-function opcionesDeCategoria(catalogo: Catalogo | null): { id: number; nombre: string }[] {
+export function opcionesDeCategoria(catalogo: Catalogo | null): { id: number; nombre: string }[] {
   if (!catalogo) return [];
   const camino = (id: number): string => {
     const nombres: string[] = [];
