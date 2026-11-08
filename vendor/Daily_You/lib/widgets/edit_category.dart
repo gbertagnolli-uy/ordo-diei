@@ -1,0 +1,190 @@
+// Copyright (C) 2026 Demizo and contributors
+// SPDX-License-Identifier: GPL-3.0-only
+// Additional terms under GPLv3 section 7 apply; see ADDITIONAL_TERMS.md.
+
+import 'package:daily_you/models/tag_category.dart';
+import 'package:daily_you/models/tag_icon_type.dart';
+import 'package:daily_you/providers/tags_provider.dart';
+import 'package:daily_you/widgets/app_dialog.dart';
+import 'package:daily_you/widgets/color_picker_dialog.dart';
+import 'package:daily_you/widgets/delete_confirm_dialog.dart';
+import 'package:daily_you/widgets/icon_color_label_row.dart';
+import 'package:daily_you/widgets/icon_picker_dialog.dart';
+import 'package:daily_you/widgets/tag_icon_glyph.dart';
+import 'package:daily_you/utils/tag_name_sanitizer.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:daily_you/l10n/generated/app_localizations.dart';
+
+class EditCategory extends StatefulWidget {
+  final TagCategory? category;
+
+  const EditCategory({super.key, this.category});
+
+  @override
+  State<EditCategory> createState() => _EditCategoryState();
+}
+
+class _EditCategoryState extends State<EditCategory> {
+  late TagNameEditingController _nameController;
+  String? _icon;
+  TagIconType _iconType = TagIconType.character;
+  int? _color;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController =
+        TagNameEditingController(text: widget.category?.name ?? '');
+    _icon = widget.category?.icon;
+    _iconType = widget.category?.iconType ?? TagIconType.character;
+    _color = widget.category?.color;
+    _nameController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = sanitizeTagName(_nameController.text);
+    if (name.isEmpty) return;
+
+    final now = DateTime.now();
+
+    if (widget.category == null) {
+      await TagsProvider.instance.addCategory(TagCategory(
+        name: name,
+        icon: _icon,
+        iconType: _iconType,
+        color: _color,
+        timeCreate: now,
+        timeModified: now,
+      ));
+    } else {
+      // Construct directly so null icon is honored when cleared
+      await TagsProvider.instance.updateCategory(TagCategory(
+        id: widget.category!.id,
+        name: name,
+        icon: _icon,
+        iconType: _iconType,
+        color: _color,
+        timeCreate: widget.category!.timeCreate,
+        timeModified: now,
+      ));
+    }
+
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _confirmDelete() async {
+    final category = widget.category;
+    if (category == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final tagCount = TagsProvider.instance.tags
+        .where((tag) => tag.categoryId == category.id)
+        .length;
+    final confirmed = await showDeleteConfirmDialog(
+      context,
+      message: l10n.deleteCategoryMessage(tagCount, category.name),
+    );
+    if (confirmed && mounted) {
+      await TagsProvider.instance.removeCategoryAndTags(category);
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  Color _effectiveColor(BuildContext context) =>
+      _color != null ? Color(_color!) : Theme.of(context).colorScheme.onSurface;
+
+  Future<void> _showIconPicker() async {
+    final result = await showAppDialog<IconPickerResult>(
+      context: context,
+      builder: (context) => IconPickerDialog(
+        previewColor: _effectiveColor(context),
+        initial: (type: _iconType, value: _icon),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _icon = result.value;
+        _iconType = result.type;
+      });
+    }
+  }
+
+  Future<void> _showColorPicker() async {
+    final result = await showAppDialog<ColorPickerResult>(
+      context: context,
+      builder: (context) => ColorPickerDialog(
+        initialColor: _color != null ? Color(_color!) : null,
+        showNoneOption: true,
+      ),
+    );
+    if (result != null) {
+      setState(() => _color = result.color?.toARGB32());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(widget.category == null
+                ? l10n.newCategoryTitle
+                : l10n.tagCategoryLabel),
+          ),
+          if (widget.category != null)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.delete_rounded),
+              tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+              onPressed: _confirmDelete,
+            ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            IconColorLabelRow(
+              icon: TagIconGlyph(
+                icon: _icon,
+                iconType: _iconType,
+                fallbackIcon: Icons.folder_rounded,
+                color: _effectiveColor(context),
+                size: 28,
+              ),
+              color: _effectiveColor(context),
+              controller: _nameController,
+              hintText: l10n.nameHint,
+              autofocus: widget.category == null,
+              onPickIcon: _showIconPicker,
+              onPickColor: _showColorPicker,
+              onSubmitted: (_) => sanitizeTagName(_nameController.text).isEmpty
+                  ? null
+                  : _save(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        TextButton(
+          onPressed:
+              sanitizeTagName(_nameController.text).isEmpty ? null : _save,
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
+        ),
+      ],
+    );
+  }
+}

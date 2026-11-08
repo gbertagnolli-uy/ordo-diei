@@ -5,6 +5,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { APP_TZ, aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
 import type { NodoDoc } from "./contenido";
+import type { EtiquetaPuesta } from "./etiquetas";
+import { prepararEtiquetas, verificarCategoria } from "./servidor-catalogo";
 import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, type TipoDiario } from "./reglas";
 
 type Actor = { id: number; esPadre: boolean };
@@ -18,6 +20,9 @@ export type EntradaVista = {
   /** Documento Tiptap; null = entrada escrita en texto plano (lane 272), se abre como párrafos. */
   contenido: NodoDoc | null;
   animo: number | null;
+  /** Lane 284: etiquetas puestas (el nombre, ícono y color salen del catálogo) y categoría de la entrada. */
+  etiquetas: EtiquetaPuesta[];
+  categoriaId: number | null;
   /** Hora de la entrada: minutos desde la medianoche en la zona de la familia (la fijada o, si no, la de `creadaEn`). */
   hora: number;
   creadaEn: string;
@@ -29,6 +34,7 @@ export type EntradaVista = {
 };
 
 const incluir = {
+  etiquetas: { select: { etiquetaId: true, valor: true }, orderBy: { id: "asc" as const } },
   fotos: { orderBy: { orden: "asc" as const }, select: { url: true } },
   autor: { select: { id: true, nombre: true, fotoUrl: true } },
 };
@@ -52,6 +58,8 @@ function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
     texto: e.texto,
     contenido: (e.contenido as NodoDoc | null) ?? null,
     animo: e.animo,
+    etiquetas: e.etiquetas.map((t) => ({ id: t.etiquetaId, valor: t.valor })),
+    categoriaId: e.categoriaId,
     hora: e.hora ?? minutosEnFamilia(e.creadaEn),
     creadaEn: e.creadaEn.toISOString(),
     editadaEn: e.editadaEn.toISOString(),
@@ -83,19 +91,25 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
   const fecha = aFecha(v.fecha);
   const delDia = await prisma.diarioEntrada.count({ where: { autorId: actor.id, fecha } });
   if (delDia >= MAX_ENTRADAS_DIA) throw new Error("Llegaste al máximo de entradas de este día");
-  const e = await prisma.diarioEntrada.create({
-    data: {
-      tipo,
-      autorId: actor.id,
-      fecha,
-      titulo: v.titulo,
-      texto: v.texto,
-      contenido: aJson(v.contenido),
-      hora: v.hora,
-      animo: v.animo,
-      fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
-    },
-    include: incluir,
+  const e = await prisma.$transaction(async (tx) => {
+    const etiquetas = await prepararEtiquetas(tx, actor, tipo, v.etiquetas ?? []);
+    if (v.categoriaId != null) await verificarCategoria(tx, actor, tipo, v.categoriaId);
+    return tx.diarioEntrada.create({
+      data: {
+        tipo,
+        autorId: actor.id,
+        fecha,
+        titulo: v.titulo,
+        texto: v.texto,
+        contenido: aJson(v.contenido),
+        hora: v.hora,
+        animo: v.animo,
+        categoriaId: v.categoriaId ?? null,
+        fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
+        etiquetas: { create: etiquetas.map((t) => ({ etiquetaId: t.id, valor: t.valor })) },
+      },
+      include: incluir,
+    });
   });
   return aVista(e, actor);
 }
@@ -113,6 +127,10 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
   const v = validarEntrada({ ...body, fecha: body.fecha ?? aClave(e.fecha), hora: body.hora ?? e.hora }, hoyEnFamilia());
   const nueva = await prisma.$transaction(async (tx) => {
     await tx.diarioFoto.deleteMany({ where: { entradaId: id } });
+    // Las etiquetas se validan contra el ámbito de la entrada; si el cuerpo no las trae, quedan como estaban
+    const etiquetas = v.etiquetas ? await prepararEtiquetas(tx, actor, e.tipo, v.etiquetas) : undefined;
+    if (etiquetas) await tx.diarioEntradaEtiqueta.deleteMany({ where: { entradaId: id } });
+    if (v.categoriaId != null) await verificarCategoria(tx, actor, e.tipo, v.categoriaId);
     return tx.diarioEntrada.update({
       where: { id },
       data: {
@@ -122,7 +140,9 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
         contenido: aJson(v.contenido) ?? Prisma.DbNull,
         hora: v.hora,
         animo: v.animo,
+        ...(v.categoriaId !== undefined ? { categoriaId: v.categoriaId } : {}),
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
+        ...(etiquetas ? { etiquetas: { create: etiquetas.map((t) => ({ etiquetaId: t.id, valor: t.valor })) } } : {}),
       },
       include: incluir,
     });

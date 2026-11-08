@@ -1,0 +1,324 @@
+// Copyright (C) 2026 Demizo and contributors
+// SPDX-License-Identifier: GPL-3.0-only
+// Additional terms under GPLv3 section 7 apply; see ADDITIONAL_TERMS.md.
+
+import 'package:daily_you/l10n/generated/app_localizations.dart';
+import 'package:daily_you/models/tag_icon_type.dart';
+import 'package:daily_you/utils/generated/tag_icon_registry.dart';
+import 'package:daily_you/widgets/cached_icon.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+
+/// Result of [IconPickerDialog]: a curated material icon (identified by its
+/// stable registry key), a free-typed character/emoji, or a null value for no
+/// icon.
+typedef IconPickerResult = ({TagIconType type, String? value});
+
+/// Dialog letting the user pick either a curated Material icon or type a
+/// custom character/emoji, shared by the tag and category editors.
+class IconPickerDialog extends StatefulWidget {
+  final Color previewColor;
+  final IconPickerResult initial;
+
+  const IconPickerDialog({
+    super.key,
+    required this.previewColor,
+    required this.initial,
+  });
+
+  @override
+  State<IconPickerDialog> createState() => _IconPickerDialogState();
+}
+
+class _IconPickerDialogState extends State<IconPickerDialog>
+    with SingleTickerProviderStateMixin {
+  static const int _revealStep = 14;
+  static final int _totalIcons =
+      tagIconGroups.fold(0, (total, group) => total + group.keys.length);
+
+  int? _revealedIcons;
+
+  late final TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _customController = TextEditingController();
+  final FocusNode _customFocusNode = FocusNode();
+
+  bool get _hasNoInitialIcon =>
+      widget.initial.value == null || widget.initial.value!.isEmpty;
+
+  bool get _hasCustomInitialIcon =>
+      !_hasNoInitialIcon && widget.initial.type == TagIconType.character;
+
+  bool _isInitialMaterialIcon(String key) =>
+      widget.initial.type == TagIconType.materialIcon &&
+      widget.initial.value == key;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: _hasCustomInitialIcon ? 1 : 0,
+    )..addListener(_onTabChanged);
+    if (_hasCustomInitialIcon) _customController.text = widget.initial.value!;
+    _searchController.addListener(() => setState(() {}));
+    _customController.addListener(() => setState(() {}));
+    _revealMore();
+  }
+
+  void _revealMore() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final revealed = (_revealedIcons ?? -_revealStep) + _revealStep;
+      setState(() => _revealedIcons = revealed);
+      if (revealed < _totalIcons) _revealMore();
+    });
+  }
+
+  void _onTabChanged() {
+    setState(() {});
+    if (_tabController.index == 0) {
+      _customFocusNode.unfocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    _customController.dispose();
+    _customFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _selectIcon(String key) {
+    Navigator.of(context).pop((type: TagIconType.materialIcon, value: key));
+  }
+
+  void _selectNone() {
+    Navigator.of(context).pop((type: TagIconType.character, value: null));
+  }
+
+  void _confirmCustom() {
+    final value = _customController.text.trim();
+    if (value.isEmpty) return;
+    Navigator.of(context).pop((type: TagIconType.character, value: value));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final query = _searchController.text.trim().toLowerCase();
+
+    final groups = tagIconGroups
+        .map((group) => TagIconGroup(
+              id: group.id,
+              keys: group.keys
+                  .where((key) => query.isEmpty || key.contains(query))
+                  .toList(),
+            ))
+        .where((group) => group.keys.isNotEmpty)
+        .toList();
+
+    final canConfirmCustom =
+        _tabController.index == 1 && _customController.text.trim().isNotEmpty;
+
+    return AlertDialog(
+      title: Text(l10n.iconPickerTitle),
+      contentPadding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+      content: SizedBox(
+        width: 360,
+        height: 420,
+        child: Column(
+          children: [
+            TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: l10n.iconPickerIconsTab),
+                Tab(text: l10n.iconPickerCustomTab),
+              ],
+            ),
+            Expanded(
+              child: _revealedIcons == null
+                  ? const SizedBox.expand()
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildIconsTab(context, l10n, groups),
+                        _buildCustomTab(context, l10n),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        TextButton(
+          onPressed: canConfirmCustom ? _confirmCustom : null,
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
+        ),
+      ],
+    );
+  }
+
+  List<TagIconGroup> _revealedGroups(
+    List<TagIconGroup> groups,
+  ) {
+    var remaining = _revealedIcons ?? 0;
+    final revealed = <TagIconGroup>[];
+    for (final group in groups) {
+      if (remaining <= 0) break;
+      final keys = group.keys.length <= remaining
+          ? group.keys
+          : group.keys.sublist(0, remaining);
+      revealed.add(TagIconGroup(id: group.id, keys: keys));
+      remaining -= keys.length;
+    }
+    return revealed;
+  }
+
+  Widget _buildIconsTab(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<TagIconGroup> groups,
+  ) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: OutlinedButton.icon(
+            onPressed: _selectNone,
+            icon: Icon(
+              _hasNoInitialIcon ? Icons.check_rounded : Icons.block_rounded,
+            ),
+            label: Text(l10n.noTemplateTitle),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: SearchBar(
+            controller: _searchController,
+            hintText: l10n.iconPickerSearchHint,
+            elevation: const WidgetStatePropertyAll(0),
+            padding: const WidgetStatePropertyAll(
+              EdgeInsets.only(left: 4, right: 4),
+            ),
+            backgroundColor: WidgetStatePropertyAll(
+              Theme.of(context).colorScheme.secondaryContainer,
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Icon(
+                Icons.search_rounded,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: groups.isEmpty
+              ? Center(
+                  child: Text(
+                    l10n.noResults,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  children: [
+                    for (final group in _revealedGroups(groups)) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text(
+                          tagIconGroupLabel(l10n, group.id),
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 48,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 4,
+                        ),
+                        itemCount: group.keys.length,
+                        itemBuilder: (context, index) {
+                          final key = group.keys[index];
+                          final isSelected = _isInitialMaterialIcon(key);
+                          return IconButton(
+                            icon: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CachedIcon(
+                                  lookupTagIcon(key) ?? Icons.circle_rounded,
+                                  size: 24,
+                                  color: isSelected
+                                      ? widget.previewColor
+                                          .withValues(alpha: 0.3)
+                                      : widget.previewColor,
+                                ),
+                                if (isSelected)
+                                  CachedIcon(
+                                    Icons.check_rounded,
+                                    size: 24,
+                                    color: widget.previewColor,
+                                  ),
+                              ],
+                            ),
+                            onPressed: () => _selectIcon(key),
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCustomTab(BuildContext context, AppLocalizations l10n) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.moodIconPrompt,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          Card.filled(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: SizedBox(
+              width: 96,
+              height: 96,
+              child: Center(
+                child: TextField(
+                  controller: _customController,
+                  focusNode: _customFocusNode,
+                  textAlign: TextAlign.center,
+                  textAlignVertical: TextAlignVertical.center,
+                  style: Theme.of(context).textTheme.headlineLarge,
+                  inputFormatters: [LengthLimitingTextInputFormatter(1)],
+                  onSubmitted: (_) => _confirmCustom(),
+                  decoration: const InputDecoration(
+                    hintText: '?',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

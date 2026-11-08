@@ -1,13 +1,15 @@
 "use client";
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PenLine } from "lucide-react";
+import { PenLine, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resumenMes, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import { toast } from "@/lib/toast";
 import { CalendarioAnimo } from "./CalendarioAnimo";
 import { EditorEntrada } from "./EditorEntrada";
+import { AdministrarDiario } from "./etiquetas/AdministrarDiario";
+import { useCatalogo } from "./etiquetas/useCatalogo";
 import { ListaDia } from "./ListaDia";
 import { ResumenMes } from "./ResumenMes";
 
@@ -17,6 +19,8 @@ export function DiarioVista({ tipo, hoy }: { tipo: TipoDiario; hoy: string }) {
   const [entradas, setEntradas] = useState<EntradaVista[]>([]);
   const [version, setVersion] = useState(0);
   const [editor, setEditor] = useState<{ entrada?: EntradaVista; clave: number } | null>(null);
+  const acciones = useCatalogo(tipo);
+  const [admin, setAdmin] = useState<"etiquetas" | "categorias" | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -55,8 +59,11 @@ export function DiarioVista({ tipo, hoy }: { tipo: TipoDiario; hoy: string }) {
       <div className="flex flex-col gap-4">
         <CalendarioAnimo mes={mes} dias={resumen.dias} seleccionado={seleccionado} hoy={hoy} onDia={setSeleccionado} onMes={cambiarMes} />
         <ResumenMes totalEntradas={resumen.totalEntradas} diasPorAnimo={resumen.diasPorAnimo} />
+        <Button variant="outline" onClick={() => setAdmin("etiquetas")}>
+          <Tags /> Etiquetas y categorías
+        </Button>
       </div>
-      <ListaDia entradas={delDia} tipo={tipo} onEditar={(e) => setEditor({ entrada: e, clave: Date.now() })} onBorrar={(e) => void borrar(e)} />
+      <ListaDia entradas={delDia} tipo={tipo} catalogo={acciones.catalogo} onEditar={(e) => setEditor({ entrada: e, clave: Date.now() })} onBorrar={(e) => void borrar(e)} />
       <Button className="fixed right-4 bottom-20 z-30 h-12 rounded-full px-5 shadow-lg sm:right-6 sm:bottom-6" onClick={() => setEditor({ clave: Date.now() })}>
         <PenLine /> Escribir
       </Button>
@@ -68,12 +75,15 @@ export function DiarioVista({ tipo, hoy }: { tipo: TipoDiario; hoy: string }) {
           entrada={editor.entrada}
           fecha={seleccionado}
           hoy={hoy}
+          acciones={acciones}
+          onAdministrar={setAdmin}
           onCerrar={(huboCambios) => {
             setEditor(null);
             if (huboCambios) recargar();
           }}
         />
       )}
+      {admin && <AdministrarDiario acciones={acciones} pestanaInicial={admin} onCerrar={() => setAdmin(null)} />}
     </div>
   );
 }

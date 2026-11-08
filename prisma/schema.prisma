@@ -67,13 +67,16 @@ model Usuario {
   lastTaskCompletedDate DateTime? @map("Last_Task_Completed_Date")
   totalTasksCompleted   Int       @default(0) @map("Total_Tasks_Completed")
 
-  tareasCreadas        Tarea[]           @relation("TareasCreadas")
-  tareasAsignadas      Tarea[]           @relation("TareasAsignadas")
+  tareasCreadas        Tarea[]                @relation("TareasCreadas")
+  tareasAsignadas      Tarea[]                @relation("TareasAsignadas")
   historialAcciones    HistorialAccion[]
-  checklistCompletados ChecklistItem[]   @relation("ChecklistCompletadoPor")
-  notasEspacio         NotaEspacio?      @relation("NotasEspacio")
-  notasPaginas         NotaPagina[]      @relation("NotasPaginas")
-  diarioEntradas       DiarioEntrada[]   @relation("DiarioEntradas")
+  checklistCompletados ChecklistItem[]        @relation("ChecklistCompletadoPor")
+  notasEspacio         NotaEspacio?           @relation("NotasEspacio")
+  notasPaginas         NotaPagina[]           @relation("NotasPaginas")
+  diarioEntradas       DiarioEntrada[]        @relation("DiarioEntradas")
+  diarioGrupos         DiarioGrupoEtiquetas[] @relation("DiarioGrupos") // ← Lane 284
+  diarioEtiquetas      DiarioEtiqueta[]       @relation("DiarioEtiquetas") // ← Lane 284
+  diarioCategorias     DiarioCategoria[]      @relation("DiarioCategorias") // ← Lane 284
   registrosAnimo       RegistroAnimo[]
   premiosEntregados    PremioEntregado[]
 
@@ -1915,12 +1918,116 @@ model DiarioEntrada {
   creadaEn  DateTime   @default(now()) @map("Creada_En")
   editadaEn DateTime   @updatedAt @map("Editada_En")
 
-  autor Usuario      @relation("DiarioEntradas", fields: [autorId], references: [id], onDelete: Cascade)
-  fotos DiarioFoto[]
+  categoriaId Int? @map("Categoria_ID") // ← Lane 284: categoría de la entrada (moodiary), una sola
+
+  autor     Usuario                 @relation("DiarioEntradas", fields: [autorId], references: [id], onDelete: Cascade)
+  fotos     DiarioFoto[]
+  categoria DiarioCategoria?        @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  etiquetas DiarioEntradaEtiqueta[]
 
   @@index([tipo, fecha])
   @@index([autorId, fecha])
   @@map("Diario_Entradas")
+}
+
+// ← Lane 284: etiquetas del diario (Daily You + storypad). Personal = del creador; familiar = de toda la familia.
+enum TipoEtiqueta {
+  etiqueta // `label` de Daily You
+  contador // `tracker` de Daily You: lleva un valor numérico en cada entrada
+}
+
+enum TipoIcono {
+  emoji // carácter tipeado
+  icono // clave del catálogo de íconos
+}
+
+model DiarioGrupoEtiquetas {
+  id             Int        @id @default(autoincrement())
+  ambito         TipoDiario @map("Ambito")
+  creadorId      Int?       @map("Creador_ID")
+  nombre         String     @map("Nombre")
+  icono          String?    @map("Icono")
+  tipoIcono      TipoIcono  @default(emoji) @map("Tipo_Icono")
+  color          String?    @map("Color") // #rrggbb
+  orden          Int        @default(0) @map("Orden")
+  seleccionUnica Boolean    @default(false) @map("Seleccion_Unica") // sentimiento / clima: una sola por entrada (storypad)
+  creadaEn       DateTime   @default(now()) @map("Creada_En")
+  editadaEn      DateTime   @updatedAt @map("Editada_En")
+
+  creador   Usuario?         @relation("DiarioGrupos", fields: [creadorId], references: [id], onDelete: SetNull)
+  etiquetas DiarioEtiqueta[]
+
+  @@index([ambito, creadorId])
+  @@map("Diario_Etiqueta_Grupos")
+}
+
+model DiarioEtiqueta {
+  id        Int          @id @default(autoincrement())
+  ambito    TipoDiario   @map("Ambito")
+  creadorId Int?         @map("Creador_ID")
+  grupoId   Int?         @map("Grupo_ID")
+  nombre    String       @map("Nombre")
+  icono     String?      @map("Icono")
+  tipoIcono TipoIcono    @default(emoji) @map("Tipo_Icono")
+  color     String?      @map("Color") // #rrggbb
+  tipo      TipoEtiqueta @default(etiqueta) @map("Tipo")
+  orden     Int          @default(0) @map("Orden")
+  creadaEn  DateTime     @default(now()) @map("Creada_En")
+  editadaEn DateTime     @updatedAt @map("Editada_En")
+
+  creador  Usuario?                @relation("DiarioEtiquetas", fields: [creadorId], references: [id], onDelete: SetNull)
+  grupo    DiarioGrupoEtiquetas?   @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  entradas DiarioEntradaEtiqueta[]
+
+  @@index([ambito, creadorId])
+  @@index([grupoId])
+  @@map("Diario_Etiquetas")
+}
+
+model DiarioEntradaEtiqueta {
+  id         Int     @id @default(autoincrement())
+  entradaId  Int     @map("Entrada_ID")
+  etiquetaId Int     @map("Etiqueta_ID")
+  valor      String? @map("Valor") // solo en los contadores
+
+  entrada  DiarioEntrada  @relation(fields: [entradaId], references: [id], onDelete: Cascade)
+  etiqueta DiarioEtiqueta @relation(fields: [etiquetaId], references: [id], onDelete: Cascade)
+
+  @@unique([entradaId, etiquetaId])
+  @@index([etiquetaId])
+  @@map("Diario_Entrada_Etiquetas")
+}
+
+// Categoría de la entrada (moodiary): jerárquica, con color. Una por entrada; no se borra si tiene entradas o hijas.
+model DiarioCategoria {
+  id        Int        @id @default(autoincrement())
+  ambito    TipoDiario @map("Ambito")
+  creadorId Int?       @map("Creador_ID")
+  nombre    String     @map("Nombre")
+  padreId   Int?       @map("Padre_ID")
+  color     String?    @map("Color") // #rrggbb
+  creadaEn  DateTime   @default(now()) @map("Creada_En")
+  editadaEn DateTime   @updatedAt @map("Editada_En")
+
+  creador  Usuario?          @relation("DiarioCategorias", fields: [creadorId], references: [id], onDelete: SetNull)
+  padre    DiarioCategoria?  @relation("DiarioCategoriaHijas", fields: [padreId], references: [id], onDelete: Restrict)
+  hijas    DiarioCategoria[] @relation("DiarioCategoriaHijas")
+  entradas DiarioEntrada[]
+
+  @@index([ambito, creadorId])
+  @@map("Diario_Categorias")
+}
+
+// Siembra única de lo predeterminado por ámbito (Daily You lo crea solo la primera vez). dueño: id del usuario (personal) o 0 (familiar).
+model DiarioSembrado {
+  id       Int        @id @default(autoincrement())
+  ambito   TipoDiario @map("Ambito")
+  duenoId  Int        @map("Dueno_ID")
+  clave    String     @map("Clave")
+  creadaEn DateTime   @default(now()) @map("Creada_En")
+
+  @@unique([ambito, duenoId, clave])
+  @@map("Diario_Sembrado")
 }
 
 model DiarioFoto {
