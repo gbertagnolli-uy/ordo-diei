@@ -68,11 +68,10 @@ export function DiarioVista({ tipo, hoy }: { tipo: TipoDiario; hoy: string }) {
           entrada={editor.entrada}
           fecha={seleccionado}
           hoy={hoy}
-          onGuardado={() => {
+          onCerrar={(huboCambios) => {
             setEditor(null);
-            recargar();
+            if (huboCambios) recargar();
           }}
-          onCerrar={() => setEditor(null)}
         />
       )}
     </div>

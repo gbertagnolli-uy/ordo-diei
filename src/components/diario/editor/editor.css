@@ -1,0 +1,320 @@
+/* Portado de vendor/moodiary/editor/src/styles (ZhuJHua/moodiary@2c552dd): _tokens, _document, _blocks, _highlight.
+   SCSS -> CSS plano; los colores salen de los tokens del tema de Ordo Diei (claro y oscuro). Solo lo que usa el diario:
+   sin video, audio, adjuntos, enlaces entre entradas ni búsqueda dentro del documento (fases 2 y 3). */
+
+.md-editor {
+  --app-on-surface: var(--foreground);
+  --app-on-surface-variant: var(--muted-foreground);
+  --app-surface: var(--background);
+  --app-surface-container: var(--muted);
+  --app-surface-container-high: var(--accent);
+  --app-outline-variant: var(--border);
+  --app-selection: color-mix(in srgb, var(--primary) 25%, transparent);
+  --app-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, monospace;
+  --md-text-xs: 0.75rem;
+  --md-text-sm: 0.8125rem;
+  --md-text-md: 0.875rem;
+  --md-para-gap: 0.75em;
+  --md-block-gap: 0.75em;
+  --md-highlight-bg: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.md-editor .md-content {
+  display: flex;
+}
+
+.md-editor .ProseMirror {
+  flex: 1;
+  min-width: 0;
+  min-height: 12rem;
+  outline: none;
+  padding-bottom: 2rem;
+  color: var(--app-on-surface);
+  caret-color: var(--app-on-surface);
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.md-editor .ProseMirror[contenteditable="false"] {
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.md-editor .ProseMirror ::selection {
+  background: var(--app-selection);
+}
+
+.md-editor .ProseMirror :where(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+}
+
+.md-editor .ProseMirror > * + *,
+.md-editor .ProseMirror blockquote > * + * {
+  margin-top: var(--md-para-gap);
+}
+
+.md-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--app-on-surface-variant);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.md-editor .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 700;
+  line-height: 1.4;
+}
+.md-editor .ProseMirror > h1:not(:first-child) { margin-top: 1.5em; }
+.md-editor .ProseMirror > h2:not(:first-child) { margin-top: 1.4em; }
+.md-editor .ProseMirror > h3:not(:first-child) { margin-top: 1.3em; }
+.md-editor .ProseMirror > :is(h4, h5, h6):not(:first-child) { margin-top: 1.2em; }
+.md-editor .ProseMirror > :is(h1, h2, h3, h4, h5, h6) + * { margin-top: 0.4em; }
+.md-editor .ProseMirror h1 { font-size: 1.5em; }
+.md-editor .ProseMirror h2 { font-size: 1.25em; }
+.md-editor .ProseMirror h3 { font-size: 1.125em; font-weight: 600; }
+.md-editor .ProseMirror :is(h4, h5, h6) { font-size: 1em; font-weight: 600; }
+.md-editor .ProseMirror > :first-child { margin-top: 0; }
+
+.md-editor .ProseMirror ul,
+.md-editor .ProseMirror ol { padding-left: 1.5em; }
+.md-editor .ProseMirror ul { list-style: disc; }
+.md-editor .ProseMirror ol { list-style: decimal; }
+.md-editor .ProseMirror li > p { margin: 0; }
+.md-editor .ProseMirror li::marker { color: var(--app-on-surface-variant); }
+
+.md-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.md-editor .ProseMirror ul[data-type="taskList"] ul[data-type="taskList"] { padding-left: 0.2em; }
+.md-editor .ProseMirror ul[data-type="taskList"] > li { display: flex; align-items: flex-start; gap: 10px; }
+.md-editor .ProseMirror ul[data-type="taskList"] > li > label {
+  position: relative;
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+  margin-top: 0.275em;
+  user-select: none;
+}
+.md-editor .ProseMirror ul[data-type="taskList"] > li > label > input {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 1.5px solid var(--app-on-surface-variant);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+.md-editor .ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > label > input {
+  border-color: var(--app-on-surface);
+  background: var(--app-on-surface);
+}
+.md-editor .ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > label::after {
+  content: "";
+  position: absolute;
+  inset: 0.15em;
+  background: var(--app-surface);
+  pointer-events: none;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
+}
+.md-editor .ProseMirror ul[data-type="taskList"] > li > div { flex: 1; min-width: 0; }
+.md-editor .ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > div {
+  color: var(--app-on-surface-variant);
+  text-decoration: line-through;
+}
+
+.md-editor .ProseMirror blockquote {
+  padding-left: 1em;
+  border-left: 0.25em solid var(--app-outline-variant);
+  color: var(--app-on-surface-variant);
+}
+
+.md-editor .ProseMirror code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--app-surface-container-high);
+  font-family: var(--app-font-mono);
+  font-size: 0.875em;
+}
+
+.md-editor .ProseMirror mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: var(--md-highlight-bg);
+  color: inherit;
+  box-decoration-break: clone;
+}
+
+.md-editor .ProseMirror a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--app-on-surface-variant);
+}
+
+/* Separador horizontal */
+.md-editor .ProseMirror .md-hr {
+  margin: var(--md-para-gap) 0;
+  padding: 0.5em 0;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.md-editor .ProseMirror .md-hr > hr { margin: 0; border: 0; height: 1px; background: var(--app-outline-variant); }
+.md-editor .ProseMirror .md-hr[data-variant="dashed"] > hr {
+  background: linear-gradient(to right, var(--app-outline-variant) 60%, transparent 60%) 0 0 / 10px 1px repeat-x;
+}
+.md-editor .ProseMirror .md-hr[data-variant="dotted"] > hr {
+  height: 4px;
+  background: radial-gradient(circle, var(--app-on-surface-variant) 1.2px, transparent 1.6px) 0 50% / 9px 4px repeat-x;
+  opacity: 0.6;
+}
+.md-editor .ProseMirror .md-hr[data-variant="double"] > hr {
+  height: 4px;
+  box-sizing: border-box;
+  background: transparent;
+  border-top: 1px solid var(--app-outline-variant);
+  border-bottom: 1px solid var(--app-outline-variant);
+}
+.md-editor .ProseMirror .md-hr[data-variant="wavy"] > hr {
+  height: 6px;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'><path d='M0 3 Q3 0.5 6 3 T12 3' fill='none' stroke='black' stroke-width='1.3'/></svg>") 0 0 / 12px 6px repeat-x;
+  background: var(--app-on-surface-variant);
+}
+.md-editor .ProseMirror .md-hr[data-variant="text"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--app-on-surface-variant);
+  font-size: var(--md-text-sm);
+  line-height: 1.4;
+}
+.md-editor .ProseMirror .md-hr[data-variant="text"]::before,
+.md-editor .ProseMirror .md-hr[data-variant="text"]::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--app-outline-variant);
+}
+.md-editor .ProseMirror .md-hr__label:empty { display: none; }
+
+.md-editor .ProseMirror[contenteditable="true"] .is-selected > .md-block__body,
+.md-editor .ProseMirror[contenteditable="true"] .md-hr.ProseMirror-selectednode {
+  outline: 2.5px solid var(--app-on-surface);
+  outline-offset: 3px;
+}
+.md-editor .ProseMirror .md-hr.ProseMirror-selectednode { outline-offset: 0; }
+
+/* Imagen */
+.md-block {
+  margin: var(--md-block-gap) 0;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.md-image {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.md-image[style*="width"] .md-image__img { width: 100%; }
+.md-image__img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background: var(--muted);
+}
+
+/* Bloque de código */
+.md-editor .ProseMirror .md-code {
+  margin: var(--md-block-gap) 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--app-surface-container);
+}
+.md-code__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 0 12px;
+  user-select: none;
+}
+.md-code__lang { color: var(--muted-foreground); font-size: var(--md-text-xs); }
+.md-code__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: var(--md-text-xs);
+  cursor: pointer;
+}
+.md-code__copy svg { width: 14px; height: 14px; }
+.md-editor .ProseMirror .md-code pre {
+  margin: 0;
+  padding: 6px 12px 12px;
+  overflow-x: auto;
+  font-family: var(--app-font-mono);
+  font-size: var(--md-text-md);
+  line-height: 1.6;
+}
+.md-editor .ProseMirror .md-code pre code { padding: 0; background: none; font-size: inherit; white-space: pre; }
+
+/* Tablas */
+.md-editor .ProseMirror .tableWrapper { margin: var(--md-block-gap) 0; overflow-x: auto; }
+.md-editor .ProseMirror table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.md-editor .ProseMirror td,
+.md-editor .ProseMirror th {
+  position: relative;
+  min-width: 64px;
+  padding: 6px 10px;
+  border: 1px solid var(--app-outline-variant);
+  vertical-align: top;
+  text-align: left;
+}
+.md-editor .ProseMirror th { background: var(--app-surface-container); font-weight: 600; }
+.md-editor .ProseMirror .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--app-selection);
+  pointer-events: none;
+}
+
+/* Resaltado de sintaxis (highlight.js GitHub claro/oscuro, tal como en moodiary) */
+.md-editor .hljs-doctag, .md-editor .hljs-keyword, .md-editor .hljs-meta-keyword, .md-editor .hljs-template-tag,
+.md-editor .hljs-template-variable, .md-editor .hljs-type, .md-editor .hljs-variable.language_ { color: #d73a49; }
+.md-editor .hljs-title, .md-editor .hljs-title.class_, .md-editor .hljs-title.function_ { color: #6f42c1; }
+.md-editor .hljs-attr, .md-editor .hljs-attribute, .md-editor .hljs-literal, .md-editor .hljs-meta, .md-editor .hljs-number,
+.md-editor .hljs-operator, .md-editor .hljs-variable, .md-editor .hljs-selector-attr, .md-editor .hljs-selector-class,
+.md-editor .hljs-selector-id { color: #005cc5; }
+.md-editor .hljs-regexp, .md-editor .hljs-string, .md-editor .hljs-meta-string { color: #032f62; }
+.md-editor .hljs-built_in, .md-editor .hljs-symbol { color: #e36209; }
+.md-editor .hljs-comment, .md-editor .hljs-code, .md-editor .hljs-formula { color: #6a737d; }
+.md-editor .hljs-name, .md-editor .hljs-quote, .md-editor .hljs-selector-tag, .md-editor .hljs-selector-pseudo { color: #22863a; }
+.md-editor .hljs-section { color: #005cc5; font-weight: 600; }
+.md-editor .hljs-bullet { color: #735c0f; }
+.md-editor .hljs-emphasis { font-style: italic; }
+.md-editor .hljs-strong { font-weight: 600; }
+
+.dark .md-editor .hljs-doctag, .dark .md-editor .hljs-keyword, .dark .md-editor .hljs-meta-keyword, .dark .md-editor .hljs-template-tag,
+.dark .md-editor .hljs-template-variable, .dark .md-editor .hljs-type, .dark .md-editor .hljs-variable.language_ { color: #ff7b72; }
+.dark .md-editor .hljs-title, .dark .md-editor .hljs-title.class_, .dark .md-editor .hljs-title.function_ { color: #d2a8ff; }
+.dark .md-editor .hljs-attr, .dark .md-editor .hljs-attribute, .dark .md-editor .hljs-literal, .dark .md-editor .hljs-meta,
+.dark .md-editor .hljs-number, .dark .md-editor .hljs-operator, .dark .md-editor .hljs-variable, .dark .md-editor .hljs-selector-attr,
+.dark .md-editor .hljs-selector-class, .dark .md-editor .hljs-selector-id { color: #79c0ff; }
+.dark .md-editor .hljs-regexp, .dark .md-editor .hljs-string, .dark .md-editor .hljs-meta-string { color: #a5d6ff; }
+.dark .md-editor .hljs-built_in, .dark .md-editor .hljs-symbol { color: #ffa657; }
+.dark .md-editor .hljs-comment, .dark .md-editor .hljs-code, .dark .md-editor .hljs-formula { color: #8b949e; }
+.dark .md-editor .hljs-name, .dark .md-editor .hljs-quote, .dark .md-editor .hljs-selector-tag, .dark .md-editor .hljs-selector-pseudo { color: #7ee787; }
+.dark .md-editor .hljs-section { color: #1f6feb; }
+.dark .md-editor .hljs-bullet { color: #f2cc60; }

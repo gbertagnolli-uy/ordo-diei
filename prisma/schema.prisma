@@ -1910,6 +1910,8 @@ model DiarioEntrada {
   titulo    String?    @map("Titulo")
   texto     String     @map("Texto")
   animo     Int?       @map("Animo") // 1 muy mal … 5 muy bien
+  contenido Json?      @map("Contenido") // ← Lane 283: documento Tiptap; `texto` queda como texto plano derivado. Null = entrada escrita en texto plano (lane 272)
+  hora      Int?       @map("Hora") // ← Lane 283: hora de la entrada, minutos desde la medianoche (0–1439) en la zona de la familia. Null = la hora de `creadaEn`
   creadaEn  DateTime   @default(now()) @map("Creada_En")
   editadaEn DateTime   @updatedAt @map("Editada_En")
 

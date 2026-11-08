@@ -6,15 +6,38 @@ const HOY = "2026-11-07";
 
 test("validarEntrada: normaliza y acepta lo correcto", () => {
   const e = validarEntrada({ texto: "  Hoy fuimos a Misa  ", titulo: " ", animo: 4 }, HOY);
-  assert.deepEqual(e, { fecha: HOY, titulo: null, texto: "Hoy fuimos a Misa", animo: 4, fotos: [] });
+  assert.deepEqual(e, { fecha: HOY, hora: null, titulo: null, texto: "Hoy fuimos a Misa", contenido: null, animo: 4, fotos: [] });
 });
 
-test("validarEntrada: rechaza vacío, futuro, > 30 días, ánimo y foto inválidos", () => {
+test("validarEntrada: rechaza vacío, futuro, fecha absurda, ánimo, hora y foto inválidos", () => {
   assert.throws(() => validarEntrada({ texto: "   " }, HOY));
   assert.throws(() => validarEntrada({ texto: "x", fecha: "2026-11-08" }, HOY));
-  assert.throws(() => validarEntrada({ texto: "x", fecha: "2026-10-07" }, HOY));
+  assert.throws(() => validarEntrada({ texto: "x", fecha: "1999-12-31" }, HOY));
+  assert.throws(() => validarEntrada({ texto: "x", hora: 1440 }, HOY));
+  assert.throws(() => validarEntrada({ texto: "x", hora: 7.5 }, HOY));
   assert.throws(() => validarEntrada({ texto: "x", animo: 6 }, HOY));
   assert.throws(() => validarEntrada({ texto: "x", fotos: ["https://otro.sitio/a.jpg"] }, HOY));
+});
+
+test("validarEntrada: ya no hay tope de 30 días hacia atrás (lane 283)", () => {
+  assert.equal(validarEntrada({ texto: "x", fecha: "2024-01-15" }, HOY).fecha, "2024-01-15");
+  assert.equal(validarEntrada({ texto: "x", hora: 0 }, HOY).hora, 0);
+  assert.equal(validarEntrada({ texto: "x", hora: "615" }, HOY).hora, 615);
+});
+
+test("validarEntrada: con contenido deriva el texto plano e ignora el texto del cliente", () => {
+  const contenido = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Misa de hoy" }] }] };
+  const e = validarEntrada({ contenido, texto: "otra cosa" }, HOY);
+  assert.equal(e.texto, "Misa de hoy");
+  assert.equal(e.contenido?.type, "doc");
+});
+
+test("validarEntrada: una entrada puede ser solo una foto", () => {
+  const url = "/api/archivos/123e4567-e89b-12d3-a456-426614174000";
+  assert.equal(validarEntrada({ texto: "", fotos: [url] }, HOY).texto, "");
+  const contenido = { type: "doc", content: [{ type: "image", attrs: { src: url } }] };
+  assert.equal(validarEntrada({ contenido }, HOY).texto, "");
+  assert.throws(() => validarEntrada({ texto: "" }, HOY));
 });
 
 test("privacidad: el personal solo lo ve el autor, ni siquiera un padre", () => {
