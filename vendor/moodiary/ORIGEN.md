@@ -10,3 +10,6 @@
 
 ## Ampliación (lane 284, 2026-11-08)
 - Se agrega, sin cambios, `packages/feature_base/moodiary_data/lib/src/category_repository.dart` (categorías jerárquicas con color; una por entrada; no se borra una categoría que tiene entradas) -> `vendor/moodiary/packages/feature_base/moodiary_data/lib/src/category_repository.dart`. Lo portado a `src/` lleva la cabecera `// Portado de vendor/moodiary/<ruta> (ZhuJHua/moodiary@2c552dd)`.
+
+## Ampliación (lane 285, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/application/{search_controller,diary_filter}.dart`, `packages/feature/moodiary_diary/lib/src/presentation/search/{search_page,search_result_card}.dart`, `packages/feature_base/moodiary_models/lib/src/search.dart` y `packages/feature_base/moodiary_data/lib/src/diary_repository.dart` (búsqueda con resaltado y extracto, orden, página, historial).

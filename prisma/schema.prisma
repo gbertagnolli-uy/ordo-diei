@@ -1920,6 +1920,9 @@ model DiarioEntrada {
 
   categoriaId Int? @map("Categoria_ID") // ← Lane 284: categoría de la entrada (moodiary), una sola
 
+  favorita Boolean @default(false) @map("Favorita") // ← Lane 285: storypad `starred`
+  fijada   Boolean @default(false) @map("Fijada") // ← Lane 285: storypad `pinned` (va arriba de la lista)
+
   autor     Usuario                 @relation("DiarioEntradas", fields: [autorId], references: [id], onDelete: Cascade)
   fotos     DiarioFoto[]
   categoria DiarioCategoria?        @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
@@ -1927,6 +1930,7 @@ model DiarioEntrada {
 
   @@index([tipo, fecha])
   @@index([autorId, fecha])
+  @@index([tipo, fijada])
   @@map("Diario_Entradas")
 }
 
