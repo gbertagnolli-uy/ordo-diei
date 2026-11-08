@@ -9,6 +9,7 @@ import type { EntradaVista } from "@/lib/diario/servidor";
 import type { Catalogo, CategoriaVista } from "@/lib/diario/servidor-catalogo";
 import { nivelDe, nombreDeNivel } from "@/lib/diario/escala";
 import { EditorTexto } from "./editor/EditorTexto";
+import { fechaLarga } from "./estadisticas/controles";
 import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { MarcasEntrada } from "./MarcasEntrada";
@@ -120,6 +121,8 @@ export function ListaDia({
   onEditar,
   onBorrar,
   onMarcar,
+  vacio = "No hay entradas este día.",
+  agrupar = false,
 }: {
   entradas: EntradaVista[];
   tipo: TipoDiario;
@@ -127,14 +130,21 @@ export function ListaDia({
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
   onMarcar: (e: EntradaVista, marcas: Marcas) => void;
+  /** Qué decir cuando no hay entradas. */
+  vacio?: string;
+  /** Con varios días (todo el mes): un título con la fecha antes de cada día (lane 288, storypad «todas del mes»). */
+  agrupar?: boolean;
 }) {
-  if (!entradas.length) return <p className="py-8 text-center text-sm text-muted-foreground">No hay entradas este día.</p>;
+  if (!entradas.length) return <p className="py-8 text-center text-sm text-muted-foreground">{vacio}</p>;
   // Las fijadas van arriba del día (storypad `pinnedStories`); el resto conserva su orden
-  const ordenadas = [...entradas].sort((a, b) => Number(b.fijada) - Number(a.fijada));
+  const ordenadas = agrupar ? entradas : [...entradas].sort((a, b) => Number(b.fijada) - Number(a.fijada));
   return (
     <div className="flex flex-col gap-3">
-      {ordenadas.map((e) => (
-        <Tarjeta key={e.id} e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} onMarcar={onMarcar} />
+      {ordenadas.map((e, i) => (
+        <div key={e.id} className="flex flex-col gap-3">
+          {agrupar && (i === 0 || ordenadas[i - 1].fecha !== e.fecha) && <h3 className="pt-1 text-sm font-medium text-muted-foreground">{fechaLarga(e.fecha)}</h3>}
+          <Tarjeta e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} onMarcar={onMarcar} />
+        </div>
       ))}
     </div>
   );
