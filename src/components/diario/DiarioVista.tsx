@@ -2,7 +2,7 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarHeart, Download, FileText, History, Images, PenLine, Route, Search, Smile, Tags, Upload } from "lucide-react";
+import { BarChart3, CalendarHeart, Download, FileText, History, Images, PenLine, Route, Search, Smile, Tags, Upload, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
@@ -18,7 +18,9 @@ import { VistaAnual } from "./calendario/VistaAnual";
 import { EditarEscalaAnimo } from "./EditarEscalaAnimo";
 import { EditorEntrada } from "./EditorEntrada";
 import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
-import { ProveedorEnlaces } from "./enlaces/ContextoEnlaces";
+import { ProveedorEnlaces, ProveedorGrafo } from "./enlaces/ContextoEnlaces";
+import { GrafoEnlaces } from "./grafo/GrafoEnlaces";
+import { GrafoLocal } from "./grafo/GrafoLocal";
 import { LineaDeTiempo } from "./linea/LineaDeTiempo";
 import { ExportarDiario } from "./exportar/ExportarDiario";
 import { ImportarDiario } from "./importar/ImportarDiario";
@@ -59,6 +61,8 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [verAnio, setVerAnio] = useState(false);
   const [verLinea, setVerLinea] = useState(false);
   const [verGaleria, setVerGaleria] = useState(false);
+  /** Lane 295: el grafo de enlaces. `desdeGeneral`: el local se abrió desde el general, y al salir se vuelve a él. */
+  const [grafo, setGrafo] = useState<{ modo: "general" } | { modo: "local"; id: number; desdeGeneral: boolean } | null>(null);
   const [compartiendo, setCompartiendo] = useState<EntradaVista | null>(null);
   /** "MM-DD" del día cuyas entradas de otros años se están viendo, o null. */
   const [enEsteDia, setEnEsteDia] = useState<string | null>(null);
@@ -120,6 +124,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setVerAnio(false);
     setVerLinea(false);
     setVerGaleria(false);
+    setGrafo(null);
   }
 
   /** Lane 290 (moodiary `linkTap`): tocar un enlace a otra entrada lleva al día de esa entrada. */
@@ -150,8 +155,29 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   return (
     <ProveedorEscala value={escala.escala}>
     <ProveedorEnlaces value={(id) => void abrirEntrada(id)}>
+    <ProveedorGrafo value={(id) => setGrafo({ modo: "local", id, desdeGeneral: false })}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
-      {verEstadisticas ? (
+      {grafo?.modo === "general" ? (
+        <div className="md:col-span-2">
+          <GrafoEnlaces
+            tipo={tipo}
+            hoy={hoy}
+            catalogo={acciones.catalogo}
+            version={version}
+            onVolver={() => setGrafo(null)}
+            onIrADia={irADia}
+            onCentrar={(id) => setGrafo({ modo: "local", id, desdeGeneral: true })}
+            onEscribir={() => {
+              setGrafo(null);
+              setEditor({ clave: Date.now() });
+            }}
+          />
+        </div>
+      ) : grafo?.modo === "local" ? (
+        <div className="md:col-span-2">
+          <GrafoLocal key={grafo.id} tipo={tipo} centroInicial={grafo.id} catalogo={acciones.catalogo} version={version} onSalir={() => setGrafo(grafo.desdeGeneral ? { modo: "general" } : null)} onIrADia={irADia} />
+        </div>
+      ) : verEstadisticas ? (
         <div className="md:col-span-2">
           <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
         </div>
@@ -217,6 +243,9 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             </Button>
             <Button variant="outline" onClick={() => setVerGaleria(true)}>
               <Images /> Galería
+            </Button>
+            <Button variant="outline" onClick={() => setGrafo({ modo: "general" })}>
+              <Waypoints /> Grafo de enlaces
             </Button>
             <Button variant="outline" onClick={() => setEnEsteDia(fechaActiva.slice(5))}>
               <CalendarHeart /> En este día
@@ -333,6 +362,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
       )}
       {editandoEscala && <EditarEscalaAnimo acciones={escala} onCerrar={() => setEditandoEscala(false)} />}
     </div>
+    </ProveedorGrafo>
     </ProveedorEnlaces>
     </ProveedorEscala>
   );

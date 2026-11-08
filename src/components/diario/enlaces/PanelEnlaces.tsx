@@ -1,13 +1,14 @@
 "use client";
 // Diario (lane 290): las entradas que enlaza esta entrada y las que la enlazan (backlinks). Portado de vendor/moodiary/editor/src/ui/EditorLinksPanel.tsx
-// y de `getForwardLinks` / `getBacklinks` de diary_repository.dart (ZhuJHua/moodiary@2c552dd). Sin el botón del grafo (fase 4).
+// y de `getForwardLinks` / `getBacklinks` de diary_repository.dart (ZhuJHua/moodiary@2c552dd). Lane 295: el botón del grafo local.
 import { useEffect, useState } from "react";
-import { ArrowUpRight, ChevronRight, CornerDownLeft, Link2 } from "lucide-react";
+import { ArrowUpRight, ChevronRight, CornerDownLeft, Link2, Waypoints } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { ResumenEnlace } from "@/lib/diario/enlaces";
 import type { TipoDiario } from "@/lib/diario/reglas";
 import type { EnlacesDeEntrada } from "@/lib/diario/servidor-enlaces";
 import { fechaLarga } from "../estadisticas/controles";
-import { useAbrirEntrada } from "./ContextoEnlaces";
+import { useAbrirEntrada, useAbrirGrafo } from "./ContextoEnlaces";
 
 function Lista({ titulo, items, saliente, onAbrir }: { titulo: string; items: ResumenEnlace[]; saliente: boolean; onAbrir: ((id: number) => void) | null }) {
   if (!items.length) return null;
@@ -36,6 +37,7 @@ export function PanelEnlaces({ tipo, entradaId }: { tipo: TipoDiario; entradaId:
   const [datos, setDatos] = useState<EnlacesDeEntrada | null>(null);
   const [fallo, setFallo] = useState(false);
   const abrir = useAbrirEntrada();
+  const abrirGrafo = useAbrirGrafo();
 
   useEffect(() => {
     let vivo = true;
@@ -59,6 +61,11 @@ export function PanelEnlaces({ tipo, entradaId }: { tipo: TipoDiario; entradaId:
       <h4 className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
         <Link2 className="size-4 text-primary" aria-hidden /> Enlaces
         {datos && <span className="ml-auto text-xs font-normal text-muted-foreground">{datos.salientes.length + datos.entrantes.length}</span>}
+        {abrirGrafo && (
+          <Button type="button" variant="ghost" size="icon-sm" className={datos ? "" : "ml-auto"} aria-label="Ver el grafo de esta entrada" title="Ver el grafo de esta entrada" onClick={() => abrirGrafo(entradaId)}>
+            <Waypoints />
+          </Button>
+        )}
       </h4>
       {fallo ? (
         <p className="px-3 pb-2 text-sm text-muted-foreground">No se pudieron cargar los enlaces.</p>
