@@ -22,3 +22,6 @@
 
 ## Ampliación (lane 289, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/application/{timeline_group,timeline_controller,diary_stamp}.dart`, `packages/feature/moodiary_diary/lib/src/presentation/widget/{timeline_view,timeline_tile}.dart` y `packages/feature/moodiary_diary/test/diary/{timeline_group_test,timeline_tile_test}.dart` (línea de tiempo por mes con eje, puntos de ánimo y cortes por días sin entradas).
+
+## Nota (lane 290, 2026-11-08)
+- No se agregan archivos: los enlaces entre entradas (`editor/src/core/editor/nodes/diary-link.ts`, `ui/{DiaryLinkSuggestion,EditorLinksPanel,link-intercept}`), la búsqueda en el documento (`editor/src/core/editor/search.ts`) y las funciones de enlaces de `diary_repository.dart` ya estaban en esta copia.

@@ -1,7 +1,7 @@
 // Portado de vendor/moodiary/editor/src/core/editor/kit.ts (ZhuJHua/moodiary@2c552dd)
 // Cambios respecto del original: sin el puente con Flutter (`post`, `scheduleChange`, estado, subidas por `saveImage`),
-// sin audio, video, adjuntos ni enlaces entre entradas (fases 2 y 3) y sin el modo panel. La carga del contenido, el
-// guardado y la subida de archivos los resuelve el componente React (`EditorTexto`).
+// sin audio, video ni adjuntos (fase 3) y sin el modo panel. La carga del contenido, el guardado y la subida de archivos
+// los resuelve el componente React (`EditorTexto`). Lane 290: enlaces entre entradas (`DiaryLink`) y búsqueda en el documento.
 import { type AnyExtension, type Editor, type EditorOptions } from '@tiptap/core'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import Highlight from '@tiptap/extension-highlight'
@@ -19,6 +19,8 @@ import { esEnlaceValido } from '@/lib/diario/contenido'
 import { leaveSelectedBlock, selectedBlock } from './block'
 import { ReglasDeEntrada } from './input-rules'
 import { createMarkdownExtension, looksLikeMarkdown } from './markdown'
+import { crearDiaryLink, type ContextoEnlace } from './nodes/diary-link'
+import { SearchExtension } from './search'
 import { ImageNode } from './nodes/image'
 import { HorizontalRuleNode } from './nodes/horizontal-rule'
 import { TrailingParagraph } from './trailing-paragraph'
@@ -69,7 +71,8 @@ const SingleHighlight = Highlight.extend({
   },
 })
 
-export function crearExtensiones(placeholder: string, nodeViews: EditorNodeViews): AnyExtension[] {
+/** `getContexto` dice de qué diario salen las entradas que ofrece `[[`; con `null` la lista no ofrece nada (el enlace igual se muestra). */
+export function crearExtensiones(placeholder: string, nodeViews: EditorNodeViews, getContexto: () => ContextoEnlace | null = () => null): AnyExtension[] {
   return [
     StarterKit.configure({
       codeBlock: false,
@@ -98,6 +101,8 @@ export function crearExtensiones(placeholder: string, nodeViews: EditorNodeViews
     TableKit.configure({ table: { resizable: false } }),
     TaskList,
     TaskItem.configure({ nested: true }),
+    crearDiaryLink(getContexto),
+    SearchExtension,
     ReglasDeEntrada,
     createMarkdownExtension(),
     Placeholder.configure({ placeholder }),

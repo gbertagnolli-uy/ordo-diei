@@ -18,6 +18,7 @@ import { VistaAnual } from "./calendario/VistaAnual";
 import { EditarEscalaAnimo } from "./EditarEscalaAnimo";
 import { EditorEntrada } from "./EditorEntrada";
 import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
+import { ProveedorEnlaces } from "./enlaces/ContextoEnlaces";
 import { LineaDeTiempo } from "./linea/LineaDeTiempo";
 import { EnEsteDiaDialog } from "./recuerdos/EnEsteDiaDialog";
 import { OpcionesDeRecuerdos } from "./recuerdos/OpcionesRecuerdos";
@@ -112,6 +113,18 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setVerLinea(false);
   }
 
+  /** Lane 290 (moodiary `linkTap`): tocar un enlace a otra entrada lleva al día de esa entrada. */
+  async function abrirEntrada(id: number) {
+    try {
+      const r = await fetch(`/api/diario/enlaces/${id}?tipo=${tipo}`);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? "La entrada no existe o no está disponible");
+      irADia(d.entrada.fecha);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo abrir la entrada");
+    }
+  }
+
   async function marcar(e: EntradaVista, marcas: Marcas) {
     if (await cambiarMarcasRemoto(e.id, marcas)) recargar();
   }
@@ -127,6 +140,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
 
   return (
     <ProveedorEscala value={escala.escala}>
+    <ProveedorEnlaces value={(id) => void abrirEntrada(id)}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
       {verEstadisticas ? (
         <div className="md:col-span-2">
@@ -293,6 +307,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
       )}
       {editandoEscala && <EditarEscalaAnimo acciones={escala} onCerrar={() => setEditandoEscala(false)} />}
     </div>
+    </ProveedorEnlaces>
     </ProveedorEscala>
   );
 }

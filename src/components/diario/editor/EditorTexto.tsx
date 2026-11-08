@@ -6,11 +6,15 @@ import { useCallback, useImperativeHandle, useMemo, useRef, useState, type Ref }
 import type { Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { docDesdeTexto, type NodoDoc } from "@/lib/diario/contenido";
+import type { TipoDiario } from "@/lib/diario/reglas";
 import { toast } from "@/lib/toast";
+import { useAbrirEntrada } from "../enlaces/ContextoEnlaces";
 import { crearExtensiones, crearPropiedades } from "./core/kit";
 import { execCommand } from "./core/commands";
 import { subirImagen } from "./subir";
+import { BarraBusqueda } from "./ui/BarraBusqueda";
 import { BarraFormato } from "./ui/BarraFormato";
+import { SugerenciaEnlace } from "./ui/SugerenciaEnlace";
 import VistaCodigo from "./ui/VistaCodigo";
 import VistaImagen from "./ui/VistaImagen";
 
@@ -39,10 +43,18 @@ interface Props {
   /** Se llama en cada cambio del documento. */
   onCambio?: (doc: NodoDoc) => void;
   className?: string;
+  /** Lane 290: el diario del que salen las entradas para enlazar con «[[». Sin esto no se ofrece enlazar. */
+  tipo?: TipoDiario;
+  /** Lane 290: la entrada que se está editando (no se ofrece enlazarla a sí misma). */
+  entradaId?: number | null;
 }
 
-export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qué pasó hoy?", onCambio, className }: Props) {
+export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qué pasó hoy?", onCambio, className, tipo, entradaId = null }: Props) {
   const editorRef = useRef<Editor | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const abrirEntrada = useAbrirEntrada();
+  const contextoRef = useRef(tipo ? { tipo, excluirId: entradaId } : null);
+  contextoRef.current = tipo ? { tipo, excluirId: entradaId } : null;
   const [subiendo, setSubiendo] = useState(false);
   const inputArchivo = useRef<HTMLInputElement>(null);
   const onCambioRef = useRef(onCambio);
@@ -50,7 +62,7 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
 
   // El contenido inicial se lee una sola vez: después el editor es la fuente de verdad
   const docInicial = useMemo(() => (inicial.contenido ?? docDesdeTexto(inicial.texto)) as JSONContent, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const extensiones = useMemo(() => crearExtensiones(placeholder, { codeBlock: VistaCodigo, image: VistaImagen }), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const extensiones = useMemo(() => crearExtensiones(placeholder, { codeBlock: VistaCodigo, image: VistaImagen }, () => contextoRef.current), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const insertarImagenes = useCallback((files: File[], pos?: number): boolean => {
     const imagenes = files.filter((f) => f.type.startsWith("image/"));
@@ -113,10 +125,26 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
   });
 
   return (
-    <div className={`md-editor ${className ?? ""}`}>
+    <div
+      className={`md-editor ${className ?? ""}`}
+      onKeyDown={(e) => {
+        // Ctrl+F busca dentro del texto en vez de en la página
+        if (editable && editor && (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f") {
+          e.preventDefault();
+          setBuscando(true);
+        }
+      }}
+      onClick={(e) => {
+        // En solo lectura, tocar un enlace a otra entrada la abre (en el editor solo coloca el cursor)
+        if (editable || !abrirEntrada || !(e.target instanceof Element)) return;
+        const id = Number(e.target.closest('[data-type="diaryLink"]')?.getAttribute("data-id"));
+        if (Number.isInteger(id) && id > 0) abrirEntrada(id);
+      }}
+    >
       {editable && editor && (
-        <div className="sticky top-0 z-10 mb-2 bg-background pb-1">
-          <BarraFormato editor={editor} subiendo={subiendo} onImagen={() => inputArchivo.current?.click()} />
+        <div className="sticky top-0 z-10 mb-2 flex flex-col gap-1 bg-background pb-1">
+          <BarraFormato editor={editor} subiendo={subiendo} onImagen={() => inputArchivo.current?.click()} onBuscar={() => setBuscando(!buscando)} buscando={buscando} puedeEnlazar={!!tipo} />
+          {buscando && <BarraBusqueda editor={editor} onCerrar={() => setBuscando(false)} />}
           <input
             ref={inputArchivo}
             type="file"
@@ -131,6 +159,7 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
         </div>
       )}
       <EditorContent editor={editor} className="md-content" />
+      {editable && tipo && <SugerenciaEnlace />}
     </div>
   );
 }
