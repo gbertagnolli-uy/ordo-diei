@@ -9,4 +9,4 @@
   - `packages/ui`, `packages/core`
   - `apps/api_v2/src/modules/{posts,channels,channel-members,reactions,notifications,media}`
 - Lo portado a `src/` lleva la cabecera `// Portado de vendor/opencircle/<ruta> (devscalelabs/opencircle@5a8beada)`.
-- `THIRD_PARTY_NOTICES.md` y las dependencias de D2 se agregan cuando la lane 271 (que también toca esos archivos) esté en `origin/dev` (D8 de `vault/LANE_276_SOCIAL_OPENCIRCLE.md`).
+- Aviso en `THIRD_PARTY_NOTICES.md` agregado en la lane 282 (2026-11-08). Las dependencias de D2 (`vault/LANE_276_SOCIAL_OPENCIRCLE.md`) se instalan cuando haga falta el port de la interfaz.
