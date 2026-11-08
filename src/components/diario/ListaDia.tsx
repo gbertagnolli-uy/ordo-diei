@@ -4,17 +4,18 @@ import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { TipoDiario } from "@/lib/diario/reglas";
+import type { Marcas, TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import type { Catalogo, CategoriaVista } from "@/lib/diario/servidor-catalogo";
 import { animoDe } from "./animo";
 import { EditorTexto } from "./editor/EditorTexto";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
+import { MarcasEntrada } from "./MarcasEntrada";
 
 const hora = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
 /** «Fe › Misa › Domingo»: la categoría con sus madres. */
-function caminoDe(id: number, categorias: CategoriaVista[]): CategoriaVista[] {
+export function caminoDe(id: number, categorias: CategoriaVista[]): CategoriaVista[] {
   const camino: CategoriaVista[] = [];
   for (let c = categorias.find((x) => x.id === id); c && camino.length < 5; c = c.padreId != null ? categorias.find((x) => x.id === c!.padreId) : undefined) camino.unshift(c);
   return camino;
@@ -26,12 +27,14 @@ function Tarjeta({
   catalogo,
   onEditar,
   onBorrar,
+  onMarcar,
 }: {
   e: EntradaVista;
   tipo: TipoDiario;
   catalogo: Catalogo | null;
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
+  onMarcar: (e: EntradaVista, marcas: Marcas) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
   const animo = animoDe(e.animo);
@@ -56,6 +59,7 @@ function Tarjeta({
             {animo.emoji}
           </span>
         )}
+        <MarcasEntrada favorita={e.favorita} fijada={e.fijada} editable={e.puedoEditar} onCambiar={(m) => onMarcar(e, m)} />
         {e.puedoEditar && (
           <Button variant="ghost" size="icon-sm" aria-label="Editar" onClick={() => onEditar(e)}>
             <Pencil />
@@ -114,18 +118,22 @@ export function ListaDia({
   catalogo,
   onEditar,
   onBorrar,
+  onMarcar,
 }: {
   entradas: EntradaVista[];
   tipo: TipoDiario;
   catalogo: Catalogo | null;
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
+  onMarcar: (e: EntradaVista, marcas: Marcas) => void;
 }) {
   if (!entradas.length) return <p className="py-8 text-center text-sm text-muted-foreground">No hay entradas este día.</p>;
+  // Las fijadas van arriba del día (storypad `pinnedStories`); el resto conserva su orden
+  const ordenadas = [...entradas].sort((a, b) => Number(b.fijada) - Number(a.fijada));
   return (
     <div className="flex flex-col gap-3">
-      {entradas.map((e) => (
-        <Tarjeta key={e.id} e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} />
+      {ordenadas.map((e) => (
+        <Tarjeta key={e.id} e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} onMarcar={onMarcar} />
       ))}
     </div>
   );

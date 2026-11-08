@@ -37,6 +37,28 @@ export interface EntradaValida {
   etiquetas?: EtiquetaPuesta[];
   /** Lane 284. `undefined` = no se toca; `null` = sin categoría. */
   categoriaId?: number | null;
+  /** Lane 285 (storypad `starred` / `pinned`). `undefined` = no se toca. */
+  favorita?: boolean;
+  fijada?: boolean;
+}
+
+export interface Marcas {
+  favorita?: boolean;
+  fijada?: boolean;
+}
+
+function marcaValida(v: unknown, nombre: string): boolean | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v !== "boolean") throw new Error(`${nombre} inválida`);
+  return v;
+}
+
+/** Marcas sueltas (estrella y chincheta) del cuerpo de un pedido. Con `exigir`, tiene que venir al menos una. */
+export function validarMarcas(b: Record<string, unknown>, exigir = false): Marcas {
+  const favorita = marcaValida(b.favorita, "Favorita");
+  const fijada = marcaValida(b.fijada, "Fijada");
+  if (exigir && favorita === undefined && fijada === undefined) throw new Error("No hay nada que cambiar");
+  return { ...(favorita !== undefined ? { favorita } : {}), ...(fijada !== undefined ? { fijada } : {}) };
 }
 
 const diasEntre = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
@@ -89,6 +111,7 @@ export function validarEntrada(e: Record<string, unknown>, hoy: string): Entrada
     fotos,
     ...(etiquetas !== undefined ? { etiquetas } : {}),
     ...(categoriaId !== undefined ? { categoriaId } : {}),
+    ...validarMarcas(e),
   };
 }
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { puedeBorrar, puedeEditar, puedeVer, resumenMes, validarEntrada } from "./reglas.ts";
+import { puedeBorrar, puedeEditar, puedeVer, resumenMes, validarEntrada, validarMarcas } from "./reglas.ts";
 
 const HOY = "2026-11-07";
 
@@ -78,4 +78,22 @@ test("validarEntrada: etiquetas y categoría solo aparecen si vienen en el cuerp
   assert.deepEqual(validarEntrada({ texto: "hola", etiquetas: [] }, HOY).etiquetas, []);
   assert.throws(() => validarEntrada({ texto: "hola", categoriaId: "7" }, HOY));
   assert.throws(() => validarEntrada({ texto: "hola", etiquetas: "x" }, HOY));
+});
+
+test("validarEntrada: favorita y fijada solo aparecen si vienen y tienen que ser booleanos (lane 285)", () => {
+  const sin = validarEntrada({ texto: "hola" }, HOY);
+  assert.ok(!("favorita" in sin) && !("fijada" in sin));
+  const con = validarEntrada({ texto: "hola", favorita: true, fijada: false }, HOY);
+  assert.equal(con.favorita, true);
+  assert.equal(con.fijada, false);
+  assert.throws(() => validarEntrada({ texto: "hola", favorita: "si" }, HOY));
+  assert.throws(() => validarEntrada({ texto: "hola", fijada: 1 }, HOY));
+});
+
+test("validarMarcas: exige al menos una cuando se pide y no deja pasar otros valores", () => {
+  assert.deepEqual(validarMarcas({ favorita: true }, true), { favorita: true });
+  assert.deepEqual(validarMarcas({ favorita: false, fijada: true, otra: 1 }, true), { favorita: false, fijada: true });
+  assert.throws(() => validarMarcas({}, true));
+  assert.deepEqual(validarMarcas({}), {});
+  assert.throws(() => validarMarcas({ fijada: "no" }, true));
 });

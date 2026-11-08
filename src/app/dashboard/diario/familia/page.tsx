@@ -14,7 +14,7 @@ export default async function DiarioFamiliarPage() {
     <div className="flex flex-col">
       <PageHeader title="Diario familiar" />
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 pb-36 sm:pb-24">
-        <DiarioVista tipo="familiar" hoy={hoyEnFamilia()} />
+        <DiarioVista tipo="familiar" hoy={hoyEnFamilia()} usuarioId={Number(session.user.id)} />
       </main>
     </div>
   );

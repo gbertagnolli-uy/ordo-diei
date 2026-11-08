@@ -7,7 +7,7 @@ import { APP_TZ, aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoEr
 import type { NodoDoc } from "./contenido";
 import type { EtiquetaPuesta } from "./etiquetas";
 import { prepararEtiquetas, verificarCategoria } from "./servidor-catalogo";
-import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, type TipoDiario } from "./reglas";
+import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, validarMarcas, type TipoDiario } from "./reglas";
 
 type Actor = { id: number; esPadre: boolean };
 
@@ -23,6 +23,9 @@ export type EntradaVista = {
   /** Lane 284: etiquetas puestas (el nombre, ícono y color salen del catálogo) y categoría de la entrada. */
   etiquetas: EtiquetaPuesta[];
   categoriaId: number | null;
+  /** Lane 285: marcas de la entrada (storypad `starred` y `pinned`). */
+  favorita: boolean;
+  fijada: boolean;
   /** Hora de la entrada: minutos desde la medianoche en la zona de la familia (la fijada o, si no, la de `creadaEn`). */
   hora: number;
   creadaEn: string;
@@ -33,13 +36,13 @@ export type EntradaVista = {
   puedoBorrar: boolean;
 };
 
-const incluir = {
+export const incluir = {
   etiquetas: { select: { etiquetaId: true, valor: true }, orderBy: { id: "asc" as const } },
   fotos: { orderBy: { orden: "asc" as const }, select: { url: true } },
   autor: { select: { id: true, nombre: true, fotoUrl: true } },
 };
 
-type EntradaConFotos = Prisma.DiarioEntradaGetPayload<{ include: typeof incluir }>;
+export type EntradaConFotos = Prisma.DiarioEntradaGetPayload<{ include: typeof incluir }>;
 
 const aJson = (d: NodoDoc | null) => (d ? (d as unknown as Prisma.InputJsonObject) : undefined);
 
@@ -49,7 +52,7 @@ export const minutosEnFamilia = (d: Date) => {
   return h * 60 + m;
 };
 
-function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
+export function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
   return {
     id: e.id,
     tipo: e.tipo,
@@ -60,6 +63,8 @@ function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
     animo: e.animo,
     etiquetas: e.etiquetas.map((t) => ({ id: t.etiquetaId, valor: t.valor })),
     categoriaId: e.categoriaId,
+    favorita: e.favorita,
+    fijada: e.fijada,
     hora: e.hora ?? minutosEnFamilia(e.creadaEn),
     creadaEn: e.creadaEn.toISOString(),
     editadaEn: e.editadaEn.toISOString(),
@@ -105,6 +110,8 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
         hora: v.hora,
         animo: v.animo,
         categoriaId: v.categoriaId ?? null,
+        favorita: v.favorita ?? false,
+        fijada: v.fijada ?? false,
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
         etiquetas: { create: etiquetas.map((t) => ({ etiquetaId: t.id, valor: t.valor })) },
       },
@@ -141,12 +148,23 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
         hora: v.hora,
         animo: v.animo,
         ...(v.categoriaId !== undefined ? { categoriaId: v.categoriaId } : {}),
+        ...(v.favorita !== undefined ? { favorita: v.favorita } : {}),
+        ...(v.fijada !== undefined ? { fijada: v.fijada } : {}),
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
         ...(etiquetas ? { etiquetas: { create: etiquetas.map((t) => ({ etiquetaId: t.id, valor: t.valor })) } } : {}),
       },
       include: incluir,
     });
   });
+  return aVista(nueva, actor);
+}
+
+/** Estrella y chincheta sin tocar el resto de la entrada (lane 285). Las cambia quien la escribió. */
+export async function cambiarMarcas(actor: Actor, id: number, body: Record<string, unknown>): Promise<EntradaVista> {
+  const e = await buscarVisible(actor, id);
+  if (!puedeEditar(e, actor)) throw new NoAutorizadoError("Solo quien la escribió puede marcarla");
+  const marcas = validarMarcas(body, true);
+  const nueva = await prisma.diarioEntrada.update({ where: { id }, data: { ...marcas, editadaEn: e.editadaEn }, include: incluir }); // marcar no cuenta como editar
   return aVista(nueva, actor);
 }
 
