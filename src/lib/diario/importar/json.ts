@@ -211,11 +211,11 @@ export function leerDailyYouJson(raiz: unknown, archivos: Archivos, carpeta: str
       else if (t.type === "tracker" && typeof t.value === "number" && Number.isFinite(t.value)) etiquetas.push({ nombre, tipo: "contador", valor: String(t.value) });
     }
     const adjuntos = lista(e.attachments).filter(esObj);
-    noImagenes += adjuntos.filter((a) => a.type !== "image").length;
-    const rutas = adjuntos
-      .filter((a) => a.type === "image" && typeof a.path === "string")
-      .sort((a, b) => Number(b.rank ?? 0) - Number(a.rank ?? 0))
-      .map((a) => a.path as string);
+    // Lane 294: los audios y videos pasan al final del documento; un tipo que no se conoce se cuenta y se avisa
+    noImagenes += adjuntos.filter((a) => a.type !== "image" && a.type !== "audio" && a.type !== "video").length;
+    const ordenadas = adjuntos.filter((a) => typeof a.path === "string").sort((a, b) => Number(b.rank ?? 0) - Number(a.rank ?? 0));
+    const rutas = ordenadas.filter((a) => a.type === "image").map((a) => a.path as string);
+    const rutasAparte = ordenadas.filter((a) => a.type === "audio" || a.type === "video").map((a) => a.path as string);
     p.entradas.push(
       entradaBase({
         ...m,
@@ -223,10 +223,11 @@ export function leerDailyYouJson(raiz: unknown, archivos: Archivos, carpeta: str
         animo: animoValido(e.mood),
         etiquetas,
         fotos: resolverFotos(p, archivos, carpeta, rutas),
+        adjuntos: resolverFotos(p, archivos, carpeta, rutasAparte),
       }),
     );
   }
-  if (noImagenes) p.avisos.push(`${noImagenes} adjuntos de audio o video no se importaron (el diario todavía no los guarda)`);
+  if (noImagenes) p.avisos.push(`${noImagenes} adjuntos de un tipo desconocido no se importaron`);
   return p;
 }
 

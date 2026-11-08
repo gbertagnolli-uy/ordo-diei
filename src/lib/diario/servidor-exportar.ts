@@ -8,7 +8,7 @@ import prisma from "@/lib/prisma";
 import { aClave, aFecha, hoyEnFamilia } from "@/lib/habitos/server";
 import { claveDeUrl } from "@/lib/archivos";
 import { descendientes } from "./busqueda";
-import { imagenesDe, type NodoDoc } from "./contenido";
+import { archivosDe, imagenesDe, type NodoDoc } from "./contenido";
 import {
   MAX_BYTES_FOTOS_EXPORT,
   MAX_ENTRADAS_EXPORT,
@@ -120,17 +120,21 @@ export async function exportarDiario(actor: Actor, tipo: TipoDiario, o: Opciones
     etiquetas: cat.etiquetas.map((e) => ({ nombre: e.nombre, tipo: e.tipo, grupo: e.grupoId === null ? null : (grupoPorId.get(e.grupoId) ?? null), icono: e.icono, tipoIcono: e.tipoIcono, color: e.color, orden: e.orden })),
   };
 
-  // Fotos: las de la entrada y las imágenes del documento, sin repetir; solo las que están guardadas en la base
+  // Fotos: las de la entrada y las imágenes del documento, sin repetir; solo las que están guardadas en la base.
+  // Lane 294: también los audios, videos y documentos del texto (carpeta `adjuntos/`), con el mismo tope de peso.
   const urlsDe = (contenido: NodoDoc | null, fotos: string[]) => [...new Set([...fotos, ...(contenido ? imagenesDe(contenido) : [])])];
   const claves = new Set<string>();
-  if (o.fotos) for (const f of filas) for (const u of urlsDe((f.contenido as NodoDoc | null) ?? null, f.fotos.map((x) => x.url))) {
-    const c = claveDeUrl(u);
-    if (c) claves.add(c);
+  if (o.fotos) for (const f of filas) {
+    const doc = (f.contenido as NodoDoc | null) ?? null;
+    for (const u of [...urlsDe(doc, f.fotos.map((x) => x.url)), ...(doc ? archivosDe(doc).map((a) => a.src) : [])]) {
+      const c = claveDeUrl(u);
+      if (c) claves.add(c);
+    }
   }
   const archivos = claves.size ? await prisma.archivo.findMany({ where: { clave: { in: [...claves] } }, select: { clave: true, tipo: true, bytes: true } }) : [];
   const bytesTotales = archivos.reduce((s, a) => s + a.bytes, 0);
   if (bytesTotales > MAX_BYTES_FOTOS_EXPORT) {
-    throw new ExportacionError(`Las fotos pesan ${Math.round(bytesTotales / 1048576)} MB y el máximo es ${MAX_BYTES_FOTOS_EXPORT / 1048576} MB. Exportá sin fotos o con un rango más corto.`, 413);
+    throw new ExportacionError(`Las fotos y los archivos pesan ${Math.round(bytesTotales / 1048576)} MB y el máximo es ${MAX_BYTES_FOTOS_EXPORT / 1048576} MB. Exportá sin fotos ni archivos o con un rango más corto.`, 413);
   }
   const archivoPorClave = new Map(archivos.map((a) => [a.clave, a]));
   const extension = (u: string) => extensionDeImagen(archivoPorClave.get(claveDeUrl(u) ?? "")?.tipo ?? "");
@@ -159,8 +163,8 @@ export async function exportarDiario(actor: Actor, tipo: TipoDiario, o: Opciones
   });
 
   const hoy = hoyEnFamilia();
-  const nombradas = nombrarEntradas(entradas, extension);
-  const conFotos = nombradas.some((n) => n.fotos.length > 0);
+  const nombradas = nombrarEntradas(entradas, extension, { mimeDe: (u) => (o.fotos ? (archivoPorClave.get(claveDeUrl(u) ?? "")?.tipo ?? null) : null) });
+  const conFotos = nombradas.some((n) => n.fotos.length > 0 || n.adjuntos.length > 0);
   const conAutor = tipo === "familiar";
   const datos: DatosExport = { tipo, exportadaEn: new Date().toISOString(), catalogo, entradas };
 
@@ -188,10 +192,14 @@ export async function exportarDiario(actor: Actor, tipo: TipoDiario, o: Opciones
   for (const [ruta, texto] of Object.entries(textos)) zip[ruta] = strToU8(texto);
   if (conFotos) {
     const rutaPorClave = new Map<string, string[]>();
-    for (const n of nombradas) n.entrada.fotos.forEach((u, i) => {
+    const agregarRuta = (u: string, ruta: string) => {
       const c = claveDeUrl(u)!;
-      rutaPorClave.set(c, [...(rutaPorClave.get(c) ?? []), n.fotos[i]]);
-    });
+      rutaPorClave.set(c, [...(rutaPorClave.get(c) ?? []), ruta]);
+    };
+    for (const n of nombradas) {
+      n.entrada.fotos.forEach((u, i) => agregarRuta(u, n.fotos[i]));
+      for (const a of n.adjuntos) agregarRuta(a.url, a.ruta);
+    }
     const lista = [...rutaPorClave.keys()];
     for (let i = 0; i < lista.length; i += 20) {
       const lote = await prisma.archivo.findMany({ where: { clave: { in: lista.slice(i, i + 20) } }, select: { clave: true, datos: true } });

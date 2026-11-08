@@ -1,7 +1,8 @@
 // Diario (lane 291): exportar el diario a Markdown, CSV y JSON. Reglas puras: sin base, sin red.
 // Portado de vendor/Daily_You/lib/utils/exports/{export_snapshot,export_json,export_csv,export_markdown,export_naming}.dart (Demizo/Daily_You@7cc237d)
 // y de vendor/moodiary/packages/feature/moodiary_export/lib/src/data/{tiptap_to_ir,markdown_writer}.dart (ZhuJHua/moodiary@2c552dd).
-import type { NodoDoc } from "./contenido.ts";
+import { extensionDeArchivo, nombreSeguro } from "./adjuntos.ts";
+import { archivosDe, type NodoDoc, type TipoArchivo } from "./contenido.ts";
 
 export type FormatoExport = "markdown" | "csv" | "json";
 export const FORMATOS_EXPORT: { valor: FormatoExport; titulo: string; detalle: string }[] = [
@@ -77,22 +78,58 @@ export interface EntradaNombrada {
   nombre: string;
   /** Ruta dentro del ZIP de cada foto (misma posición que `entrada.fotos`); con extensión si se dio `extensionDe`. */
   fotos: string[];
+  /** Lane 294: audios, videos y documentos del texto, cada uno una sola vez, con su ruta dentro del ZIP. */
+  adjuntos: AdjuntoNombrado[];
+}
+
+export interface AdjuntoNombrado {
+  /** `/api/archivos/<uuid>` */
+  url: string;
+  /** `adjuntos/2026-07-20_1_informe.pdf` */
+  ruta: string;
+  tipo: TipoArchivo;
+  nombre: string | null;
 }
 
 export const CARPETA_FOTOS = "fotos";
+export const CARPETA_ADJUNTOS = "adjuntos";
+
+/** Cómo conoce el servidor los archivos del texto: su tipo (para la extensión) y si están guardados. */
+export interface ResolverAdjuntos {
+  /** Tipo MIME guardado de ese archivo, o `null` si no está (no se exporta). */
+  mimeDe: (url: string) => string | null;
+}
 
 /** Las entradas por fecha y hora (Daily You las ordena por fecha de creación). */
 export const ordenarCronologicas = (entradas: EntradaExport[]): EntradaExport[] =>
   [...entradas].sort((a, b) => (a.fecha === b.fecha ? a.hora - b.hora || a.creadaEn.localeCompare(b.creadaEn) : a.fecha < b.fecha ? -1 : 1));
 
-export function nombrarEntradas(entradas: EntradaExport[], extensionDe?: (url: string) => string): EntradaNombrada[] {
+export function nombrarEntradas(entradas: EntradaExport[], extensionDe?: (url: string) => string, adjuntos?: ResolverAdjuntos): EntradaNombrada[] {
   const porDia = new Map<string, number>();
   return ordenarCronologicas(entradas).map((entrada) => {
     const n = (porDia.get(entrada.fecha) ?? 0) + 1;
     porDia.set(entrada.fecha, n);
     const nombre = n > 1 ? `${entrada.fecha}_${n}` : entrada.fecha;
-    return { entrada, nombre, fotos: entrada.fotos.map((url, i) => `${CARPETA_FOTOS}/foto_${nombre}_${i + 1}${extensionDe ? `.${extensionDe(url)}` : ""}`) };
+    return { entrada, nombre, fotos: entrada.fotos.map((url, i) => `${CARPETA_FOTOS}/foto_${nombre}_${i + 1}${extensionDe ? `.${extensionDe(url)}` : ""}`), adjuntos: adjuntosDeEntrada(entrada, nombre, adjuntos) };
   });
+}
+
+/** Los archivos del texto que se exportan: `adjuntos/<entrada>_<n>_<nombre limpio>.<extensión del tipo>`. Sin resolver no hay ninguno. */
+function adjuntosDeEntrada(entrada: EntradaExport, nombre: string, resolver: ResolverAdjuntos | undefined): AdjuntoNombrado[] {
+  if (!resolver || !entrada.contenido) return [];
+  const vistos = new Set<string>();
+  const salida: AdjuntoNombrado[] = [];
+  for (const a of archivosDe(entrada.contenido)) {
+    if (vistos.has(a.src)) continue;
+    vistos.add(a.src);
+    const mime = resolver.mimeDe(a.src);
+    if (mime === null) continue;
+    const ext = extensionDeArchivo(mime);
+    // Sin la extensión que trae el nombre («Informe.pdf» → «Informe»): la que vale es la del tipo guardado
+    const base = nombreSeguro((a.name ?? "").replace(/\.[^.]{1,16}$/, ""), "archivo");
+    salida.push({ url: a.src, ruta: `${CARPETA_ADJUNTOS}/${nombre}_${salida.length + 1}_${base}.${ext}`, tipo: a.tipo, nombre: a.name });
+  }
+  return salida;
 }
 
 /** Extensión de archivo para un tipo de imagen. */
@@ -120,6 +157,8 @@ export function nombreDeAnimo(escala: NivelExport[], animo: number | null): stri
 export interface OpcionesMarkdown {
   /** URL de la imagen en el Markdown (ruta relativa dentro del ZIP o la misma URL). */
   rutaDeImagen: (src: string) => string;
+  /** Lane 294: ruta de un audio, video o documento. Sin esto (o si devuelve `null`) el bloque queda como su nombre, sin enlace. */
+  rutaDeAdjunto?: (src: string) => string | null;
 }
 
 const escapar = (t: string) => t.replace(/[\\`*_[\]<=]/g, (c) => `\\${c}`);
@@ -247,6 +286,16 @@ function bloque(n: NodoDoc, o: OpcionesMarkdown): string | null {
       const alt = typeof n.attrs?.name === "string" ? escapar(n.attrs.name) : "";
       return `![${alt}](${o.rutaDeImagen(src)})`;
     }
+    // Lane 294: un enlace solo en su línea; al importar, el tipo (audio, video, documento) sale de la extensión
+    case "audio":
+    case "video":
+    case "attachment": {
+      const src = typeof n.attrs?.src === "string" ? n.attrs.src : "";
+      if (!src) return null;
+      const nombre = typeof n.attrs?.name === "string" && n.attrs.name.trim() ? n.attrs.name.trim() : n.type === "audio" ? "Audio" : n.type === "video" ? "Video" : "Archivo";
+      const ruta = o.rutaDeAdjunto?.(src) ?? null;
+      return ruta ? `[${escapar(nombre)}](${escaparUrl(ruta)})` : escapar(nombre);
+    }
     case "table":
       return tabla(n.content ?? [], o);
     default:
@@ -276,19 +325,26 @@ const yamlTexto = (s: string) => `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"
 const yamlLista = (xs: string[]) => `[${xs.map(yamlTexto).join(", ")}]`;
 
 /** Cuerpo de una entrada: el documento, o el texto plano si no tiene formato (moodiary: «no es JSON → un párrafo»). */
-export function cuerpoMarkdown(e: EntradaExport, rutaDeImagen: (src: string) => string): string {
-  if (e.contenido) return markdownDeDoc(e.contenido, { rutaDeImagen });
+export function cuerpoMarkdown(e: EntradaExport, rutaDeImagen: (src: string) => string, rutaDeAdjunto?: (src: string) => string | null): string {
+  if (e.contenido) return markdownDeDoc(e.contenido, { rutaDeImagen, rutaDeAdjunto });
   return e.texto
     .split(/\r?\n/)
     .map((l) => escapar(l))
     .join("\n\n");
 }
 
+/** Ruta dentro del ZIP de un audio, video o documento de la entrada; `null` si no se exporta. */
+const rutaDeAdjuntoDe = (n: EntradaNombrada) => {
+  const rutas = new Map(n.adjuntos.map((a) => [a.url, a.ruta]));
+  return (src: string): string | null => rutas.get(src) ?? null;
+};
+
 /** Una nota: front matter (Daily You) + título + cuerpo + las fotos que no están dentro del texto. */
 export function notaMarkdown(n: EntradaNombrada, escala: NivelExport[], opciones: { conAutor: boolean }): string {
   const e = n.entrada;
   const rutas = new Map(e.fotos.map((f, i) => [f, n.fotos[i]]));
   const rutaDeImagen = (src: string) => rutas.get(src) ?? src;
+  const rutaDeAdjunto = rutaDeAdjuntoDe(n);
   const enTexto = new Set<string>();
   const cuerpo = e.contenido
     ? markdownDeDoc(e.contenido, {
@@ -296,6 +352,7 @@ export function notaMarkdown(n: EntradaNombrada, escala: NivelExport[], opciones
           enTexto.add(src);
           return rutaDeImagen(src);
         },
+        rutaDeAdjunto,
       })
     : cuerpoMarkdown(e, rutaDeImagen);
   const contadores = Object.fromEntries(e.etiquetas.filter((t) => t.tipo === "contador" && t.valor !== null).map((t) => [t.nombre, Number.isFinite(Number(t.valor)) ? Number(t.valor) : t.valor]));
@@ -322,7 +379,7 @@ export function markdownUnido(nombradas: EntradaNombrada[], escala: NivelExport[
       const animo = nombreDeAnimo(escala, e.animo);
       const meta = [horaTexto(e.hora), animo, e.categoria, conAutor ? e.autor : null].filter(Boolean).join(" · ");
       const rutas = new Map(e.fotos.map((f, i) => [f, n.fotos[i]]));
-      const cuerpo = cuerpoMarkdown(e, (src) => rutas.get(src) ?? src);
+      const cuerpo = cuerpoMarkdown(e, (src) => rutas.get(src) ?? src, rutaDeAdjuntoDe(n));
       return [`## ${e.fecha}${e.titulo ? ` · ${escapar(e.titulo)}` : ""}`, `*${meta}*`, cuerpo].filter(Boolean).join("\n\n");
     })
     .join("\n\n---\n\n")
@@ -346,7 +403,7 @@ export function csvDeEntradas(nombradas: EntradaNombrada[], catalogo: CatalogoEx
   const contadores = catalogo.etiquetas.filter((t) => t.tipo === "contador").map((t) => t.nombre);
   const filas: (string | number | null)[][] = [
     [...COLUMNAS_CSV, ...contadores.map((c) => `${PREFIJO_CONTADOR}${c}`)],
-    ...nombradas.map(({ entrada: e, fotos }) => {
+    ...nombradas.map(({ entrada: e, fotos, adjuntos }) => {
       const valores = new Map(e.etiquetas.filter((t) => t.tipo === "contador").map((t) => [t.nombre, t.valor]));
       return [
         fechaHora(e.fecha, e.hora),
@@ -357,7 +414,7 @@ export function csvDeEntradas(nombradas: EntradaNombrada[], catalogo: CatalogoEx
         e.texto,
         e.categoria,
         e.etiquetas.filter((t) => t.tipo === "etiqueta").map((t) => t.nombre).join(", "),
-        fotos.join(", "),
+        [...fotos, ...adjuntos.map((a) => a.ruta)].join(", "),
         ...contadores.map((c) => valores.get(c) ?? null),
       ];
     }),
@@ -365,10 +422,13 @@ export function csvDeEntradas(nombradas: EntradaNombrada[], catalogo: CatalogoEx
   return `﻿${filas.map((f) => f.map(celdaCsv).join(",")).join("\r\n")}\r\n`;
 }
 
-/** Copia del documento con el `src` de cada imagen cambiado por `nuevo(src)`; con `null` la imagen se quita. */
+/**
+ * Copia del documento con el `src` de cada imagen (y, desde la lane 294, de cada audio, video y adjunto) cambiado por `nuevo(src)`;
+ * con `null` el bloque se quita.
+ */
 export function reescribirImagenes(doc: NodoDoc, nuevo: (src: string) => string | null): NodoDoc {
   const recorrer = (n: NodoDoc): NodoDoc[] => {
-    if (n.type === "image" && typeof n.attrs?.src === "string") {
+    if ((n.type === "image" || n.type === "audio" || n.type === "video" || n.type === "attachment") && typeof n.attrs?.src === "string") {
       const src = nuevo(n.attrs.src);
       return src === null ? [] : [{ ...n, attrs: { ...n.attrs, src } }];
     }
@@ -389,9 +449,9 @@ export function documentoJson(datos: DatosExport, nombradas: EntradaNombrada[], 
     tagGroups: datos.catalogo.grupos.map((g) => ({ name: g.nombre, icon: g.icono, iconType: g.tipoIcono, color: g.color, singleChoice: g.seleccionUnica, sortOrder: g.orden })),
     categories: datos.catalogo.categorias.map((c) => ({ name: c.nombre, path: c.camino, color: c.color })),
     tags: datos.catalogo.etiquetas.map((t) => ({ name: t.nombre, type: t.tipo, group: t.grupo, icon: t.icono, iconType: t.tipoIcono, color: t.color, sortOrder: t.orden })),
-    entries: nombradas.map(({ entrada: e, fotos }) => {
-      // Con fotos, las imágenes del documento apuntan a su archivo dentro del ZIP (si no, quedan con su URL)
-      const rutas = new Map(e.fotos.map((f, i) => [f, fotos[i]]));
+    entries: nombradas.map(({ entrada: e, fotos, adjuntos }) => {
+      // Con fotos, las imágenes y los archivos del documento apuntan a su archivo dentro del ZIP (si no, quedan con su URL)
+      const rutas = new Map([...e.fotos.map((f, i): [string, string] => [f, fotos[i]]), ...adjuntos.map((a): [string, string] => [a.url, a.ruta])]);
       return {
       date: e.fecha,
       time: horaTexto(e.hora),
@@ -407,6 +467,7 @@ export function documentoJson(datos: DatosExport, nombradas: EntradaNombrada[], 
       created: e.creadaEn,
       modified: e.editadaEn,
       photos: conFotos ? fotos : [],
+      attachments: conFotos ? adjuntos.map((a) => a.ruta) : [],
       };
     }),
   };

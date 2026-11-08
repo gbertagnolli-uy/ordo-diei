@@ -12,6 +12,8 @@ import {
   Heading3,
   Highlighter,
   ImagePlus,
+  Mic,
+  Paperclip,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -72,6 +74,8 @@ export function BarraFormato({
   editor,
   subiendo,
   onImagen,
+  onAdjuntar,
+  onVoz,
   onBuscar,
   buscando,
   puedeEnlazar,
@@ -79,6 +83,10 @@ export function BarraFormato({
   editor: Editor;
   subiendo: boolean;
   onImagen: () => void;
+  /** Lane 294: elegir un audio, un video corto o un documento. */
+  onAdjuntar: () => void;
+  /** Lane 294: abrir la grabadora de notas de voz. */
+  onVoz: () => void;
   /** Abre o cierra la barra de búsqueda dentro del texto (lane 290). */
   onBuscar: () => void;
   buscando: boolean;
@@ -129,6 +137,8 @@ export function BarraFormato({
         {estado.marks.link && <Tecla icono={<Unlink />} etiqueta="Quitar enlace" onClick={() => run("unsetLink")} />}
         {puedeEnlazar && <Tecla icono={<Link2 />} etiqueta="Enlazar otra entrada" onClick={() => run("insertDiaryLink")} />}
         <Tecla icono={<ImagePlus />} etiqueta="Insertar imagen" deshabilitado={subiendo} onClick={onImagen} />
+        <Tecla icono={<Paperclip />} etiqueta="Adjuntar audio, video o documento" deshabilitado={subiendo} onClick={onAdjuntar} />
+        <Tecla icono={<Mic />} etiqueta="Grabar nota de voz" deshabilitado={subiendo} onClick={onVoz} />
         <Tecla icono={<Table />} etiqueta="Insertar tabla" onClick={() => run("insertTable")} />
         <Tecla icono={<Minus />} etiqueta="Separador" onClick={() => run("insertHorizontalRule")} />
         <Separador />

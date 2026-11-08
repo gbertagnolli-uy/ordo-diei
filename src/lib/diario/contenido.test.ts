@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { docDesdeTexto, imagenesDe, sanearDocumento, textoPlanoDe, tieneImagen } from "./contenido.ts";
+import { archivosDe, docDesdeTexto, imagenesDe, sanearDocumento, textoPlanoDe, tieneArchivo, tieneImagen } from "./contenido.ts";
 
 const URL = "/api/archivos/123e4567-e89b-12d3-a456-426614174000";
 const p = (text?: string) => (text ? { type: "paragraph", content: [{ type: "text", text }] } : { type: "paragraph" });
@@ -75,4 +75,52 @@ test("sanearDocumento: un documento sin contenido queda con un párrafo vacío",
 test("sanearDocumento: `code` excluye a las demás marcas, como en el editor", () => {
   const s = sanearDocumento({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "x", marks: [{ type: "bold" }, { type: "code" }] }] }] });
   assert.deepEqual(s.content?.[0].content?.[0].marks, [{ type: "code" }]);
+});
+
+// ── Lane 294: audio, video y adjuntos ───────────────────────────────────────
+const URL2 = "/api/archivos/223e4567-e89b-12d3-a456-426614174000";
+const URL3 = "/api/archivos/323e4567-e89b-12d3-a456-426614174000";
+
+test("sanearDocumento: audio, video y adjunto conservan solo sus atributos", () => {
+  const s = sanearDocumento({
+    type: "doc",
+    content: [
+      { type: "audio", attrs: { src: URL, name: "Nota de voz", onclick: "x()" } },
+      { type: "video", attrs: { src: URL2, name: "clip.mp4", widthPercent: 10 } },
+      { type: "attachment", attrs: { src: URL3, name: "informe.pdf", mime: "application/pdf", size: 1234, extra: 1 } },
+    ],
+  });
+  assert.deepEqual(s.content?.[0].attrs, { src: URL, name: "Nota de voz" });
+  assert.deepEqual(s.content?.[1].attrs, { src: URL2, name: "clip.mp4", widthPercent: 25 });
+  assert.deepEqual(s.content?.[2].attrs, { src: URL3, name: "informe.pdf", mime: "application/pdf", size: 1234 });
+});
+
+test("sanearDocumento: el adjunto descarta peso absurdo y los bloques exigen un archivo propio", () => {
+  const con = (n: object) => ({ type: "doc", content: [n] });
+  const s = sanearDocumento(con({ type: "attachment", attrs: { src: URL, size: 99_000_000, mime: 5 } }));
+  assert.deepEqual(s.content?.[0].attrs, { src: URL, name: null, mime: null, size: null });
+  for (const type of ["audio", "video", "attachment"]) {
+    assert.throws(() => sanearDocumento(con({ type, attrs: { src: "https://otro.sitio/a.mp3" } })), /inválido/, type);
+    assert.throws(() => sanearDocumento(con({ type, attrs: { src: `${URL}?x=1` } })), /inválido/, type);
+    assert.throws(() => sanearDocumento(con({ type })), /inválido/, type);
+  }
+});
+
+test("tieneArchivo / archivosDe: audio, video y adjuntos en orden, sin contar imágenes", () => {
+  const doc = sanearDocumento({
+    type: "doc",
+    content: [
+      { type: "image", attrs: { src: URL } },
+      { type: "audio", attrs: { src: URL2, name: "voz" } },
+      { type: "bulletList", content: [{ type: "listItem", content: [{ type: "attachment", attrs: { src: URL3, name: "a.pdf", mime: "application/pdf", size: 10 } }] }] },
+    ],
+  });
+  assert.equal(tieneArchivo(doc), true);
+  assert.deepEqual(archivosDe(doc), [
+    { tipo: "audio", src: URL2, name: "voz", mime: null, size: null },
+    { tipo: "attachment", src: URL3, name: "a.pdf", mime: "application/pdf", size: 10 },
+  ]);
+  assert.deepEqual(imagenesDe(doc), [URL]);
+  assert.equal(tieneArchivo(docDesdeTexto("hola")), false);
+  assert.equal(textoPlanoDe(doc), "");
 });

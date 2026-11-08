@@ -316,3 +316,32 @@ test("la escala baja cuando el lienzo no entra en el navegador", () => {
   // superficie: 360×3 por 5000×3 = 16,2 millones > 16 millones → escala 2
   assert.equal(escalaDeTarjeta(5000, 360, 3), 2);
 });
+
+// ── Lane 294: audio, video y documentos ─────────────────────────────────────
+test("un audio, un video y un documento se dibujan como un recuadro con tipo, nombre y peso", () => {
+  const d = diseno(
+    entrada({
+      texto: "",
+      contenido: doc(
+        { type: "audio", attrs: { src: IMG, name: "Nota de voz" } },
+        { type: "video", attrs: { src: IMG, name: "clip.mp4" } },
+        { type: "attachment", attrs: { src: IMG, name: "Informe final.pdf", mime: "application/pdf", size: 1536 } },
+      ),
+    }),
+  );
+  const ts = textos(d.comandos).map((c) => c.texto);
+  assert.ok(ts.includes("AUDIO") && ts.includes("VIDEO") && ts.includes("PDF"), ts.join("|"));
+  assert.ok(ts.includes("Nota de voz") && ts.includes("clip.mp4") && ts.includes("Informe final.pdf"));
+  assert.ok(ts.includes("1,5 KB"));
+  // tres recuadros de 48 px además de las fichas de la cabecera
+  assert.ok(de(d.comandos, "rect").filter((c) => c.t === "rect" && c.h === 48).length >= 3);
+  assert.equal(d.truncada, false);
+});
+
+test("un nombre largo se corta con «…» dentro del recuadro", () => {
+  const largo = "Un nombre de archivo larguísimo que no entra en una tarjeta de trescientos sesenta píxeles.pdf";
+  const d = diseno(entrada({ texto: "", contenido: doc({ type: "attachment", attrs: { src: IMG, name: largo, size: 10 } }) }));
+  const nombre = textos(d.comandos).find((c) => c.texto.endsWith("…") && c.texto.startsWith("Un nombre"));
+  assert.ok(nombre, "no se cortó");
+  assert.ok(medir(nombre.texto, nombre.fuente) <= ANCHO_TARJETA - MARGEN_X * 2);
+});

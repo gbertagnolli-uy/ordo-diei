@@ -1,8 +1,9 @@
 // Diario (lane 292): corre la importación en el navegador: catálogo, fotos y entradas por lotes (decisión I1).
 // Es el `runImport` de vendor/Daily_You/lib/utils/imports/import_runner.dart (Demizo/Daily_You@7cc237d) con el servidor en lugar de la base local.
+import { validarAdjunto } from "@/lib/diario/adjuntos";
 import type { TipoDiario } from "@/lib/diario/reglas";
 import { catalogoDelPaquete } from "@/lib/diario/importar/catalogo";
-import { extensionDe, nombreDe } from "@/lib/diario/importar/comun";
+import { esImagen, extensionDe, nombreDe } from "@/lib/diario/importar/comun";
 import { entradaALote, partirEnLotes, type EntradaLote, type ResultadoCatalogo, type ResultadoLote } from "@/lib/diario/importar/lote";
 import type { Archivos, PaqueteImport } from "@/lib/diario/importar/tipos";
 import { markdownADocumento } from "./markdown-a-doc";
@@ -36,13 +37,23 @@ async function pedir<T>(cuerpo: Record<string, unknown>): Promise<T> {
   return d as T;
 }
 
-/** Sube una foto por /api/upload (la misma de las fotos de la entrada). Devuelve la URL, o el motivo si no se pudo. */
+/**
+ * Sube una foto por /api/upload (la misma de las fotos de la entrada); un audio, video o documento (lane 294) va con `modo=diario`.
+ * Devuelve la URL, o el motivo si no se pudo.
+ */
 async function subirFoto(ruta: string, bytes: Uint8Array): Promise<{ url: string } | { motivo: string }> {
-  const tipo = TIPOS[extensionDe(ruta)];
-  if (!tipo) return { motivo: `${nombreDe(ruta)}: formato de imagen no soportado` };
-  if (bytes.length > MAX_BYTES_FOTO) return { motivo: `${nombreDe(ruta)}: pesa más de 4 MB` };
   const form = new FormData();
-  form.append("file", new File([bytes as BlobPart], nombreDe(ruta), { type: tipo }));
+  if (esImagen(ruta)) {
+    const tipo = TIPOS[extensionDe(ruta)];
+    if (!tipo) return { motivo: `${nombreDe(ruta)}: formato de imagen no soportado` };
+    if (bytes.length > MAX_BYTES_FOTO) return { motivo: `${nombreDe(ruta)}: pesa más de 4 MB` };
+    form.append("file", new File([bytes as BlobPart], nombreDe(ruta), { type: tipo }));
+  } else {
+    const valido = validarAdjunto(nombreDe(ruta), "", bytes.length);
+    if (!valido.ok) return { motivo: `${nombreDe(ruta)}: ${valido.error}` };
+    form.append("file", new File([bytes as BlobPart], nombreDe(ruta), { type: valido.tipo.mime }));
+    form.append("modo", "diario");
+  }
   try {
     const r = await fetch("/api/upload", { method: "POST", body: form });
     const d = await r.json().catch(() => ({}));
@@ -68,8 +79,9 @@ export async function ejecutarImportacion(
   onProgreso({ fase: "catalogo", hecho: 1, total: 1 });
 
   // 2 · Fotos, una vez cada una
-  const rutas = [...new Set(paquete.entradas.flatMap((e) => [...e.fotos, ...e.imagenes]))];
+  const rutas = [...new Set(paquete.entradas.flatMap((e) => [...e.fotos, ...e.imagenes, ...e.adjuntos]))];
   const urls = new Map<string, string | null>();
+  const tamanos = new Map<string, number>();
   const motivos = new Set<string>();
   let hechas = 0;
   onProgreso({ fase: "fotos", hecho: 0, total: rutas.length });
@@ -80,6 +92,7 @@ export async function ejecutarImportacion(
         const r = bytes ? await subirFoto(ruta, bytes) : { motivo: `${nombreDe(ruta)}: no está en el archivo` };
         if ("url" in r) {
           urls.set(ruta, r.url);
+          if (bytes) tamanos.set(ruta, bytes.length);
           informe.fotosSubidas++;
         } else {
           urls.set(ruta, null);
@@ -90,12 +103,12 @@ export async function ejecutarImportacion(
       }),
     );
   }
-  if (motivos.size) informe.avisos.push(`Fotos que no se importaron: ${[...motivos].slice(0, 5).join("; ")}${motivos.size > 5 ? "…" : ""}`);
+  if (motivos.size) informe.avisos.push(`Fotos o archivos que no se importaron: ${[...motivos].slice(0, 5).join("; ")}${motivos.size > 5 ? "…" : ""}`);
   if (cancelado()) return { ...informe, cancelada: true };
-  if (paquete.fotosFaltantes) informe.avisos.push(`${paquete.fotosFaltantes} fotos que el archivo nombra no estaban dentro`);
+  if (paquete.fotosFaltantes) informe.avisos.push(`${paquete.fotosFaltantes} fotos o archivos que el archivo nombra no estaban dentro`);
 
   // 3 · Entradas, por lotes
-  const lote = paquete.entradas.map((e) => ({ e, l: entradaALote(e, urls, markdownADocumento) }));
+  const lote = paquete.entradas.map((e) => ({ e, l: entradaALote(e, urls, markdownADocumento, tamanos) }));
   const lotes = partirEnLotes(lote, (x) => JSON.stringify(x.l).length);
   let enviadas = 0;
   onProgreso({ fase: "entradas", hecho: 0, total: lote.length });

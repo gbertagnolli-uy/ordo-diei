@@ -1,6 +1,6 @@
 // Diario personal y familiar (lane 272, Plane #31). Reglas puras: sin base ni red.
 // Escala de ánimo 1–5 basada en Daily You (Demizo/Daily_You@7cc237d, lib/models/mood.dart).
-import { sanearDocumento, textoPlanoDe, tieneImagen, type NodoDoc } from "./contenido.ts";
+import { sanearDocumento, textoPlanoDe, tieneArchivo, tieneImagen, type NodoDoc } from "./contenido.ts";
 import { validarPuestas, type EtiquetaPuesta } from "./etiquetas.ts";
 
 export type TipoDiario = "personal" | "familiar";
@@ -85,7 +85,7 @@ export function validarEntrada(e: Record<string, unknown>, hoy: string): Entrada
   } else {
     texto = typeof e.texto === "string" ? e.texto.trim() : "";
   }
-  if (!texto && !fotos.length && !(contenido && tieneImagen(contenido))) throw new Error("Escribí algo");
+  if (!texto && !fotos.length && !(contenido && (tieneImagen(contenido) || tieneArchivo(contenido)))) throw new Error("Escribí algo");
   if (texto.length > MAX_TEXTO) throw new Error(`Máximo ${MAX_TEXTO} caracteres`);
   const tituloCrudo = typeof e.titulo === "string" ? e.titulo.trim() : "";
   if (tituloCrudo.length > MAX_TITULO) throw new Error(`El título puede tener hasta ${MAX_TITULO} caracteres`);

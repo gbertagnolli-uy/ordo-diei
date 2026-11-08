@@ -5,6 +5,7 @@
 // citas con barra, listas con viñeta / número / casilla, código sobre fondo, reglas con sus variantes, imágenes con su ancho %, tablas con borde,
 // marca de agua al pie, claro u oscuro y la escala que baja cuando el contenido es muy alto (`_kDowngradeAboveLogical`).
 // La función de diseño recibe cómo medir un texto y el tamaño de las imágenes, y devuelve una lista de comandos con sus posiciones: el canvas solo la ejecuta.
+import { extensionDe, formatearTamano } from "./adjuntos.ts";
 import { imagenesDe, textoPlanoDe, type NodoDoc } from "./contenido.ts";
 
 // ── Medidas ──────────────────────────────────────────────────────────────────
@@ -489,6 +490,35 @@ function tabla(n: NodoDoc, x: number, y: number, ancho: number, ctx: Ctx): numbe
   return yy - y;
 }
 
+/**
+ * Lane 294 (moodiary `_placeholderBox`): un audio, video o documento no se puede dibujar en una imagen; queda un recuadro con su tipo, su nombre y su peso.
+ */
+function archivo(n: NodoDoc, x: number, y: number, ancho: number, ctx: Ctx): number {
+  const nombre = typeof n.attrs?.name === "string" && n.attrs.name.trim() ? n.attrs.name.trim() : n.type === "audio" ? "Audio" : n.type === "video" ? "Video" : "Archivo";
+  const tamano = n.type === "attachment" ? formatearTamano(typeof n.attrs?.size === "number" ? n.attrs.size : null) : "";
+  const sello = n.type === "audio" ? "AUDIO" : n.type === "video" ? "VIDEO" : (extensionDe(nombre).slice(0, 4).toUpperCase() || "?");
+  const alto = 48;
+  const lado = 34;
+  const fuenteSello = cuerpo({ tam: TAM_META - 2, negrita: true });
+  const fuenteNombre = cuerpo({ tam: TAM_CUERPO - 1 });
+  const fuenteTamano = cuerpo({ tam: TAM_META });
+  ctx.out.push({ t: "rect", x, y, w: ancho, h: alto, color: ctx.p.superficieCodigo, radio: 10 });
+  ctx.out.push({ t: "rect", x: x + 8, y: y + (alto - lado) / 2, w: lado, h: lado, color: ctx.p.lineaFina, radio: 8 });
+  const ws = ctx.medir(sello, fuenteSello);
+  ctx.out.push({ t: "texto", x: x + 8 + (lado - ws) / 2, y: baseDe(y + (alto - lado) / 2, lado, TAM_META - 2), texto: sello, fuente: fuenteSello, color: ctx.p.apagado });
+  const xt = x + 8 + lado + 10;
+  const util = ancho - (xt - x) - 10;
+  let rotulo = nombre;
+  if (ctx.medir(rotulo, fuenteNombre) > util) {
+    while (rotulo.length > 1 && ctx.medir(`${rotulo}…`, fuenteNombre) > util) rotulo = rotulo.slice(0, -1);
+    rotulo = `${rotulo.trimEnd()}…`;
+  }
+  const altoNombre = tamano ? 20 : alto;
+  ctx.out.push({ t: "texto", x: xt, y: baseDe(tamano ? y + 6 : y, altoNombre, TAM_CUERPO - 1), texto: rotulo, fuente: fuenteNombre, color: ctx.p.texto });
+  if (tamano) ctx.out.push({ t: "texto", x: xt, y: baseDe(y + 26, 16, TAM_META), texto: tamano, fuente: fuenteTamano, color: ctx.p.apagado });
+  return alto;
+}
+
 function bloque(n: NodoDoc, x: number, y: number, ancho: number, base: Base, ctx: Ctx): number {
   switch (n.type) {
     case "paragraph":
@@ -510,6 +540,10 @@ function bloque(n: NodoDoc, x: number, y: number, ancho: number, base: Base, ctx
       return regla(n, x, y, ancho, ctx);
     case "image":
       return imagen(n, x, y, ancho, ctx);
+    case "audio":
+    case "video":
+    case "attachment":
+      return archivo(n, x, y, ancho, ctx);
     case "table":
       return tabla(n, x, y, ancho, ctx);
     default:

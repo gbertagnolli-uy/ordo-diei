@@ -1,6 +1,6 @@
 /* Portado de vendor/moodiary/editor/src/styles (ZhuJHua/moodiary@2c552dd): _tokens, _document, _blocks, _highlight.
    SCSS -> CSS plano; los colores salen de los tokens del tema de Ordo Diei (claro y oscuro). Solo lo que usa el diario:
-   sin video, audio, adjuntos, enlaces entre entradas ni búsqueda dentro del documento (fases 2 y 3). */
+   Lane 294 agrega audio, video, adjuntos y la grabadora de voz al final. */
 
 .md-editor {
   --app-on-surface: var(--foreground);
@@ -14,6 +14,9 @@
   --md-text-xs: 0.75rem;
   --md-text-sm: 0.8125rem;
   --md-text-md: 0.875rem;
+  --md-text-2xs: 0.6875rem;
+  --md-text-lg: 1rem;
+  --app-surface-container-highest: color-mix(in srgb, var(--muted-foreground) 25%, var(--muted));
   --md-para-gap: 0.75em;
   --md-block-gap: 0.75em;
   --md-highlight-bg: color-mix(in srgb, var(--warning) 40%, transparent);
@@ -387,3 +390,221 @@
   color: var(--muted-foreground);
   font-size: 0.8125rem;
 }
+
+/* Audio, video y adjuntos (lane 294). Portado de vendor/moodiary/editor/src/styles/_blocks.scss (ZhuJHua/moodiary@2c552dd) */
+.md-video { margin-inline: auto; }
+.md-video__frame {
+  --video-max-h: 480px;
+  position: relative;
+  overflow: hidden;
+  width: min(100%, calc(var(--video-max-h) * var(--video-ratio, 1.7778)));
+  aspect-ratio: var(--video-ratio, 1.7778);
+  margin-inline: auto;
+  border-radius: 12px;
+  background: var(--app-surface-container-high);
+}
+.md-video__el {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.md-video__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 64px;
+  padding: 0 6px 0 2px;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.4) 26%, rgba(0, 0, 0, 0.2) 52%, rgba(0, 0, 0, 0.07) 76%, rgba(0, 0, 0, 0) 100%);
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+.md-video__bar.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.md-video__key {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.md-video__key svg { width: 20px; height: 20px; }
+.md-video__key:active { background: rgba(255, 255, 255, 0.12); }
+.md-video__track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  cursor: pointer;
+  touch-action: none;
+}
+.md-video__rail,
+.md-video__fill {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  transition: height 0.16s cubic-bezier(0.2, 0, 0, 1), transform 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+/* 0,5 px negro: sobre una imagen blanca la parte sin reproducir (12 % blanco) desaparecería */
+.md-video__rail { left: 0; right: 0; background: rgba(255, 255, 255, 0.12); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.55); }
+.md-video__fill { left: 0; background: #fff; }
+.md-video__thumb {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.16s cubic-bezier(0.2, 0, 0, 1), height 0.16s cubic-bezier(0.2, 0, 0, 1), transform 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.md-video__track.is-pressed .md-video__rail,
+.md-video__track.is-pressed .md-video__fill { height: 6px; transform: translateY(calc(-50% - 2px)); }
+.md-video__track.is-pressed .md-video__thumb { width: 14px; height: 14px; transform: translate(-50%, calc(-50% - 2px)); }
+.md-video__time {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-inline: 4px;
+  font-size: var(--md-text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.md-video__time-pos { font-weight: 600; }
+.md-video__time-sep { color: rgba(255, 255, 255, 0.3); }
+.md-video__time-dur { color: rgba(255, 255, 255, 0.62); }
+
+.md-audio__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--app-surface-container);
+}
+.md-audio__play {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--app-on-surface);
+  color: var(--app-surface);
+  cursor: pointer;
+}
+.md-audio__play svg { width: 18px; height: 18px; fill: currentColor; }
+.md-audio__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.md-audio__name {
+  overflow: hidden;
+  font-size: var(--md-text-md);
+  font-weight: 500;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.md-audio__row { display: flex; align-items: center; gap: 8px; }
+.md-audio__time { flex: none; color: var(--app-on-surface-variant); font-size: var(--md-text-xs); font-variant-numeric: tabular-nums; }
+
+/* range nativo: un control dibujado a mano roba el foco en cada cambio de valor */
+.md-range {
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.md-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--app-on-surface) var(--progress, 0%), var(--app-surface-container-highest) var(--progress, 0%));
+}
+.md-range::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: var(--app-on-surface);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.md-range::-moz-range-track { height: 4px; border-radius: 999px; background: var(--app-surface-container-highest); }
+.md-range::-moz-range-progress { height: 4px; border-radius: 999px; background: var(--app-on-surface); }
+.md-range::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 999px; background: var(--app-on-surface); }
+
+.md-attachment__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--app-outline-variant);
+  border-radius: 14px;
+  background: var(--app-surface);
+  cursor: pointer;
+}
+.md-attachment__tile {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--app-surface-container-high);
+  color: var(--app-on-surface-variant);
+  font-size: var(--md-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.md-attachment__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.md-attachment__name {
+  overflow: hidden;
+  color: var(--app-on-surface);
+  font-size: var(--md-text-lg);
+  font-weight: 500;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.md-attachment__size { color: var(--app-on-surface-variant); font-size: var(--md-text-xs); line-height: 1.3; }
+.md-attachment__open {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: var(--app-on-surface-variant);
+}
+.md-attachment__open:hover { background: var(--app-surface-container); }
+.md-attachment__open svg { width: 18px; height: 18px; }
+
+/* Grabadora de voz (lane 294), portada de Daily You audio_recorder_page.dart */
+.md-voz { display: flex; flex-direction: column; gap: 12px; }
+.md-voz__onda { display: flex; align-items: center; justify-content: center; gap: 3px; height: 72px; }
+.md-voz__barra { width: 4px; min-height: 4px; border-radius: 999px; background: var(--app-on-surface); transition: height 0.12s linear; }
+.md-voz__onda[data-quieta="true"] .md-voz__barra { background: var(--app-on-surface-variant); }

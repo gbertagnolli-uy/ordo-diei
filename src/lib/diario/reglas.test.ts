@@ -19,6 +19,14 @@ test("validarEntrada: rechaza vacío, futuro, fecha absurda, ánimo, hora y foto
   assert.throws(() => validarEntrada({ texto: "x", fotos: ["https://otro.sitio/a.jpg"] }, HOY));
 });
 
+test("validarEntrada: una entrada puede ser solo una nota de voz o un adjunto (lane 294)", () => {
+  const U = "/api/archivos/123e4567-e89b-12d3-a456-426614174000";
+  const solo = (n: object) => ({ contenido: { type: "doc", content: [n, { type: "paragraph" }] } });
+  assert.equal(validarEntrada(solo({ type: "audio", attrs: { src: U } }), HOY).texto, "");
+  assert.equal(validarEntrada(solo({ type: "attachment", attrs: { src: U, name: "a.pdf" } }), HOY).contenido?.content?.[0].type, "attachment");
+  assert.throws(() => validarEntrada({ contenido: { type: "doc", content: [{ type: "paragraph" }] } }, HOY));
+});
+
 test("validarEntrada: ya no hay tope de 30 días hacia atrás (lane 283)", () => {
   assert.equal(validarEntrada({ texto: "x", fecha: "2024-01-15" }, HOY).fecha, "2024-01-15");
   assert.equal(validarEntrada({ texto: "x", hora: 0 }, HOY).hora, 0);

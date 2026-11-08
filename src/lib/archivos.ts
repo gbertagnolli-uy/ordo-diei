@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import sharp from "sharp";
 import prisma from "./prisma.ts";
+import { nombreSeguro, validarAdjunto, type CategoriaAdjunto } from "./diario/adjuntos.ts";
 
 export const PREFIJO_ARCHIVOS = "/api/archivos/";
 /** Perfiles de optimización: el cliente elige uno por nombre, nunca números arbitrarios */
@@ -196,11 +197,41 @@ export async function guardarArchivoEstudio(
       subidoPorId: opciones.subidoPorId ?? null,
     },
   });
-  cacheMemoria.set(clave, { datos, tipo: doc.mime, nombreOrigen: nombre });
+  if (datos.length <= MAX_BYTES_CACHE) cacheMemoria.set(clave, { datos, tipo: doc.mime, nombreOrigen: nombre });
   const params = new URLSearchParams({ tipo: doc.categoria, nombre });
   return { url: `${urlArchivo(clave)}?${params.toString()}`, bytes: datos.length, ancho: null, alto: null, categoria: doc.categoria, nombre };
 }
 
+/**
+ * Lane 294: audio, video corto o documento para el diario (≤ 4 MB). Devuelve la URL limpia `/api/archivos/<uuid>`
+ * (el sanitizador del documento no admite parámetros): el tipo queda en la tabla y el nombre en `nombreOrigen`.
+ */
+export async function guardarAdjuntoDiario(
+  entrada: File,
+  opciones: { subidoPorId?: number | null } = {}
+): Promise<{ url: string; bytes: number; mime: string; categoria: CategoriaAdjunto; nombre: string }> {
+  const nombre = nombreSeguro(entrada.name);
+  const datos = Buffer.from(await entrada.arrayBuffer());
+  const valido = validarAdjunto(nombre, entrada.type, datos.length);
+  if (!valido.ok) throw new ImagenInvalidaError(valido.error);
+  const clave = crypto.randomUUID();
+  await prisma.archivo.create({
+    data: {
+      clave,
+      tipo: valido.tipo.mime,
+      datos: new Uint8Array(datos),
+      bytes: datos.length,
+      ancho: null,
+      alto: null,
+      nombreOrigen: nombre,
+      subidoPorId: opciones.subidoPorId ?? null,
+    },
+  });
+  return { url: urlArchivo(clave), bytes: datos.length, mime: valido.tipo.mime, categoria: valido.tipo.categoria, nombre };
+}
+
+/** Lo que pesa más que esto no se guarda en la memoria del servidor (un audio de 4 MB por clave llenaría la instancia). */
+const MAX_BYTES_CACHE = 1024 * 1024;
 const cacheMemoria = new Map<string, { datos: Buffer; tipo: string; nombreOrigen: string | null }>();
 
 /** Bytes y tipo de un archivo por su URL /api/archivos/<uuid> */
@@ -213,7 +244,7 @@ export async function leerArchivo(url: string): Promise<{ datos: Buffer; tipo: s
   const a = await prisma.archivo.findUnique({ where: { clave }, select: { datos: true, tipo: true, nombreOrigen: true } });
   if (a) {
     const res = { datos: Buffer.from(a.datos), tipo: a.tipo, nombreOrigen: a.nombreOrigen };
-    cacheMemoria.set(clave, res);
+    if (res.datos.length <= MAX_BYTES_CACHE) cacheMemoria.set(clave, res);
     return res;
   }
   return null;
