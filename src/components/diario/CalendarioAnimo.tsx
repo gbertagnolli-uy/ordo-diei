@@ -4,6 +4,7 @@
 // «99+», etiqueta o contador superpuesto), de vendor/moodiary/.../presentation/calendar/calendar_page.dart (ZhuJHua/moodiary@2c552dd: seis filas fijas, título con
 // la cuenta del mes, volver a hoy, franja de color de la categoría) y de vendor/storypad/lib/views/calendar/mood (theachoem/storypad@a76825e: volver a tocar el día
 // quita la selección y deja ver todo el mes).
+import { useState } from "react";
 import { CalendarCheck, ChevronLeft, ChevronRight, LayoutGrid, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, celdasDelMes, contenidoDeCelda, moverMes, textoContador, type DiaCalendario, type OpcionesCalendario } from "@/lib/diario/calendario";
@@ -116,6 +117,13 @@ export function CalendarioAnimo({
   onOpciones?: () => void;
   onAnio?: () => void;
 }) {
+  // moodiary calendar_page `animateToPage`: la grilla entra desde el lado hacia el que se cambió de mes (estado derivado de la prop, sin efectos)
+  const [mesPrevio, setMesPrevio] = useState(mes);
+  const [direccion, setDireccion] = useState<"sig" | "ant" | null>(null);
+  if (mesPrevio !== mes) {
+    setDireccion(mes > mesPrevio ? "sig" : "ant");
+    setMesPrevio(mes);
+  }
   const [y, m] = mes.split("-").map(Number);
   const celdas = celdasDelMes(mes);
 
@@ -161,7 +169,7 @@ export function CalendarioAnimo({
           <span key={i}>{d}</span>
         ))}
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-1">
+      <div key={mes} className={cn("mt-1 grid grid-cols-7 gap-1", direccion === "sig" && "diario-mes-sig", direccion === "ant" && "diario-mes-ant")}>
         {celdas.map((f, i) =>
           f === null ? (
             <span key={`h${i}`} aria-hidden className="aspect-square" />

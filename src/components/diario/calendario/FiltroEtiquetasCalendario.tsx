@@ -8,7 +8,7 @@ import { IconoEtiqueta } from "../etiquetas/iconos";
 export function FiltroEtiquetasCalendario({ catalogo, elegida, cantidad, onElegir }: { catalogo: Catalogo | null; elegida: number | null; cantidad: number; onElegir: (id: number | null) => void }) {
   const etiquetas = (catalogo?.etiquetas ?? []).filter((e) => e.usos > 0 || e.id === elegida);
   if (etiquetas.length === 0) return null;
-  const pastilla = (activa: boolean) => cn("inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-sm transition", activa ? "border-primary bg-primary/10 font-medium text-primary" : "bg-card hover:bg-muted");
+  const pastilla = (activa: boolean) => cn("inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors duration-200 ease-out", activa ? "border-primary bg-primary/10 font-medium text-primary" : "bg-card hover:bg-muted");
   return (
     <div role="group" aria-label="Filtrar por etiqueta" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
       <button type="button" aria-pressed={elegida === null} className={pastilla(elegida === null)} onClick={() => onElegir(null)}>
