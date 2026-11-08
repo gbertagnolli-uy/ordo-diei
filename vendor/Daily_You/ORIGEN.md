@@ -9,3 +9,6 @@
 
 ## Ampliación (lane 285, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de búsqueda y orden: `lib/utils/{search_matcher,search_highlight,search_text_window}.dart`, `lib/providers/entries_provider.dart`, `lib/pages/entries_list_page.dart`.
+
+## Ampliación (lane 286, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de plantillas y de la escala de ánimo: `lib/models/{template,mood,mood_scale_level,mood_scale_preset}.dart`, `lib/database/{template_dao,template_tag_dao,mood_scale_dao}.dart`, `lib/providers/{templates,mood_scale}_provider.dart`, `lib/template_renderer.dart`, `lib/utils/{mood_scale_visuals,text_editing}.dart`, `lib/widgets/{edit_template,template_select,template_select_popup,edit_mood_scale,mood_scale_setting,mood_scale_glyph,entry_mood_picker,mood_icon}.dart`, `lib/pages/settings/templates_page.dart`, `lib/pages/edit_entry_page.dart` y `lib/l10n/intl_es.arb` (textos de las plantillas de ejemplo).

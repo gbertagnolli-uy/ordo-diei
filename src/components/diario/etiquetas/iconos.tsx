@@ -2,7 +2,7 @@
 // Un ícono es un emoji tipeado o una clave del catálogo (src/lib/diario/iconos.ts); sin ícono se muestra el de reemplazo.
 import type { ComponentType } from "react";
 import {
-  Activity, Angry, Baby, Bath, BatteryCharging, Bed, Bell, Bike, BookOpen, Bookmark, Brain, Briefcase, Cake, Calendar, Camera, Car, ChefHat, Church, Clock, Cloud,
+  Activity, Angry, Baby, Bath, BatteryCharging, Bed, Bell, Bike, BookOpen, Bookmark, Brain, Briefcase, Cake, Calendar, Camera, Car, ChefHat, Church, Circle, Clock, Cloud,
   CloudLightning, CloudRain, Coffee, Cross, Droplets, Dumbbell, Flag, Flame, Flower2, Footprints, Frown, Gamepad2, Gift, GraduationCap, HandHeart, Heart,
   HeartHandshake, House, Laptop, Laugh, Leaf, type LucideProps, MapPin, Meh, Mic, Moon, Mountain, Music, PartyPopper, Palette, PenLine, Pill, Plane,
   Rainbow, Scissors, ShoppingCart, Smile, Snowflake, Sparkles, Sprout, Star, Stethoscope, Sun, Tag, Thermometer, ThumbsDown, ThumbsUp, TreePine, Trophy, Tv,
@@ -12,7 +12,7 @@ import type { IconoClave } from "@/lib/diario/iconos";
 import type { TipoIcono } from "@/lib/diario/etiquetas";
 
 export const ICONOS: Record<IconoClave, ComponentType<LucideProps>> = {
-  smile: Smile, laugh: Laugh, frown: Frown, meh: Meh, angry: Angry, heart: Heart, "heart-handshake": HeartHandshake, "hand-heart": HandHeart,
+  smile: Smile, laugh: Laugh, frown: Frown, meh: Meh, angry: Angry, circle: Circle, heart: Heart, "heart-handshake": HeartHandshake, "hand-heart": HandHeart,
   "party-popper": PartyPopper, sparkles: Sparkles, "thumbs-up": ThumbsUp, "thumbs-down": ThumbsDown,
   dumbbell: Dumbbell, bike: Bike, footprints: Footprints, waves: Waves, trophy: Trophy, "gamepad-2": Gamepad2, tv: Tv, music: Music, mic: Mic, camera: Camera,
   palette: Palette, "book-open": BookOpen, "pen-line": PenLine, "graduation-cap": GraduationCap, laptop: Laptop, briefcase: Briefcase,

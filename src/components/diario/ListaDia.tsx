@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import type { Marcas, TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import type { Catalogo, CategoriaVista } from "@/lib/diario/servidor-catalogo";
-import { animoDe } from "./animo";
+import { nivelDe, nombreDeNivel } from "@/lib/diario/escala";
 import { EditorTexto } from "./editor/EditorTexto";
+import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { MarcasEntrada } from "./MarcasEntrada";
 
@@ -37,7 +38,7 @@ function Tarjeta({
   onMarcar: (e: EntradaVista, marcas: Marcas) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
-  const animo = animoDe(e.animo);
+  const nivel = nivelDe(useEscala(), e.animo);
   const categoria = catalogo && e.categoriaId != null ? caminoDe(e.categoriaId, catalogo.categorias) : [];
   const chips = catalogo ? e.etiquetas.flatMap((t) => catalogo.etiquetas.filter((x) => x.id === t.id).map((x) => ({ etiqueta: x, valor: t.valor }))) : [];
   const largo = e.texto.length > 280 || e.texto.split("\n").length > 4;
@@ -54,9 +55,9 @@ function Tarjeta({
           {tipo === "familiar" && <p className="truncate text-sm font-medium">{e.autor.nombre}</p>}
           <p className="text-xs text-muted-foreground">{hora(e.hora)}</p>
         </div>
-        {animo && (
-          <span className="text-xl" title={animo.etiqueta} aria-label={`Ánimo: ${animo.etiqueta}`}>
-            {animo.emoji}
+        {nivel && (
+          <span title={nombreDeNivel(nivel)} role="img" aria-label={`Ánimo: ${nombreDeNivel(nivel)}`}>
+            <GlifoAnimo nivel={nivel} tamano={22} />
           </span>
         )}
         <MarcasEntrada favorita={e.favorita} fijada={e.fijada} editable={e.puedoEditar} onCambiar={(m) => onMarcar(e, m)} />

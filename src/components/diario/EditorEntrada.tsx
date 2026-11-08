@@ -3,22 +3,26 @@
 // UX basada en Demizo/Daily_You@7cc237d (lib/pages/edit_entry_page.dart): autoguardado a los 5 s y al salir, fecha y hora editables.
 // El texto es el editor Tiptap portado de moodiary (ver ./editor/EditorTexto.tsx).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, Pin, Star, Tags, X } from "lucide-react";
+import { FileText, ImagePlus, Pin, Star, Tags, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { textoPlanoDe, tieneImagen, type NodoDoc } from "@/lib/diario/contenido";
+import { docDesdeTexto, textoPlanoDe, tieneImagen, type NodoDoc } from "@/lib/diario/contenido";
 import type { EtiquetaPuesta } from "@/lib/diario/etiquetas";
+import { cuandoDe, fusionarEtiquetas, poblarDocumento } from "@/lib/diario/plantillas";
 import { MAX_FOTOS, MAX_TITULO, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
+import type { PlantillaVista } from "@/lib/diario/servidor-plantillas";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { EditorTexto } from "./editor/EditorTexto";
+import { EditorTexto, type EditorTextoHandle } from "./editor/EditorTexto";
 import { subirImagen } from "./editor/subir";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { SelectorCategoria } from "./etiquetas/SelectorCategoria";
 import { SelectorEtiquetas } from "./etiquetas/SelectorEtiquetas";
 import type { AccionesCatalogo } from "./etiquetas/useCatalogo";
+import { SelectorPlantilla } from "./plantillas/SelectorPlantilla";
+import type { AccionesPlantillas } from "./plantillas/usePlantillas";
 import { SelectorAnimo } from "./SelectorAnimo";
 
 const AUTOGUARDADO_MS = 5000;
@@ -41,7 +45,9 @@ export function EditorEntrada({
   fecha,
   hoy,
   acciones,
+  plantillas,
   onAdministrar,
+  onAdministrarPlantillas,
   onCerrar,
 }: {
   abierto: boolean;
@@ -51,25 +57,38 @@ export function EditorEntrada({
   hoy: string;
   /** Catálogo de etiquetas y categorías (lane 284). */
   acciones: AccionesCatalogo;
+  /** Plantillas (lane 286). */
+  plantillas: AccionesPlantillas;
   onAdministrar: (pestana: "etiquetas" | "categorias") => void;
+  onAdministrarPlantillas: () => void;
   /** `huboCambios`: se guardó algo, hay que recargar la lista. */
   onCerrar: (huboCambios: boolean) => void;
 }) {
+  // Entrada nueva: arranca con la plantilla predeterminada (con sus variables ya reemplazadas) y sus etiquetas, como Daily You
+  const [base] = useState(() => {
+    const p = entrada ? undefined : plantillas.lista?.find((x) => x.predeterminada);
+    if (!p) return null;
+    const contenido = poblarDocumento(p.contenido ?? docDesdeTexto(""), cuandoDe(fecha, ahoraEnMinutos()));
+    const c = acciones.catalogo;
+    return { contenido, texto: textoPlanoDe(contenido).trim(), etiquetas: c ? fusionarEtiquetas([], p.etiquetas, c.etiquetas, c.grupos) : [] };
+  });
   const [animo, setAnimo] = useState<number | null>(entrada?.animo ?? null);
   const [titulo, setTitulo] = useState(entrada?.titulo ?? "");
   const [dia, setDia] = useState(entrada?.fecha ?? fecha);
   const [hora, setHora] = useState<number>(entrada?.hora ?? ahoraEnMinutos());
   const [fotos, setFotos] = useState<string[]>(entrada?.fotos ?? []);
-  const [etiquetas, setEtiquetas] = useState<EtiquetaPuesta[]>(entrada?.etiquetas ?? []);
+  const [etiquetas, setEtiquetas] = useState<EtiquetaPuesta[]>(entrada?.etiquetas ?? base?.etiquetas ?? []);
   const [categoriaId, setCategoriaId] = useState<number | null>(entrada?.categoriaId ?? null);
   const [favorita, setFavorita] = useState(entrada?.favorita ?? false);
   const [fijada, setFijada] = useState(entrada?.fijada ?? false);
   const [eligiendoEtiquetas, setEligiendoEtiquetas] = useState(false);
+  const [eligiendoPlantilla, setEligiendoPlantilla] = useState(false);
+  const editorTexto = useRef<EditorTextoHandle>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [estado, setEstado] = useState<"" | "guardando" | "guardado">("");
 
   // Lo último que se escribió, para que el guardado diferido no use valores viejos
-  const doc = useRef<NodoDoc | null>(entrada?.contenido ?? null);
+  const doc = useRef<NodoDoc | null>(entrada?.contenido ?? base?.contenido ?? null);
   const campos = useRef({ animo, titulo, dia, hora, fotos, etiquetas, categoriaId, favorita, fijada });
   useEffect(() => {
     campos.current = { animo, titulo, dia, hora, fotos, etiquetas, categoriaId, favorita, fijada };
@@ -88,7 +107,8 @@ export function EditorEntrada({
   const vacia = () => {
     const { fotos: f } = campos.current;
     const d = doc.current;
-    const sinTexto = d ? !textoPlanoDe(d).trim() && !tieneImagen(d) : !(entrada?.texto ?? "").trim();
+    // Una plantilla sin tocar no es una entrada: solo cuenta si se escribió algo distinto de lo que ya traía
+    const sinTexto = d ? (!textoPlanoDe(d).trim() || textoPlanoDe(d).trim() === base?.texto) && !tieneImagen(d) : !(entrada?.texto ?? "").trim();
     return sinTexto && f.length === 0;
   };
 
@@ -154,6 +174,15 @@ export function EditorEntrada({
   async function cerrar() {
     await guardarAhora();
     onCerrar(huboCambios.current);
+  }
+
+  /** Daily You `insertTemplateText`: inserta el cuerpo (con las variables de esta entrada) y suma las etiquetas de la plantilla. */
+  function usarPlantilla(p: PlantillaVista) {
+    const c = campos.current;
+    editorTexto.current?.insertarContenido(poblarDocumento(p.contenido ?? docDesdeTexto(""), cuandoDe(c.dia, c.hora)));
+    const cat = catalogo.current;
+    if (cat && p.etiquetas.length) setEtiquetas(fusionarEtiquetas(c.etiquetas, p.etiquetas, cat.etiquetas, cat.grupos));
+    cambio();
   }
 
   async function subirFotos(archivos: FileList | null) {
@@ -249,8 +278,14 @@ export function EditorEntrada({
               cambio();
             }}
           />
+          <div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setEligiendoPlantilla(true)}>
+              <FileText /> Plantilla
+            </Button>
+          </div>
           <EditorTexto
-            inicial={{ contenido: entrada?.contenido ?? null, texto: entrada?.texto ?? "" }}
+            ref={editorTexto}
+            inicial={{ contenido: entrada?.contenido ?? base?.contenido ?? null, texto: entrada?.texto ?? "" }}
             onCambio={(d) => {
               doc.current = d;
               cambio();
@@ -303,6 +338,7 @@ export function EditorEntrada({
             )}
           </div>
         </div>
+        {eligiendoPlantilla && <SelectorPlantilla plantillas={plantillas} onElegir={usarPlantilla} onAdministrar={onAdministrarPlantillas} onCerrar={() => setEligiendoPlantilla(false)} />}
         {eligiendoEtiquetas && (
           <SelectorEtiquetas
             acciones={acciones}

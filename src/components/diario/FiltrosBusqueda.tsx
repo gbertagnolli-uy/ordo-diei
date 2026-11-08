@@ -10,9 +10,11 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { rangoDePreset, presetDe, sumarDias, type FiltroBusqueda, type ModoEtiquetas, type PresetFecha } from "@/lib/diario/busqueda";
 import { aplanarArbol, armarSecciones } from "@/lib/diario/etiquetas";
-import { ANIMOS, FECHA_MINIMA } from "@/lib/diario/reglas";
+import { nombreDeNivel } from "@/lib/diario/escala";
+import { FECHA_MINIMA } from "@/lib/diario/reglas";
 import type { Catalogo } from "@/lib/diario/servidor-catalogo";
 import { cn } from "@/lib/utils";
+import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 
 const PRESETS: { valor: PresetFecha; texto: string }[] = [
@@ -89,6 +91,7 @@ export function FiltrosBusqueda({
 }) {
   const secciones = useMemo(() => (catalogo ? armarSecciones(catalogo.grupos, catalogo.etiquetas) : []), [catalogo]);
   const arbol = useMemo(() => (catalogo ? aplanarArbol(catalogo.categorias) : []), [catalogo]);
+  const escala = useEscala();
   const preset = presetDe(filtro.desde, filtro.hasta, hoy);
 
   function elegirPreset(p: PresetFecha) {
@@ -147,10 +150,12 @@ export function FiltrosBusqueda({
 
           <Seccion titulo="Ánimo">
             <div className="flex gap-2">
-              {ANIMOS.map((a) => (
-                <Opcion key={a.valor} activa={filtro.animos.includes(a.valor)} titulo={a.etiqueta} onClick={() => onFiltro({ animos: alternar(filtro.animos, a.valor) })}>
-                  <span aria-hidden>{a.emoji}</span>
-                  <span className="sr-only">{a.etiqueta}</span>
+              {escala.map((a) => (
+                <Opcion key={a.valor} activa={filtro.animos.includes(a.valor)} titulo={nombreDeNivel(a)} onClick={() => onFiltro({ animos: alternar(filtro.animos, a.valor) })}>
+                  <span aria-hidden>
+                    <GlifoAnimo nivel={a} tamano={18} />
+                  </span>
+                  <span className="sr-only">{nombreDeNivel(a)}</span>
                 </Opcion>
               ))}
             </div>
