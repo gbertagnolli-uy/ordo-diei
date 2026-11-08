@@ -2,8 +2,8 @@
 // Asistente del diario (lane 298): pantalla del chat con el asistente de IA del diario personal. Portado de vendor/moodiary/packages/feature/moodiary_assistant
 // (ZhuJHua/moodiary@2c552dd): `assistant_page.dart` (el chat, el aviso de privacidad, el estado vacío, el compositor), `assistant_setting_page.dart`, la lista de sesiones
 // y los proveedores. El motor (bucle del agente, herramientas, permisos) está en src/lib/diario/asistente; acá solo se muestra.
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, History, Plus, Send, Settings, ShieldCheck, Sparkles, Square } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { ArrowLeft, FoldVertical, History, Loader2, Plus, Send, Settings, ShieldCheck, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,13 +11,15 @@ import { MARCA_CONTINUAR } from "@/lib/diario/asistente/herramientas";
 import { tituloVisible } from "@/lib/diario/asistente/sesiones";
 import { toast } from "@/lib/toast";
 import { AjustesAsistente } from "./AjustesAsistente";
+import { AvisoCompactacion } from "./AvisoCompactacion";
 import { BurbujaAsistente, BurbujaUsuario } from "./BurbujaChat";
 import { ListaSesiones } from "./ListaSesiones";
+import { MemoriaAsistente } from "./MemoriaAsistente";
 import { Panel, ProveedoresAsistente } from "./ProveedoresAsistente";
 import { TarjetaAprobacion } from "./TarjetaAprobacion";
 import { useAsistente } from "./useAsistente";
 
-type Pantalla = "chat" | "sesiones" | "ajustes" | "proveedores";
+type Pantalla = "chat" | "sesiones" | "ajustes" | "proveedores" | "memoria";
 
 const SUGERENCIAS = ["¿Cómo estuve de ánimo este mes?", "Resumime lo que escribí esta semana", "Buscá mis entradas sobre la familia", "Escribí una entrada de hoy: "];
 
@@ -71,6 +73,19 @@ export function AsistenteDiario({ usuarioId, onVolver }: { usuarioId: number; on
   const esperando = new Set(a.aprobaciones.map((x) => x.id));
   const sinConfigurar = !a.proveedor || !a.claves[a.proveedor.id];
 
+  let indiceAviso = -1;
+  if (a.activa?.compactada) {
+    const hastaPos = a.activa.turnos.findIndex((t) => t.id === a.activa!.compactada!.hastaId);
+    if (hastaPos >= 0) {
+      for (let i = 0; i < turnos.length; i++) {
+        const pos = a.activa.turnos.findIndex((x) => x.id === turnos[i].id);
+        if (pos >= 0 && pos <= hastaPos) {
+          indiceAviso = i;
+        }
+      }
+    }
+  }
+
   useEffect(() => {
     const el = lista.current;
     if (el && alFinal.current) el.scrollTop = el.scrollHeight;
@@ -105,7 +120,29 @@ export function AsistenteDiario({ usuarioId, onVolver }: { usuarioId: number; on
     );
 
   if (pantalla === "ajustes")
-    return <AjustesAsistente ajustes={a.ajustes} cantidadDeSesiones={a.sesiones.length} onVolver={() => setPantalla("chat")} onGuardar={a.guardarAjustes} onProveedores={() => setPantalla("proveedores")} onBorrarTodo={a.borrarTodo} />;
+    return (
+      <AjustesAsistente
+        ajustes={a.ajustes}
+        cantidadDeSesiones={a.sesiones.length}
+        cantidadDeHechos={a.hechos.length}
+        onVolver={() => setPantalla("chat")}
+        onGuardar={a.guardarAjustes}
+        onProveedores={() => setPantalla("proveedores")}
+        onMemoria={() => setPantalla("memoria")}
+        onBorrarTodo={a.borrarTodo}
+      />
+    );
+
+  if (pantalla === "memoria")
+    return (
+      <MemoriaAsistente
+        hechos={a.hechos}
+        onVolver={() => setPantalla("ajustes")}
+        onEditar={a.editarHechoPorId}
+        onOlvidar={a.olvidarHecho}
+        onOlvidarTodo={a.olvidarTodosLosHechos}
+      />
+    );
 
   if (pantalla === "sesiones")
     return (
@@ -137,6 +174,17 @@ export function AsistenteDiario({ usuarioId, onVolver }: { usuarioId: number; on
         </h2>
         <Button type="button" variant="ghost" size="icon" aria-label="Conversación nueva" disabled={a.ocupado} onClick={a.nuevaSesion}>
           <Plus />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Compactar la conversación"
+          title="Resumir los mensajes anteriores para ahorrar contexto"
+          disabled={a.ocupado || !a.activa || a.compactando !== null}
+          onClick={() => void a.compactarAhora().then((r) => (r.ok ? toast.success(r.mensaje) : toast.error(r.mensaje)))}
+        >
+          <FoldVertical />
         </Button>
         <Button type="button" variant="ghost" size="icon" aria-label="Conversaciones" onClick={() => setPantalla("sesiones")}>
           <History />
@@ -182,28 +230,43 @@ export function AsistenteDiario({ usuarioId, onVolver }: { usuarioId: number; on
               </div>
             ) : (
               <>
-                {turnos.map((t) =>
-                  t.deUsuario ? (
-                    <BurbujaUsuario key={t.id} turno={t} />
-                  ) : (
-                    <BurbujaAsistente
-                      key={t.id}
-                      turno={t}
-                      enCurso={false}
-                      esperandoPermiso={esperando}
-                      puedeRegenerar={t === ultimo && !a.ocupado}
-                      onRegenerar={() => aviso(a.regenerar())}
-                      onContinuar={() => aviso(a.continuar())}
-                    />
-                  ),
-                )}
+                {turnos.map((t, index) => (
+                  <Fragment key={t.id}>
+                    {t.deUsuario ? (
+                      <BurbujaUsuario turno={t} />
+                    ) : (
+                      <BurbujaAsistente
+                        turno={t}
+                        enCurso={false}
+                        esperandoPermiso={esperando}
+                        puedeRegenerar={t === ultimo && !a.ocupado}
+                        onRegenerar={() => aviso(a.regenerar())}
+                        onContinuar={() => aviso(a.continuar())}
+                      />
+                    )}
+                    {index === indiceAviso && a.activa?.compactada && (
+                      <AvisoCompactacion
+                        key="compactada"
+                        resumen={a.activa.compactada.resumen}
+                        onRestaurar={() => a.restaurarHistorial(a.activa!.id)}
+                      />
+                    )}
+                  </Fragment>
+                ))}
                 {enVivo && <BurbujaAsistente turno={enVivo} enCurso esperandoPermiso={esperando} puedeRegenerar={false} onRegenerar={() => {}} onContinuar={() => {}} />}
               </>
             )}
             {a.aprobaciones.map((p) => (
-              <TarjetaAprobacion key={p.id} nombre={p.nombre} args={p.args} nivel={p.nivel} onResolver={(ok) => a.resolverAprobacion(p.id, ok)} />
+              <TarjetaAprobacion key={p.id} nombre={p.nombre} args={p.args} nivel={p.nivel} hechos={a.hechos} onResolver={(ok) => a.resolverAprobacion(p.id, ok)} />
             ))}
           </div>
+
+          {a.compactando !== null && a.compactando === a.activaId && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              <span>Resumiendo la conversación…</span>
+            </div>
+          )}
 
           <form
             className="flex flex-col gap-2"

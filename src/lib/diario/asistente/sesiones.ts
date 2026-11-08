@@ -5,6 +5,7 @@
 
 import type { LlamadaRegistrada } from "./herramientas.ts";
 import { MODOS_PERMISO, MAX_NOTAS, modoPermisoDe, type ModoPermiso } from "./herramientas.ts";
+import { limiteDeContexto, MAX_RESUMEN, PRESUPUESTO_CONTEXTO } from "./compactacion.ts";
 import { proveedorValido, type Proveedor } from "./proveedores.ts";
 
 export const VERSION_ALMACEN = 1;
@@ -30,6 +31,16 @@ export interface TurnoChat {
   error: string | null;
 }
 
+/** Lane 299 (moodiary `compactedSummary` / `compactedUpToMessageId` / `compactedAt` / `compactedInputTokensAtTrigger`): los turnos hasta `hastaId` están resumidos. */
+export interface Compactada {
+  resumen: string;
+  hastaId: string;
+  /** Milisegundos desde 1970. */
+  en: number;
+  /** Tokens de entrada que tenía el contexto cuando se compactó. */
+  tokens: number;
+}
+
 export interface Sesion {
   id: string;
   titulo: string;
@@ -38,6 +49,7 @@ export interface Sesion {
   creadaEn: number;
   actualizadaEn: number;
   turnos: TurnoChat[];
+  compactada: Compactada | null;
 }
 
 export interface Ajustes {
@@ -46,14 +58,18 @@ export interface Ajustes {
   /** Aceptó el aviso de privacidad (D3). */
   acepto: boolean;
   proveedorActivo: string | null;
+  /** Lane 299 (moodiary `assistantMemoryEnabled`): el asistente guarda y recuerda hechos entre conversaciones. Por defecto sí. */
+  memoria: boolean;
+  /** Lane 299: tamaño del contexto del modelo en tokens; la compactación se dispara al pasar el 75 %. */
+  contexto: number;
 }
 
-export const AJUSTES_INICIALES: Ajustes = { modoPermiso: "confirm", notas: "", acepto: false, proveedorActivo: null };
+export const AJUSTES_INICIALES: Ajustes = { modoPermiso: "confirm", notas: "", acepto: false, proveedorActivo: null, memoria: true, contexto: PRESUPUESTO_CONTEXTO };
 
 let secuencia = 0;
 export const nuevoId = () => `${Date.now().toString(36)}${(secuencia++).toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
-export const sesionNueva = (proveedorId: string, modelo: string, ahora = Date.now()): Sesion => ({ id: nuevoId(), titulo: "", proveedorId, modelo, creadaEn: ahora, actualizadaEn: ahora, turnos: [] });
+export const sesionNueva = (proveedorId: string, modelo: string, ahora = Date.now()): Sesion => ({ id: nuevoId(), titulo: "", proveedorId, modelo, creadaEn: ahora, actualizadaEn: ahora, turnos: [], compactada: null });
 
 export function turnoDeUsuario(texto: string, ahora = Date.now()): TurnoChat {
   return { id: nuevoId(), deUsuario: true, texto, creadoEn: ahora, llamadas: [], modelo: "", proveedorId: "", entradaTokens: 0, salidaTokens: 0, truncado: false, error: null };
@@ -96,13 +112,23 @@ function turnoValido(v: unknown): TurnoChat | null {
   };
 }
 
+function compactadaValida(v: unknown, turnos: TurnoChat[]): Compactada | null {
+  if (typeof v !== "object" || v === null) return null;
+  const c = v as Record<string, unknown>;
+  const resumen = txt(c.resumen, MAX_RESUMEN).trim();
+  const hastaId = txt(c.hastaId, 60);
+  // Si el turno de la marca ya no está (la lista se recortó), el resumen no se puede ubicar y se descarta
+  if (!resumen || !hastaId || !turnos.some((t) => t.id === hastaId)) return null;
+  return { resumen, hastaId, en: num(c.en), tokens: num(c.tokens) };
+}
+
 export function sesionValida(v: unknown): Sesion | null {
   if (typeof v !== "object" || v === null) return null;
   const s = v as Record<string, unknown>;
   const id = txt(s.id, 60);
   if (!id) return null;
   const turnos = Array.isArray(s.turnos) ? s.turnos.map(turnoValido).filter((t): t is TurnoChat => t !== null).slice(-MAX_MENSAJES_SESION) : [];
-  return { id, titulo: txt(s.titulo, 120), proveedorId: txt(s.proveedorId, 60), modelo: txt(s.modelo, 120), creadaEn: num(s.creadaEn), actualizadaEn: num(s.actualizadaEn), turnos };
+  return { id, titulo: txt(s.titulo, 120), proveedorId: txt(s.proveedorId, 60), modelo: txt(s.modelo, 120), creadaEn: num(s.creadaEn), actualizadaEn: num(s.actualizadaEn), turnos, compactada: compactadaValida(s.compactada, turnos) };
 }
 
 export function sesionesValidas(v: unknown): Sesion[] {
@@ -122,6 +148,8 @@ export function ajustesValidos(v: unknown): Ajustes {
     notas: txt(a.notas, MAX_NOTAS),
     acepto: a.acepto === true,
     proveedorActivo: typeof a.proveedorActivo === "string" && a.proveedorActivo ? a.proveedorActivo.slice(0, 60) : null,
+    memoria: a.memoria !== false,
+    contexto: limiteDeContexto(a.contexto),
   };
 }
 
@@ -179,4 +207,4 @@ export function tituloVisible(s: Sesion): string {
 }
 
 /** La clave del almacén local: una por usuario y por tipo de dato. */
-export const claveAlmacen = (usuarioId: number, parte: "sesiones" | "ajustes" | "proveedores" | "claves") => `ordo-diei:asistente:v${VERSION_ALMACEN}:${usuarioId}:${parte}`;
+export const claveAlmacen = (usuarioId: number, parte: "sesiones" | "ajustes" | "proveedores" | "claves" | "memoria") => `ordo-diei:asistente:v${VERSION_ALMACEN}:${usuarioId}:${parte}`;

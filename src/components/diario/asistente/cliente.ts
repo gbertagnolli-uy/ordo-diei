@@ -2,9 +2,10 @@
 // Las llamadas a `fetch` son las únicas con red; el resto de la lógica (bucle, protocolos, permisos) está en src/lib/diario/asistente y tiene pruebas.
 import type { DependenciasAgente } from "@/lib/diario/asistente/agente";
 import { conContexto } from "@/lib/diario/asistente/agente";
-import { itemsDe, type Herramienta } from "@/lib/diario/asistente/herramientas";
+import { MAX_TOKENS_RESUMEN, mensajesParaResumir, normalizarResumen, type MensajeCompactable } from "@/lib/diario/asistente/compactacion";
+import { esHerramientaDeMemoria, itemsDe, type HerramientaDeMemoria, type HerramientaDelDiario } from "@/lib/diario/asistente/herramientas";
 import { mensajeDeTitulo, normalizarTitulo } from "@/lib/diario/asistente/titulo";
-import { MAX_SALIDA_TITULO, REINTENTOS_TITULO, TIEMPO_TITULO_MS, promptDelTitulo } from "@/lib/diario/asistente/prompt";
+import { MAX_SALIDA_TITULO, REINTENTOS_TITULO, TIEMPO_TITULO_MS, promptDeCompactacion, promptDelTitulo } from "@/lib/diario/asistente/prompt";
 import type { EventoIA, MensajeIA, Protocolo } from "@/lib/diario/asistente/protocolos";
 import type { Proveedor } from "@/lib/diario/asistente/proveedores";
 
@@ -59,6 +60,7 @@ interface PedidoRemoto {
   sistema: string;
   mensajes: MensajeIA[];
   herramientas: boolean;
+  memoria: boolean;
   maxTokens: number;
 }
 
@@ -76,6 +78,7 @@ export async function* turnoRemoto(p: PedidoRemoto, senal: AbortSignal): AsyncGe
       sistema: p.sistema,
       mensajes: p.mensajes,
       herramientas: p.herramientas,
+      memoria: p.memoria,
       maxTokens: p.maxTokens,
     }),
   });
@@ -97,7 +100,7 @@ async function conDocumentos(items: Record<string, unknown>[]): Promise<Record<s
   });
 }
 
-export async function ejecutarRemoto(nombre: Herramienta, args: Record<string, unknown>, senal: AbortSignal): Promise<string> {
+export async function ejecutarRemoto(nombre: HerramientaDelDiario, args: Record<string, unknown>, senal: AbortSignal): Promise<string> {
   const conTexto = nombre === "createDiary" || nombre === "updateDiary";
   const enviados = conTexto ? { items: await conDocumentos(itemsDe(args)) } : args;
   const res = await fetch("/api/diario/asistente/herramienta", {
@@ -115,6 +118,8 @@ export interface OpcionesDependencias {
   conexion: ConexionModelo;
   sistema: string;
   contexto: string;
+  memoria: boolean;
+  ejecutarMemoria: (nombre: HerramientaDeMemoria, args: Record<string, unknown>) => Promise<string>;
   aprobar: DependenciasAgente["aprobar"];
   maxTokens: number;
 }
@@ -122,8 +127,8 @@ export interface OpcionesDependencias {
 /** Las dependencias reales del bucle del agente. */
 export function dependenciasReales(o: OpcionesDependencias): DependenciasAgente {
   return {
-    turno: (mensajes, senal) => turnoRemoto({ conexion: o.conexion, sistema: o.sistema, mensajes: conContexto(mensajes, o.contexto), herramientas: true, maxTokens: o.maxTokens }, senal),
-    ejecutar: ejecutarRemoto,
+    turno: (mensajes, senal) => turnoRemoto({ conexion: o.conexion, sistema: o.sistema, mensajes: conContexto(mensajes, o.contexto), herramientas: true, memoria: o.memoria, maxTokens: o.maxTokens }, senal),
+    ejecutar: (nombre, args, senal) => (esHerramientaDeMemoria(nombre) ? o.ejecutarMemoria(nombre, args) : ejecutarRemoto(nombre, args, senal)),
     aprobar: o.aprobar,
   };
 }
@@ -138,7 +143,7 @@ export async function titularSesion(conexion: ConexionModelo, primerMensaje: str
     try {
       let crudo = "";
       let fallo = false;
-      for await (const ev of turnoRemoto({ conexion, sistema: promptDelTitulo(), mensajes: [{ rol: "usuario", texto: mensaje }], herramientas: false, maxTokens: MAX_SALIDA_TITULO }, control.signal)) {
+      for await (const ev of turnoRemoto({ conexion, sistema: promptDelTitulo(), mensajes: [{ rol: "usuario", texto: mensaje }], herramientas: false, memoria: false, maxTokens: MAX_SALIDA_TITULO }, control.signal)) {
         if (ev.t === "texto") crudo += ev.d;
         else if (ev.t === "error") fallo = true;
       }
@@ -152,6 +157,24 @@ export async function titularSesion(conexion: ConexionModelo, primerMensaje: str
     }
   }
   return null;
+}
+
+/** moodiary ContextCompactionController._summarize: un turno sin herramientas que resume los turnos viejos. `null` si falla o viene vacío. */
+export async function compactarConversacion(conexion: ConexionModelo, resumenPrevio: string | null, aResumir: MensajeCompactable[]): Promise<string | null> {
+  const control = new AbortController();
+  const reloj = setTimeout(() => control.abort(), 60_000);
+  try {
+    let crudo = "";
+    for await (const ev of turnoRemoto({ conexion, sistema: promptDeCompactacion(), mensajes: mensajesParaResumir(resumenPrevio, aResumir), herramientas: false, memoria: false, maxTokens: MAX_TOKENS_RESUMEN }, control.signal)) {
+      if (ev.t === "texto") crudo += ev.d;
+      else if (ev.t === "error") return null;
+    }
+    return normalizarResumen(crudo);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(reloj);
+  }
 }
 
 export async function pedirModelos(p: Proveedor, apiKey: string): Promise<string[]> {

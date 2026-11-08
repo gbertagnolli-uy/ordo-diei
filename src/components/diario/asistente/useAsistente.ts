@@ -4,14 +4,17 @@
 // ZhuJHua/moodiary@2c552dd). Todo el historial queda en este navegador (D4); la clave de cada proveedor, también (D1).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { correrAgente, historialParaElModelo } from "@/lib/diario/asistente/agente";
-import { MARCA_CONTINUAR, MAX_TOKENS_RESPUESTA, confirmaEscrituras, type Herramienta, type Nivel } from "@/lib/diario/asistente/herramientas";
+import { compactables, compactadaNueva, porCompactar } from "@/lib/diario/asistente/compactacion";
+import { MARCA_CONTINUAR, MAX_TOKENS_RESPUESTA, confirmaEscrituras, type Herramienta, type HerramientaDeMemoria, type Nivel } from "@/lib/diario/asistente/herramientas";
 import { citarEntrada } from "@/lib/diario/asistente/citas";
+import { editarHecho, ejecutarMemoria, hechosValidos, quitarHecho, type CategoriaHecho, type Hecho } from "@/lib/diario/asistente/memoria";
 import { contextoDelTurno, promptDeSistema } from "@/lib/diario/asistente/prompt";
 import { MAX_CLAVE, opcionesDeModelo, type Proveedor } from "@/lib/diario/asistente/proveedores";
 import {
   AJUSTES_INICIALES,
   ajustesValidos,
   claveAlmacen,
+  nuevoId,
   paraGuardar,
   proveedoresValidos,
   sesionNueva,
@@ -22,10 +25,9 @@ import {
   type Sesion,
   type TurnoChat,
 } from "@/lib/diario/asistente/sesiones";
-import { dependenciasReales, titularSesion, type ConexionModelo } from "./cliente";
+import { compactarConversacion, dependenciasReales, titularSesion, type ConexionModelo } from "./cliente";
 
 const VENCE_APROBACION_MS = 5 * 60_000;
-const TURNOS_AL_MODELO = 80;
 
 export interface Aprobacion {
   id: string;
@@ -65,25 +67,35 @@ export function useAsistente(usuarioId: number) {
   const kProveedores = claveAlmacen(usuarioId, "proveedores");
   const kClaves = claveAlmacen(usuarioId, "claves");
   const kSesiones = claveAlmacen(usuarioId, "sesiones");
+  const kMemoria = claveAlmacen(usuarioId, "memoria");
 
   // Este componente solo se dibuja después de que la persona lo abre, nunca en el servidor: se puede leer el almacén al crear el estado.
   const [ajustes, setAjustes] = useState<Ajustes>(() => leer(kAjustes, ajustesValidos, AJUSTES_INICIALES));
   const [proveedores, setProveedores] = useState<Proveedor[]>(() => leer(kProveedores, proveedoresValidos, []));
   const [claves, setClaves] = useState<Record<string, string>>(() => leer(kClaves, clavesValidas, {}));
   const [sesiones, setSesiones] = useState<Sesion[]>(() => leer(kSesiones, sesionesValidas, []));
+  const [hechos, setHechos] = useState<Hecho[]>(() => leer(kMemoria, hechosValidos, []));
   const [activaId, setActivaId] = useState<string | null>(() => ultimaActiva.get(usuarioId) ?? null);
   /** El turno del asistente que se está escribiendo (todavía no está en `sesiones`). */
   const [vivo, setVivo] = useState<{ sesionId: string; turno: TurnoChat } | null>(null);
   const [aprobaciones, setAprobaciones] = useState<Aprobacion[]>([]);
+  const [compactando, setCompactando] = useState<string | null>(null);
 
   const control = useRef<AbortController | null>(null);
   const pendientes = useRef(new Map<string, (ok: boolean) => void>());
   const sesionesRef = useRef(sesiones);
   const ajustesRef = useRef(ajustes);
+  const hechosRef = useRef(hechos);
+  const compactandoRef = useRef(new Set<string>());
+
   useEffect(() => {
     sesionesRef.current = sesiones;
     escribir(kSesiones, paraGuardar(sesiones));
   }, [sesiones, kSesiones]);
+  useEffect(() => {
+    hechosRef.current = hechos;
+    escribir(kMemoria, hechos);
+  }, [hechos, kMemoria]);
   useEffect(() => {
     ajustesRef.current = ajustes;
   }, [ajustes]);
@@ -91,6 +103,20 @@ export function useAsistente(usuarioId: number) {
     if (activaId) ultimaActiva.set(usuarioId, activaId);
     else ultimaActiva.delete(usuarioId);
   }, [activaId, usuarioId]);
+
+  const aplicarHechos = useCallback((nuevos: Hecho[]) => {
+    hechosRef.current = nuevos;
+    setHechos(nuevos);
+  }, []);
+
+  const ejecutarMemoriaLocal = useCallback(
+    async (nombre: HerramientaDeMemoria, args: Record<string, unknown>) => {
+      const r = await ejecutarMemoria(nombre, args, hechosRef.current, { ahora: Date.now(), nuevoId });
+      aplicarHechos(r.hechos);
+      return r.resultado;
+    },
+    [aplicarHechos],
+  );
 
   const proveedor = proveedores.find((p) => p.id === ajustes.proveedorActivo) ?? proveedores[0] ?? null;
   const activa = sesiones.find((s) => s.id === activaId) ?? null;
@@ -182,6 +208,30 @@ export function useAsistente(usuarioId: number) {
 
   // ── El bucle ──────────────────────────────────────────────────────────────
 
+  type ResultadoCompactar = "hecho" | "nada" | "fallo";
+  const compactar = useCallback(
+    async (sesionId: string, turnos: TurnoChat[], conexion: ConexionModelo, forzar: boolean): Promise<ResultadoCompactar> => {
+      if (compactandoRef.current.has(sesionId)) return "nada";
+      const sesion = sesionesRef.current.find((s) => s.id === sesionId);
+      if (!sesion) return "nada";
+      const ultimo = [...turnos].reverse().find((t) => !t.deUsuario && t.entradaTokens > 0);
+      const plan = porCompactar({ compactada: sesion.compactada, mensajes: compactables(turnos), entradaTokens: ultimo?.entradaTokens ?? 0, limiteContexto: ajustesRef.current.contexto, forzar });
+      if (plan === null) return "nada";
+      compactandoRef.current.add(sesionId);
+      setCompactando(sesionId);
+      try {
+        const resumen = await compactarConversacion(conexion, plan.resumenPrevio, plan.aResumir);
+        if (!resumen) return "fallo";
+        ponerSesion(sesionId, (s) => ({ ...s, compactada: compactadaNueva(resumen, plan.hastaId, ultimo?.entradaTokens ?? 0) }));
+        return "hecho";
+      } finally {
+        compactandoRef.current.delete(sesionId);
+        setCompactando(null);
+      }
+    },
+    [ponerSesion],
+  );
+
   const correr = useCallback(
     async (sesionId: string, turnosPrevios: TurnoChat[], conexion: ConexionModelo) => {
       const abortar = new AbortController();
@@ -196,13 +246,19 @@ export function useAsistente(usuarioId: number) {
       const a = ajustesRef.current;
       const deps = dependenciasReales({
         conexion,
-        sistema: promptDeSistema({ herramientas: true, memoria: false, notas: a.notas, confirmaEscrituras: confirmaEscrituras(a.modoPermiso) }),
-        contexto: contextoDelTurno(new Date()),
+        sistema: promptDeSistema({ herramientas: true, memoria: a.memoria, notas: a.notas, confirmaEscrituras: confirmaEscrituras(a.modoPermiso) }),
+        contexto: contextoDelTurno(new Date(), a.memoria ? hechosRef.current.length : undefined),
+        memoria: a.memoria,
+        ejecutarMemoria: ejecutarMemoriaLocal,
         aprobar,
         maxTokens: MAX_TOKENS_RESPUESTA,
       });
       try {
-        for await (const ev of correrAgente(deps, { mensajes: historialParaElModelo(turnosPrevios.slice(-TURNOS_AL_MODELO)), modo: a.modoPermiso, senal: abortar.signal })) {
+        for await (const ev of correrAgente(deps, {
+          mensajes: historialParaElModelo(turnosPrevios, sesionesRef.current.find((s) => s.id === sesionId)?.compactada ?? null),
+          modo: a.modoPermiso,
+          senal: abortar.signal,
+        })) {
           if (ev.t === "texto") {
             publicar({ ...actual, texto: `${actual.texto}${separar && actual.texto ? "\n\n" : ""}${ev.d}` });
             separar = false;
@@ -239,8 +295,11 @@ export function useAsistente(usuarioId: number) {
           if (titulo) ponerSesion(sesionId, (s) => (s.titulo ? s : { ...s, titulo }));
         });
       }
+      if (!final.error) {
+        void compactar(sesionId, [...turnosPrevios, final], conexion, false);
+      }
     },
-    [aprobar, ponerSesion, rechazarPendientes],
+    [aprobar, compactar, ejecutarMemoriaLocal, ponerSesion, rechazarPendientes],
   );
 
   /** La conexión que se usaría ahora, o el motivo por el que todavía no se puede. */
@@ -294,7 +353,7 @@ export function useAsistente(usuarioId: number) {
     const conexion = conexionPara(sesion);
     if (typeof conexion === "string") return conexion;
     const previos = sesion.turnos.slice(0, i + 1);
-    ponerSesion(sesion.id, (s) => ({ ...s, turnos: previos }));
+    ponerSesion(sesion.id, (s) => ({ ...s, turnos: previos, compactada: s.compactada && previos.some((t) => t.id === s.compactada!.hastaId) ? s.compactada : null }));
     void correr(sesion.id, previos, conexion);
     return null;
   }, [activaId, vivo, conexionPara, ponerSesion, correr]);
@@ -311,6 +370,37 @@ export function useAsistente(usuarioId: number) {
     void correr(sesion.id, previos, conexion);
     return null;
   }, [activaId, vivo, conexionPara, ponerSesion, correr]);
+
+  const compactarAhora = useCallback(async (): Promise<{ ok: boolean; mensaje: string }> => {
+    const sesion = sesionesRef.current.find((s) => s.id === activaId);
+    if (!sesion || vivo) return { ok: false, mensaje: "No hay nada para compactar ahora." };
+    const conexion = conexionPara(sesion);
+    if (typeof conexion === "string") return { ok: false, mensaje: conexion };
+    const res = await compactar(sesion.id, sesion.turnos, conexion, true);
+    if (res === "hecho") return { ok: true, mensaje: "Mensajes anteriores resumidos." };
+    if (res === "nada") return { ok: false, mensaje: "No hay nada para compactar." };
+    return { ok: false, mensaje: "No se pudo compactar. Probá de nuevo más tarde." };
+  }, [activaId, vivo, conexionPara, compactar]);
+
+  const restaurarHistorial = useCallback((id: string) => ponerSesion(id, (s) => ({ ...s, compactada: null })), [ponerSesion]);
+
+  const editarHechoPorId = useCallback(
+    (id: string, cambios: { texto: string; categoria: CategoriaHecho }) => {
+      aplicarHechos(editarHecho(hechosRef.current, id, cambios, Date.now()));
+    },
+    [aplicarHechos],
+  );
+
+  const olvidarHecho = useCallback(
+    (id: string) => {
+      aplicarHechos(quitarHecho(hechosRef.current, id));
+    },
+    [aplicarHechos],
+  );
+
+  const olvidarTodosLosHechos = useCallback(() => {
+    aplicarHechos([]);
+  }, [aplicarHechos]);
 
   const elegirModelo = useCallback(
     (proveedorId: string, modelo: string) => {
@@ -336,6 +426,7 @@ export function useAsistente(usuarioId: number) {
     proveedores,
     claves,
     sesiones,
+    hechos,
     activa,
     activaId,
     vivo,
@@ -343,6 +434,7 @@ export function useAsistente(usuarioId: number) {
     aprobaciones,
     proveedor,
     modelosDisponibles,
+    compactando,
     abrirSesion: setActivaId,
     nuevaSesion: () => setActivaId(null),
     borrarSesion,
@@ -356,5 +448,10 @@ export function useAsistente(usuarioId: number) {
     regenerar,
     continuar,
     resolverAprobacion,
+    compactarAhora,
+    restaurarHistorial,
+    editarHechoPorId,
+    olvidarHecho,
+    olvidarTodosLosHechos,
   };
 }

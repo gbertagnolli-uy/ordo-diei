@@ -1,7 +1,7 @@
 // Asistente del diario (lane 298): validación del cuerpo que el navegador manda al proxy de turnos. Reglas puras.
 // El servidor no confía en el cliente: acota tamaños, valida la URL del proveedor y NO acepta definiciones de herramientas (usa las suyas).
 
-import { DEFINICIONES, MAX_TOKENS_RESPUESTA, esHerramienta } from "./herramientas.ts";
+import { DEFINICIONES, MAX_TOKENS_RESPUESTA, esHerramienta, esHerramientaDelDiario } from "./herramientas.ts";
 import { MAX_CLAVE, MAX_MODELO, validarUrlBase } from "./proveedores.ts";
 import { protocoloDe, type HerramientaIA, type LlamadaIA, type MensajeIA, type PedidoTurno } from "./protocolos.ts";
 
@@ -38,8 +38,9 @@ function mensajeValido(v: unknown): MensajeIA {
   throw new Error("Mensaje inválido");
 }
 
-/** Las herramientas del diario con el contrato del servidor (el cliente solo dice si las quiere). */
-export const herramientasParaElModelo = (): HerramientaIA[] => DEFINICIONES.map((d) => ({ nombre: d.nombre, descripcion: d.descripcion, esquema: d.esquema }));
+/** Las herramientas con el contrato del servidor (el cliente solo dice si las quiere): las del diario y, si la memoria está encendida, las tres de memoria (lane 299). */
+export const herramientasParaElModelo = (conMemoria = false): HerramientaIA[] =>
+  DEFINICIONES.filter((d) => conMemoria || esHerramientaDelDiario(d.nombre)).map((d) => ({ nombre: d.nombre, descripcion: d.descripcion, esquema: d.esquema }));
 
 /** Cuerpo del pedido → pedido validado. Lanza `Error` con un mensaje para la persona si algo no sirve. */
 export function validarPedido(cuerpo: unknown): PedidoTurno {
@@ -60,7 +61,7 @@ export function validarPedido(cuerpo: unknown): PedidoTurno {
     modelo,
     sistema: cadena(cuerpo.sistema ?? "", MAX_SISTEMA, "Instrucciones"),
     mensajes,
-    herramientas: cuerpo.herramientas === true ? herramientasParaElModelo() : [],
+    herramientas: cuerpo.herramientas === true ? herramientasParaElModelo(cuerpo.memoria === true) : [],
     maxTokens: Math.min(MAX_TOKENS_RESPUESTA, Math.max(MIN_TOKENS, maxTokens)),
   };
 }

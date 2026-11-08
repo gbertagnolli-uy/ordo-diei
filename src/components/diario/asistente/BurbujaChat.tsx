@@ -24,6 +24,9 @@ const NOMBRE_HERRAMIENTA: Record<string, string> = {
   createCategory: "Crear categoría",
   updateCategory: "Cambiar categoría",
   deleteCategory: "Borrar categoría",
+  recallMemory: "Recordar",
+  rememberFact: "Guardar recuerdo",
+  forgetFact: "Olvidar",
 };
 
 function FichaHerramienta({ l, esperando }: { l: LlamadaRegistrada; esperando: boolean }) {

@@ -2,7 +2,7 @@
 // El modelo no elige ámbito ni persona; la aprobación del usuario (modo de permisos) se resuelve en el navegador antes de llamar acá.
 import { NextRequest, NextResponse } from "next/server";
 import { actorDeSesion, noAutorizado } from "@/lib/diario/api";
-import { esHerramienta } from "@/lib/diario/asistente/herramientas";
+import { esHerramientaDelDiario } from "@/lib/diario/asistente/herramientas";
 import { ejecutarHerramienta } from "@/lib/diario/asistente/servidor-herramientas";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Pedido inválido" }, { status: 400 });
   }
-  if (!esHerramienta(cuerpo.nombre)) return NextResponse.json({ error: "Herramienta desconocida" }, { status: 400 });
+  if (!esHerramientaDelDiario(cuerpo.nombre)) return NextResponse.json({ error: "Herramienta desconocida" }, { status: 400 });
   const args = typeof cuerpo.args === "object" && cuerpo.args !== null && !Array.isArray(cuerpo.args) ? (cuerpo.args as Record<string, unknown>) : {};
   return NextResponse.json({ resultado: await ejecutarHerramienta(actor, cuerpo.nombre, args) });
 }

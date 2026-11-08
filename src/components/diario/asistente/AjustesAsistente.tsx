@@ -2,11 +2,14 @@
 // Asistente del diario (lane 298): ajustes — modo de permisos y notas para el asistente. Los proveedores y el historial tienen su propio lugar.
 // Portado de vendor/moodiary/.../presentation/{assistant_setting_page,permission_mode_sheet,assistant_notes_page}.dart (ZhuJHua/moodiary@2c552dd).
 import { useState } from "react";
-import { Cpu, Trash2 } from "lucide-react";
+import { Brain, Cpu, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { MAX_CONTEXTO, MIN_CONTEXTO, limiteDeContexto } from "@/lib/diario/asistente/compactacion";
 import { MAX_NOTAS, MODOS_PERMISO, type ModoPermiso } from "@/lib/diario/asistente/herramientas";
 import type { Ajustes } from "@/lib/diario/asistente/sesiones";
 import { Panel } from "./ProveedoresAsistente";
@@ -20,19 +23,24 @@ const MODOS: Record<ModoPermiso, { titulo: string; detalle: string }> = {
 export function AjustesAsistente({
   ajustes,
   cantidadDeSesiones,
+  cantidadDeHechos,
   onVolver,
   onGuardar,
   onProveedores,
+  onMemoria,
   onBorrarTodo,
 }: {
   ajustes: Ajustes;
   cantidadDeSesiones: number;
+  cantidadDeHechos: number;
   onVolver: () => void;
   onGuardar: (parcial: Partial<Ajustes>) => void;
   onProveedores: () => void;
+  onMemoria: () => void;
   onBorrarTodo: () => void;
 }) {
   const [notas, setNotas] = useState(ajustes.notas);
+  const [contextoTexto, setContextoTexto] = useState(() => String(ajustes.contexto));
   return (
     <Panel titulo="Ajustes del asistente" onVolver={onVolver}>
       <div className="flex flex-col gap-6">
@@ -56,6 +64,51 @@ export function AjustesAsistente({
               </Label>
             ))}
           </RadioGroup>
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <h4 className="text-sm font-medium">Memoria</h4>
+          <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
+            <span className="text-xs text-muted-foreground">
+              Cuando está encendida, el asistente guarda lo que le contás de vos, solo en este navegador.
+            </span>
+            <Switch
+              checked={ajustes.memoria}
+              onCheckedChange={(memoria) => onGuardar({ memoria })}
+              aria-label="Memoria del asistente"
+            />
+          </div>
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!ajustes.memoria}
+              onClick={onMemoria}
+            >
+              <Brain /> Ver lo que recuerda ({cantidadDeHechos})
+            </Button>
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <h4 className="text-sm font-medium">Contexto</h4>
+          <p className="text-xs text-muted-foreground">
+            Tamaño del contexto del modelo, en tokens. Cuando la conversación pasa el 75 % de este número, los mensajes viejos se resumen. Si no sabés cuál es, dejá 32000.
+          </p>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={MIN_CONTEXTO}
+            max={MAX_CONTEXTO}
+            step={1000}
+            value={contextoTexto}
+            onChange={(e) => setContextoTexto(e.target.value)}
+            onBlur={() => {
+              const acotado = limiteDeContexto(contextoTexto);
+              onGuardar({ contexto: acotado });
+              setContextoTexto(String(acotado));
+            }}
+          />
         </section>
 
         <section className="flex flex-col gap-2">
