@@ -2,7 +2,7 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarHeart, Download, FileText, History, PenLine, Route, Search, Smile, Tags, Upload } from "lucide-react";
+import { BarChart3, CalendarHeart, Download, FileText, History, Images, PenLine, Route, Search, Smile, Tags, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
@@ -22,6 +22,8 @@ import { ProveedorEnlaces } from "./enlaces/ContextoEnlaces";
 import { LineaDeTiempo } from "./linea/LineaDeTiempo";
 import { ExportarDiario } from "./exportar/ExportarDiario";
 import { ImportarDiario } from "./importar/ImportarDiario";
+import { CompartirEntrada } from "./compartir/CompartirEntrada";
+import { GaleriaDiario } from "./galeria/GaleriaDiario";
 import { EnEsteDiaDialog } from "./recuerdos/EnEsteDiaDialog";
 import { OpcionesDeRecuerdos } from "./recuerdos/OpcionesRecuerdos";
 import { SeccionRecuerdos } from "./recuerdos/SeccionRecuerdos";
@@ -56,6 +58,8 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [verEstadisticas, setVerEstadisticas] = useState(false);
   const [verAnio, setVerAnio] = useState(false);
   const [verLinea, setVerLinea] = useState(false);
+  const [verGaleria, setVerGaleria] = useState(false);
+  const [compartiendo, setCompartiendo] = useState<EntradaVista | null>(null);
   /** "MM-DD" del día cuyas entradas de otros años se están viendo, o null. */
   const [enEsteDia, setEnEsteDia] = useState<string | null>(null);
   const [editandoRecuerdos, setEditandoRecuerdos] = useState(false);
@@ -115,6 +119,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setVerEstadisticas(false);
     setVerAnio(false);
     setVerLinea(false);
+    setVerGaleria(false);
   }
 
   /** Lane 290 (moodiary `linkTap`): tocar un enlace a otra entrada lleva al día de esa entrada. */
@@ -149,6 +154,10 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
       {verEstadisticas ? (
         <div className="md:col-span-2">
           <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
+        </div>
+      ) : verGaleria ? (
+        <div className="md:col-span-2">
+          <GaleriaDiario tipo={tipo} hoy={hoy} usuarioId={usuarioId} acciones={acciones} onVolver={() => setVerGaleria(false)} onIrADia={irADia} version={version} />
         </div>
       ) : verLinea ? (
         <div className="md:col-span-2">
@@ -206,6 +215,9 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             <Button variant="outline" onClick={() => setVerLinea(true)}>
               <Route /> Línea de tiempo
             </Button>
+            <Button variant="outline" onClick={() => setVerGaleria(true)}>
+              <Images /> Galería
+            </Button>
             <Button variant="outline" onClick={() => setEnEsteDia(fechaActiva.slice(5))}>
               <CalendarHeart /> En este día
             </Button>
@@ -246,6 +258,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
               onEditar={(e) => setEditor({ entrada: e, clave: Date.now() })}
               onBorrar={(e) => void borrar(e)}
               onMarcar={(e, m) => void marcar(e, m)}
+              onCompartir={setCompartiendo}
               agrupar={seleccionado === null}
               vacio={seleccionado ? (etiquetaFiltrada !== null ? "No hay entradas con esa etiqueta este día." : "No hay entradas este día.") : etiquetaFiltrada !== null ? "No hay entradas con esa etiqueta este mes." : "No hay entradas este mes."}
             />
@@ -303,6 +316,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           }}
         />
       )}
+      {compartiendo && <CompartirEntrada entrada={compartiendo} tipo={tipo} catalogo={acciones.catalogo} onCerrar={() => setCompartiendo(null)} />}
       {importando && <ImportarDiario tipo={tipo} onTerminado={recargar} onCerrar={() => setImportando(false)} />}
       {exportando && <ExportarDiario tipo={tipo} catalogo={acciones.catalogo} onCerrar={() => setExportando(false)} />}
       {editandoRecuerdos && <OpcionesDeRecuerdos opciones={opcionesRecuerdos} onCambiar={setOpcionesRecuerdos} onCerrar={() => setEditandoRecuerdos(false)} />}

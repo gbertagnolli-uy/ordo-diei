@@ -1,7 +1,7 @@
 "use client";
 // Diario (lane 272): entradas del día seleccionado. UX basada en theachoem/storypad@a76825e (lib/views/home).
 import { useState } from "react";
-import { Link2, Pencil, Trash2 } from "lucide-react";
+import { Link2, Pencil, Share2, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { Marcas, TipoDiario } from "@/lib/diario/reglas";
@@ -31,6 +31,7 @@ function Tarjeta({
   onEditar,
   onBorrar,
   onMarcar,
+  onCompartir,
 }: {
   e: EntradaVista;
   tipo: TipoDiario;
@@ -38,6 +39,7 @@ function Tarjeta({
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
   onMarcar: (e: EntradaVista, marcas: Marcas) => void;
+  onCompartir?: (e: EntradaVista) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
   const [verEnlaces, setVerEnlaces] = useState(false);
@@ -69,6 +71,11 @@ function Tarjeta({
           </Button>
         )}
         <MarcasEntrada favorita={e.favorita} fijada={e.fijada} editable={e.puedoEditar} onCambiar={(m) => onMarcar(e, m)} />
+        {onCompartir && (
+          <Button variant="ghost" size="icon-sm" aria-label="Compartir" onClick={() => onCompartir(e)}>
+            <Share2 />
+          </Button>
+        )}
         {e.puedoEditar && (
           <Button variant="ghost" size="icon-sm" aria-label="Editar" onClick={() => onEditar(e)}>
             <Pencil />
@@ -129,6 +136,7 @@ export function ListaDia({
   onEditar,
   onBorrar,
   onMarcar,
+  onCompartir,
   vacio = "No hay entradas este día.",
   agrupar = false,
 }: {
@@ -138,6 +146,8 @@ export function ListaDia({
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
   onMarcar: (e: EntradaVista, marcas: Marcas) => void;
+  /** Lane 293: abre el diálogo de compartir (imagen o Markdown). */
+  onCompartir?: (e: EntradaVista) => void;
   /** Qué decir cuando no hay entradas. */
   vacio?: string;
   /** Con varios días (todo el mes): un título con la fecha antes de cada día (lane 288, storypad «todas del mes»). */
@@ -151,7 +161,7 @@ export function ListaDia({
       {ordenadas.map((e, i) => (
         <div key={e.id} className="flex flex-col gap-3">
           {agrupar && (i === 0 || ordenadas[i - 1].fecha !== e.fecha) && <h3 className="pt-1 text-sm font-medium text-muted-foreground">{fechaLarga(e.fecha)}</h3>}
-          <Tarjeta e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} onMarcar={onMarcar} />
+          <Tarjeta e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} onMarcar={onMarcar} onCompartir={onCompartir} />
         </div>
       ))}
     </div>

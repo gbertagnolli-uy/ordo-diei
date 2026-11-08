@@ -12,6 +12,12 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#FBF9F5",
     theme_color: "#502300",
     lang: "es",
+    // Lane 293 (Daily You `share_page`): «Compartir» de otras apps → Ordo Diei → agregar al diario. Solo texto y enlace (ver LANE_293).
+    share_target: {
+      action: "/dashboard/diario/compartido",
+      method: "GET",
+      params: { title: "title", text: "text", url: "url" },
+    },
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

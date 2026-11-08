@@ -41,6 +41,8 @@ export interface FiltroBusqueda {
   /** storypad `starred` / `pinned`: tri-estado (null = sin filtro). */
   favorita: boolean | null;
   fijada: boolean | null;
+  /** Lane 293 (Daily You `gallery_page`): solo entradas con fotos adjuntas o con imágenes en el texto. */
+  soloFotos: boolean;
   desde: string | null;
   hasta: string | null;
   anios: number[];
@@ -61,6 +63,7 @@ export const FILTRO_VACIO: FiltroBusqueda = {
   animos: [],
   favorita: null,
   fijada: null,
+  soloFotos: false,
   desde: null,
   hasta: null,
   anios: [],
@@ -365,6 +368,7 @@ export function leerFiltro(p: Parametros): FiltroBusqueda {
     animos: listaEnteros(p.get("animos"), "Ánimos", 1, 5),
     favorita: triEstado(p.get("favorita"), "Favorita"),
     fijada: triEstado(p.get("fijada"), "Fijada"),
+    soloFotos: p.get("fotos") === "si",
     desde,
     hasta,
     anios: listaEnteros(p.get("anios"), "Años", 2000, 2200),
@@ -387,6 +391,7 @@ export function aParametros(f: FiltroBusqueda, tipo: string): URLSearchParams {
   if (f.animos.length) p.set("animos", f.animos.join(","));
   if (f.favorita !== null) p.set("favorita", f.favorita ? "si" : "no");
   if (f.fijada !== null) p.set("fijada", f.fijada ? "si" : "no");
+  if (f.soloFotos) p.set("fotos", "si");
   if (f.desde) p.set("desde", f.desde);
   if (f.hasta) p.set("hasta", f.hasta);
   if (f.anios.length) p.set("anios", f.anios.join(","));
