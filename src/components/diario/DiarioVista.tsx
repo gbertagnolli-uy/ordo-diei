@@ -175,7 +175,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     <ProveedorGrafo value={(id) => setGrafo({ modo: "local", id, desdeGeneral: false })}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
       {grafo?.modo === "general" ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <GrafoEnlaces
             tipo={tipo}
             hoy={hoy}
@@ -191,31 +191,31 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           />
         </div>
       ) : grafo?.modo === "local" ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <GrafoLocal key={grafo.id} tipo={tipo} centroInicial={grafo.id} catalogo={acciones.catalogo} version={version} onSalir={() => setGrafo(grafo.desdeGeneral ? { modo: "general" } : null)} onIrADia={irADia} />
         </div>
       ) : verEstadisticas ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
         </div>
       ) : verAsistente && tipo === "personal" ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <AsistenteDiario usuarioId={usuarioId} onVolver={() => setVerAsistente(false)} />
         </div>
       ) : verMapa ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <MapaHuellas tipo={tipo} lugares={lugares} catalogo={acciones.catalogo} version={version} onVolver={() => setVerMapa(false)} onIrADia={irADia} />
         </div>
       ) : verGaleria ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <GaleriaDiario tipo={tipo} hoy={hoy} usuarioId={usuarioId} acciones={acciones} onVolver={() => setVerGaleria(false)} onIrADia={irADia} version={version} />
         </div>
       ) : verLinea ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <LineaDeTiempo tipo={tipo} catalogo={acciones.catalogo} version={version} onVolver={() => setVerLinea(false)} onIrADia={irADia} />
         </div>
       ) : verAnio ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <VistaAnual
             tipo={tipo}
             hoy={hoy}
@@ -230,7 +230,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           />
         </div>
       ) : buscando ? (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 diario-entra">
           <BuscadorDiario
             tipo={tipo}
             hoy={hoy}
@@ -245,7 +245,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 diario-vuelve">
             <FiltroEtiquetasCalendario catalogo={acciones.catalogo} elegida={etiquetaFiltrada} cantidad={visibles.length} onElegir={setFiltroEtiqueta} />
             <CalendarioAnimo
               mes={mes}
@@ -313,7 +313,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
               </Button>
             )}
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 diario-vuelve">
             {recuerdos && <SeccionRecuerdos grupos={recuerdos.grupos} opciones={opcionesRecuerdos} onAbrir={(g) => (g.enEsteDia ? setEnEsteDia(recuerdos.hoy.slice(5)) : irADia(g.entradas[0].entrada.fecha))} />}
             <SeccionFijadas tipo={tipo} version={version} onIrADia={irADia} />
             <ListaDia

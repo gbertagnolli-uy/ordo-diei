@@ -540,3 +540,50 @@ body {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* Lane 300: transiciones del diario (moodiary: page_transitions.dart, calendar_page.dart; curva emphasizedDecelerate de Material) */
+:root {
+  --diario-curva: cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+@keyframes diario-entra {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes diario-vuelve {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.diario-entra,
+.diario-mes-sig {
+  animation: diario-entra 300ms var(--diario-curva) both;
+}
+
+.diario-vuelve,
+.diario-mes-ant {
+  animation: diario-vuelve 300ms var(--diario-curva) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diario-entra,
+  .diario-vuelve,
+  .diario-mes-sig,
+  .diario-mes-ant {
+    animation: none;
+  }
+}
+
