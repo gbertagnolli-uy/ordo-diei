@@ -2,7 +2,9 @@
 // vendor/moodiary/packages/feature/moodiary_export/lib/src/data/import/{markdown_front_matter,markdown_importer,import_media_stage,import_source}.dart (ZhuJHua/moodiary@2c552dd).
 // También lee las notas que exporta la lane 291 (`date`, `title`, `mood`, `category`, `tags`, `trackers`, `favorite`, `pinned`).
 import { clasificarAdjunto } from "../adjuntos.ts";
+import { climaDeFrontMatter } from "../clima.ts";
 import { limpiarNombre, MAX_NOMBRE } from "../etiquetas.ts";
+import { lugarDeFrontMatter } from "../lugares.ts";
 import { animoValido, aTexto, carpetaDe, esImagen, fechaValida, limpiarCuerpo, momentoDeIso, nombreDe, resolverArchivo, titulo } from "./comun.ts";
 import { entradaBase, ImportacionError, MARCADOR_ARCHIVO, MARCADOR_IMAGEN, paqueteVacio, type Archivos, type EtiquetaPuestaImport, type MomentoImport, type PaqueteImport } from "./tipos.ts";
 
@@ -299,6 +301,8 @@ export function leerMarkdown(archivos: Archivos): PaqueteImport {
         animo: animoDeMeta(meta.mood),
         categoria,
         etiquetas: etiquetasDeMeta(meta),
+        clima: climaDeFrontMatter(meta.weather),
+        lugar: lugarDeFrontMatter(meta.position),
         favorita: meta.favorite === true || meta.starred === true,
         fijada: meta.pinned === true,
         imagenes: r.imagenes,

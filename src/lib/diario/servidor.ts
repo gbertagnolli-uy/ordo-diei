@@ -4,10 +4,12 @@ import { tz } from "@date-fns/tz";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { APP_TZ, aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
+import type { Clima } from "./clima";
 import type { NodoDoc } from "./contenido";
 import type { EtiquetaPuesta } from "./etiquetas";
 import { aplicarEnlaces } from "./servidor-enlaces";
 import { prepararEtiquetas, verificarCategoria } from "./servidor-catalogo";
+import { verificarLugar } from "./servidor-lugares";
 import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, validarMarcas, type TipoDiario } from "./reglas";
 
 type Actor = { id: number; esPadre: boolean };
@@ -24,6 +26,9 @@ export type EntradaVista = {
   /** Lane 284: etiquetas puestas (el nombre, ícono y color salen del catálogo) y categoría de la entrada. */
   etiquetas: EtiquetaPuesta[];
   categoriaId: number | null;
+  /** Lane 296: lugar frecuente (el nombre, ícono y coordenadas salen de `/api/diario/lugares`) y clima de la entrada. */
+  lugarId: number | null;
+  clima: Clima | null;
   /** Lane 285: marcas de la entrada (storypad `starred` y `pinned`). */
   favorita: boolean;
   fijada: boolean;
@@ -48,6 +53,9 @@ export const incluir = {
 
 export type EntradaConFotos = Prisma.DiarioEntradaGetPayload<{ include: typeof incluir }>;
 
+/** Las tres columnas del clima (moodiary `weather_icon` / `weather_temp` / `weather_text`); null las borra. */
+export const columnasClima = (c: Clima | null) => ({ climaCodigo: c ? c.codigo : null, climaTemp: c ? c.temp : null, climaTexto: c ? c.texto : null });
+
 const aJson = (d: NodoDoc | null) => (d ? (d as unknown as Prisma.InputJsonObject) : undefined);
 
 /** Minutos desde la medianoche, en la zona de la familia. */
@@ -67,6 +75,8 @@ export function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
     animo: e.animo,
     etiquetas: e.etiquetas.map((t) => ({ id: t.etiquetaId, valor: t.valor })),
     categoriaId: e.categoriaId,
+    lugarId: e.lugarId,
+    clima: e.climaCodigo ? { codigo: e.climaCodigo, temp: e.climaTemp, texto: e.climaTexto ?? "" } : null,
     favorita: e.favorita,
     fijada: e.fijada,
     hora: e.hora ?? minutosEnFamilia(e.creadaEn),
@@ -104,6 +114,7 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
   const e = await prisma.$transaction(async (tx) => {
     const etiquetas = await prepararEtiquetas(tx, actor, tipo, v.etiquetas ?? []);
     if (v.categoriaId != null) await verificarCategoria(tx, actor, tipo, v.categoriaId);
+    if (v.lugarId != null) await verificarLugar(tx, actor, tipo, v.lugarId);
     const creada = await tx.diarioEntrada.create({
       data: {
         tipo,
@@ -115,6 +126,8 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
         hora: v.hora,
         animo: v.animo,
         categoriaId: v.categoriaId ?? null,
+        lugarId: v.lugarId ?? null,
+        ...columnasClima(v.clima ?? null),
         favorita: v.favorita ?? false,
         fijada: v.fijada ?? false,
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
@@ -145,6 +158,7 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
     const etiquetas = v.etiquetas ? await prepararEtiquetas(tx, actor, e.tipo, v.etiquetas) : undefined;
     if (etiquetas) await tx.diarioEntradaEtiqueta.deleteMany({ where: { entradaId: id } });
     if (v.categoriaId != null) await verificarCategoria(tx, actor, e.tipo, v.categoriaId);
+    if (v.lugarId != null) await verificarLugar(tx, actor, e.tipo, v.lugarId);
     await tx.diarioEntrada.update({
       where: { id },
       data: {
@@ -155,6 +169,8 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
         hora: v.hora,
         animo: v.animo,
         ...(v.categoriaId !== undefined ? { categoriaId: v.categoriaId } : {}),
+        ...(v.lugarId !== undefined ? { lugarId: v.lugarId } : {}),
+        ...(v.clima !== undefined ? columnasClima(v.clima) : {}),
         ...(v.favorita !== undefined ? { favorita: v.favorita } : {}),
         ...(v.fijada !== undefined ? { fijada: v.fijada } : {}),
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },

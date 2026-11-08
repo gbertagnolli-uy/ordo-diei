@@ -3,10 +3,11 @@
 // UX basada en Demizo/Daily_You@7cc237d (lib/pages/edit_entry_page.dart): autoguardado a los 5 s y al salir, fecha y hora editables.
 // El texto es el editor Tiptap portado de moodiary (ver ./editor/EditorTexto.tsx).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, ImagePlus, Pin, Star, Tags, X } from "lucide-react";
+import { Cloud, FileText, ImagePlus, MapPin, Pin, Star, Tags, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { textoClima, type Clima } from "@/lib/diario/clima";
 import { docDesdeTexto, textoPlanoDe, tieneImagen, type NodoDoc } from "@/lib/diario/contenido";
 import type { EtiquetaPuesta } from "@/lib/diario/etiquetas";
 import { cuandoDe, fusionarEtiquetas, poblarDocumento } from "@/lib/diario/plantillas";
@@ -21,6 +22,11 @@ import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { SelectorCategoria } from "./etiquetas/SelectorCategoria";
 import { SelectorEtiquetas } from "./etiquetas/SelectorEtiquetas";
 import type { AccionesCatalogo } from "./etiquetas/useCatalogo";
+import { IconoClima, IconoDeLugar } from "./lugares/iconos";
+import { usePreferenciasRelleno, useRellenoAutomatico } from "./lugares/relleno";
+import { SelectorClima } from "./lugares/SelectorClima";
+import { SelectorLugar } from "./lugares/SelectorLugar";
+import type { AccionesLugares } from "./lugares/useLugares";
 import { SelectorPlantilla } from "./plantillas/SelectorPlantilla";
 import type { AccionesPlantillas } from "./plantillas/usePlantillas";
 import { SelectorAnimo } from "./SelectorAnimo";
@@ -46,8 +52,10 @@ export function EditorEntrada({
   hoy,
   acciones,
   plantillas,
+  lugares,
   onAdministrar,
   onAdministrarPlantillas,
+  onAdministrarLugares,
   onCerrar,
 }: {
   abierto: boolean;
@@ -59,8 +67,11 @@ export function EditorEntrada({
   acciones: AccionesCatalogo;
   /** Plantillas (lane 286). */
   plantillas: AccionesPlantillas;
+  /** Lugares frecuentes (lane 296). */
+  lugares: AccionesLugares;
   onAdministrar: (pestana: "etiquetas" | "categorias") => void;
   onAdministrarPlantillas: () => void;
+  onAdministrarLugares: () => void;
   /** `huboCambios`: se guardó algo, hay que recargar la lista. */
   onCerrar: (huboCambios: boolean) => void;
 }) {
@@ -79,6 +90,10 @@ export function EditorEntrada({
   const [fotos, setFotos] = useState<string[]>(entrada?.fotos ?? []);
   const [etiquetas, setEtiquetas] = useState<EtiquetaPuesta[]>(entrada?.etiquetas ?? base?.etiquetas ?? []);
   const [categoriaId, setCategoriaId] = useState<number | null>(entrada?.categoriaId ?? null);
+  const [lugarId, setLugarId] = useState<number | null>(entrada?.lugarId ?? null);
+  const [clima, setClima] = useState<Clima | null>(entrada?.clima ?? null);
+  const [eligiendoLugar, setEligiendoLugar] = useState(false);
+  const [eligiendoClima, setEligiendoClima] = useState(false);
   const [favorita, setFavorita] = useState(entrada?.favorita ?? false);
   const [fijada, setFijada] = useState(entrada?.fijada ?? false);
   const [eligiendoEtiquetas, setEligiendoEtiquetas] = useState(false);
@@ -89,10 +104,13 @@ export function EditorEntrada({
 
   // Lo último que se escribió, para que el guardado diferido no use valores viejos
   const doc = useRef<NodoDoc | null>(entrada?.contenido ?? base?.contenido ?? null);
-  const campos = useRef({ animo, titulo, dia, hora, fotos, etiquetas, categoriaId, favorita, fijada });
+  const campos = useRef({ animo, titulo, dia, hora, fotos, etiquetas, categoriaId, lugarId, clima, favorita, fijada });
   useEffect(() => {
-    campos.current = { animo, titulo, dia, hora, fotos, etiquetas, categoriaId, favorita, fijada };
-  }, [animo, titulo, dia, hora, fotos, etiquetas, categoriaId, favorita, fijada]);
+    campos.current = { animo, titulo, dia, hora, fotos, etiquetas, categoriaId, lugarId, clima, favorita, fijada };
+  }, [animo, titulo, dia, hora, fotos, etiquetas, categoriaId, lugarId, clima, favorita, fijada]);
+  // Los lugares pueden haber cambiado desde que se abrió la entrada (se borró uno): solo se guarda el que sigue existiendo
+  const listaLugares = useRef(lugares.lista);
+  listaLugares.current = lugares.lista;
   // El catálogo puede haber cambiado desde que se abrió la entrada (se borró una etiqueta): solo se guardan las que siguen existiendo
   const catalogo = useRef(acciones.catalogo);
   catalogo.current = acciones.catalogo;
@@ -103,6 +121,8 @@ export function EditorEntrada({
   const cola = useRef<Promise<void>>(Promise.resolve()); // un guardado a la vez: evita crear la misma entrada dos veces
   const temporizador = useRef(0);
   const huboCambios = useRef(false);
+
+  const lugarActual = lugarId === null ? null : (lugares.lista?.find((l) => l.id === lugarId) ?? null);
 
   const vacia = () => {
     const { fotos: f } = campos.current;
@@ -129,6 +149,8 @@ export function EditorEntrada({
           fotos: c.fotos,
           etiquetas: catalogo.current ? c.etiquetas.filter((t) => catalogo.current!.etiquetas.some((e) => e.id === t.id)) : c.etiquetas,
           categoriaId: catalogo.current && !catalogo.current.categorias.some((x) => x.id === c.categoriaId) ? null : c.categoriaId,
+          lugarId: listaLugares.current && !listaLugares.current.some((l) => l.id === c.lugarId) ? null : c.lugarId,
+          clima: c.clima,
           favorita: c.favorita,
           fijada: c.fijada,
           ...(doc.current ? { contenido: doc.current } : { texto: entrada?.texto ?? "" }),
@@ -170,6 +192,25 @@ export function EditorEntrada({
       window.clearTimeout(temporizador.current);
     };
   }, [guardarAhora]);
+
+  // Lane 296: en una entrada nueva, el lugar y el clima se ponen solos si el usuario lo activó (y no pisa lo que ya eligió)
+  const [relleno] = usePreferenciasRelleno();
+  useRellenoAutomatico({
+    activo: !entrada,
+    opciones: relleno,
+    lugares,
+    lugarActual: () => campos.current.lugarId,
+    climaActual: () => campos.current.clima,
+    onLugar: (id) => {
+      setLugarId(id);
+      void lugares.recargar();
+      cambio();
+    },
+    onClima: (c) => {
+      setClima(c);
+      cambio();
+    },
+  });
 
   async function cerrar() {
     await guardarAhora();
@@ -312,6 +353,16 @@ export function EditorEntrada({
               }}
               onAdministrar={() => onAdministrar("categorias")}
             />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" className="max-w-full" onClick={() => setEligiendoLugar(true)}>
+                {lugarActual ? <IconoDeLugar icono={lugarActual.icono} /> : <MapPin />}
+                <span className="truncate">{lugarActual ? lugarActual.nombre : "Lugar"}</span>
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="max-w-full" onClick={() => setEligiendoClima(true)}>
+                {clima ? <IconoClima codigo={clima.codigo} /> : <Cloud />}
+                <span className="truncate">{clima ? textoClima(clima) : "Clima"}</span>
+              </Button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {fotos.map((url) => (
@@ -340,6 +391,29 @@ export function EditorEntrada({
             )}
           </div>
         </div>
+        {eligiendoLugar && (
+          <SelectorLugar
+            lugares={lugares}
+            valor={lugarId}
+            onElegir={(id) => {
+              setLugarId(id);
+              void lugares.recargar();
+              cambio();
+            }}
+            onAdministrar={onAdministrarLugares}
+            onCerrar={() => setEligiendoLugar(false)}
+          />
+        )}
+        {eligiendoClima && (
+          <SelectorClima
+            valor={clima}
+            onElegir={(c) => {
+              setClima(c);
+              cambio();
+            }}
+            onCerrar={() => setEligiendoClima(false)}
+          />
+        )}
         {eligiendoPlantilla && <SelectorPlantilla plantillas={plantillas} onElegir={usarPlantilla} onAdministrar={onAdministrarPlantillas} onCerrar={() => setEligiendoPlantilla(false)} />}
         {eligiendoEtiquetas && (
           <SelectorEtiquetas

@@ -88,6 +88,21 @@ test("validarEntrada: etiquetas y categoría solo aparecen si vienen en el cuerp
   assert.throws(() => validarEntrada({ texto: "hola", etiquetas: "x" }, HOY));
 });
 
+test("validarEntrada: lugar y clima solo aparecen si vienen (lane 296)", () => {
+  const sin = validarEntrada({ texto: "hola" }, HOY);
+  assert.ok(!("lugarId" in sin) && !("clima" in sin));
+  const con = validarEntrada({ texto: "hola", lugarId: 4, clima: { codigo: "100", temp: 23.4 } }, HOY);
+  assert.equal(con.lugarId, 4);
+  assert.deepEqual(con.clima, { codigo: "100", temp: 23, texto: "Soleado" });
+  const borra = validarEntrada({ texto: "hola", lugarId: null, clima: null }, HOY);
+  assert.equal(borra.lugarId, null);
+  assert.equal(borra.clima, null);
+  assert.throws(() => validarEntrada({ texto: "hola", lugarId: "4" }, HOY), /Lugar/);
+  assert.throws(() => validarEntrada({ texto: "hola", lugarId: 0 }, HOY), /Lugar/);
+  assert.throws(() => validarEntrada({ texto: "hola", clima: { codigo: "x" } }, HOY), /Clima/);
+  assert.throws(() => validarEntrada({ texto: "hola", clima: "100" }, HOY), /Clima/);
+});
+
 test("validarEntrada: favorita y fijada solo aparecen si vienen y tienen que ser booleanos (lane 285)", () => {
   const sin = validarEntrada({ texto: "hola" }, HOY);
   assert.ok(!("favorita" in sin) && !("fijada" in sin));

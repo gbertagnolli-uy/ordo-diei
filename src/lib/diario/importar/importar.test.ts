@@ -255,6 +255,8 @@ const unaEntrada = (o: Partial<EntradaExport> = {}): EntradaExport => ({
   animo: 4,
   categoria: "Fe › Misa",
   etiquetas: [{ nombre: "Familia", tipo: "etiqueta", valor: null }, { nombre: "Agua", tipo: "contador", valor: "3" }],
+  clima: null,
+  lugar: null,
   favorita: true,
   fijada: false,
   autor: "Gabriel",
@@ -311,6 +313,39 @@ test("el JSON propio sin fotos deja las imágenes con su URL y rechaza otras ver
   assert.match(JSON.stringify(p.entradas[0].contenido), /\/api\/archivos\/11111111/);
   assert.throws(() => leerJsonPropio({ ...json, version: 7 }, archivos({}), ""), ImportacionError);
   assert.throws(() => leerJsonPropio({ format: "x" }, archivos({}), ""), ImportacionError);
+});
+
+test("el JSON propio devuelve el clima y el lugar de cada entrada (lane 296)", () => {
+  const datos: DatosExport = { tipo: "personal", exportadaEn: "x", catalogo: { escala: [], grupos: [], categorias: [], etiquetas: [] }, entradas: [] };
+  const entradas = nombrarEntradas([
+    unaEntrada({ clima: { codigo: "305", temp: 18, texto: "Lluvia débil" }, lugar: { nombre: "Oficina", latitud: -34.9, longitud: -56.16, icono: "building-2" } }),
+    unaEntrada({ fecha: "2026-07-21" }),
+  ]);
+  const json = JSON.parse(JSON.stringify(documentoJson(datos, entradas, false)));
+  const p = leerJsonPropio(json, archivos({}), "");
+  assert.deepEqual(p.entradas[0].clima, { codigo: "305", temp: 18, texto: "Lluvia débil" });
+  assert.deepEqual(p.entradas[0].lugar, { nombre: "Oficina", latitud: -34.9, longitud: -56.16 });
+  assert.equal(p.entradas[1].clima, null);
+  assert.equal(p.entradas[1].lugar, null);
+});
+
+test("el JSON propio ignora un clima o un lugar que no se entienden (lane 296)", () => {
+  const datos: DatosExport = { tipo: "personal", exportadaEn: "x", catalogo: { escala: [], grupos: [], categorias: [], etiquetas: [] }, entradas: [] };
+  const json = JSON.parse(JSON.stringify(documentoJson(datos, nombrarEntradas([unaEntrada()]), false)));
+  json.entries[0].weather = { code: "sol", temp: 20 };
+  json.entries[0].place = { name: "X", latitude: 200, longitude: 0 };
+  const p = leerJsonPropio(json, archivos({}), "");
+  assert.equal(p.entradas[0].clima, null);
+  assert.equal(p.entradas[0].lugar, null);
+});
+
+test("Markdown de moodiary: weather y position del front matter (lane 296)", () => {
+  const nota = '---\ndate: "2026-07-20T09:30"\nweather: ["100", "23", "Soleado"]\nposition: ["-34.9011", "-56.1645", "Casa, Pocitos"]\n---\nHola';
+  const p = leerMarkdown(archivos({ "2026-07-20.md": nota, "2026-07-21.md": "---\nposition: [\"x\"]\n---\nSin lugar" }));
+  assert.deepEqual(p.entradas[0].clima, { codigo: "100", temp: 23, texto: "Soleado" });
+  assert.deepEqual(p.entradas[0].lugar, { nombre: "Casa, Pocitos", latitud: -34.9011, longitud: -56.1645 });
+  assert.equal(p.entradas[1].clima, null);
+  assert.equal(p.entradas[1].lugar, null);
 });
 
 test("reescribirImagenes cambia, deja o quita imágenes sin tocar el resto", () => {

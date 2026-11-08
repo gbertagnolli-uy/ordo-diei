@@ -11,6 +11,7 @@ import { nivelDe, nombreDeNivel } from "@/lib/diario/escala";
 import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { caminoDe } from "./ListaDia";
+import { ClimaYLugar } from "./lugares/ContextoLugares";
 import { MarcasEntrada } from "./MarcasEntrada";
 import { TextoResaltado } from "./TextoResaltado";
 
@@ -76,6 +77,7 @@ export function TarjetaHallazgo({
           </p>
         )}
       </button>
+      <ClimaYLugar clima={e.clima} lugarId={e.lugarId} className="mt-2 flex min-w-0 items-center gap-3 text-xs text-muted-foreground" />
       {categoria.length > 0 && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="size-2.5 shrink-0 rounded-full border" style={{ backgroundColor: categoria[categoria.length - 1].color ?? "transparent" }} aria-hidden />

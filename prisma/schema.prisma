@@ -77,6 +77,7 @@ model Usuario {
   diarioGrupos         DiarioGrupoEtiquetas[] @relation("DiarioGrupos") // ← Lane 284
   diarioEtiquetas      DiarioEtiqueta[]       @relation("DiarioEtiquetas") // ← Lane 284
   diarioCategorias     DiarioCategoria[]      @relation("DiarioCategorias") // ← Lane 284
+  diarioLugares        DiarioLugar[]          @relation("DiarioLugares") // ← Lane 296
   diarioPlantillas     DiarioPlantilla[]      @relation("DiarioPlantillas") // ← Lane 286
   registrosAnimo       RegistroAnimo[]
   premiosEntregados    PremioEntregado[]
@@ -1921,12 +1922,18 @@ model DiarioEntrada {
 
   categoriaId Int? @map("Categoria_ID") // ← Lane 284: categoría de la entrada (moodiary), una sola
 
+  lugarId     Int?    @map("Lugar_ID") // ← Lane 296: lugar frecuente de la entrada (moodiary `placeId`)
+  climaCodigo String? @map("Clima_Codigo") // ← Lane 296: código QWeather como lo guarda moodiary (`weather_icon`)
+  climaTemp   Int?    @map("Clima_Temp") // ← Lane 296: °C, entero (`weather_temp`)
+  climaTexto  String? @map("Clima_Texto") // ← Lane 296: `weather_text`
+
   favorita Boolean @default(false) @map("Favorita") // ← Lane 285: storypad `starred`
   fijada   Boolean @default(false) @map("Fijada") // ← Lane 285: storypad `pinned` (va arriba de la lista)
 
   autor     Usuario                 @relation("DiarioEntradas", fields: [autorId], references: [id], onDelete: Cascade)
   fotos     DiarioFoto[]
   categoria DiarioCategoria?        @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  lugar     DiarioLugar?            @relation(fields: [lugarId], references: [id], onDelete: Restrict)
   etiquetas DiarioEntradaEtiqueta[]
 
   enlacesSalientes DiarioEnlace[] @relation("EnlacesSalientes") // ← Lane 290: entradas que ésta enlaza
@@ -1935,6 +1942,7 @@ model DiarioEntrada {
   @@index([tipo, fecha])
   @@index([autorId, fecha])
   @@index([tipo, fijada])
+  @@index([lugarId])
   @@map("Diario_Entradas")
 }
 
@@ -2038,6 +2046,26 @@ model DiarioCategoria {
 
   @@index([ambito, creadorId])
   @@map("Diario_Categorias")
+}
+
+// ← Lane 296: lugares frecuentes (moodiary `places`). Personal = del creador; familiar = de toda la familia. No se borra un lugar con entradas.
+model DiarioLugar {
+  id        Int        @id @default(autoincrement())
+  ambito    TipoDiario @map("Ambito")
+  creadorId Int?       @map("Creador_ID")
+  nombre    String     @map("Nombre")
+  latitud   Float      @map("Latitud")
+  longitud  Float      @map("Longitud")
+  icono     String?    @map("Icono") // clave de `ICONOS_LUGAR`; null = pin por defecto
+  orden     Int        @default(0) @map("Orden")
+  creadaEn  DateTime   @default(now()) @map("Creada_En")
+  editadaEn DateTime   @updatedAt @map("Editada_En")
+
+  creador  Usuario?        @relation("DiarioLugares", fields: [creadorId], references: [id], onDelete: SetNull)
+  entradas DiarioEntrada[]
+
+  @@index([ambito, creadorId])
+  @@map("Diario_Lugares")
 }
 
 // Siembra única de lo predeterminado por ámbito (Daily You lo crea solo la primera vez). dueño: id del usuario (personal) o 0 (familiar).

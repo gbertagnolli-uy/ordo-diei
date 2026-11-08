@@ -1,7 +1,9 @@
 // Diario (lane 292): lo que viaja del navegador al servidor, por lotes (decisión I1: el límite del cuerpo de una función en Vercel es 4,5 MB).
 import { clasificarAdjunto } from "../adjuntos.ts";
+import type { Clima } from "../clima.ts";
 import { textoPlanoDe, type NodoDoc } from "../contenido.ts";
 import { reescribirImagenes } from "../exportar.ts";
+import type { LugarImport } from "../lugares.ts";
 import { MAX_FOTOS } from "../reglas.ts";
 import { nombreDe } from "./comun.ts";
 import { MARCADOR_ARCHIVO, MARCADOR_IMAGEN, type EntradaImport, type EtiquetaPuestaImport } from "./tipos.ts";
@@ -21,6 +23,8 @@ export interface EntradaLote {
   animo: number | null;
   categoria: string | null;
   etiquetas: EtiquetaPuestaImport[];
+  lugar: LugarImport | null;
+  clima: Clima | null;
   favorita: boolean;
   fijada: boolean;
   fotos: string[];
@@ -147,6 +151,8 @@ export function entradaALote(e: EntradaImport, urls: Map<string, string | null>,
     animo: e.animo,
     categoria: e.categoria,
     etiquetas: e.etiquetas,
+    lugar: e.lugar,
+    clima: e.clima,
     favorita: e.favorita,
     fijada: e.fijada,
     fotos: fotos.slice(0, MAX_FOTOS),

@@ -10,13 +10,16 @@ import { APP_TZ, hoyEnFamilia } from "@/lib/habitos/server";
 import { claveDeUrl } from "@/lib/archivos";
 import { archivosDe, imagenesDe, type NodoDoc } from "./contenido";
 import { reescribirImagenes } from "./exportar";
+import { validarClima, type Clima } from "./clima";
 import { MAX_ETIQUETAS_ENTRADA, type Actor, type EtiquetaPuesta } from "./etiquetas";
+import { lugarDeFrontMatter, type LugarImport } from "./lugares";
 import { claveEtiqueta, claveNombre, partesDeCamino, type CatalogoImport } from "./importar/catalogo";
 import type { RechazoLote, ResultadoCatalogo, ResultadoLote } from "./importar/lote";
 import { MAX_ENTRADAS_LOTE } from "./importar/lote";
 import { MAX_ENTRADAS_DIA, MAX_FOTOS, MAX_TITULO, validarEntrada, type TipoDiario } from "./reglas";
 import { crear, prepararEtiquetas } from "./servidor-catalogo";
-import { minutosEnFamilia } from "./servidor";
+import { resolverLugarImportado } from "./servidor-lugares";
+import { columnasClima, minutosEnFamilia } from "./servidor";
 
 const alcance = (actor: Actor, tipo: TipoDiario) => ({ ambito: tipo, ...(tipo === "personal" ? { creadorId: actor.id } : {}) });
 const esObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -116,9 +119,20 @@ interface EntradaLeida {
   animo: number | null;
   categoria: string | null;
   etiquetas: { nombre: string; tipo: "etiqueta" | "contador"; valor: string | null }[];
+  lugar: LugarImport | null;
+  clima: Clima | null;
   favorita: boolean;
   fijada: boolean;
   fotos: string[];
+}
+
+/** El clima que trae el lote: si no se entiende, la entrada se importa sin él (no se rechaza). */
+function climaLeido(v: unknown): Clima | null {
+  try {
+    return validarClima(v) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function leerEntrada(x: unknown): EntradaLeida {
@@ -137,6 +151,8 @@ function leerEntrada(x: unknown): EntradaLeida {
     etiquetas: (Array.isArray(x.etiquetas) ? x.etiquetas : []).flatMap((t) =>
       esObj(t) && texto(t.nombre) && (t.tipo === "etiqueta" || t.tipo === "contador") ? [{ nombre: String(t.nombre), tipo: t.tipo, valor: t.valor == null ? null : String(t.valor) }] : [],
     ),
+    lugar: esObj(x.lugar) ? lugarDeFrontMatter({ latitude: x.lugar.latitud, longitude: x.lugar.longitud, name: x.lugar.nombre }) : null,
+    clima: climaLeido(x.clima),
     favorita: x.favorita === true,
     fijada: x.fijada === true,
     fotos: (Array.isArray(x.fotos) ? x.fotos : []).filter((f): f is string => typeof f === "string"),
@@ -166,6 +182,8 @@ export async function importarLote(actor: Actor, tipo: TipoDiario, crudas: unkno
     return nombres.join(" › ");
   };
   const categoriaId = new Map(categorias.map((c) => [claveNombre(caminoDe(c.id)), c.id]));
+  // Lane 296: los lugares del diario, para reusar por nombre o por cercanía (moodiary `_resolvePlace`)
+  const lugares = (await prisma.diarioLugar.findMany({ where: donde, select: { id: true, nombre: true, latitud: true, longitud: true } })).map((l) => ({ ...l }));
 
   // Fecha, hora y momento de creación de cada una
   interface Lista {
@@ -245,8 +263,20 @@ export async function importarLote(actor: Actor, tipo: TipoDiario, crudas: unkno
       }
       if ((porDia.get(fecha) ?? 0) >= MAX_ENTRADAS_DIA) throw new Error("Ya hay el máximo de entradas de ese día");
       const catId = e.categoria ? (categoriaId.get(claveNombre(partesDeCamino(e.categoria).join(" › "))) ?? null) : null;
+      const lugaresNuevos: { id: number; nombre: string; latitud: number; longitud: number }[] = [];
       await prisma.$transaction(async (tx) => {
         const etiquetasOk = await prepararEtiquetas(tx, actor, tipo, v.etiquetas ?? []);
+        // Un lugar que no se puede crear (por ejemplo, el tope) no impide importar la entrada
+        let lugarId: number | null = null;
+        if (e.lugar) {
+          try {
+            const r = await resolverLugarImportado(tx, actor, tipo, lugares, e.lugar);
+            lugarId = r.id;
+            if (r.nuevo) lugaresNuevos.push(r.nuevo);
+          } catch {
+            lugarId = null;
+          }
+        }
         await tx.diarioEntrada.create({
           data: {
             tipo,
@@ -258,6 +288,8 @@ export async function importarLote(actor: Actor, tipo: TipoDiario, crudas: unkno
             hora: v.hora ?? (e.instante ? null : HORA_SIN_HORA),
             animo: v.animo,
             categoriaId: catId,
+            lugarId,
+            ...columnasClima(e.clima),
             favorita: v.favorita ?? false,
             fijada: v.fijada ?? false,
             creadaEn,
@@ -268,6 +300,7 @@ export async function importarLote(actor: Actor, tipo: TipoDiario, crudas: unkno
           select: { id: true },
         });
       });
+      lugares.push(...lugaresNuevos);
       yaEsta.add(`${creadaEn.getTime()}|${v.titulo ?? ""}|${v.texto}`);
       porDia.set(fecha, (porDia.get(fecha) ?? 0) + 1);
       res.creadas++;

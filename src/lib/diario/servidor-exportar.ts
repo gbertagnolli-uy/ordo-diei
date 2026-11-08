@@ -28,6 +28,7 @@ import type { Actor } from "./etiquetas";
 import { SIN_CATEGORIA } from "./linea";
 import type { TipoDiario } from "./reglas";
 import { listarCatalogo } from "./servidor-catalogo";
+import { listarLugares } from "./servidor-lugares";
 import { leerEscala } from "./servidor-escala";
 import { incluir, minutosEnFamilia } from "./servidor";
 
@@ -112,6 +113,7 @@ export async function exportarDiario(actor: Actor, tipo: TipoDiario, o: Opciones
     return nombres.length ? nombres.join(" › ") : null;
   };
   const grupoPorId = new Map(cat.grupos.map((g) => [g.id, g.nombre]));
+  const lugarPorId = new Map((await listarLugares(actor, tipo)).map((l) => [l.id, { nombre: l.nombre, latitud: l.latitud, longitud: l.longitud, icono: l.icono }]));
   const etiquetaPorId = new Map(cat.etiquetas.map((e) => [e.id, e]));
   const catalogo: CatalogoExport = {
     escala,
@@ -149,6 +151,8 @@ export async function exportarDiario(actor: Actor, tipo: TipoDiario, o: Opciones
       contenido,
       animo: f.animo,
       categoria: camino(f.categoriaId),
+      clima: f.climaCodigo ? { codigo: f.climaCodigo, temp: f.climaTemp, texto: f.climaTexto ?? "" } : null,
+      lugar: f.lugarId === null ? null : (lugarPorId.get(f.lugarId) ?? null),
       etiquetas: f.etiquetas.flatMap((t) => {
         const e = etiquetaPorId.get(t.etiquetaId);
         return e ? [{ nombre: e.nombre, tipo: e.tipo, valor: t.valor }] : [];
