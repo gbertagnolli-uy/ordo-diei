@@ -16,3 +16,6 @@
 
 ## Ampliación (lane 287, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature_base/moodiary_data/lib/src/{mood_insights,mood_insights_controller,mood_insights_repository}.dart` y `packages/feature/moodiary_diary/lib/src/presentation/mood_insights/{mood_insights_page,mood_period_header,mood_period_picker,mood_patterns,mood_calendar}.dart` (resumen de ánimo por semana, mes y año). El calendario de ánimo (`mood_calendar`) se porta en la lane 288.
+
+## Ampliación (lane 288, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/presentation/calendar/calendar_page.dart` (mes de seis filas y vista del año), `packages/foundation/mui/lib/src/components/common/heatmap.dart` (`MHeatmap`), `packages/feature_base/moodiary_data/lib/src/dashboard_controller.dart` y su `test/heatmap_level_test.dart` (niveles del mapa de calor) y `mobile/lib/app/me/me_page.dart` (tarjeta del mapa de calor).

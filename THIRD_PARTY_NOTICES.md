@@ -35,17 +35,17 @@
 
 ## moodiary — https://github.com/ZhuJHua/moodiary
 - Licencia AGPL-3.0 (`vendor/moodiary/LICENSE`).
-- Copia del editor web en `vendor/moodiary/editor/` y, desde las lanes 284 y 285, de `category_repository.dart` y de las fuentes de búsqueda (commit `2c552ddd7939a054122380397fb914cf000824b0`, ver `vendor/moodiary/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/moodiary/<ruta> (ZhuJHua/moodiary@2c552dd)` (lane 283, editor del diario).
+- Copia del editor web en `vendor/moodiary/editor/` y, desde las lanes 284, 285, 287 y 288, de `category_repository.dart` y de las fuentes de búsqueda, estadísticas y calendario (commit `2c552ddd7939a054122380397fb914cf000824b0`, ver `vendor/moodiary/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/moodiary/<ruta> (ZhuJHua/moodiary@2c552dd)` (lane 283, editor del diario).
 - Dependencias que trae el port: Tiptap (`@tiptap/*`, MIT), `lowlight` (MIT), `marked` y `marked-cjk-friendly` (MIT), `prosemirror-search` (MIT).
 - Licencia AGPL pendiente de revisión legal por Gabriel.
 
 ## Daily You — https://github.com/Demizo/Daily_You
 - Licencia GPL-3.0 con términos adicionales (`vendor/Daily_You/LICENSE.txt`, `vendor/Daily_You/ADDITIONAL_TERMS.md`).
-- Copia parcial de los archivos de etiquetas en `vendor/Daily_You/` (commit `7cc237d1dcef24a27ca0f78ad449cc199b61bea3`, ver `vendor/Daily_You/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/Daily_You/<ruta> (Demizo/Daily_You@7cc237d)` (lane 284, etiquetas del diario). Desde la lane 285 se suman las fuentes de búsqueda y orden, desde la 286 las de plantillas y escala de ánimo y desde la 287 las de estadísticas.
+- Copia parcial de los archivos de etiquetas en `vendor/Daily_You/` (commit `7cc237d1dcef24a27ca0f78ad449cc199b61bea3`, ver `vendor/Daily_You/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/Daily_You/<ruta> (Demizo/Daily_You@7cc237d)` (lane 284, etiquetas del diario). Desde la lane 285 se suman las fuentes de búsqueda y orden, desde la 286 las de plantillas y escala de ánimo, desde la 287 las de estadísticas y desde la 288 las del calendario.
 - Esta app no usa el nombre ni el logotipo de Daily You; el diario es una adaptación propia y así se declara.
 - Licencia GPL pendiente de revisión legal por Gabriel.
 
 ## storypad — https://github.com/theachoem/storypad
 - Licencia GPL-3.0 (`vendor/storypad/LICENSE`).
-- Copia parcial de los modelos de etiquetas y, desde la lane 285, de las fuentes de búsqueda y filtros en `vendor/storypad/` (commit `a76825e88740c935458beff404cbb95c889e4e2e`, ver `vendor/storypad/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/storypad/<ruta> (theachoem/storypad@a76825e)` (lane 284).
+- Copia parcial de los modelos de etiquetas y, desde las lanes 285, 287 y 288, de las fuentes de búsqueda y filtros, estadísticas y calendario de ánimo en `vendor/storypad/` (commit `a76825e88740c935458beff404cbb95c889e4e2e`, ver `vendor/storypad/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/storypad/<ruta> (theachoem/storypad@a76825e)` (lane 284).
 - Licencia GPL pendiente de revisión legal por Gabriel.

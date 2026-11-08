@@ -1,0 +1,843 @@
+// Copyright (C) 2026 Demizo and contributors
+// SPDX-License-Identifier: GPL-3.0-only
+// Additional terms under GPLv3 section 7 apply; see ADDITIONAL_TERMS.md.
+
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
+import 'package:daily_you/config_provider.dart';
+import 'package:daily_you/l10n/generated/app_localizations.dart';
+import 'package:daily_you/models/entry.dart';
+import 'package:daily_you/models/tag.dart';
+import 'package:daily_you/pages/entries_list_page.dart';
+import 'package:daily_you/pages/entry_timeline_page.dart';
+import 'package:daily_you/providers/entries_provider.dart';
+import 'package:daily_you/models/attachment.dart';
+import 'package:daily_you/providers/entry_attachments_provider.dart';
+import 'package:daily_you/providers/tags_provider.dart';
+import 'package:daily_you/time_manager.dart';
+import 'package:daily_you/utils/calendar_month_table.dart';
+import 'package:daily_you/widgets/calendar_view_options_dialog.dart';
+import 'package:daily_you/widgets/entry_day_cell.dart';
+import 'package:daily_you/widgets/hide_semantics_while_dragging.dart';
+import 'package:daily_you/widgets/snapshot_while_scrolling.dart';
+import 'package:daily_you/widgets/year_month_picker.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:provider/provider.dart';
+
+class VerticalCalendar extends StatefulWidget {
+  final ScrollController scrollController;
+  final void Function(BuildContext context, DateTime date)? onDaySelected;
+
+  const VerticalCalendar({
+    super.key,
+    required this.scrollController,
+    this.onDaySelected,
+  });
+
+  @override
+  State<VerticalCalendar> createState() => _VerticalCalendarState();
+}
+
+class _VerticalCalendarState extends State<VerticalCalendar>
+    with AutomaticKeepAliveClientMixin {
+  static const double _daysOfWeekRowHeight = 32.0;
+  static const double _panelGap = 16.0;
+  static const double _minPanelWidth = 360.0;
+
+  static const int _monthsPerBatch = 240;
+  static const int _growMarginRows = 600;
+  static const Duration _dayNumberRebakeDelay = Duration(milliseconds: 150);
+
+  double _weekRowHeight = 57.0;
+  late CalendarMonthTable _table;
+  int _columns = 1;
+  double _panelWidth = 0;
+
+  double get _todayOffset => _table.rowsBelowToday <= 1
+      ? 0.0
+      : (_table.rowsBelowToday - 1) * _weekRowHeight;
+
+  Map<int, ui.Image> _dayNumberCache = {};
+  double? _lastDevicePixelRatio;
+  double _lastWeekRowHeight = 0.0;
+  Timer? _dayNumberRebakeTimer;
+  int _cacheGeneration = 0;
+
+  bool _initialScrollDone = false;
+  bool _isJalali = false;
+
+  bool _growScheduled = false;
+
+  final _showTodayButton = ValueNotifier<bool>(false);
+  final _scrolling = ValueNotifier<bool>(false);
+  DateTime _visibleMonth = DateTime.now();
+  String _cachedLocale = '';
+
+  int? _lastFirstDayIndex;
+  double _cellWidth = 0;
+  List<String> _dayLabels = [];
+
+  final DateTime _today =
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final configProvider = Provider.of<ConfigProvider>(context, listen: false);
+    final firstDayIndex = configProvider.getFirstDayOfWeekIndex(context);
+    final newLocale = TimeManager.currentLocale(context);
+
+    final firstDayChanged = firstDayIndex != _lastFirstDayIndex;
+    final localeChanged = newLocale != _cachedLocale;
+    _cachedLocale = newLocale;
+
+    final newIsJalali = TimeManager.isJalaliCalendar(context);
+    final jalaliChanged = newIsJalali != _isJalali;
+    _isJalali = newIsJalali;
+
+    if (firstDayChanged || jalaliChanged) {
+      _lastFirstDayIndex = firstDayIndex;
+      _resetMonths(firstDayIndex);
+      _visibleMonth = DateTime.now();
+    }
+
+    if (firstDayChanged || localeChanged || jalaliChanged) {
+      final allLabels = TimeManager.daysOfWeekLabels(context);
+      _dayLabels = [
+        ...allLabels.sublist(firstDayIndex),
+        ...allLabels.sublist(0, firstDayIndex),
+      ];
+    }
+  }
+
+  @override
+  void dispose() {
+    _dayNumberRebakeTimer?.cancel();
+    _disposeImages(_dayNumberCache);
+    _showTodayButton.dispose();
+    _scrolling.dispose();
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  Future<ui.Image> _bakeDayNumber(
+      String text, double devicePixelRatio, double logicalSize) async {
+    final physicalSize = (logicalSize * devicePixelRatio).ceil();
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    canvas.scale(devicePixelRatio, devicePixelRatio);
+
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: 18,
+          color: Colors.white,
+          shadows: [
+            Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 6),
+          ],
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+
+    painter.paint(
+      canvas,
+      Offset(
+        (logicalSize - painter.width) / 2,
+        (logicalSize - painter.height) / 2,
+      ),
+    );
+
+    return recorder.endRecording().toImage(physicalSize, physicalSize);
+  }
+
+  void _scheduleDayNumberCache(double devicePixelRatio) {
+    _dayNumberRebakeTimer?.cancel();
+    if (_dayNumberCache.isEmpty) {
+      _createDayNumberCache(devicePixelRatio);
+      return;
+    }
+    _dayNumberRebakeTimer = Timer(
+      _dayNumberRebakeDelay,
+      () => _createDayNumberCache(devicePixelRatio),
+    );
+  }
+
+  Future<void> _createDayNumberCache(double devicePixelRatio) async {
+    final generation = ++_cacheGeneration;
+    final logicalSize = _weekRowHeight;
+    final cache = <int, ui.Image>{};
+    for (int day = 1; day <= 31; day++) {
+      final image =
+          await _bakeDayNumber(day.toString(), devicePixelRatio, logicalSize);
+      if (!mounted || generation != _cacheGeneration) {
+        image.dispose();
+        _disposeImages(cache);
+        return;
+      }
+      cache[day] = image;
+    }
+    final previous = _dayNumberCache;
+    setState(() => _dayNumberCache = cache);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _disposeImages(previous));
+  }
+
+  void _disposeImages(Map<int, ui.Image> images) {
+    for (final image in images.values) {
+      image.dispose();
+    }
+  }
+
+  void _resetMonths(int firstDayIndex) {
+    _table = CalendarMonthTable(
+      today: _today,
+      isJalali: _isJalali,
+      firstWeekday: firstDayIndex == 6 ? 7 : firstDayIndex + 1,
+      columns: _columns,
+    )..extend(_floorDate, _monthsPerBatch);
+  }
+
+  DateTime get _floorDate {
+    final entries = context.read<EntriesProvider>().entries;
+    if (entries.isEmpty) return TimeManager.minEntryDate;
+    final oldest = entries.last.timeCreate;
+    return oldest.isBefore(TimeManager.minEntryDate)
+        ? oldest
+        : TimeManager.minEntryDate;
+  }
+
+  void _extendMonths() => _table.extend(_floorDate, _monthsPerBatch);
+
+  void _growIfNeeded(int row) {
+    if (_table.reachedFloor(_floorDate) || _growScheduled) return;
+    if (row < _table.rowCount - _growMarginRows) return;
+    _growScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _growScheduled = false;
+      if (!mounted) return;
+      setState(_extendMonths);
+    });
+  }
+
+  void _scrollToToday({bool animate = true}) {
+    if (!widget.scrollController.hasClients) return;
+    if (animate) {
+      widget.scrollController.animateTo(
+        _todayOffset,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      widget.scrollController.jumpTo(_todayOffset);
+    }
+    _updateVisibleMonthFromOffset(_todayOffset);
+  }
+
+  void _jumpToMonth(DateTime date) {
+    if (!widget.scrollController.hasClients || date.isAfter(_today)) return;
+    int index = _table.indexOfMonthContaining(date);
+    while (index < 0 && !_table.reachedFloor(_floorDate)) {
+      _extendMonths();
+      index = _table.indexOfMonthContaining(date);
+    }
+    if (index < 0) return;
+
+    final target = _table.firstRowOfMonth(index) * _weekRowHeight;
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.scrollController.hasClients) {
+        widget.scrollController.jumpTo(target);
+      }
+    });
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollStartNotification) {
+      _scrolling.value = true;
+    } else if (notification is ScrollEndNotification) {
+      _scrolling.value = false;
+    }
+    return false;
+  }
+
+  void _onScroll() {
+    final offset = widget.scrollController.offset;
+    final showToday = (offset - _todayOffset).abs() > _weekRowHeight * 12;
+    if (_showTodayButton.value != showToday) {
+      _showTodayButton.value = showToday;
+    }
+    _updateVisibleMonthFromOffset(offset);
+  }
+
+  void _updateVisibleMonthFromOffset(double offset) {
+    if (_table.months.isEmpty || _weekRowHeight <= 0) return;
+    final row = (offset / _weekRowHeight).floor();
+    _visibleMonth =
+        _table.bands[_table.bandIndexForRow(row)].months.first.firstDate;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final configProvider = context.watch<ConfigProvider>();
+    final showImages = !configProvider.get(Settings.hideImagesInCalendar);
+    final showMood = configProvider.get(Settings.calendarShowMood);
+    final entriesProvider = context.watch<EntriesProvider>();
+    final attachmentsProvider = context.watch<EntryAttachmentsProvider>();
+
+    final tagsProvider = context.watch<TagsProvider>();
+    final overlayTagId = configProvider.get(Settings.calendarTagOverlay);
+    final calendarTagOverride = overlayTagId != null
+        ? tagsProvider.tags.where((tag) => tag.id == overlayTagId).firstOrNull
+        : null;
+
+    // The selected tag may have been deleted since it was saved; revert the
+    // persisted setting back to "none" instead of leaving a stale tag id.
+    if (overlayTagId != null && calendarTagOverride == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          configProvider.set(Settings.calendarTagOverlay, null);
+        }
+      });
+    }
+
+    final calendarTagEntryMap = overlayTagId != null
+        ? {
+            for (final entryTag in tagsProvider.entryTags
+                .where((entryTag) => entryTag.tagId == overlayTagId))
+              entryTag.entryId: entryTag,
+          }
+        : const <int, EntryTag>{};
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = math.max(
+            1,
+            ((constraints.maxWidth + _panelGap) / (_minPanelWidth + _panelGap))
+                .floor());
+        if (columns != _columns) {
+          _columns = columns;
+          _resetMonths(_lastFirstDayIndex!);
+          _initialScrollDone = false;
+        }
+        _panelWidth =
+            (constraints.maxWidth - _panelGap * (columns - 1)) / columns;
+        final newCellWidth = _panelWidth / 7;
+        if (newCellWidth != _cellWidth) {
+          _cellWidth = newCellWidth;
+          _weekRowHeight = newCellWidth;
+        }
+
+        final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+        if (_lastDevicePixelRatio != devicePixelRatio ||
+            _lastWeekRowHeight != _weekRowHeight) {
+          _lastDevicePixelRatio = devicePixelRatio;
+          _lastWeekRowHeight = _weekRowHeight;
+          _scheduleDayNumberCache(devicePixelRatio);
+        }
+
+        if (!_initialScrollDone) {
+          _initialScrollDone = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (widget.scrollController.hasClients) {
+              widget.scrollController.jumpTo(_todayOffset);
+            }
+          });
+        }
+
+        return Stack(
+            fit: StackFit.loose,
+            alignment: AlignmentDirectional.bottomCenter,
+            children: [
+              Column(
+                children: [
+                  _buildWeekdayHeader(context, _dayLabels),
+                  Expanded(
+                    child: ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(context)
+                          .copyWith(scrollbars: false),
+                      child: HideSemanticsWhileDragging(
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: _onScrollNotification,
+                          child: CustomScrollView(
+                            controller: widget.scrollController,
+                            reverse: true,
+                            slivers: [
+                              const SliverPadding(
+                                  padding: EdgeInsets.only(bottom: 85)),
+                              SliverFixedExtentList(
+                                itemExtent: _weekRowHeight,
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) => _buildItem(
+                                      context,
+                                      index,
+                                      entriesProvider,
+                                      attachmentsProvider,
+                                      showImages,
+                                      showMood,
+                                      calendarTagOverride,
+                                      calendarTagEntryMap),
+                                  childCount: _table.rowCount,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.onDaySelected == null) _buildCalendarControls(context),
+              _buildJumpToTodayButton(context),
+            ]);
+      },
+    );
+  }
+
+  Widget _buildWeekdayHeader(BuildContext context, List<String> dayLabels) {
+    final theme = Theme.of(context);
+    return _panelRow([
+      for (int column = 0; column < _columns; column++)
+        _buildWeekdayPanel(theme, dayLabels),
+    ]);
+  }
+
+  Widget _panelRow(List<Widget> panels) {
+    return Row(
+      children: [
+        for (int column = 0; column < panels.length; column++) ...[
+          if (column > 0) const SizedBox(width: _panelGap),
+          SizedBox(width: _panelWidth, child: panels[column]),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildWeekdayPanel(ThemeData theme, List<String> dayLabels) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(14),
+          topRight: Radius.circular(14),
+          bottomLeft: Radius.circular(4),
+          bottomRight: Radius.circular(4),
+        ),
+      ),
+      child: SizedBox(
+        height: _daysOfWeekRowHeight,
+        child: Row(
+          children: dayLabels.map((label) {
+            return Expanded(
+              child: Center(
+                child: Text(
+                  label,
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarControls(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    return Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            elevation: 1,
+            margin: EdgeInsets.all(0),
+            color: Theme.of(context).colorScheme.primaryContainer,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(80))),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.calendar_month_rounded,
+                      color: theme.colorScheme.primary),
+                  padding: const EdgeInsets.all(8),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      value: 'month',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_month_rounded,
+                              color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(l10n.jumpToMonthTitle),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'log',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.event_rounded,
+                              color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(l10n.jumpToLogTitle),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (value) {
+                    if (value == 'month') {
+                      _onMonthLabelTap(context);
+                    } else {
+                      _onCalendarIconTap(context);
+                    }
+                  },
+                ),
+                IconButton(
+                  onPressed: () => showCalendarViewOptionsDialog(context),
+                  icon: const Icon(Icons.visibility_rounded),
+                  color: theme.colorScheme.primary,
+                  padding: const EdgeInsets.all(8),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildJumpToTodayButton(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 13.0),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _showTodayButton,
+          builder: (context, showToday, _) => AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) {
+              final scale = TweenSequence([
+                TweenSequenceItem(
+                  tween: Tween<double>(begin: 0.0, end: 1.1)
+                      .chain(CurveTween(curve: Curves.easeOut)),
+                  weight: 50,
+                ),
+                TweenSequenceItem(
+                  tween: Tween<double>(begin: 1.1, end: 1.0)
+                      .chain(CurveTween(curve: Curves.easeIn)),
+                  weight: 50,
+                ),
+              ]).animate(animation);
+              return ScaleTransition(scale: scale, child: child);
+            },
+            child: showToday
+                ? IconButton(
+                    color: theme.colorScheme.primary,
+                    key: const ValueKey('todayBtn'),
+                    onPressed: () => _scrollToToday(),
+                    icon: Icon(Icons.arrow_downward_rounded),
+                    style: IconButton.styleFrom(
+                        elevation: 1,
+                        shadowColor: theme.shadowColor,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primaryContainer),
+                  )
+                : const SizedBox.shrink(key: ValueKey('noBtn')),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onCalendarIconTap(BuildContext context) async {
+    final entriesProvider = context.read<EntriesProvider>();
+    final DateTime? picked = await TimeManager.pickDate(
+      context,
+      selectableDayPredicate: (date) {
+        if (entriesProvider.entries.isEmpty) return true;
+        return entriesProvider.getEntryForDate(date) != null;
+      },
+      initialDate: entriesProvider.entries.isNotEmpty
+          ? entriesProvider.entries.first.timeCreate
+          : DateTime.now(),
+      firstDate: _floorDate,
+      lastDate: DateTime.now(),
+    );
+
+    if (picked == null || !mounted) return;
+    _jumpToMonth(picked);
+
+    final List<Entry> entries = entriesProvider.getEntriesForDate(picked);
+    if (!context.mounted) return;
+
+    if (entries.isNotEmpty) {
+      if (entries.length == 1) {
+        await Navigator.of(context).push(MaterialPageRoute(
+          allowSnapshotting: false,
+          builder: (context) => EntriesListPage(
+            index: entriesProvider.getIndexOfEntry(entries.first.id!),
+            getEntries: () => entriesProvider.entries,
+          ),
+        ));
+      } else {
+        EntryTimelinePage.pushForDay(context, picked);
+      }
+    }
+  }
+
+  Future<void> _onMonthLabelTap(BuildContext context) async {
+    final DateTime? selected = await showYearMonthPicker(context,
+        initialDate: _visibleMonth, isJalali: _isJalali);
+    if (selected == null) return;
+    _jumpToMonth(selected);
+  }
+
+  Widget _buildItem(
+      BuildContext context,
+      int index,
+      EntriesProvider entriesProvider,
+      EntryAttachmentsProvider attachmentsProvider,
+      bool showImages,
+      bool showMood,
+      Tag? calendarTagOverride,
+      Map<int, EntryTag> calendarTagEntryMap) {
+    _growIfNeeded(index);
+    final band = _table.bands[_table.bandIndexForRow(index)];
+    final rowFromTop = band.rowCount - 1 - (index - band.firstRow);
+    return RepaintBoundary(
+      child: _panelRow([
+        for (int column = 0; column < _columns; column++)
+          _buildPanelRow(
+              context,
+              band,
+              _columns - 1 - column,
+              rowFromTop,
+              entriesProvider,
+              attachmentsProvider,
+              showImages,
+              showMood,
+              calendarTagOverride,
+              calendarTagEntryMap),
+      ]),
+    );
+  }
+
+  Widget _buildPanelRow(
+      BuildContext context,
+      MonthBand band,
+      int monthIndexInBand,
+      int rowFromTop,
+      EntriesProvider entriesProvider,
+      EntryAttachmentsProvider attachmentsProvider,
+      bool showImages,
+      bool showMood,
+      Tag? calendarTagOverride,
+      Map<int, EntryTag> calendarTagEntryMap) {
+    if (monthIndexInBand >= band.months.length) return const SizedBox.shrink();
+    final layout = band.months[monthIndexInBand];
+    if (rowFromTop == 0) return _buildMonthHeader(context, layout.firstDate);
+    final weekIndex = layout.weekCount - rowFromTop;
+    if (weekIndex < 0) return const SizedBox.shrink();
+    return _buildWeekRow(
+        context,
+        _table.weekDays(layout, weekIndex,
+            isHidden: (day) =>
+                day.isBefore(TimeManager.minEntryDate) &&
+                entriesProvider.getEntriesForDate(day).isEmpty),
+        entriesProvider,
+        attachmentsProvider,
+        showImages,
+        showMood,
+        calendarTagOverride,
+        calendarTagEntryMap);
+  }
+
+  Widget _buildMonthHeader(BuildContext context, DateTime month) {
+    return SizedBox(
+      height: _weekRowHeight,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          height: _daysOfWeekRowHeight,
+          margin: const EdgeInsets.only(bottom: 2.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(14),
+              topRight: Radius.circular(14),
+              bottomLeft: Radius.circular(4),
+              bottomRight: Radius.circular(4),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              TimeManager.formatMonthYear(month, context),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeekRow(
+      BuildContext context,
+      List<DateTime?> days,
+      EntriesProvider entriesProvider,
+      EntryAttachmentsProvider attachmentsProvider,
+      bool showImages,
+      bool showMood,
+      Tag? calendarTagOverride,
+      Map<int, EntryTag> calendarTagEntryMap) {
+    return SnapshotWhileScrolling(
+      scrolling: _scrolling,
+      child: _WeekRow(
+        days: days,
+        today: _today,
+        cellSize: _cellWidth,
+        dayNumberCache: _dayNumberCache,
+        entriesProvider: entriesProvider,
+        attachmentsProvider: attachmentsProvider,
+        showImages: showImages,
+        showMood: showMood,
+        isJalali: _isJalali,
+        calendarTagOverride: calendarTagOverride,
+        calendarTagEntryMap: calendarTagEntryMap,
+        onSelectDay: widget.onDaySelected,
+      ),
+    );
+  }
+}
+
+class _WeekRow extends StatelessWidget {
+  final List<DateTime?> days;
+  final DateTime today;
+  final double cellSize;
+  final Map<int, ui.Image> dayNumberCache;
+  final EntriesProvider entriesProvider;
+  final EntryAttachmentsProvider attachmentsProvider;
+  final bool showImages;
+  final bool showMood;
+  final bool isJalali;
+  final Tag? calendarTagOverride;
+  final Map<int, EntryTag> calendarTagEntryMap;
+  final void Function(BuildContext context, DateTime date)? onSelectDay;
+
+  const _WeekRow({
+    required this.days,
+    required this.today,
+    required this.cellSize,
+    required this.dayNumberCache,
+    required this.entriesProvider,
+    required this.attachmentsProvider,
+    required this.showImages,
+    required this.showMood,
+    this.isJalali = false,
+    this.calendarTagOverride,
+    this.calendarTagEntryMap = const {},
+    this.onSelectDay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: cellSize,
+      child: Row(
+        children: days.map((day) {
+          if (day == null) {
+            return SizedBox(
+              width: cellSize,
+              height: cellSize,
+              child: Container(
+                margin: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            );
+          }
+
+          final isFuture =
+              day.isAfter(today) && !TimeManager.isSameDay(day, today);
+          if (isFuture) {
+            final futureDayNum =
+                isJalali ? TimeManager.jalaliDayNumber(day) : day.day;
+            return SizedBox(
+              width: cellSize,
+              height: cellSize,
+              child: Container(
+                margin: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    '$futureDayNum',
+                    style: TextStyle(
+                        fontSize: 16, color: Theme.of(context).disabledColor),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final entries = entriesProvider.getEntriesForDate(day);
+          final coverCandidates = !showImages
+              ? const <EntryAttachment>[]
+              : entries
+                  .map((entry) =>
+                      attachmentsProvider.getCoverCandidatesForEntry(entry.id!))
+                  .firstWhere((candidates) => candidates.isNotEmpty,
+                      orElse: () => const []);
+
+          final displayDayNum =
+              isJalali ? TimeManager.jalaliDayNumber(day) : day.day;
+
+          return SizedBox(
+            width: cellSize,
+            height: cellSize,
+            child: EntryDayCell(
+              date: day,
+              today: today,
+              entries: entries,
+              coverCandidates: coverCandidates,
+              cellSize: cellSize,
+              dayNumber: dayNumberCache[displayDayNum],
+              showImages: showImages,
+              showMood: showMood,
+              isJalali: isJalali,
+              calendarTagOverride: calendarTagOverride,
+              calendarTagEntryMap: calendarTagEntryMap,
+              onSelectDay: onSelectDay,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}

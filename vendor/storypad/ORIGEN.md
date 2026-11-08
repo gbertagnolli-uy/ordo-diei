@@ -11,3 +11,6 @@
 
 ## Ampliación (lane 287, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de estadísticas: `lib/core/objects/stats/{stats_range,story_stats_object}.dart`, `lib/core/objects/month_recap_stats_object.dart`, `lib/core/services/stories/{story_stats_service,monthly_story_stats_service}.dart` y `lib/views/stats/{stats_view,stats_view_model,stats_content,stats_section}.dart` con `local_widgets/{stats_emoji_grid,stats_label_list,stats_metric_chip,stats_trend}.dart`.
+
+## Ampliación (lane 288, 2026-11-08)
+- Se agregan, sin cambios, las fuentes del calendario de ánimo y de la lista de años: `lib/views/calendar/mood/{mood_calendar_view,mood_calendar_view_model,mood_calendar_content}.dart` y `lib/views/home/years/{home_years_view_model,home_years_content}.dart`.

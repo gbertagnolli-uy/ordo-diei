@@ -15,3 +15,6 @@
 
 ## Ampliación (lane 287, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de estadísticas: `lib/stats/{entry_stats,stats_range,streaks}.dart`, `lib/models/stats_subject.dart`, `lib/utils/{bucket_combiner,chart_y_range,chart_axis}.dart`, `lib/pages/statistics_page.dart` y `lib/widgets/{stat_range_selector,stats_overview_card,distribution_chart,label_summary_card,mood_summary_chart,value_by_day_chart,value_over_time_chart}.dart`.
+
+## Ampliación (lane 288, 2026-11-08)
+- Se agregan, sin cambios, las fuentes del calendario: `lib/widgets/{vertical_calendar,entry_day_cell,year_month_picker,calendar_view_options_dialog}.dart` y `lib/utils/year_month_range.dart` (celda con portada, ánimo, contador y etiqueta; opciones del calendario; selector de año y mes).
