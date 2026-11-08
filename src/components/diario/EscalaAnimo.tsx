@@ -24,6 +24,17 @@ export function fondoDe(nivel: NivelAnimo): { className?: string; style?: CSSPro
   return nivel.color ? { style: { backgroundColor: nivel.color } } : { className: FONDO_ANIMO[nivel.valor] };
 }
 
+const COLOR_PREDETERMINADO: Record<number, string> = {
+  1: "var(--destructive)",
+  2: "var(--warning)",
+  3: "var(--muted-foreground)",
+  4: "color-mix(in oklch, var(--primary) 60%, transparent)",
+  5: "var(--success)",
+};
+
+/** El color del nivel como valor CSS (para gráficos): el elegido o el del tema, el mismo que `fondoDe`. */
+export const colorDe = (nivel: NivelAnimo): string => nivel.color ?? COLOR_PREDETERMINADO[nivel.valor] ?? "var(--primary)";
+
 type Pedido = { escala: EscalaAnimo };
 
 async function pedir(url: string, metodo: string, cuerpo?: unknown): Promise<EscalaAnimo> {

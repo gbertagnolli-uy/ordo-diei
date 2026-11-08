@@ -1,7 +1,7 @@
 "use client";
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, PenLine, Search, Smile, Tags } from "lucide-react";
+import { BarChart3, FileText, PenLine, Search, Smile, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resumenMes, type Marcas, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
@@ -12,6 +12,7 @@ import { EditarEscalaAnimo } from "./EditarEscalaAnimo";
 import { EditorEntrada } from "./EditorEntrada";
 import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
 import { AdministrarDiario } from "./etiquetas/AdministrarDiario";
+import { PanelEstadisticas } from "./estadisticas/PanelEstadisticas";
 import { useCatalogo } from "./etiquetas/useCatalogo";
 import { ListaDia } from "./ListaDia";
 import { cambiarMarcasRemoto } from "./MarcasEntrada";
@@ -35,6 +36,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const puedeCambiarEscala = tipo === "personal" || esPadre;
   const [admin, setAdmin] = useState<"etiquetas" | "categorias" | null>(null);
   const [buscando, setBuscando] = useState(false);
+  const [verEstadisticas, setVerEstadisticas] = useState(false);
   const [versionBusqueda, setVersionBusqueda] = useState(0);
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setMes(fecha.slice(0, 7));
     setSeleccionado(fecha);
     setBuscando(false);
+    setVerEstadisticas(false);
   }
 
   async function marcar(e: EntradaVista, marcas: Marcas) {
@@ -83,7 +86,11 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   return (
     <ProveedorEscala value={escala.escala}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
-      {buscando ? (
+      {verEstadisticas ? (
+        <div className="md:col-span-2">
+          <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
+        </div>
+      ) : buscando ? (
         <div className="md:col-span-2">
           <BuscadorDiario
             tipo={tipo}
@@ -104,6 +111,9 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             <ResumenMes totalEntradas={resumen.totalEntradas} diasPorAnimo={resumen.diasPorAnimo} />
             <Button variant="outline" onClick={() => setBuscando(true)}>
               <Search /> Buscar
+            </Button>
+            <Button variant="outline" onClick={() => setVerEstadisticas(true)}>
+              <BarChart3 /> Estadísticas
             </Button>
             <Button variant="outline" onClick={() => setAdmin("etiquetas")}>
               <Tags /> Etiquetas y categorías
