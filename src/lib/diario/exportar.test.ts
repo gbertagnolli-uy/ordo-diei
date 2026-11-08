@@ -42,6 +42,7 @@ const entrada = (o: Partial<EntradaExport> = {}): EntradaExport => ({
 
 const catalogo: CatalogoExport = {
   escala: [{ valor: 4, etiqueta: "Bien", icono: null, tipoIcono: "emoji", color: null }],
+  grupos: [{ nombre: "Personas", icono: "👪", tipoIcono: "emoji", color: "#43a047", seleccionUnica: false, orden: 0 }],
   categorias: [{ nombre: "Misa", camino: "Fe › Misa", color: null }],
   etiquetas: [
     { nombre: "Familia", tipo: "etiqueta", grupo: null, icono: null, tipoIcono: "emoji", color: null, orden: 0 },
@@ -200,10 +201,14 @@ test("csv: BOM, columnas fijas y una columna por contador", () => {
 test("json: formato, versión, escala y entradas con sus fotos", () => {
   const datos: DatosExport = { tipo: "personal", exportadaEn: "2026-07-21T00:00:00.000Z", catalogo, entradas: [] };
   const n = nombrarEntradas([entrada({ animo: 4, fotos: ["/api/archivos/a"], etiquetas: [{ nombre: "Agua", tipo: "contador", valor: "3" }] })]);
-  const con = documentoJson(datos, n, true) as { format: string; version: number; entries: { photos: string[]; tags: unknown[]; time: string }[]; moodScale: unknown[] };
+  const con = documentoJson(datos, n, true) as { format: string; version: number; entries: { photos: string[]; tags: unknown[]; time: string }[]; moodScale: unknown[]; tagGroups: unknown[]; categories: unknown[]; tags: unknown[] };
   assert.equal(con.format, "ordo-diei-diario");
   assert.equal(con.version, 1);
   assert.equal(con.moodScale.length, 1);
+  assert.deepEqual(con.moodScale[0], { mood: 4, label: "Bien", icon: null, iconType: "emoji", color: null });
+  assert.deepEqual(con.tagGroups, [{ name: "Personas", icon: "👪", iconType: "emoji", color: "#43a047", singleChoice: false, sortOrder: 0 }]);
+  assert.deepEqual(con.categories, [{ name: "Misa", path: "Fe › Misa", color: null }]);
+  assert.equal((con.tags[0] as { name: string }).name, "Familia");
   assert.equal(con.entries[0].time, "09:30");
   assert.deepEqual(con.entries[0].photos, ["fotos/foto_2026-07-20_1"]);
   assert.deepEqual(con.entries[0].tags, [{ name: "Agua", type: "contador", value: "3" }]);

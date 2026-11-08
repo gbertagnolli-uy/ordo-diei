@@ -2,7 +2,7 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarHeart, Download, FileText, History, PenLine, Route, Search, Smile, Tags } from "lucide-react";
+import { BarChart3, CalendarHeart, Download, FileText, History, PenLine, Route, Search, Smile, Tags, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
@@ -21,6 +21,7 @@ import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
 import { ProveedorEnlaces } from "./enlaces/ContextoEnlaces";
 import { LineaDeTiempo } from "./linea/LineaDeTiempo";
 import { ExportarDiario } from "./exportar/ExportarDiario";
+import { ImportarDiario } from "./importar/ImportarDiario";
 import { EnEsteDiaDialog } from "./recuerdos/EnEsteDiaDialog";
 import { OpcionesDeRecuerdos } from "./recuerdos/OpcionesRecuerdos";
 import { SeccionRecuerdos } from "./recuerdos/SeccionRecuerdos";
@@ -59,6 +60,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [enEsteDia, setEnEsteDia] = useState<string | null>(null);
   const [editandoRecuerdos, setEditandoRecuerdos] = useState(false);
   const [exportando, setExportando] = useState(false);
+  const [importando, setImportando] = useState(false);
   const [eligiendoMes, setEligiendoMes] = useState(false);
   const [editandoVista, setEditandoVista] = useState(false);
   const [filtroEtiqueta, setFiltroEtiqueta] = useState<number | null>(null);
@@ -225,6 +227,9 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             <Button variant="outline" onClick={() => setExportando(true)}>
               <Download /> Exportar
             </Button>
+            <Button variant="outline" onClick={() => setImportando(true)}>
+              <Upload /> Importar
+            </Button>
             {puedeCambiarEscala && (
               <Button variant="outline" onClick={() => setEditandoEscala(true)}>
                 <Smile /> Escala de ánimo
@@ -298,6 +303,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           }}
         />
       )}
+      {importando && <ImportarDiario tipo={tipo} onTerminado={recargar} onCerrar={() => setImportando(false)} />}
       {exportando && <ExportarDiario tipo={tipo} catalogo={acciones.catalogo} onCerrar={() => setExportando(false)} />}
       {editandoRecuerdos && <OpcionesDeRecuerdos opciones={opcionesRecuerdos} onCambiar={setOpcionesRecuerdos} onCerrar={() => setEditandoRecuerdos(false)} />}
       {editandoVista && <OpcionesDelCalendario opciones={{ ...opciones, etiqueta: etiquetaDeCalendario }} catalogo={acciones.catalogo} onCambiar={setOpciones} onCerrar={() => setEditandoVista(false)} />}
