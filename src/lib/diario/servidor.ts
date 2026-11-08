@@ -1,7 +1,10 @@
 // Diario (lane 272), lado servidor. La privacidad del personal se hace cumplir acá, en cada consulta (D1).
-import type { Prisma } from "@prisma/client";
+import { format } from "date-fns";
+import { tz } from "@date-fns/tz";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
+import { APP_TZ, aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
+import type { NodoDoc } from "./contenido";
 import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, type TipoDiario } from "./reglas";
 
 type Actor = { id: number; esPadre: boolean };
@@ -12,8 +15,13 @@ export type EntradaVista = {
   fecha: string;
   titulo: string | null;
   texto: string;
+  /** Documento Tiptap; null = entrada escrita en texto plano (lane 272), se abre como párrafos. */
+  contenido: NodoDoc | null;
   animo: number | null;
+  /** Hora de la entrada: minutos desde la medianoche en la zona de la familia (la fijada o, si no, la de `creadaEn`). */
+  hora: number;
   creadaEn: string;
+  editadaEn: string;
   fotos: string[];
   autor: { id: number; nombre: string; fotoUrl: string | null };
   puedoEditar: boolean;
@@ -27,6 +35,14 @@ const incluir = {
 
 type EntradaConFotos = Prisma.DiarioEntradaGetPayload<{ include: typeof incluir }>;
 
+const aJson = (d: NodoDoc | null) => (d ? (d as unknown as Prisma.InputJsonObject) : undefined);
+
+/** Minutos desde la medianoche, en la zona de la familia. */
+export const minutosEnFamilia = (d: Date) => {
+  const [h, m] = format(d, "HH:mm", { in: tz(APP_TZ) }).split(":").map(Number);
+  return h * 60 + m;
+};
+
 function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
   return {
     id: e.id,
@@ -34,8 +50,11 @@ function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
     fecha: aClave(e.fecha),
     titulo: e.titulo,
     texto: e.texto,
+    contenido: (e.contenido as NodoDoc | null) ?? null,
     animo: e.animo,
+    hora: e.hora ?? minutosEnFamilia(e.creadaEn),
     creadaEn: e.creadaEn.toISOString(),
+    editadaEn: e.editadaEn.toISOString(),
     fotos: e.fotos.map((f: { url: string }) => f.url),
     autor: e.autor,
     puedoEditar: puedeEditar(e, actor),
@@ -54,7 +73,9 @@ export async function listarMes(actor: Actor, tipo: TipoDiario, mes: string): Pr
     orderBy: [{ fecha: "desc" }, { creadaEn: "desc" }],
     include: incluir,
   });
-  return filas.map((e) => aVista(e, actor));
+  return filas
+    .map((e) => aVista(e, actor))
+    .sort((a, b) => (a.fecha === b.fecha ? b.hora - a.hora || b.creadaEn.localeCompare(a.creadaEn) : b.fecha.localeCompare(a.fecha)));
 }
 
 export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<string, unknown>): Promise<EntradaVista> {
@@ -69,6 +90,8 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
       fecha,
       titulo: v.titulo,
       texto: v.texto,
+      contenido: aJson(v.contenido),
+      hora: v.hora,
       animo: v.animo,
       fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
     },
@@ -87,7 +110,7 @@ async function buscarVisible(actor: Actor, id: number) {
 export async function editarEntrada(actor: Actor, id: number, body: Record<string, unknown>): Promise<EntradaVista> {
   const e = await buscarVisible(actor, id);
   if (!puedeEditar(e, actor)) throw new NoAutorizadoError("Solo quien la escribió puede editarla");
-  const v = validarEntrada({ ...body, fecha: body.fecha ?? aClave(e.fecha) }, hoyEnFamilia());
+  const v = validarEntrada({ ...body, fecha: body.fecha ?? aClave(e.fecha), hora: body.hora ?? e.hora }, hoyEnFamilia());
   const nueva = await prisma.$transaction(async (tx) => {
     await tx.diarioFoto.deleteMany({ where: { entradaId: id } });
     return tx.diarioEntrada.update({
@@ -96,6 +119,8 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
         fecha: aFecha(v.fecha),
         titulo: v.titulo,
         texto: v.texto,
+        contenido: aJson(v.contenido) ?? Prisma.DbNull,
+        hora: v.hora,
         animo: v.animo,
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
       },

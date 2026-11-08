@@ -32,3 +32,9 @@
 - Licencia AGPL-3.0, Copyright (C) 2024-2025 Devscalelabs (`vendor/opencircle/LICENSE.md`). El `package.json` raíz de opencircle dice «ISC», pero el README y `LICENSE.md` dicen AGPL v3; vale `LICENSE.md`.
 - Copia en `vendor/opencircle/` (commit `5a8beada3147c6bd922c44f9cfe5b4a82f1a4056`, ver `vendor/opencircle/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/opencircle/<ruta> (devscalelabs/opencircle@5a8beada)`: hoy, los servicios de `src/lib/social/servidor/` (posts, canales, reacciones, notificaciones; lane 276, módulo social).
 - Licencia AGPL pendiente de revisión legal por Gabriel.
+
+## moodiary — https://github.com/ZhuJHua/moodiary
+- Licencia AGPL-3.0 (`vendor/moodiary/LICENSE`).
+- Copia del editor web en `vendor/moodiary/editor/` (commit `2c552ddd7939a054122380397fb914cf000824b0`, ver `vendor/moodiary/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/moodiary/<ruta> (ZhuJHua/moodiary@2c552dd)` (lane 283, editor del diario).
+- Dependencias que trae el port: Tiptap (`@tiptap/*`, MIT), `lowlight` (MIT), `marked` y `marked-cjk-friendly` (MIT), `prosemirror-search` (MIT).
+- Licencia AGPL pendiente de revisión legal por Gabriel.

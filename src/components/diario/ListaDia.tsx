@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import type { TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import { animoDe } from "./animo";
+import { EditorTexto } from "./editor/EditorTexto";
 
-const hora = (iso: string) => new Date(iso).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+const hora = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
 function Tarjeta({
   e,
@@ -35,7 +36,7 @@ function Tarjeta({
         )}
         <div className="min-w-0 flex-1">
           {tipo === "familiar" && <p className="truncate text-sm font-medium">{e.autor.nombre}</p>}
-          <p className="text-xs text-muted-foreground">{hora(e.creadaEn)}</p>
+          <p className="text-xs text-muted-foreground">{hora(e.hora)}</p>
         </div>
         {animo && (
           <span className="text-xl" title={animo.etiqueta} aria-label={`Ánimo: ${animo.etiqueta}`}>
@@ -54,7 +55,14 @@ function Tarjeta({
         )}
       </header>
       {e.titulo && <h3 className="mb-1 font-semibold">{e.titulo}</h3>}
-      <p className={`whitespace-pre-line text-sm ${abierta ? "" : "line-clamp-4"}`}>{e.texto}</p>
+      {e.contenido ? (
+        // Entrada con formato (lane 283): se muestra con el mismo editor, solo lectura. Plegada a unas 6 líneas.
+        <div className={`text-sm ${abierta ? "" : "max-h-36 overflow-hidden"}`}>
+          <EditorTexto key={`${e.id}-${e.editadaEn}`} inicial={{ contenido: e.contenido, texto: e.texto }} editable={false} />
+        </div>
+      ) : (
+        <p className={`whitespace-pre-line text-sm ${abierta ? "" : "line-clamp-4"}`}>{e.texto}</p>
+      )}
       {largo && (
         <button type="button" className="mt-1 text-sm text-primary" onClick={() => setAbierta(!abierta)}>
           {abierta ? "ver menos" : "ver más"}

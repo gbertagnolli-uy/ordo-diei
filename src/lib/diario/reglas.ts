@@ -1,5 +1,6 @@
 // Diario personal y familiar (lane 272, Plane #31). Reglas puras: sin base ni red.
 // Escala de ánimo 1–5 basada en Daily You (Demizo/Daily_You@7cc237d, lib/models/mood.dart).
+import { sanearDocumento, textoPlanoDe, tieneImagen, type NodoDoc } from "./contenido.ts";
 
 export type TipoDiario = "personal" | "familiar";
 
@@ -11,18 +12,24 @@ export const ANIMOS = [
   { valor: 5, etiqueta: "Muy bien", emoji: "😄" },
 ] as const;
 
-export const MAX_TEXTO = 10_000;
+export const MAX_TEXTO = 50_000;
 export const MAX_TITULO = 120;
 export const MAX_FOTOS = 4;
-export const MAX_DIAS_ATRAS = 30;
+/** Lane 283 (D9): ya no hay tope de 30 días hacia atrás, como en Daily You; solo se bloquea el futuro. */
+export const FECHA_MINIMA = "2000-01-01";
 export const MAX_ENTRADAS_DIA = 50;
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const URL_ARCHIVO = /^\/api\/archivos\/[0-9a-f-]{36}$/i;
 
 export interface EntradaValida {
   fecha: string;
+  /** Minutos desde la medianoche (0–1439) o null = la hora en que se creó. */
+  hora: number | null;
   titulo: string | null;
+  /** Siempre texto plano: si hay `contenido`, se deriva de él. */
   texto: string;
+  /** Documento Tiptap saneado, o null para una entrada en texto plano. */
+  contenido: NodoDoc | null;
   animo: number | null;
   fotos: string[];
 }
@@ -33,11 +40,25 @@ const diasEntre = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:0
 export function validarEntrada(e: Record<string, unknown>, hoy: string): EntradaValida {
   const fecha = String(e.fecha ?? hoy);
   if (!FECHA.test(fecha) || Number.isNaN(Date.parse(fecha))) throw new Error("Fecha inválida");
-  const atras = diasEntre(fecha, hoy);
-  if (atras < 0) throw new Error("No se puede escribir en un día que todavía no llegó");
-  if (atras > MAX_DIAS_ATRAS) throw new Error(`Solo se puede escribir hasta ${MAX_DIAS_ATRAS} días atrás`);
-  const texto = typeof e.texto === "string" ? e.texto.trim() : "";
-  if (!texto) throw new Error("Escribí algo");
+  if (diasEntre(fecha, hoy) < 0) throw new Error("No se puede escribir en un día que todavía no llegó");
+  if (fecha < FECHA_MINIMA) throw new Error("Fecha inválida");
+  let hora: number | null = null;
+  if (e.hora !== null && e.hora !== undefined && e.hora !== "") {
+    hora = Number(e.hora);
+    if (!Number.isInteger(hora) || hora < 0 || hora > 1439) throw new Error("Hora inválida");
+  }
+  const fotos = Array.isArray(e.fotos) ? e.fotos.map(String) : [];
+  if (fotos.length > MAX_FOTOS) throw new Error(`Hasta ${MAX_FOTOS} fotos`);
+  if (fotos.some((f) => !URL_ARCHIVO.test(f))) throw new Error("Foto inválida");
+  let contenido: NodoDoc | null = null;
+  let texto: string;
+  if (e.contenido !== null && e.contenido !== undefined) {
+    contenido = sanearDocumento(e.contenido);
+    texto = textoPlanoDe(contenido).trim();
+  } else {
+    texto = typeof e.texto === "string" ? e.texto.trim() : "";
+  }
+  if (!texto && !fotos.length && !(contenido && tieneImagen(contenido))) throw new Error("Escribí algo");
   if (texto.length > MAX_TEXTO) throw new Error(`Máximo ${MAX_TEXTO} caracteres`);
   const tituloCrudo = typeof e.titulo === "string" ? e.titulo.trim() : "";
   if (tituloCrudo.length > MAX_TITULO) throw new Error(`El título puede tener hasta ${MAX_TITULO} caracteres`);
@@ -46,10 +67,7 @@ export function validarEntrada(e: Record<string, unknown>, hoy: string): Entrada
     animo = Number(e.animo);
     if (!Number.isInteger(animo) || animo < 1 || animo > 5) throw new Error("Ánimo inválido");
   }
-  const fotos = Array.isArray(e.fotos) ? e.fotos.map(String) : [];
-  if (fotos.length > MAX_FOTOS) throw new Error(`Hasta ${MAX_FOTOS} fotos`);
-  if (fotos.some((f) => !URL_ARCHIVO.test(f))) throw new Error("Foto inválida");
-  return { fecha, titulo: tituloCrudo || null, texto, animo, fotos };
+  return { fecha, hora, titulo: tituloCrudo || null, texto, contenido, animo, fotos };
 }
 
 type Lector = { id: number; esPadre: boolean };
