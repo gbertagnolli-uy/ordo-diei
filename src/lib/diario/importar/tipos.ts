@@ -1,6 +1,8 @@
 // Diario (lane 292): lo que producen los lectores de cada formato. Es la versión web de `ImportBundle` de Daily You
 // (vendor/Daily_You/lib/utils/imports/import_bundle.dart, Demizo/Daily_You@7cc237d).
+import type { Clima } from "../clima.ts";
 import type { NodoDoc } from "../contenido.ts";
+import type { LugarImport } from "../lugares.ts";
 
 /** Los archivos de lo que se abrió (un ZIP ya descomprimido o un solo archivo), por ruta con `/`. */
 export type Archivos = Map<string, Uint8Array>;
@@ -68,6 +70,9 @@ export interface EntradaImport extends MomentoImport {
   animo: number | null;
   categoria: string | null;
   etiquetas: EtiquetaPuestaImport[];
+  /** Lane 296. Lugar (moodiary `position`) y clima (`weather`) de la entrada. */
+  lugar: LugarImport | null;
+  clima: Clima | null;
   favorita: boolean;
   fijada: boolean;
   /** Rutas dentro de `Archivos` de las fotos de la entrada. */
@@ -112,6 +117,8 @@ export const entradaBase = (m: Partial<EntradaImport> = {}): EntradaImport => ({
   animo: null,
   categoria: null,
   etiquetas: [],
+  lugar: null,
+  clima: null,
   favorita: false,
   fijada: false,
   fotos: [],

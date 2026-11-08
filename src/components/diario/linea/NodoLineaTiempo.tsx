@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { colorDe, useEscala } from "../EscalaAnimo";
 import { ChipEtiqueta } from "../etiquetas/ChipEtiqueta";
 import { caminoDe } from "../ListaDia";
+import { ClimaYLugar } from "../lugares/ContextoLugares";
 
 const MAX_IMAGENES = 3;
 const MAX_ETIQUETAS = 4;
@@ -98,6 +99,7 @@ export function NodoLineaTiempo({
             </span>
           </span>
           {e.titulo && <span className="text-sm font-semibold">{e.titulo}</span>}
+          <ClimaYLugar clima={e.clima} lugarId={e.lugarId} />
           <span className="line-clamp-3 text-sm">{texto || (imagenes.length ? "" : "(sin texto)")}</span>
           {imagenes.length > 0 && (
             <span className="mt-1 flex gap-1.5">

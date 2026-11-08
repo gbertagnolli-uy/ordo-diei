@@ -1,7 +1,9 @@
 // Diario personal y familiar (lane 272, Plane #31). Reglas puras: sin base ni red.
 // Escala de ánimo 1–5 basada en Daily You (Demizo/Daily_You@7cc237d, lib/models/mood.dart).
+import { validarClima, type Clima } from "./clima.ts";
 import { sanearDocumento, textoPlanoDe, tieneArchivo, tieneImagen, type NodoDoc } from "./contenido.ts";
 import { validarPuestas, type EtiquetaPuesta } from "./etiquetas.ts";
+import { validarLugarId } from "./lugares.ts";
 
 export type TipoDiario = "personal" | "familiar";
 
@@ -40,6 +42,10 @@ export interface EntradaValida {
   /** Lane 285 (storypad `starred` / `pinned`). `undefined` = no se toca. */
   favorita?: boolean;
   fijada?: boolean;
+  /** Lane 296 (moodiary `placeId`). `undefined` = no se toca; `null` = sin lugar. */
+  lugarId?: number | null;
+  /** Lane 296 (moodiary `weather`). `undefined` = no se toca; `null` = sin clima. */
+  clima?: Clima | null;
 }
 
 export interface Marcas {
@@ -101,6 +107,8 @@ export function validarEntrada(e: Record<string, unknown>, hoy: string): Entrada
     else if (typeof e.categoriaId === "number" && Number.isInteger(e.categoriaId) && e.categoriaId > 0) categoriaId = e.categoriaId;
     else throw new Error("Categoría inválida");
   }
+  const lugarId = validarLugarId(e.lugarId);
+  const clima = validarClima(e.clima);
   return {
     fecha,
     hora,
@@ -111,6 +119,8 @@ export function validarEntrada(e: Record<string, unknown>, hoy: string): Entrada
     fotos,
     ...(etiquetas !== undefined ? { etiquetas } : {}),
     ...(categoriaId !== undefined ? { categoriaId } : {}),
+    ...(lugarId !== undefined ? { lugarId } : {}),
+    ...(clima !== undefined ? { clima } : {}),
     ...validarMarcas(e),
   };
 }

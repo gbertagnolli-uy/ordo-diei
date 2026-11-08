@@ -1,8 +1,10 @@
 // Diario (lane 292): lectores de los JSON. Portado de vendor/Daily_You/lib/utils/imports/{import_json,import_mybrain,import_oneshot,import_pixels}.dart
 // (Demizo/Daily_You@7cc237d). El JSON propio (`ordo-diei-diario`) es el de la lane 291.
+import { validarClima, type Clima } from "../clima.ts";
 import type { NodoDoc } from "../contenido.ts";
 import { esColor, esEmojiUnico, limpiarNombre, MAX_NOMBRE } from "../etiquetas.ts";
 import { FORMATO_JSON, reescribirImagenes, VERSION_JSON } from "../exportar.ts";
+import { lugarDeFrontMatter, type LugarImport } from "../lugares.ts";
 import {
   animoDePuntaje,
   animoLegado,
@@ -66,6 +68,19 @@ function iconoDe(icono: unknown, tipo: unknown): { icono: string | null; tipoIco
   if (!i) return { icono: null, tipoIcono: t };
   return t === "emoji" && !esEmojiUnico(i) ? { icono: null, tipoIcono: t } : { icono: i, tipoIcono: t };
 }
+
+/** `weather: { code, temp, text }` del JSON propio; lo que no se entiende queda sin clima. */
+function climaDeJson(v: unknown): Clima | null {
+  if (!esObj(v)) return null;
+  try {
+    return validarClima({ codigo: v.code, temp: v.temp, texto: v.text }) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** `place: { name, latitude, longitude, icon }` del JSON propio. */
+const lugarDeJson = (v: unknown): LugarImport | null => (esObj(v) ? lugarDeFrontMatter({ latitude: v.latitude, longitude: v.longitude, name: v.name }) : null);
 
 export function esJsonPropio(raiz: unknown): boolean {
   return esObj(raiz) && raiz.format === FORMATO_JSON;
@@ -139,6 +154,8 @@ export function leerJsonPropio(raiz: unknown, archivos: Archivos, carpeta: strin
         animo: animoValido(e.mood),
         categoria: texto(e.category),
         etiquetas,
+        clima: climaDeJson(e.weather),
+        lugar: lugarDeJson(e.place),
         favorita: e.favorite === true,
         fijada: e.pinned === true,
         fotos,

@@ -2,7 +2,9 @@
 // Portado de vendor/Daily_You/lib/utils/exports/{export_snapshot,export_json,export_csv,export_markdown,export_naming}.dart (Demizo/Daily_You@7cc237d)
 // y de vendor/moodiary/packages/feature/moodiary_export/lib/src/data/{tiptap_to_ir,markdown_writer}.dart (ZhuJHua/moodiary@2c552dd).
 import { extensionDeArchivo, nombreSeguro } from "./adjuntos.ts";
+import { climaAFrontMatter, textoClima, type Clima } from "./clima.ts";
 import { archivosDe, type NodoDoc, type TipoArchivo } from "./contenido.ts";
+import { lugarAFrontMatter } from "./lugares.ts";
 
 export type FormatoExport = "markdown" | "csv" | "json";
 export const FORMATOS_EXPORT: { valor: FormatoExport; titulo: string; detalle: string }[] = [
@@ -38,6 +40,9 @@ export interface EntradaExport {
   /** «Fe › Misa»: la categoría con sus madres. */
   categoria: string | null;
   etiquetas: EtiquetaExport[];
+  /** Lane 296 (moodiary `weather` y `position`). */
+  clima: Clima | null;
+  lugar: { nombre: string; latitud: number; longitud: number; icono: string | null } | null;
   favorita: boolean;
   fijada: boolean;
   autor: string;
@@ -361,6 +366,8 @@ export function notaMarkdown(n: EntradaNombrada, escala: NivelExport[], opciones
   if (e.titulo) campos.push(["title", yamlTexto(e.titulo)]);
   if (e.animo !== null) campos.push(["mood", String(e.animo)], ["moodLabel", yamlTexto(nombreDeAnimo(escala, e.animo) ?? "")]);
   if (e.categoria) campos.push(["category", yamlTexto(e.categoria)]);
+  if (e.clima) campos.push(["weather", yamlLista(climaAFrontMatter(e.clima))]);
+  if (e.lugar) campos.push(["position", yamlLista(lugarAFrontMatter(e.lugar))]);
   if (etiquetas.length) campos.push(["tags", yamlLista(etiquetas)]);
   if (Object.keys(contadores).length) campos.push(["trackers", JSON.stringify(contadores)]);
   if (e.favorita) campos.push(["favorite", "true"]);
@@ -377,7 +384,7 @@ export function markdownUnido(nombradas: EntradaNombrada[], escala: NivelExport[
     .map((n) => {
       const e = n.entrada;
       const animo = nombreDeAnimo(escala, e.animo);
-      const meta = [horaTexto(e.hora), animo, e.categoria, conAutor ? e.autor : null].filter(Boolean).join(" · ");
+      const meta = [horaTexto(e.hora), animo, e.clima ? textoClima(e.clima) : null, e.lugar?.nombre ?? null, e.categoria, conAutor ? e.autor : null].filter(Boolean).join(" · ");
       const rutas = new Map(e.fotos.map((f, i) => [f, n.fotos[i]]));
       const cuerpo = cuerpoMarkdown(e, (src) => rutas.get(src) ?? src, rutaDeAdjuntoDe(n));
       return [`## ${e.fecha}${e.titulo ? ` · ${escapar(e.titulo)}` : ""}`, `*${meta}*`, cuerpo].filter(Boolean).join("\n\n");
@@ -460,6 +467,8 @@ export function documentoJson(datos: DatosExport, nombradas: EntradaNombrada[], 
       content: e.contenido && conFotos ? reescribirImagenes(e.contenido, (src) => rutas.get(src) ?? src) : e.contenido,
       mood: e.animo,
       category: e.categoria,
+      weather: e.clima ? { code: e.clima.codigo, temp: e.clima.temp, text: e.clima.texto } : null,
+      place: e.lugar ? { name: e.lugar.nombre, latitude: e.lugar.latitud, longitude: e.lugar.longitud, icon: e.lugar.icono } : null,
       tags: e.etiquetas.map((t) => ({ name: t.nombre, type: t.tipo, value: t.valor })),
       favorite: e.favorita,
       pinned: e.fijada,

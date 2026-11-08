@@ -2,7 +2,7 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarHeart, Download, FileText, History, Images, PenLine, Route, Search, Smile, Tags, Upload, Waypoints } from "lucide-react";
+import { BarChart3, CalendarHeart, Download, FileText, History, Images, MapPin, PenLine, Route, Search, Smile, Tags, Upload, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
@@ -35,6 +35,9 @@ import { PanelEstadisticas } from "./estadisticas/PanelEstadisticas";
 import { usePreferencia } from "./estadisticas/controles";
 import { useCatalogo } from "./etiquetas/useCatalogo";
 import { ListaDia } from "./ListaDia";
+import { AdministrarLugares } from "./lugares/AdministrarLugares";
+import { ProveedorLugares } from "./lugares/ContextoLugares";
+import { useLugares } from "./lugares/useLugares";
 import { cambiarMarcasRemoto } from "./MarcasEntrada";
 import { AdministrarPlantillas } from "./plantillas/AdministrarPlantillas";
 import { usePlantillas } from "./plantillas/usePlantillas";
@@ -51,6 +54,8 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [editor, setEditor] = useState<{ entrada?: EntradaVista; clave: number } | null>(null);
   const acciones = useCatalogo(tipo);
   const plantillas = usePlantillas(tipo);
+  const lugares = useLugares(tipo);
+  const [administrandoLugares, setAdministrandoLugares] = useState(false);
   const escala = useEscalaAnimo(tipo);
   const [administrandoPlantillas, setAdministrandoPlantillas] = useState(false);
   const [editandoEscala, setEditandoEscala] = useState(false);
@@ -154,6 +159,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
 
   return (
     <ProveedorEscala value={escala.escala}>
+    <ProveedorLugares value={lugares.lista ?? []}>
     <ProveedorEnlaces value={(id) => void abrirEntrada(id)}>
     <ProveedorGrafo value={(id) => setGrafo({ modo: "local", id, desdeGeneral: false })}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
@@ -265,6 +271,9 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             <Button variant="outline" onClick={() => setAdministrandoPlantillas(true)}>
               <FileText /> Plantillas
             </Button>
+            <Button variant="outline" onClick={() => setAdministrandoLugares(true)}>
+              <MapPin /> Lugares
+            </Button>
             <Button variant="outline" onClick={() => setExportando(true)}>
               <Download /> Exportar
             </Button>
@@ -307,8 +316,10 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           hoy={hoy}
           acciones={acciones}
           plantillas={plantillas}
+          lugares={lugares}
           onAdministrar={setAdmin}
           onAdministrarPlantillas={() => setAdministrandoPlantillas(true)}
+          onAdministrarLugares={() => setAdministrandoLugares(true)}
           onCerrar={(huboCambios) => {
             setEditor(null);
             if (huboCambios) {
@@ -360,10 +371,12 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           onCerrar={() => setAdministrandoPlantillas(false)}
         />
       )}
+      {administrandoLugares && <AdministrarLugares lugares={lugares} onCerrar={() => setAdministrandoLugares(false)} />}
       {editandoEscala && <EditarEscalaAnimo acciones={escala} onCerrar={() => setEditandoEscala(false)} />}
     </div>
     </ProveedorGrafo>
     </ProveedorEnlaces>
+    </ProveedorLugares>
     </ProveedorEscala>
   );
 }

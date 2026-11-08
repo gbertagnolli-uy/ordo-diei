@@ -13,6 +13,7 @@ import { PanelEnlaces } from "./enlaces/PanelEnlaces";
 import { fechaLarga } from "./estadisticas/controles";
 import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
+import { ClimaYLugar } from "./lugares/ContextoLugares";
 import { MarcasEntrada } from "./MarcasEntrada";
 import { VisorDeFotos } from "./visor/VisorDeFotos";
 
@@ -91,6 +92,7 @@ function Tarjeta({
         )}
       </header>
       {e.titulo && <h3 className="mb-1 font-semibold">{e.titulo}</h3>}
+      <ClimaYLugar clima={e.clima} lugarId={e.lugarId} className="mb-1 flex min-w-0 items-center gap-3 text-xs text-muted-foreground" />
       {categoria.length > 0 && (
         <p className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="size-2.5 shrink-0 rounded-full border" style={{ backgroundColor: categoria[categoria.length - 1].color ?? "transparent" }} aria-hidden />

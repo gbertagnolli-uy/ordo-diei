@@ -31,6 +31,8 @@ const entrada = (o: Partial<EntradaExport> = {}): EntradaExport => ({
   animo: null,
   categoria: null,
   etiquetas: [],
+  clima: null,
+  lugar: null,
   favorita: false,
   fijada: false,
   autor: "Gabriel",
@@ -159,6 +161,26 @@ test("notaMarkdown: front matter, título, fotos sueltas y cuerpo", () => {
   assert.match(r, /Hola\n$/);
 });
 
+test("notaMarkdown: el clima y el lugar van al front matter como en moodiary (weather / position) (lane 296)", () => {
+  const [n] = nombrarEntradas([
+    entrada({
+      categoria: "Fe",
+      clima: { codigo: "100", temp: 23, texto: "Soleado" },
+      lugar: { nombre: "Casa, Pocitos", latitud: -34.9011, longitud: -56.1645, icono: "house" },
+    }),
+  ]);
+  const r = notaMarkdown(n, catalogo.escala, { conAutor: false });
+  assert.match(r, /category: "Fe"\nweather: \["100", "23", "Soleado"\]\nposition: \["-34.9011", "-56.1645", "Casa, Pocitos"\]\n---/);
+  const [m] = nombrarEntradas([entrada({ clima: { codigo: "100", temp: null, texto: "Soleado" } })]);
+  assert.match(notaMarkdown(m, catalogo.escala, { conAutor: false }), /weather: \["100", "", "Soleado"\]/);
+  assert.doesNotMatch(notaMarkdown(m, catalogo.escala, { conAutor: false }), /position:/);
+});
+
+test("markdownUnido: el clima y el lugar entran en la línea de la entrada (lane 296)", () => {
+  const r = markdownUnido(nombrarEntradas([entrada({ clima: { codigo: "100", temp: 23, texto: "Soleado" }, lugar: { nombre: "Casa", latitud: 1, longitud: 2, icono: null } })]), catalogo.escala, false);
+  assert.match(r, /\*09:30 · Soleado 23° · Casa\*/);
+});
+
 test("notaMarkdown: una foto que ya está dentro del documento no se repite", () => {
   const [n] = nombrarEntradas([entrada({ contenido: doc({ type: "image", attrs: { src: "/api/archivos/a" } }), fotos: ["/api/archivos/a"] })]);
   const r = notaMarkdown(n, catalogo.escala, { conAutor: false });
@@ -214,6 +236,19 @@ test("json: formato, versión, escala y entradas con sus fotos", () => {
   assert.deepEqual(con.entries[0].tags, [{ name: "Agua", type: "contador", value: "3" }]);
   const sin = documentoJson(datos, n, false) as { entries: { photos: string[] }[] };
   assert.deepEqual(sin.entries[0].photos, []);
+});
+
+test("json: clima y lugar de la entrada (lane 296)", () => {
+  const datos: DatosExport = { tipo: "personal", exportadaEn: "x", catalogo, entradas: [] };
+  const n = nombrarEntradas([
+    entrada({ clima: { codigo: "305", temp: 18, texto: "Lluvia débil" }, lugar: { nombre: "Oficina", latitud: -34.9, longitud: -56.16, icono: "building-2" } }),
+    entrada({ fecha: "2026-07-21" }),
+  ]);
+  const j = documentoJson(datos, n, false) as { entries: { weather: unknown; place: unknown }[] };
+  assert.deepEqual(j.entries[0].weather, { code: "305", temp: 18, text: "Lluvia débil" });
+  assert.deepEqual(j.entries[0].place, { name: "Oficina", latitude: -34.9, longitude: -56.16, icon: "building-2" });
+  assert.equal(j.entries[1].weather, null);
+  assert.equal(j.entries[1].place, null);
 });
 
 test("nombreDeArchivo", () => {
