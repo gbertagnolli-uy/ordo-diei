@@ -1,6 +1,6 @@
 // Portado de vendor/moodiary/editor/src/core/editor/kit.ts (ZhuJHua/moodiary@2c552dd)
 // Cambios respecto del original: sin el puente con Flutter (`post`, `scheduleChange`, estado, subidas por `saveImage`),
-// sin audio, video ni adjuntos (fase 3) y sin el modo panel. La carga del contenido, el guardado y la subida de archivos
+// y sin el modo panel. Lane 294: audio, video y adjuntos (nodos propios, solo archivos del diario). La carga del contenido, el guardado y la subida de archivos
 // los resuelve el componente React (`EditorTexto`). Lane 290: enlaces entre entradas (`DiaryLink`) y búsqueda en el documento.
 import { type AnyExtension, type Editor, type EditorOptions } from '@tiptap/core'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
@@ -22,6 +22,8 @@ import { createMarkdownExtension, looksLikeMarkdown } from './markdown'
 import { crearDiaryLink, type ContextoEnlace } from './nodes/diary-link'
 import { SearchExtension } from './search'
 import { ImageNode } from './nodes/image'
+import { AudioNode, VideoNode } from './nodes/audio'
+import { AttachmentNode } from './nodes/adjunto'
 import { HorizontalRuleNode } from './nodes/horizontal-rule'
 import { TrailingParagraph } from './trailing-paragraph'
 
@@ -30,6 +32,9 @@ type NodeViewComponent = Parameters<typeof ReactNodeViewRenderer>[0]
 export interface EditorNodeViews {
   codeBlock: NodeViewComponent
   image: NodeViewComponent
+  audio: NodeViewComponent
+  video: NodeViewComponent
+  attachment: NodeViewComponent
 }
 
 const lowlight = createLowlight(common)
@@ -97,6 +102,9 @@ export function crearExtensiones(placeholder: string, nodeViews: EditorNodeViews
       addNodeView: () => ReactNodeViewRenderer(nodeViews.codeBlock),
     }),
     ImageNode.extend({ addNodeView: () => ReactNodeViewRenderer(nodeViews.image) }),
+    AudioNode.extend({ addNodeView: () => ReactNodeViewRenderer(nodeViews.audio) }),
+    VideoNode.extend({ addNodeView: () => ReactNodeViewRenderer(nodeViews.video) }),
+    AttachmentNode.extend({ addNodeView: () => ReactNodeViewRenderer(nodeViews.attachment) }),
     HorizontalRuleNode,
     TableKit.configure({ table: { resizable: false } }),
     TaskList,
@@ -138,11 +146,11 @@ function selectBlockOnPress(view: EditorView, event: MouseEvent): boolean {
 
 interface OpcionesPropiedades {
   getEditor: () => Editor | null
-  /** Sube las imágenes y las inserta; devuelve true si manejó los archivos. */
-  subirImagenes: (files: File[], pos?: number) => boolean
+  /** Sube los archivos (imágenes, audio, video, documentos) y los inserta; devuelve true si manejó alguno. */
+  subirArchivos: (files: File[], pos?: number) => boolean
 }
 
-export function crearPropiedades({ getEditor, subirImagenes }: OpcionesPropiedades): Partial<EditorOptions>['editorProps'] {
+export function crearPropiedades({ getEditor, subirArchivos }: OpcionesPropiedades): Partial<EditorOptions>['editorProps'] {
   const handleBeforeInput = (view: EditorView, event: InputEvent): boolean => {
     const type = event.inputType
     if (type === 'deleteContentBackward' && getEditor()?.commands.undoInputRule()) {
@@ -168,7 +176,7 @@ export function crearPropiedades({ getEditor, subirImagenes }: OpcionesPropiedad
     const ed = getEditor()
     const data = event.clipboardData
     if (!ed || !data || !ed.isEditable) return false
-    if (data.files.length > 0) return subirImagenes(Array.from(data.files))
+    if (data.files.length > 0) return subirArchivos(Array.from(data.files))
     if (data.types.some((t) => t !== 'text/plain')) return false
     const text = data.getData('text/plain')
     // Un Markdown con imágenes se pega como texto: las imágenes de afuera no entran al documento
@@ -197,7 +205,7 @@ export function crearPropiedades({ getEditor, subirImagenes }: OpcionesPropiedad
       const ed = getEditor()
       if (moved || !event.dataTransfer?.files.length || !ed?.isEditable) return false
       const pos = ed.view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
-      return subirImagenes(Array.from(event.dataTransfer.files), pos)
+      return subirArchivos(Array.from(event.dataTransfer.files), pos)
     },
     handleDOMEvents: {
       mousedown: (view, event) => selectBlockOnPress(view, event),

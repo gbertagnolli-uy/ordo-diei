@@ -221,3 +221,66 @@ test("nombreDeArchivo", () => {
   assert.equal(nombreDeArchivo("csv", "familiar", "2026-07-20", false), "ordo-diei-diario-familiar-2026-07-20.csv");
   assert.equal(nombreDeArchivo("json", "personal", "2026-07-20", true), "ordo-diei-diario-personal-2026-07-20.zip");
 });
+
+// ── Lane 294: audios, videos y documentos ───────────────────────────────────
+const A = "/api/archivos/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+const B = "/api/archivos/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+const C = "/api/archivos/cccccccc-cccc-cccc-cccc-cccccccccccc";
+const conArchivos = doc(
+  p(txt("Hoy")),
+  { type: "audio", attrs: { src: A, name: "Nota de voz" } },
+  { type: "attachment", attrs: { src: B, name: "Informe final.pdf", mime: "application/pdf", size: 1000 } },
+  { type: "video", attrs: { src: C, name: "clip.mp4" } },
+  { type: "audio", attrs: { src: A, name: "Nota de voz" } },
+);
+const tipos: Record<string, string> = { [A]: "audio/webm", [B]: "application/pdf", [C]: "video/mp4" };
+
+test("nombrarEntradas: los archivos del texto van a adjuntos/<entrada>_<n>_<nombre>.<extensión del tipo>, sin repetir", () => {
+  const [n] = nombrarEntradas([entrada({ contenido: conArchivos })], undefined, { mimeDe: (u) => tipos[u] ?? null });
+  assert.deepEqual(
+    n.adjuntos.map((a) => [a.ruta, a.tipo]),
+    [
+      ["adjuntos/2026-07-20_1_Nota de voz.weba", "audio"],
+      ["adjuntos/2026-07-20_2_Informe final.pdf", "attachment"],
+      ["adjuntos/2026-07-20_3_clip.mp4", "video"],
+    ],
+  );
+  // sin resolver (o con un archivo que no está guardado) no hay adjuntos
+  assert.deepEqual(nombrarEntradas([entrada({ contenido: conArchivos })])[0].adjuntos, []);
+  assert.equal(nombrarEntradas([entrada({ contenido: conArchivos })], undefined, { mimeDe: (u) => (u === B ? tipos[u] : null) })[0].adjuntos.length, 1);
+});
+
+test("nombrarEntradas: el nombre del archivo se limpia", () => {
+  const sucio = doc({ type: "attachment", attrs: { src: B, name: "../../Etc: passwd?.pdf" } }, { type: "audio", attrs: { src: A, name: null } });
+  const [n] = nombrarEntradas([entrada({ contenido: sucio })], undefined, { mimeDe: (u) => tipos[u] ?? null });
+  assert.deepEqual(n.adjuntos.map((a) => a.ruta), ["adjuntos/2026-07-20_1_Etc_ passwd_.pdf", "adjuntos/2026-07-20_2_archivo.weba"]);
+});
+
+test("markdown: cada archivo es un enlace solo en su línea; sin ruta queda su nombre", () => {
+  const [n] = nombrarEntradas([entrada({ contenido: conArchivos })], undefined, { mimeDe: (u) => tipos[u] ?? null });
+  const r = notaMarkdown(n, catalogo.escala, { conAutor: false });
+  assert.match(r, /\n\[Nota de voz\]\(adjuntos\/2026-07-20_1_Nota%20de%20voz\.weba\)\n/);
+  assert.match(r, /\n\[Informe final\.pdf\]\(adjuntos\/2026-07-20_2_Informe%20final\.pdf\)\n/);
+  assert.match(r, /\n\[clip\.mp4\]\(adjuntos\/2026-07-20_3_clip\.mp4\)\n/);
+  const sin = markdownDeDoc(conArchivos, { rutaDeImagen: (s) => s });
+  assert.doesNotMatch(sin, /\]\(/);
+  assert.match(sin, /Nota de voz/);
+});
+
+test("markdown unido y CSV también llevan los archivos", () => {
+  const n = nombrarEntradas([entrada({ contenido: conArchivos })], undefined, { mimeDe: (u) => tipos[u] ?? null });
+  assert.match(markdownUnido(n, catalogo.escala, false), /\[clip\.mp4\]\(adjuntos\/2026-07-20_3_clip\.mp4\)/);
+  assert.match(csvDeEntradas(n, catalogo), /adjuntos\/2026-07-20_1_Nota de voz\.weba, adjuntos\/2026-07-20_2_Informe final\.pdf/);
+});
+
+test("json: el documento apunta a adjuntos/ y la lista `attachments` los nombra; sin archivos queda la URL", () => {
+  const datos: DatosExport = { tipo: "personal", exportadaEn: "2026-07-21T00:00:00.000Z", catalogo, entradas: [] };
+  const n = nombrarEntradas([entrada({ contenido: conArchivos })], undefined, { mimeDe: (u) => tipos[u] ?? null });
+  const con = documentoJson(datos, n, true) as { entries: { content: NodoDoc; attachments: string[] }[] };
+  assert.deepEqual(con.entries[0].attachments, ["adjuntos/2026-07-20_1_Nota de voz.weba", "adjuntos/2026-07-20_2_Informe final.pdf", "adjuntos/2026-07-20_3_clip.mp4"]);
+  const srcs = (con.entries[0].content.content ?? []).filter((x) => x.type !== "paragraph").map((x) => x.attrs?.src);
+  assert.deepEqual(srcs, ["adjuntos/2026-07-20_1_Nota de voz.weba", "adjuntos/2026-07-20_2_Informe final.pdf", "adjuntos/2026-07-20_3_clip.mp4", "adjuntos/2026-07-20_1_Nota de voz.weba"]);
+  const sin = documentoJson(datos, n, false) as { entries: { content: NodoDoc; attachments: string[] }[] };
+  assert.deepEqual(sin.entries[0].attachments, []);
+  assert.equal(sin.entries[0].content.content?.[1].attrs?.src, A);
+});

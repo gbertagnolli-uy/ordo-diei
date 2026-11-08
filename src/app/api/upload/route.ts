@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { guardarArchivoEstudio, guardarImagen, ImagenInvalidaError, PERFILES_IMAGEN, type PerfilImagen } from "@/lib/archivos";
+import { guardarAdjuntoDiario, guardarArchivoEstudio, guardarImagen, ImagenInvalidaError, PERFILES_IMAGEN, type PerfilImagen } from "@/lib/archivos";
 
 export const runtime = "nodejs";
 
-// POST /api/upload — sube una imagen (o un archivo de estudio con modo="estudio") y devuelve { url, bytes, ancho, alto }.
+// POST /api/upload — sube una imagen (un archivo de estudio con modo="estudio", un adjunto del diario con modo="diario") y devuelve { url, bytes, ancho, alto }.
 // Campo opcional "perfil": "general" (1600 px) o "carta" (1200 px, ≤ 300 KB).
 // Requiere sesión, salvo en la configuración inicial (todavía no hay ningún usuario).
 export async function POST(request: NextRequest) {
@@ -24,6 +24,11 @@ export async function POST(request: NextRequest) {
     if (form.get("modo") === "estudio") {
       const guardado = await guardarArchivoEstudio(file, { subidoPorId });
       return NextResponse.json(guardado);
+    }
+
+    // Lane 294: audio, video corto o documento del diario; devuelve la URL limpia que el documento exige
+    if (form.get("modo") === "diario") {
+      return NextResponse.json(await guardarAdjuntoDiario(file, { subidoPorId }));
     }
 
     const pedido = String(form.get("perfil") ?? "general");

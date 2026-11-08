@@ -14,6 +14,7 @@ import { fechaLarga } from "./estadisticas/controles";
 import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { MarcasEntrada } from "./MarcasEntrada";
+import { VisorDeFotos } from "./visor/VisorDeFotos";
 
 const hora = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
@@ -43,6 +44,8 @@ function Tarjeta({
 }) {
   const [abierta, setAbierta] = useState(false);
   const [verEnlaces, setVerEnlaces] = useState(false);
+  // Lane 294: visor de fotos a pantalla completa (Daily You `zoomable_attachment_page_view`)
+  const [visor, setVisor] = useState<number | null>(null);
   const nivel = nivelDe(useEscala(), e.animo);
   const categoria = catalogo && e.categoriaId != null ? caminoDe(e.categoriaId, catalogo.categorias) : [];
   const chips = catalogo ? e.etiquetas.flatMap((t) => catalogo.etiquetas.filter((x) => x.id === t.id).map((x) => ({ etiqueta: x, valor: t.valor }))) : [];
@@ -117,14 +120,15 @@ function Tarjeta({
       )}
       {e.fotos.length > 0 && (
         <div className="mt-3 flex gap-2 overflow-x-auto">
-          {e.fotos.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer" className="shrink-0">
+          {e.fotos.map((url, i) => (
+            <button key={url} type="button" className="shrink-0" aria-label={`Ver la foto ${i + 1} de ${e.fotos.length}`} onClick={() => setVisor(i)}>
               {/* eslint-disable-next-line @next/next/no-img-element -- fotos ya optimizadas por /api/upload */}
               <img src={url} alt="" className="size-20 rounded-lg object-cover" />
-            </a>
+            </button>
           ))}
         </div>
       )}
+      {visor !== null && <VisorDeFotos fotos={e.fotos} inicio={visor} onCerrar={() => setVisor(null)} />}
     </article>
   );
 }

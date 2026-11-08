@@ -9,9 +9,9 @@ let editor: Editor | null = null;
 
 /** Un editor sin pantalla, uno solo para todo el lote. */
 function editorSinPantalla(): Editor {
-  // Las vistas de bloques de código e imágenes solo se usan al dibujar; acá nunca se dibuja
+  // Las vistas de los bloques (código, imágenes, audio, video, adjuntos) solo se usan al dibujar; acá nunca se dibuja
   const vistaVacia = (() => null) as never;
-  editor ??= new Editor({ extensions: crearExtensiones("", { codeBlock: vistaVacia, image: vistaVacia }), content: "", editable: false, enableContentCheck: false });
+  editor ??= new Editor({ extensions: crearExtensiones("", { codeBlock: vistaVacia, image: vistaVacia, audio: vistaVacia, video: vistaVacia, attachment: vistaVacia }), content: "", editable: false, enableContentCheck: false });
   return editor;
 }
 

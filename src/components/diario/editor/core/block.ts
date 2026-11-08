@@ -3,7 +3,7 @@ import { Fragment, type Node as PMNode, type ResolvedPos } from '@tiptap/pm/mode
 import { NodeSelection, Selection, TextSelection, type EditorState, type Transaction } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
 
-const BLOCK_NODE_TYPES = ['image', 'horizontalRule'] as const // audio, video y adjuntos: fase 3
+const BLOCK_NODE_TYPES = ['image', 'audio', 'video', 'attachment', 'horizontalRule'] as const
 export type BlockNodeType = (typeof BLOCK_NODE_TYPES)[number]
 
 export const isBlockNodeType = (name: string): name is BlockNodeType =>

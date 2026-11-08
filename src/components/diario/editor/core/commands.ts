@@ -1,5 +1,5 @@
 // Portado de vendor/moodiary/editor/src/core/editor/commands.ts (ZhuJHua/moodiary@2c552dd)
-// Se quitó todo lo que hablaba con Flutter (`post`: abrir enlace, copiar, vista previa de imagen, adjuntos, audio, video).
+// Se quitó todo lo que hablaba con Flutter (`post`: abrir enlace, copiar, vista previa de imagen, tocar un adjunto).
 // Quedan las órdenes de formato que usa la barra, `insertDiaryLink` y la búsqueda dentro del documento (lane 290).
 import { type ChainedCommands, type Editor, type JSONContent } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
@@ -94,7 +94,7 @@ function setLink(ctx: RunContext, args: ExecArgs): void {
     .run()
 }
 
-const SIZED_TYPES = new Set(['image'])
+const SIZED_TYPES = new Set(['image', 'video'])
 
 function sizedNode(editor: Editor): NodeSelection | null {
   const sel = editor.state.selection
@@ -131,6 +131,18 @@ const HANDLERS: Record<string, Handler> = {
   redo: (c) => void chain(c).redo().run(),
   insertImage: (c, a) => {
     if (str(a.src)) insertAtom(c, { type: 'image', attrs: { src: str(a.src), name: str(a.name).trim() || null } })
+  },
+  // Lane 294 (moodiary `insertAudio` / `insertVideo` / `insertAttachment`): el `src` es la URL que devolvió la subida
+  insertAudio: (c, a) => {
+    if (str(a.src)) insertAtom(c, { type: 'audio', attrs: { src: str(a.src), name: str(a.name).trim() || null } })
+  },
+  insertVideo: (c, a) => {
+    if (str(a.src)) insertAtom(c, { type: 'video', attrs: { src: str(a.src), name: str(a.name).trim() || null } })
+  },
+  insertAttachment: (c, a) => {
+    if (!str(a.src)) return
+    const size = typeof a.size === 'number' && Number.isFinite(a.size) && a.size >= 0 ? a.size : null
+    insertAtom(c, { type: 'attachment', attrs: { src: str(a.src), name: str(a.name).trim() || null, mime: str(a.mime) || null, size } })
   },
   insertTable: (c) => void chain(c).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
   insertHorizontalRule: (c, a) => {

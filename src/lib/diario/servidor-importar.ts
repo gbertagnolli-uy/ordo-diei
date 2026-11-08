@@ -8,7 +8,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { APP_TZ, hoyEnFamilia } from "@/lib/habitos/server";
 import { claveDeUrl } from "@/lib/archivos";
-import { imagenesDe, type NodoDoc } from "./contenido";
+import { archivosDe, imagenesDe, type NodoDoc } from "./contenido";
 import { reescribirImagenes } from "./exportar";
 import { MAX_ETIQUETAS_ENTRADA, type Actor, type EtiquetaPuesta } from "./etiquetas";
 import { claveEtiqueta, claveNombre, partesDeCamino, type CatalogoImport } from "./importar/catalogo";
@@ -211,7 +211,8 @@ export async function importarLote(actor: Actor, tipo: TipoDiario, crudas: unkno
       const c = claveDeUrl(u);
       if (c) claves.add(c);
     }
-    if (esObj(l.e.contenido)) for (const u of imagenesDe(l.e.contenido as unknown as NodoDoc)) {
+    // Lane 294: también los audios, videos y adjuntos del documento
+    if (esObj(l.e.contenido)) for (const u of [...imagenesDe(l.e.contenido as unknown as NodoDoc), ...archivosDe(l.e.contenido as unknown as NodoDoc).map((a) => a.src)]) {
       const c = claveDeUrl(u);
       if (c) claves.add(c);
     }

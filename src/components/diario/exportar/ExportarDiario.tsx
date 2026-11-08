@@ -109,10 +109,10 @@ export function ExportarDiario({ tipo, catalogo, onCerrar }: { tipo: TipoDiario;
         <div className="flex flex-col gap-3 border-t pt-3">
           <label className="flex items-center gap-3">
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-sm">Incluir las fotos</span>
-              <span className="text-xs text-muted-foreground">Con fotos se descarga un .zip con la carpeta «fotos».</span>
+              <span className="text-sm">Incluir las fotos y los archivos</span>
+              <span className="text-xs text-muted-foreground">Se descarga un .zip con las carpetas «fotos» y «adjuntos» (notas de voz, audios, videos y documentos).</span>
             </span>
-            <Switch checked={fotos} onCheckedChange={setFotos} aria-label="Incluir las fotos" />
+            <Switch checked={fotos} onCheckedChange={setFotos} aria-label="Incluir las fotos y los archivos" />
           </label>
           {formato === "markdown" && (
             <label className="flex items-center gap-3">

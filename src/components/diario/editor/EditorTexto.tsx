@@ -5,18 +5,23 @@
 import { useCallback, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { ACEPTAR_ADJUNTOS, clasificarAdjunto } from "@/lib/diario/adjuntos";
 import { docDesdeTexto, type NodoDoc } from "@/lib/diario/contenido";
 import type { TipoDiario } from "@/lib/diario/reglas";
 import { toast } from "@/lib/toast";
 import { useAbrirEntrada } from "../enlaces/ContextoEnlaces";
 import { crearExtensiones, crearPropiedades } from "./core/kit";
 import { execCommand } from "./core/commands";
-import { subirImagen } from "./subir";
+import { subirAdjunto, subirImagen } from "./subir";
 import { BarraBusqueda } from "./ui/BarraBusqueda";
 import { BarraFormato } from "./ui/BarraFormato";
 import { SugerenciaEnlace } from "./ui/SugerenciaEnlace";
+import { GrabadoraDeVoz } from "./ui/GrabadoraDeVoz";
+import VistaAdjunto from "./ui/VistaAdjunto";
+import VistaAudio from "./ui/VistaAudio";
 import VistaCodigo from "./ui/VistaCodigo";
 import VistaImagen from "./ui/VistaImagen";
+import VistaVideo from "./ui/VistaVideo";
 
 export interface ContenidoInicial {
   /** Documento Tiptap; null = entrada en texto plano (lane 272), se abre como un párrafo por línea. */
@@ -57,33 +62,56 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
   contextoRef.current = tipo ? { tipo, excluirId: entradaId } : null;
   const [subiendo, setSubiendo] = useState(false);
   const inputArchivo = useRef<HTMLInputElement>(null);
+  const inputAdjunto = useRef<HTMLInputElement>(null);
+  const [grabando, setGrabando] = useState(false);
   const onCambioRef = useRef(onCambio);
   onCambioRef.current = onCambio;
 
   // El contenido inicial se lee una sola vez: después el editor es la fuente de verdad
   const docInicial = useMemo(() => (inicial.contenido ?? docDesdeTexto(inicial.texto)) as JSONContent, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const extensiones = useMemo(() => crearExtensiones(placeholder, { codeBlock: VistaCodigo, image: VistaImagen }, () => contextoRef.current), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const extensiones = useMemo(() => crearExtensiones(placeholder, { codeBlock: VistaCodigo, image: VistaImagen, audio: VistaAudio, video: VistaVideo, attachment: VistaAdjunto }, () => contextoRef.current), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const insertarImagenes = useCallback((files: File[], pos?: number): boolean => {
-    const imagenes = files.filter((f) => f.type.startsWith("image/"));
-    if (!imagenes.length) return false;
+  // Imágenes (las normaliza el servidor) y, desde la lane 294, audio, video corto y documentos (≤ 4 MB)
+  const insertarArchivos = useCallback((files: File[], pos?: number): boolean => {
+    const aceptados = files.filter((f) => f.type.startsWith("image/") || clasificarAdjunto(f.name, f.type));
+    if (!aceptados.length) return false;
     setSubiendo(true);
     void (async () => {
       try {
-        for (const f of imagenes) {
-          const url = await subirImagen(f);
+        for (const f of aceptados) {
+          const sinExtension = f.name.replace(/\.[^.]+$/, "");
+          const esImagen = f.type.startsWith("image/");
+          const subido = esImagen ? null : await subirAdjunto(f);
+          const url = subido ? subido.url : await subirImagen(f);
           const ed = editorRef.current;
           if (!ed || ed.isDestroyed) return;
           if (pos != null) ed.commands.setTextSelection(pos);
-          execCommand(ed, "insertImage", { src: url, name: f.name.replace(/\.[^.]+$/, "") });
+          if (!subido) execCommand(ed, "insertImage", { src: url, name: sinExtension });
+          else if (subido.categoria === "audio") execCommand(ed, "insertAudio", { src: url, name: sinExtension });
+          else if (subido.categoria === "video") execCommand(ed, "insertVideo", { src: url, name: subido.nombre });
+          else execCommand(ed, "insertAttachment", { src: url, name: subido.nombre, mime: subido.mime, size: subido.bytes });
         }
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "No se pudo subir la imagen");
+        toast.error(e instanceof Error ? e.message : "No se pudo subir el archivo");
       } finally {
         setSubiendo(false);
       }
     })();
     return true;
+  }, []);
+
+  // La nota de voz recién grabada se sube y se agrega al texto como un audio
+  const guardarNotaDeVoz = useCallback(async (archivo: File) => {
+    setSubiendo(true);
+    try {
+      const subido = await subirAdjunto(archivo);
+      const ed = editorRef.current;
+      if (ed && !ed.isDestroyed) execCommand(ed, "insertAudio", { src: subido.url, name: subido.nombre.replace(/\.[^.]+$/, "") });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar la nota de voz");
+    } finally {
+      setSubiendo(false);
+    }
   }, []);
 
   useImperativeHandle(
@@ -116,7 +144,7 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
     enableContentCheck: false,
     editorProps: {
       attributes: { class: "md-prose", "aria-label": "Texto de la entrada", role: "textbox", "aria-multiline": "true" },
-      ...crearPropiedades({ getEditor: () => editorRef.current, subirImagenes: insertarImagenes }),
+      ...crearPropiedades({ getEditor: () => editorRef.current, subirArchivos: insertarArchivos }),
     },
     onCreate: ({ editor: e }) => {
       editorRef.current = e;
@@ -143,7 +171,7 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
     >
       {editable && editor && (
         <div className="sticky top-0 z-10 mb-2 flex flex-col gap-1 bg-background pb-1">
-          <BarraFormato editor={editor} subiendo={subiendo} onImagen={() => inputArchivo.current?.click()} onBuscar={() => setBuscando(!buscando)} buscando={buscando} puedeEnlazar={!!tipo} />
+          <BarraFormato editor={editor} subiendo={subiendo} onImagen={() => inputArchivo.current?.click()} onAdjuntar={() => inputAdjunto.current?.click()} onVoz={() => setGrabando(true)} onBuscar={() => setBuscando(!buscando)} buscando={buscando} puedeEnlazar={!!tipo} />
           {buscando && <BarraBusqueda editor={editor} onCerrar={() => setBuscando(false)} />}
           <input
             ref={inputArchivo}
@@ -152,7 +180,18 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
             multiple
             hidden
             onChange={(e) => {
-              insertarImagenes(Array.from(e.target.files ?? []));
+              insertarArchivos(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={inputAdjunto}
+            type="file"
+            accept={ACEPTAR_ADJUNTOS}
+            multiple
+            hidden
+            onChange={(e) => {
+              insertarArchivos(Array.from(e.target.files ?? []));
               e.target.value = "";
             }}
           />
@@ -160,6 +199,7 @@ export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qu
       )}
       <EditorContent editor={editor} className="md-content" />
       {editable && tipo && <SugerenciaEnlace />}
+      {editable && grabando && <GrabadoraDeVoz onGuardar={guardarNotaDeVoz} onCerrar={() => setGrabando(false)} />}
     </div>
   );
 }

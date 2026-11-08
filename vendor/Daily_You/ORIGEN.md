@@ -30,3 +30,6 @@
 
 ## Ampliación (lane 293, 2026-11-08)
 - Se agregan, sin cambios: `lib/pages/{gallery_page,share_page}.dart` (galería de entradas con fotos, con búsqueda, filtro por etiquetas, orden y tarjetas grandes o chicas; recibir texto de otra app y elegir el día).
+
+## Ampliación (lane 294, 2026-11-08)
+- Se agregan, sin cambios: `lib/pages/audio_recorder_page.dart`, `lib/utils/{attachment_mime,attachment_file_name}.dart`, `lib/widgets/{attachment_type_presentation,file_size_row,zoomable_attachment_page_view,audio_waveform_decoration}.dart` (grabadora de notas de voz, tipos MIME y nombres de archivo de los adjuntos, visor de fotos con zoom y onda animada).

@@ -34,3 +34,6 @@
 
 ## Ampliación (lane 293, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature/moodiary_export/lib/src/data/image_composer.dart` y `lib/src/presentation/{image_export_page,share_sheet}.dart`, `lib/src/presentation/image_card/{card,card_style,blocks}.dart` (compartir una entrada como imagen: tarjeta con fecha, ánimo, etiquetas y cuerpo con formato, claro u oscuro, marca de agua).
+
+## Nota (lane 294, 2026-11-08)
+- No se agregan archivos: los bloques de audio, video y adjunto del editor (`editor/src/core/editor/nodes/{attachment,media}.ts`, `core/editor/media.ts`, `ui/nodes/{AttachmentNodeView,AudioNodeView,VideoNodeView}.tsx`, `ui/hooks/use-media.ts`, `styles/_blocks.scss`) ya estaban en esta copia.

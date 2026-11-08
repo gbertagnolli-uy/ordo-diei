@@ -1,9 +1,10 @@
 // Diario (lane 292): importar notas en Markdown con front matter. Portado de
 // vendor/moodiary/packages/feature/moodiary_export/lib/src/data/import/{markdown_front_matter,markdown_importer,import_media_stage,import_source}.dart (ZhuJHua/moodiary@2c552dd).
 // También lee las notas que exporta la lane 291 (`date`, `title`, `mood`, `category`, `tags`, `trackers`, `favorite`, `pinned`).
+import { clasificarAdjunto } from "../adjuntos.ts";
 import { limpiarNombre, MAX_NOMBRE } from "../etiquetas.ts";
 import { animoValido, aTexto, carpetaDe, esImagen, fechaValida, limpiarCuerpo, momentoDeIso, nombreDe, resolverArchivo, titulo } from "./comun.ts";
-import { entradaBase, ImportacionError, MARCADOR_IMAGEN, paqueteVacio, type Archivos, type EtiquetaPuestaImport, type MomentoImport, type PaqueteImport } from "./tipos.ts";
+import { entradaBase, ImportacionError, MARCADOR_ARCHIVO, MARCADOR_IMAGEN, paqueteVacio, type Archivos, type EtiquetaPuestaImport, type MomentoImport, type PaqueteImport } from "./tipos.ts";
 
 // ── YAML mínimo ──────────────────────────────────────────────────────────────
 
@@ -220,7 +221,10 @@ interface ResultadoCuerpo {
   noImagenes: number;
 }
 
-/** Cambia las imágenes del ZIP por `imagen://N`; una imagen que no está queda como su texto alternativo, y un archivo que no es imagen, como su nombre. */
+/**
+ * Cambia las imágenes del ZIP por `imagen://N`; una imagen que no está queda como su texto alternativo. Un audio, video o documento admitido (lane 294)
+ * pasa a ser un enlace al marcador del archivo N; cualquier otro archivo queda como su nombre.
+ */
 export function reescribirCuerpo(cuerpo: string, archivos: Archivos, carpeta: string): ResultadoCuerpo {
   const imagenes: string[] = [];
   let faltantes = 0;
@@ -234,11 +238,16 @@ export function reescribirCuerpo(cuerpo: string, archivos: Archivos, carpeta: st
       if (bang) faltantes++;
       return bang ? alt : todo;
     }
-    if (!esImagen(ruta)) {
-      noImagenes++;
-      return alt.trim() || nombreDe(ruta);
-    }
     let i = imagenes.indexOf(ruta);
+    if (!esImagen(ruta)) {
+      // Otra nota del mismo ZIP no es un adjunto: queda como su nombre
+      if (!clasificarAdjunto(nombreDe(ruta), "") || /\.(md|markdown)$/i.test(ruta)) {
+        noImagenes++;
+        return alt.trim() || nombreDe(ruta);
+      }
+      if (i < 0) i = imagenes.push(ruta) - 1;
+      return `[${alt.trim() || nombreDe(ruta)}](${MARCADOR_ARCHIVO}${i})`;
+    }
     if (i < 0) i = imagenes.push(ruta) - 1;
     return `![${alt}](${MARCADOR_IMAGEN}${i})`;
   });
@@ -297,6 +306,6 @@ export function leerMarkdown(archivos: Archivos): PaqueteImport {
     );
   }
   for (const camino of categorias.keys()) p.categorias.push({ camino, color: null });
-  if (noImagenes) p.avisos.push(`${noImagenes} archivos de las notas (audio, video o documentos) no se importaron`);
+  if (noImagenes) p.avisos.push(`${noImagenes} archivos de las notas no se importaron (tipo no admitido)`);
   return p;
 }

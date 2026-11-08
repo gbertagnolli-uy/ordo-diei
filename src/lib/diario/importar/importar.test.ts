@@ -8,7 +8,7 @@ import { animoDePuntaje, animoLegado, colorDeEntero, leerCsv, leerTablasXml, lee
 import { htmlAMarkdown } from "./html.ts";
 import { leerDailyYouJson, leerJsonPropio, leerMyBrain, leerOneShot, leerPixels, sinEnlaces } from "./json.ts";
 import { animoDeMeta, fechaDeNombre, leerFrontMatter, leerMarkdown, leerYaml, reescribirCuerpo, separarTitulo, tituloDeNombre, valorYaml } from "./markdown.ts";
-import { MARCADOR_IMAGEN, ImportacionError, type Archivos } from "./tipos.ts";
+import { MARCADOR_ARCHIVO, MARCADOR_IMAGEN, ImportacionError, type Archivos } from "./tipos.ts";
 
 const bytes = (s: string) => strToU8(s);
 const archivos = (o: Record<string, string | Uint8Array>): Archivos => new Map(Object.entries(o).map(([k, v]) => [k, typeof v === "string" ? bytes(v) : v]));
@@ -147,12 +147,17 @@ test("animoDeMeta: número, nombre en español o inglés", () => {
 });
 
 test("reescribirCuerpo: imágenes del ZIP a marcadores; lo que no está queda como texto", () => {
-  const a = archivos({ "notas/f/uno.png": "x", "notas/doc.pdf": "y" });
+  const a = archivos({ "notas/f/uno.png": "x", "notas/doc.pdf": "y", "notas/programa.exe": "z", "notas/otra.md": "m" });
   const r = reescribirCuerpo("![foto](f/uno.png) y ![otra](f/uno.png) ![falta](f/no.png) [doc](doc.pdf) [web](https://a.com) [a](#x)", a, "notas");
-  assert.equal(r.cuerpo, `![foto](${MARCADOR_IMAGEN}0) y ![otra](${MARCADOR_IMAGEN}0) falta doc [web](https://a.com) [a](#x)`);
-  assert.deepEqual(r.imagenes, ["notas/f/uno.png"]);
+  assert.equal(r.cuerpo, `![foto](${MARCADOR_IMAGEN}0) y ![otra](${MARCADOR_IMAGEN}0) falta [doc](${MARCADOR_ARCHIVO}1) [web](https://a.com) [a](#x)`);
+  // Lane 294: un documento admitido se sube como adjunto; un ejecutable o una nota Markdown quedan como su nombre
+  assert.deepEqual(r.imagenes, ["notas/f/uno.png", "notas/doc.pdf"]);
   assert.equal(r.faltantes, 1);
-  assert.equal(r.noImagenes, 1);
+  assert.equal(r.noImagenes, 0);
+  const otros = reescribirCuerpo("[exe](programa.exe) [nota](otra.md) [voz](voz.m4a)", archivos({ "programa.exe": "z", "otra.md": "m", "voz.m4a": "a" }), "");
+  assert.equal(otros.cuerpo, `exe nota [voz](${MARCADOR_ARCHIVO}0)`);
+  assert.deepEqual(otros.imagenes, ["voz.m4a"]);
+  assert.equal(otros.noImagenes, 2);
 });
 
 test("leerMarkdown: una nota con front matter, otra solo con fecha en el nombre", () => {
@@ -197,12 +202,14 @@ test("leerDailyYouJson: versión 2 con grupos, etiquetas, contadores y fotos", (
           { type: "image", path: "attachments/b.jpg", rank: 0, timeCreate: "2026-07-20T09:30:00.000" },
           { type: "image", path: "attachments/a.jpg", rank: 1, timeCreate: "2026-07-20T09:30:00.000" },
           { type: "video", path: "attachments/v.mp4", rank: 2, timeCreate: "2026-07-20T09:30:00.000" },
+          { type: "audio", path: "attachments/nota.m4a", rank: 4, timeCreate: "2026-07-20T09:30:00.000" },
+          { type: "documento", path: "attachments/raro.bin", rank: 5, timeCreate: "2026-07-20T09:30:00.000" },
           { type: "image", path: "attachments/falta.jpg", rank: 3, timeCreate: "2026-07-20T09:30:00.000" },
         ],
       },
     ],
   };
-  const a = archivos({ "attachments/a.jpg": "a", "attachments/b.jpg": "b" });
+  const a = archivos({ "attachments/a.jpg": "a", "attachments/b.jpg": "b", "attachments/v.mp4": "v", "attachments/nota.m4a": "n" });
   const p = leerDailyYouJson(raiz, a, "");
   assert.deepEqual(p.grupos, [{ nombre: "Personas", icono: "👪", tipoIcono: "emoji", color: "#43a047", seleccionUnica: false }]);
   assert.deepEqual(p.etiquetas[0], { nombre: "Mamá", tipo: "etiqueta", grupo: "Personas", icono: "👩", tipoIcono: "emoji", color: null });
@@ -213,7 +220,9 @@ test("leerDailyYouJson: versión 2 con grupos, etiquetas, contadores y fotos", (
   // Se ordenan por rango, de mayor a menor
   assert.deepEqual(e.fotos, ["attachments/a.jpg", "attachments/b.jpg"]);
   assert.equal(p.fotosFaltantes, 1);
-  assert.match(p.avisos.join(" "), /1 adjuntos/);
+  // Lane 294: el audio y el video pasan al final del texto (de mayor a menor rango); un tipo que no se conoce se avisa
+  assert.deepEqual(e.adjuntos, ["attachments/nota.m4a", "attachments/v.mp4"]);
+  assert.match(p.avisos.join(" "), /1 adjuntos de un tipo desconocido/);
 });
 
 test("leerDailyYouJson: el formato viejo (una lista) y las versiones que no se conocen", () => {

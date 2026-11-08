@@ -4,6 +4,8 @@
 // El servidor no confía en el cliente: `sanearDocumento` reconstruye el documento solo con nodos, marcas y
 // atributos conocidos, así que un JSON armado a mano no puede meter HTML, enlaces `javascript:` ni imágenes ajenas.
 
+import { MAX_BYTES_ADJUNTO } from "./adjuntos.ts";
+
 export interface NodoDoc {
   type: string;
   attrs?: Record<string, unknown>;
@@ -31,6 +33,12 @@ type Limpiar = (attrs: Atributos) => Atributos;
 const entero = (v: unknown, min: number, max: number, def: number) =>
   typeof v === "number" && Number.isInteger(v) && v >= min && v <= max ? v : def;
 const textoCorto = (v: unknown, max: number) => (typeof v === "string" && v.length <= max ? v : null);
+
+const srcArchivo = (v: unknown, mensaje: string): string => {
+  if (typeof v !== "string" || !URL_ARCHIVO_DOC.test(v)) throw new Error(mensaje);
+  return v;
+};
+const anchoPorcentaje = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(25, Math.round(v))) : null);
 
 /** Id de una entrada enlazada: solo dígitos, sin ceros a la izquierda, hasta 12. */
 export const ID_ENLACE = /^[1-9]\d{0,11}$/;
@@ -60,11 +68,16 @@ const NODOS: Record<string, Limpiar | null> = {
     variant: VARIANTES_REGLA.includes(String(a.variant)) ? a.variant : "solid",
     label: textoCorto(a.label, 100),
   }),
-  image: (a) => {
-    if (typeof a.src !== "string" || !URL_ARCHIVO_DOC.test(a.src)) throw new Error("Imagen inválida");
-    const w = typeof a.widthPercent === "number" && Number.isFinite(a.widthPercent) ? Math.min(100, Math.max(25, Math.round(a.widthPercent))) : null;
-    return { src: a.src, name: textoCorto(a.name, 200), widthPercent: w };
-  },
+  image: (a) => ({ src: srcArchivo(a.src, "Imagen inválida"), name: textoCorto(a.name, 200), widthPercent: anchoPorcentaje(a.widthPercent) }),
+  // Lane 294 (moodiary `audio` / `video` / `attachment`): archivos propios del diario. Sin parámetros en la URL: el tipo está en la tabla.
+  audio: (a) => ({ src: srcArchivo(a.src, "Audio inválido"), name: textoCorto(a.name, 200) }),
+  video: (a) => ({ src: srcArchivo(a.src, "Video inválido"), name: textoCorto(a.name, 200), widthPercent: anchoPorcentaje(a.widthPercent) }),
+  attachment: (a) => ({
+    src: srcArchivo(a.src, "Adjunto inválido"),
+    name: textoCorto(a.name, 200),
+    mime: textoCorto(a.mime, 100),
+    size: typeof a.size === "number" && Number.isInteger(a.size) && a.size >= 0 && a.size <= MAX_BYTES_ADJUNTO ? a.size : null,
+  }),
   // Lane 290 (moodiary `diaryLink`): enlace a otra entrada. El id es el de la entrada; el rótulo es lo que se ve.
   diaryLink: (a) => {
     const id = typeof a.id === "number" ? String(a.id) : a.id;
@@ -168,6 +181,43 @@ export function docDesdeTexto(texto: string): NodoDoc {
 /** ¿El documento lleva alguna imagen? (una entrada puede ser solo una foto). */
 export function tieneImagen(doc: NodoDoc): boolean {
   return doc.type === "image" || (doc.content ?? []).some(tieneImagen);
+}
+
+/** Tipos de bloque que son un archivo propio del diario (lane 294), además de la imagen. */
+export const TIPOS_ARCHIVO = ["audio", "video", "attachment"] as const;
+export type TipoArchivo = (typeof TIPOS_ARCHIVO)[number];
+const esArchivo = (t: string) => (TIPOS_ARCHIVO as readonly string[]).includes(t);
+
+/** ¿El documento lleva un audio, un video o un adjunto? (una entrada puede ser solo una nota de voz). */
+export function tieneArchivo(doc: NodoDoc): boolean {
+  return esArchivo(doc.type) || (doc.content ?? []).some(tieneArchivo);
+}
+
+export interface ArchivoDoc {
+  tipo: TipoArchivo;
+  src: string;
+  name: string | null;
+  mime: string | null;
+  size: number | null;
+}
+
+/** Los audios, videos y adjuntos del documento, en orden (la lista que el exportador mete en `adjuntos/`). */
+export function archivosDe(doc: NodoDoc): ArchivoDoc[] {
+  const salida: ArchivoDoc[] = [];
+  const recorrer = (n: NodoDoc) => {
+    if (esArchivo(n.type) && typeof n.attrs?.src === "string") {
+      salida.push({
+        tipo: n.type as TipoArchivo,
+        src: n.attrs.src,
+        name: typeof n.attrs.name === "string" ? n.attrs.name : null,
+        mime: typeof n.attrs.mime === "string" ? n.attrs.mime : null,
+        size: typeof n.attrs.size === "number" ? n.attrs.size : null,
+      });
+    }
+    n.content?.forEach(recorrer);
+  };
+  recorrer(doc);
+  return salida;
 }
 
 /** Las URLs `/api/archivos/<uuid>` de las imágenes del documento, en orden. */
