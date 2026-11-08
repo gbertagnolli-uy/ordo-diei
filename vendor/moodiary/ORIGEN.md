@@ -19,3 +19,6 @@
 
 ## Ampliación (lane 288, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/presentation/calendar/calendar_page.dart` (mes de seis filas y vista del año), `packages/foundation/mui/lib/src/components/common/heatmap.dart` (`MHeatmap`), `packages/feature_base/moodiary_data/lib/src/dashboard_controller.dart` y su `test/heatmap_level_test.dart` (niveles del mapa de calor) y `mobile/lib/app/me/me_page.dart` (tarjeta del mapa de calor).
+
+## Ampliación (lane 289, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/application/{timeline_group,timeline_controller,diary_stamp}.dart`, `packages/feature/moodiary_diary/lib/src/presentation/widget/{timeline_view,timeline_tile}.dart` y `packages/feature/moodiary_diary/test/diary/{timeline_group_test,timeline_tile_test}.dart` (línea de tiempo por mes con eje, puntos de ánimo y cortes por días sin entradas).

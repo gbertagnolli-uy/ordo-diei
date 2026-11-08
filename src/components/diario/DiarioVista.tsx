@@ -2,9 +2,10 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, FileText, PenLine, Search, Smile, Tags } from "lucide-react";
+import { BarChart3, CalendarHeart, FileText, History, PenLine, Route, Search, Smile, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
+import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
 import { resumenMes, type Marcas, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import { toast } from "@/lib/toast";
@@ -17,6 +18,11 @@ import { VistaAnual } from "./calendario/VistaAnual";
 import { EditarEscalaAnimo } from "./EditarEscalaAnimo";
 import { EditorEntrada } from "./EditorEntrada";
 import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
+import { LineaDeTiempo } from "./linea/LineaDeTiempo";
+import { EnEsteDiaDialog } from "./recuerdos/EnEsteDiaDialog";
+import { OpcionesDeRecuerdos } from "./recuerdos/OpcionesRecuerdos";
+import { SeccionRecuerdos } from "./recuerdos/SeccionRecuerdos";
+import { useRecuerdos } from "./recuerdos/useRecuerdos";
 import { AdministrarDiario } from "./etiquetas/AdministrarDiario";
 import { PanelEstadisticas } from "./estadisticas/PanelEstadisticas";
 import { usePreferencia } from "./estadisticas/controles";
@@ -46,11 +52,17 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [buscando, setBuscando] = useState(false);
   const [verEstadisticas, setVerEstadisticas] = useState(false);
   const [verAnio, setVerAnio] = useState(false);
+  const [verLinea, setVerLinea] = useState(false);
+  /** "MM-DD" del día cuyas entradas de otros años se están viendo, o null. */
+  const [enEsteDia, setEnEsteDia] = useState<string | null>(null);
+  const [editandoRecuerdos, setEditandoRecuerdos] = useState(false);
   const [eligiendoMes, setEligiendoMes] = useState(false);
   const [editandoVista, setEditandoVista] = useState(false);
   const [filtroEtiqueta, setFiltroEtiqueta] = useState<number | null>(null);
   const [versionBusqueda, setVersionBusqueda] = useState(0);
   const [opciones, setOpciones] = usePreferencia(`diario.calendario.${tipo}`, OPCIONES_CALENDARIO, esOpcionesCalendario);
+  const [opcionesRecuerdos, setOpcionesRecuerdos] = usePreferencia(`diario.recuerdos.${tipo}`, OPCIONES_RECUERDOS, esOpcionesRecuerdos);
+  const recuerdos = useRecuerdos(tipo, opcionesRecuerdos, version);
 
   useEffect(() => {
     let vivo = true;
@@ -97,6 +109,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setBuscando(false);
     setVerEstadisticas(false);
     setVerAnio(false);
+    setVerLinea(false);
   }
 
   async function marcar(e: EntradaVista, marcas: Marcas) {
@@ -118,6 +131,10 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
       {verEstadisticas ? (
         <div className="md:col-span-2">
           <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
+        </div>
+      ) : verLinea ? (
+        <div className="md:col-span-2">
+          <LineaDeTiempo tipo={tipo} catalogo={acciones.catalogo} version={version} onVolver={() => setVerLinea(false)} onIrADia={irADia} />
         </div>
       ) : verAnio ? (
         <div className="md:col-span-2">
@@ -168,6 +185,15 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
               onAnio={() => setVerAnio(true)}
             />
             <ResumenMes totalEntradas={resumen.totalEntradas} diasPorAnimo={resumen.diasPorAnimo} />
+            <Button variant="outline" onClick={() => setVerLinea(true)}>
+              <Route /> Línea de tiempo
+            </Button>
+            <Button variant="outline" onClick={() => setEnEsteDia(fechaActiva.slice(5))}>
+              <CalendarHeart /> En este día
+            </Button>
+            <Button variant="outline" onClick={() => setEditandoRecuerdos(true)}>
+              <History /> Recuerdos
+            </Button>
             <Button variant="outline" onClick={() => setBuscando(true)}>
               <Search /> Buscar
             </Button>
@@ -187,6 +213,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             )}
           </div>
           <div className="flex flex-col gap-4">
+            {recuerdos && <SeccionRecuerdos grupos={recuerdos.grupos} opciones={opcionesRecuerdos} onAbrir={(g) => (g.enEsteDia ? setEnEsteDia(recuerdos.hoy.slice(5)) : irADia(g.entradas[0].entrada.fecha))} />}
             <SeccionFijadas tipo={tipo} version={version} onIrADia={irADia} />
             <ListaDia
               entradas={delDia}
@@ -238,6 +265,21 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           onCerrar={() => setEligiendoMes(false)}
         />
       )}
+      {enEsteDia && (
+        <EnEsteDiaDialog
+          tipo={tipo}
+          diaMes={enEsteDia}
+          hoy={hoy}
+          onCerrar={() => setEnEsteDia(null)}
+          onIrADia={irADia}
+          onResponder={(f) => {
+            setEnEsteDia(null);
+            irADia(f);
+            setEditor({ clave: Date.now() });
+          }}
+        />
+      )}
+      {editandoRecuerdos && <OpcionesDeRecuerdos opciones={opcionesRecuerdos} onCambiar={setOpcionesRecuerdos} onCerrar={() => setEditandoRecuerdos(false)} />}
       {editandoVista && <OpcionesDelCalendario opciones={{ ...opciones, etiqueta: etiquetaDeCalendario }} catalogo={acciones.catalogo} onCambiar={setOpciones} onCerrar={() => setEditandoVista(false)} />}
       {admin && <AdministrarDiario acciones={acciones} pestanaInicial={admin} onCerrar={() => setAdmin(null)} />}
       {administrandoPlantillas && (
