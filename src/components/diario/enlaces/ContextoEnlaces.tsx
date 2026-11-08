@@ -9,3 +9,9 @@ const Contexto = createContext<AbrirEntrada | null>(null);
 export const ProveedorEnlaces = Contexto.Provider;
 /** `null` si no hay pantalla que sepa abrir entradas (el enlace se ve, pero no navega). */
 export const useAbrirEntrada = () => useContext(Contexto);
+
+// Lane 295: quién sabe abrir el grafo local de una entrada (moodiary `DiaryGraphRoute`). Lo provee la pantalla del diario.
+const ContextoGrafo = createContext<AbrirEntrada | null>(null);
+export const ProveedorGrafo = ContextoGrafo.Provider;
+/** `null` si no hay pantalla que sepa mostrar el grafo (el botón no aparece). */
+export const useAbrirGrafo = () => useContext(ContextoGrafo);

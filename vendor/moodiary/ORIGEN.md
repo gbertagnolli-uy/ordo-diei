@@ -37,3 +37,6 @@
 
 ## Nota (lane 294, 2026-11-08)
 - No se agregan archivos: los bloques de audio, video y adjunto del editor (`editor/src/core/editor/nodes/{attachment,media}.ts`, `core/editor/media.ts`, `ui/nodes/{AttachmentNodeView,AudioNodeView,VideoNodeView}.tsx`, `ui/hooks/use-media.ts`, `styles/_blocks.scss`) ya estaban en esta copia.
+
+## Ampliación (lane 295, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/presentation/graph/{diary_graph_page,diary_ego_graph_page,graph_canvas,graph_scene,graph_style,graph_info_card}.dart` y `test/graph_canvas_test.dart`, `packages/feature_base/moodiary_models/lib/src/diary_graph.dart`, `packages/feature_base/moodiary_data/lib/src/db/diary.drift` (consultas del grafo) y `test/diary_repository_test.dart`, y el motor de fuerzas `packages/foundation/fast_core/rust/src/graph/layout.rs` con su puente (`rust/src/api/graph_layout.rs`, `lib/graph.dart`): grafo de enlaces entre entradas (general y local) con disposición por fuerzas. `diary_repository.dart` (`buildLinkGraph`, `buildEgoGraph`) ya estaba desde la lane 285.
