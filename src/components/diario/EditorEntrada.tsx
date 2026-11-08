@@ -285,6 +285,8 @@ export function EditorEntrada({
           </div>
           <EditorTexto
             ref={editorTexto}
+            tipo={tipo}
+            entradaId={entrada?.id ?? null}
             inicial={{ contenido: entrada?.contenido ?? base?.contenido ?? null, texto: entrada?.texto ?? "" }}
             onCambio={(d) => {
               doc.current = d;

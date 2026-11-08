@@ -1,7 +1,7 @@
 "use client";
 // Diario (lane 272): entradas del día seleccionado. UX basada en theachoem/storypad@a76825e (lib/views/home).
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Link2, Pencil, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { Marcas, TipoDiario } from "@/lib/diario/reglas";
@@ -9,6 +9,7 @@ import type { EntradaVista } from "@/lib/diario/servidor";
 import type { Catalogo, CategoriaVista } from "@/lib/diario/servidor-catalogo";
 import { nivelDe, nombreDeNivel } from "@/lib/diario/escala";
 import { EditorTexto } from "./editor/EditorTexto";
+import { PanelEnlaces } from "./enlaces/PanelEnlaces";
 import { fechaLarga } from "./estadisticas/controles";
 import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
@@ -39,6 +40,7 @@ function Tarjeta({
   onMarcar: (e: EntradaVista, marcas: Marcas) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
+  const [verEnlaces, setVerEnlaces] = useState(false);
   const nivel = nivelDe(useEscala(), e.animo);
   const categoria = catalogo && e.categoriaId != null ? caminoDe(e.categoriaId, catalogo.categorias) : [];
   const chips = catalogo ? e.etiquetas.flatMap((t) => catalogo.etiquetas.filter((x) => x.id === t.id).map((x) => ({ etiqueta: x, valor: t.valor }))) : [];
@@ -60,6 +62,11 @@ function Tarjeta({
           <span title={nombreDeNivel(nivel)} role="img" aria-label={`Ánimo: ${nombreDeNivel(nivel)}`}>
             <GlifoAnimo nivel={nivel} tamano={22} />
           </span>
+        )}
+        {e.enlaces > 0 && (
+          <Button variant="ghost" size="sm" aria-label={`Enlaces (${e.enlaces})`} aria-expanded={verEnlaces} onClick={() => setVerEnlaces(!verEnlaces)}>
+            <Link2 /> {e.enlaces}
+          </Button>
         )}
         <MarcasEntrada favorita={e.favorita} fijada={e.fijada} editable={e.puedoEditar} onCambiar={(m) => onMarcar(e, m)} />
         {e.puedoEditar && (
@@ -93,6 +100,7 @@ function Tarjeta({
           {abierta ? "ver menos" : "ver más"}
         </button>
       )}
+      {verEnlaces && e.enlaces > 0 && <PanelEnlaces tipo={tipo} entradaId={e.id} />}
       {chips.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {chips.map(({ etiqueta, valor }) => (

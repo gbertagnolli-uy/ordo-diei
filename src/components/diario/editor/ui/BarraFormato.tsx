@@ -16,11 +16,13 @@ import {
   IndentIncrease,
   Italic,
   Link as LinkIcon,
+  Link2,
   List,
   ListChecks,
   ListOrdered,
   Minus,
   Redo2,
+  Search,
   SquareCode,
   Strikethrough,
   Table,
@@ -66,7 +68,23 @@ function Tecla({ icono, etiqueta, activo, deshabilitado, onClick }: Boton) {
 
 const Separador = () => <span aria-hidden className="mx-0.5 h-5 w-px bg-border" />;
 
-export function BarraFormato({ editor, subiendo, onImagen }: { editor: Editor; subiendo: boolean; onImagen: () => void }) {
+export function BarraFormato({
+  editor,
+  subiendo,
+  onImagen,
+  onBuscar,
+  buscando,
+  puedeEnlazar,
+}: {
+  editor: Editor;
+  subiendo: boolean;
+  onImagen: () => void;
+  /** Abre o cierra la barra de búsqueda dentro del texto (lane 290). */
+  onBuscar: () => void;
+  buscando: boolean;
+  /** Hay un diario del que sacar entradas para enlazar (lane 290). */
+  puedeEnlazar: boolean;
+}) {
   const estado = useEditorState({ editor, selector: ({ editor: e }) => deriveState(e) });
   const [enlace, setEnlace] = useState<string | null>(null);
   const run = (cmd: string, args?: ExecArgs) => execCommand(editor, cmd, args);
@@ -109,9 +127,12 @@ export function BarraFormato({ editor, subiendo, onImagen }: { editor: Editor; s
         <Separador />
         <Tecla icono={<LinkIcon />} etiqueta="Enlace" activo={estado.marks.link} onClick={abrirEnlace} />
         {estado.marks.link && <Tecla icono={<Unlink />} etiqueta="Quitar enlace" onClick={() => run("unsetLink")} />}
+        {puedeEnlazar && <Tecla icono={<Link2 />} etiqueta="Enlazar otra entrada" onClick={() => run("insertDiaryLink")} />}
         <Tecla icono={<ImagePlus />} etiqueta="Insertar imagen" deshabilitado={subiendo} onClick={onImagen} />
         <Tecla icono={<Table />} etiqueta="Insertar tabla" onClick={() => run("insertTable")} />
         <Tecla icono={<Minus />} etiqueta="Separador" onClick={() => run("insertHorizontalRule")} />
+        <Separador />
+        <Tecla icono={<Search />} etiqueta="Buscar en el texto (Ctrl+F)" activo={buscando} onClick={onBuscar} />
       </div>
       {enlace !== null && (
         <form

@@ -36,7 +36,7 @@
 ## moodiary — https://github.com/ZhuJHua/moodiary
 - Licencia AGPL-3.0 (`vendor/moodiary/LICENSE`).
 - Copia del editor web en `vendor/moodiary/editor/` y, desde las lanes 284, 285, 287, 288 y 289, de `category_repository.dart` y de las fuentes de búsqueda, estadísticas, calendario y línea de tiempo (commit `2c552ddd7939a054122380397fb914cf000824b0`, ver `vendor/moodiary/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/moodiary/<ruta> (ZhuJHua/moodiary@2c552dd)` (lane 283, editor del diario).
-- Dependencias que trae el port: Tiptap (`@tiptap/*`, MIT), `lowlight` (MIT), `marked` y `marked-cjk-friendly` (MIT), `prosemirror-search` (MIT).
+- Dependencias que trae el port: Tiptap (`@tiptap/*`, MIT), `lowlight` (MIT), `marked` y `marked-cjk-friendly` (MIT), `prosemirror-search` (MIT); desde la lane 290, `@tiptap/extension-mention` y `@tiptap/suggestion` (MIT, los enlaces entre entradas).
 - Licencia AGPL pendiente de revisión legal por Gabriel.
 
 ## Daily You — https://github.com/Demizo/Daily_You

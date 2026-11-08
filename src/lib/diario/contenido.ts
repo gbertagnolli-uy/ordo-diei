@@ -32,6 +32,9 @@ const entero = (v: unknown, min: number, max: number, def: number) =>
   typeof v === "number" && Number.isInteger(v) && v >= min && v <= max ? v : def;
 const textoCorto = (v: unknown, max: number) => (typeof v === "string" && v.length <= max ? v : null);
 
+/** Id de una entrada enlazada: solo dígitos, sin ceros a la izquierda, hasta 12. */
+export const ID_ENLACE = /^[1-9]\d{0,11}$/;
+
 /** Atributos permitidos por tipo de nodo. Un tipo que no está acá no se admite. */
 const NODOS: Record<string, Limpiar | null> = {
   doc: () => ({ v: VERSION_DOC }),
@@ -61,6 +64,12 @@ const NODOS: Record<string, Limpiar | null> = {
     if (typeof a.src !== "string" || !URL_ARCHIVO_DOC.test(a.src)) throw new Error("Imagen inválida");
     const w = typeof a.widthPercent === "number" && Number.isFinite(a.widthPercent) ? Math.min(100, Math.max(25, Math.round(a.widthPercent))) : null;
     return { src: a.src, name: textoCorto(a.name, 200), widthPercent: w };
+  },
+  // Lane 290 (moodiary `diaryLink`): enlace a otra entrada. El id es el de la entrada; el rótulo es lo que se ve.
+  diaryLink: (a) => {
+    const id = typeof a.id === "number" ? String(a.id) : a.id;
+    if (typeof id !== "string" || !ID_ENLACE.test(id)) throw new Error("Enlace a entrada inválido");
+    return { id, label: textoCorto(a.label, 200) ?? "" };
   },
 };
 
@@ -129,6 +138,11 @@ export function textoPlanoDe(doc: NodoDoc): string {
     }
     if (n.type === "hardBreak") {
       texto += "\n";
+      return;
+    }
+    // moodiary `plain-text.ts`: un enlace a otra entrada aporta su rótulo
+    if (n.type === "diaryLink") {
+      texto += String(n.attrs?.label ?? "").replace(/\s+/g, " ").trim();
       return;
     }
     if (esBloqueDeTexto(n.type)) {

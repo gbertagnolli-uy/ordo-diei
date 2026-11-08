@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { APP_TZ, aClave, aFecha, hoyEnFamilia, NoAutorizadoError, NoEncontradoError } from "@/lib/habitos/server";
 import type { NodoDoc } from "./contenido";
 import type { EtiquetaPuesta } from "./etiquetas";
+import { aplicarEnlaces } from "./servidor-enlaces";
 import { prepararEtiquetas, verificarCategoria } from "./servidor-catalogo";
 import { MAX_ENTRADAS_DIA, puedeBorrar, puedeEditar, validarEntrada, validarMarcas, type TipoDiario } from "./reglas";
 
@@ -31,6 +32,8 @@ export type EntradaVista = {
   creadaEn: string;
   editadaEn: string;
   fotos: string[];
+  /** Lane 290: cuántas entradas enlaza ésta y cuántas la enlazan (para mostrar el panel de enlaces). */
+  enlaces: number;
   autor: { id: number; nombre: string; fotoUrl: string | null };
   puedoEditar: boolean;
   puedoBorrar: boolean;
@@ -40,6 +43,7 @@ export const incluir = {
   etiquetas: { select: { etiquetaId: true, valor: true }, orderBy: { id: "asc" as const } },
   fotos: { orderBy: { orden: "asc" as const }, select: { url: true } },
   autor: { select: { id: true, nombre: true, fotoUrl: true } },
+  _count: { select: { enlacesSalientes: true, enlacesEntrantes: true } },
 };
 
 export type EntradaConFotos = Prisma.DiarioEntradaGetPayload<{ include: typeof incluir }>;
@@ -69,6 +73,7 @@ export function aVista(e: EntradaConFotos, actor: Actor): EntradaVista {
     creadaEn: e.creadaEn.toISOString(),
     editadaEn: e.editadaEn.toISOString(),
     fotos: e.fotos.map((f: { url: string }) => f.url),
+    enlaces: e._count.enlacesSalientes + e._count.enlacesEntrantes,
     autor: e.autor,
     puedoEditar: puedeEditar(e, actor),
     puedoBorrar: puedeBorrar(e, actor),
@@ -99,7 +104,7 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
   const e = await prisma.$transaction(async (tx) => {
     const etiquetas = await prepararEtiquetas(tx, actor, tipo, v.etiquetas ?? []);
     if (v.categoriaId != null) await verificarCategoria(tx, actor, tipo, v.categoriaId);
-    return tx.diarioEntrada.create({
+    const creada = await tx.diarioEntrada.create({
       data: {
         tipo,
         autorId: actor.id,
@@ -115,8 +120,10 @@ export async function crearEntrada(actor: Actor, tipo: TipoDiario, body: Record<
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
         etiquetas: { create: etiquetas.map((t) => ({ etiquetaId: t.id, valor: t.valor })) },
       },
-      include: incluir,
+      select: { id: true },
     });
+    await aplicarEnlaces(tx, creada.id, tipo, actor.id, v.contenido);
+    return tx.diarioEntrada.findUniqueOrThrow({ where: { id: creada.id }, include: incluir });
   });
   return aVista(e, actor);
 }
@@ -138,7 +145,7 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
     const etiquetas = v.etiquetas ? await prepararEtiquetas(tx, actor, e.tipo, v.etiquetas) : undefined;
     if (etiquetas) await tx.diarioEntradaEtiqueta.deleteMany({ where: { entradaId: id } });
     if (v.categoriaId != null) await verificarCategoria(tx, actor, e.tipo, v.categoriaId);
-    return tx.diarioEntrada.update({
+    await tx.diarioEntrada.update({
       where: { id },
       data: {
         fecha: aFecha(v.fecha),
@@ -153,8 +160,10 @@ export async function editarEntrada(actor: Actor, id: number, body: Record<strin
         fotos: { create: v.fotos.map((url, orden) => ({ url, orden })) },
         ...(etiquetas ? { etiquetas: { create: etiquetas.map((t) => ({ etiquetaId: t.id, valor: t.valor })) } } : {}),
       },
-      include: incluir,
+      select: { id: true },
     });
+    await aplicarEnlaces(tx, id, e.tipo, e.autorId, v.contenido);
+    return tx.diarioEntrada.findUniqueOrThrow({ where: { id }, include: incluir });
   });
   return aVista(nueva, actor);
 }

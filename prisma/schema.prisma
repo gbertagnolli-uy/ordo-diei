@@ -1929,10 +1929,26 @@ model DiarioEntrada {
   categoria DiarioCategoria?        @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
   etiquetas DiarioEntradaEtiqueta[]
 
+  enlacesSalientes DiarioEnlace[] @relation("EnlacesSalientes") // ← Lane 290: entradas que ésta enlaza
+  enlacesEntrantes DiarioEnlace[] @relation("EnlacesEntrantes") // ← Lane 290: entradas que enlazan a ésta (backlinks)
+
   @@index([tipo, fecha])
   @@index([autorId, fecha])
   @@index([tipo, fijada])
   @@map("Diario_Entradas")
+}
+
+// ← Lane 290: enlaces entre entradas (moodiary `DiaryLinks`). Se reescriben enteros al guardar la entrada de origen.
+model DiarioEnlace {
+  origenId  Int @map("Origen_ID")
+  destinoId Int @map("Destino_ID")
+
+  origen  DiarioEntrada @relation("EnlacesSalientes", fields: [origenId], references: [id], onDelete: Cascade)
+  destino DiarioEntrada @relation("EnlacesEntrantes", fields: [destinoId], references: [id], onDelete: Cascade)
+
+  @@id([origenId, destinoId])
+  @@index([destinoId])
+  @@map("Diario_Enlaces")
 }
 
 // ← Lane 284: etiquetas del diario (Daily You + storypad). Personal = del creador; familiar = de toda la familia.
