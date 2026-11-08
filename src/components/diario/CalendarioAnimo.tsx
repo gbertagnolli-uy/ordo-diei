@@ -3,7 +3,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { FONDO_ANIMO } from "./animo";
+import { nivelDe } from "@/lib/diario/escala";
+import { fondoDe, useEscala } from "./EscalaAnimo";
 
 const DIAS = ["L", "M", "M", "J", "V", "S", "D"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -30,6 +31,7 @@ export function CalendarioAnimo({
   onDia: (fecha: string) => void;
   onMes: (mes: string) => void;
 }) {
+  const escala = useEscala();
   const [y, m] = mes.split("-").map(Number);
   const total = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const huecos = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7; // lunes = 0
@@ -60,6 +62,7 @@ export function CalendarioAnimo({
         {fechas.map((f) => {
           const d = dias[f];
           const futuro = f > hoy;
+          const nivel = d?.animo ? nivelDe(escala, d.animo) : null;
           return (
             <button
               key={f}
@@ -79,9 +82,10 @@ export function CalendarioAnimo({
               <span
                 className={cn(
                   "size-1.5 rounded-full",
-                  d ? (d.animo ? FONDO_ANIMO[d.animo] : "bg-foreground/40") : "bg-transparent",
+                  d ? (nivel ? fondoDe(nivel).className : "bg-foreground/40") : "bg-transparent",
                   d && f === seleccionado && "ring-1 ring-primary-foreground",
                 )}
+                style={nivel ? fondoDe(nivel).style : undefined}
               />
             </button>
           );

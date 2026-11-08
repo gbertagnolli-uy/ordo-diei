@@ -6,7 +6,7 @@ export const GRUPOS_ICONOS = [
   {
     id: "emociones",
     nombre: "Emociones",
-    claves: ["smile", "laugh", "frown", "meh", "angry", "heart", "heart-handshake", "hand-heart", "party-popper", "sparkles", "thumbs-up", "thumbs-down"],
+    claves: ["smile", "laugh", "frown", "meh", "angry", "circle", "heart", "heart-handshake", "hand-heart", "party-popper", "sparkles", "thumbs-up", "thumbs-down"],
   },
   {
     id: "actividades",

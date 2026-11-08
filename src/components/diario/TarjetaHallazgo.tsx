@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import type { Marcas, TipoDiario } from "@/lib/diario/reglas";
 import type { HallazgoVista } from "@/lib/diario/servidor-busqueda";
 import type { Catalogo } from "@/lib/diario/servidor-catalogo";
-import { animoDe } from "./animo";
+import { nivelDe, nombreDeNivel } from "@/lib/diario/escala";
+import { GlifoAnimo, useEscala } from "./EscalaAnimo";
 import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 import { caminoDe } from "./ListaDia";
 import { MarcasEntrada } from "./MarcasEntrada";
@@ -33,7 +34,7 @@ export function TarjetaHallazgo({
   onMarcar: (marcas: Marcas) => void;
 }) {
   const e = h.entrada;
-  const animo = animoDe(e.animo);
+  const nivel = nivelDe(useEscala(), e.animo);
   const categoria = catalogo && e.categoriaId != null ? caminoDe(e.categoriaId, catalogo.categorias) : [];
   const chips = catalogo ? e.etiquetas.flatMap((t) => catalogo.etiquetas.filter((x) => x.id === t.id).map((x) => ({ etiqueta: x, valor: t.valor }))) : [];
   return (
@@ -51,9 +52,9 @@ export function TarjetaHallazgo({
             {fechaLarga(e.fecha)} · {hora(e.hora)}
           </p>
         </div>
-        {animo && (
-          <span className="text-xl" title={animo.etiqueta} aria-label={`Ánimo: ${animo.etiqueta}`}>
-            {animo.emoji}
+        {nivel && (
+          <span title={nombreDeNivel(nivel)} role="img" aria-label={`Ánimo: ${nombreDeNivel(nivel)}`}>
+            <GlifoAnimo nivel={nivel} tamano={22} />
           </span>
         )}
         <MarcasEntrada favorita={e.favorita} fijada={e.fijada} editable={e.puedoEditar} onCambiar={onMarcar} />

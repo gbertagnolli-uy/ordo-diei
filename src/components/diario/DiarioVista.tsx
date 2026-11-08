@@ -1,28 +1,38 @@
 "use client";
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PenLine, Search, Tags } from "lucide-react";
+import { FileText, PenLine, Search, Smile, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resumenMes, type Marcas, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import { toast } from "@/lib/toast";
 import { BuscadorDiario } from "./BuscadorDiario";
 import { CalendarioAnimo } from "./CalendarioAnimo";
+import { EditarEscalaAnimo } from "./EditarEscalaAnimo";
 import { EditorEntrada } from "./EditorEntrada";
+import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
 import { AdministrarDiario } from "./etiquetas/AdministrarDiario";
 import { useCatalogo } from "./etiquetas/useCatalogo";
 import { ListaDia } from "./ListaDia";
 import { cambiarMarcasRemoto } from "./MarcasEntrada";
+import { AdministrarPlantillas } from "./plantillas/AdministrarPlantillas";
+import { usePlantillas } from "./plantillas/usePlantillas";
 import { ResumenMes } from "./ResumenMes";
 import { SeccionFijadas } from "./SeccionFijadas";
 
-export function DiarioVista({ tipo, hoy, usuarioId }: { tipo: TipoDiario; hoy: string; usuarioId: number }) {
+/** `esPadre`: en el diario familiar, la escala de ánimo y la plantilla predeterminada las cambia un padre. */
+export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiario; hoy: string; usuarioId: number; esPadre: boolean }) {
   const [mes, setMes] = useState(hoy.slice(0, 7));
   const [seleccionado, setSeleccionado] = useState(hoy);
   const [entradas, setEntradas] = useState<EntradaVista[]>([]);
   const [version, setVersion] = useState(0);
   const [editor, setEditor] = useState<{ entrada?: EntradaVista; clave: number } | null>(null);
   const acciones = useCatalogo(tipo);
+  const plantillas = usePlantillas(tipo);
+  const escala = useEscalaAnimo(tipo);
+  const [administrandoPlantillas, setAdministrandoPlantillas] = useState(false);
+  const [editandoEscala, setEditandoEscala] = useState(false);
+  const puedeCambiarEscala = tipo === "personal" || esPadre;
   const [admin, setAdmin] = useState<"etiquetas" | "categorias" | null>(null);
   const [buscando, setBuscando] = useState(false);
   const [versionBusqueda, setVersionBusqueda] = useState(0);
@@ -71,6 +81,7 @@ export function DiarioVista({ tipo, hoy, usuarioId }: { tipo: TipoDiario; hoy: s
   }
 
   return (
+    <ProveedorEscala value={escala.escala}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
       {buscando ? (
         <div className="md:col-span-2">
@@ -97,6 +108,14 @@ export function DiarioVista({ tipo, hoy, usuarioId }: { tipo: TipoDiario; hoy: s
             <Button variant="outline" onClick={() => setAdmin("etiquetas")}>
               <Tags /> Etiquetas y categorías
             </Button>
+            <Button variant="outline" onClick={() => setAdministrandoPlantillas(true)}>
+              <FileText /> Plantillas
+            </Button>
+            {puedeCambiarEscala && (
+              <Button variant="outline" onClick={() => setEditandoEscala(true)}>
+                <Smile /> Escala de ánimo
+              </Button>
+            )}
           </div>
           <div className="flex flex-col gap-4">
             <SeccionFijadas tipo={tipo} version={version} onIrADia={irADia} />
@@ -116,7 +135,9 @@ export function DiarioVista({ tipo, hoy, usuarioId }: { tipo: TipoDiario; hoy: s
           fecha={seleccionado}
           hoy={hoy}
           acciones={acciones}
+          plantillas={plantillas}
           onAdministrar={setAdmin}
+          onAdministrarPlantillas={() => setAdministrandoPlantillas(true)}
           onCerrar={(huboCambios) => {
             setEditor(null);
             if (huboCambios) {
@@ -127,6 +148,17 @@ export function DiarioVista({ tipo, hoy, usuarioId }: { tipo: TipoDiario; hoy: s
         />
       )}
       {admin && <AdministrarDiario acciones={acciones} pestanaInicial={admin} onCerrar={() => setAdmin(null)} />}
+      {administrandoPlantillas && (
+        <AdministrarPlantillas
+          plantillas={plantillas}
+          catalogo={acciones}
+          esPadre={esPadre}
+          onAdministrarEtiquetas={() => setAdmin("etiquetas")}
+          onCerrar={() => setAdministrandoPlantillas(false)}
+        />
+      )}
+      {editandoEscala && <EditarEscalaAnimo acciones={escala} onCerrar={() => setEditandoEscala(false)} />}
     </div>
+    </ProveedorEscala>
   );
 }

@@ -77,6 +77,7 @@ model Usuario {
   diarioGrupos         DiarioGrupoEtiquetas[] @relation("DiarioGrupos") // ← Lane 284
   diarioEtiquetas      DiarioEtiqueta[]       @relation("DiarioEtiquetas") // ← Lane 284
   diarioCategorias     DiarioCategoria[]      @relation("DiarioCategorias") // ← Lane 284
+  diarioPlantillas     DiarioPlantilla[]      @relation("DiarioPlantillas") // ← Lane 286
   registrosAnimo       RegistroAnimo[]
   premiosEntregados    PremioEntregado[]
 
@@ -1979,9 +1980,10 @@ model DiarioEtiqueta {
   creadaEn  DateTime     @default(now()) @map("Creada_En")
   editadaEn DateTime     @updatedAt @map("Editada_En")
 
-  creador  Usuario?                @relation("DiarioEtiquetas", fields: [creadorId], references: [id], onDelete: SetNull)
-  grupo    DiarioGrupoEtiquetas?   @relation(fields: [grupoId], references: [id], onDelete: Cascade)
-  entradas DiarioEntradaEtiqueta[]
+  creador    Usuario?                  @relation("DiarioEtiquetas", fields: [creadorId], references: [id], onDelete: SetNull)
+  grupo      DiarioGrupoEtiquetas?     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  entradas   DiarioEntradaEtiqueta[]
+  plantillas DiarioPlantillaEtiqueta[] // ← Lane 286
 
   @@index([ambito, creadorId])
   @@index([grupoId])
@@ -2032,6 +2034,54 @@ model DiarioSembrado {
 
   @@unique([ambito, duenoId, clave])
   @@map("Diario_Sembrado")
+}
+
+// ← Lane 286: plantillas del diario (Daily You). Personal = del creador; familiar = de toda la familia. El cuerpo es un documento Tiptap.
+model DiarioPlantilla {
+  id             Int        @id @default(autoincrement())
+  ambito         TipoDiario @map("Ambito")
+  creadorId      Int?       @map("Creador_ID")
+  nombre         String     @map("Nombre")
+  texto          String     @default("") @map("Texto") // texto plano derivado de `contenido`
+  contenido      Json?      @map("Contenido")
+  predeterminada Boolean    @default(false) @map("Predeterminada") // una sola por ámbito (por persona en el personal)
+  creadaEn       DateTime   @default(now()) @map("Creada_En")
+  editadaEn      DateTime   @updatedAt @map("Editada_En")
+
+  creador   Usuario?                  @relation("DiarioPlantillas", fields: [creadorId], references: [id], onDelete: SetNull)
+  etiquetas DiarioPlantillaEtiqueta[]
+
+  @@index([ambito, creadorId])
+  @@map("Diario_Plantillas")
+}
+
+model DiarioPlantillaEtiqueta {
+  id          Int @id @default(autoincrement())
+  plantillaId Int @map("Plantilla_ID")
+  etiquetaId  Int @map("Etiqueta_ID")
+
+  plantilla DiarioPlantilla @relation(fields: [plantillaId], references: [id], onDelete: Cascade)
+  etiqueta  DiarioEtiqueta  @relation(fields: [etiquetaId], references: [id], onDelete: Cascade)
+
+  @@unique([plantillaId, etiquetaId])
+  @@index([etiquetaId])
+  @@map("Diario_Plantilla_Etiquetas")
+}
+
+// ← Lane 286: escala de ánimo configurable (Daily You `mood_scale`). Sin filas = escala predeterminada. dueño: id del usuario (personal) o 0 (familiar).
+model DiarioEscalaAnimo {
+  id        Int        @id @default(autoincrement())
+  ambito    TipoDiario @map("Ambito")
+  duenoId   Int        @map("Dueno_ID")
+  animo     Int        @map("Animo") // 1 muy mal … 5 muy bien
+  etiqueta  String?    @map("Etiqueta") // null = el nombre predeterminado del nivel
+  icono     String?    @map("Icono")
+  tipoIcono TipoIcono  @default(emoji) @map("Tipo_Icono")
+  color     String?    @map("Color") // #rrggbb; null = el color predeterminado del nivel
+  editadaEn DateTime   @updatedAt @map("Editada_En")
+
+  @@unique([ambito, duenoId, animo])
+  @@map("Diario_Escala_Animo")
 }
 
 model DiarioFoto {

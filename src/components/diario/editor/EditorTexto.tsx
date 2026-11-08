@@ -2,7 +2,7 @@
 // Editor de texto enriquecido del diario (lane 283). Tiptap 3 + React, portado del editor web de moodiary
 // (vendor/moodiary/editor, ZhuJHua/moodiary@2c552dd). Sirve para escribir (con barra de formato) y, con
 // `editable={false}`, para mostrar una entrada con el mismo aspecto.
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { docDesdeTexto, type NodoDoc } from "@/lib/diario/contenido";
@@ -20,7 +20,19 @@ export interface ContenidoInicial {
   texto: string;
 }
 
+/** Lo que el que lo usa puede pedirle al editor (lane 286: insertar una plantilla o una variable). */
+export interface EditorTextoHandle {
+  /**
+   * Daily You `insertTemplateText`: si el editor está vacío lo reemplaza; si el cursor está en el texto inserta ahí;
+   * si no, agrega al final.
+   */
+  insertarContenido: (doc: NodoDoc) => void;
+  /** Inserta texto en la posición del cursor (aunque el editor haya perdido el foco al tocar un botón). */
+  insertarTexto: (texto: string) => void;
+}
+
 interface Props {
+  ref?: Ref<EditorTextoHandle>;
   inicial: ContenidoInicial;
   editable?: boolean;
   placeholder?: string;
@@ -29,7 +41,7 @@ interface Props {
   className?: string;
 }
 
-export function EditorTexto({ inicial, editable = true, placeholder = "¿Qué pasó hoy?", onCambio, className }: Props) {
+export function EditorTexto({ ref, inicial, editable = true, placeholder = "¿Qué pasó hoy?", onCambio, className }: Props) {
   const editorRef = useRef<Editor | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const inputArchivo = useRef<HTMLInputElement>(null);
@@ -61,6 +73,28 @@ export function EditorTexto({ inicial, editable = true, placeholder = "¿Qué pa
     })();
     return true;
   }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertarContenido(doc) {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return;
+        if (ed.isEmpty) {
+          ed.chain().setContent(doc as JSONContent, { emitUpdate: true }).focus("end").run();
+          return;
+        }
+        const bloques = (doc.content ?? []) as JSONContent[];
+        (ed.isFocused ? ed.chain().focus() : ed.chain().focus("end")).insertContent(bloques).run();
+      },
+      insertarTexto(texto) {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return;
+        ed.chain().focus().insertContent(texto).run();
+      },
+    }),
+    [],
+  );
 
   const editor = useEditor({
     immediatelyRender: false,
