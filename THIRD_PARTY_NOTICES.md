@@ -41,7 +41,7 @@
 
 ## Daily You — https://github.com/Demizo/Daily_You
 - Licencia GPL-3.0 con términos adicionales (`vendor/Daily_You/LICENSE.txt`, `vendor/Daily_You/ADDITIONAL_TERMS.md`).
-- Copia parcial de los archivos de etiquetas en `vendor/Daily_You/` (commit `7cc237d1dcef24a27ca0f78ad449cc199b61bea3`, ver `vendor/Daily_You/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/Daily_You/<ruta> (Demizo/Daily_You@7cc237d)` (lane 284, etiquetas del diario). Desde la lane 285 se suman las fuentes de búsqueda y orden y, desde la 286, las de plantillas y escala de ánimo.
+- Copia parcial de los archivos de etiquetas en `vendor/Daily_You/` (commit `7cc237d1dcef24a27ca0f78ad449cc199b61bea3`, ver `vendor/Daily_You/ORIGEN.md`). Los archivos portados a `src/` llevan la cabecera `// Portado de vendor/Daily_You/<ruta> (Demizo/Daily_You@7cc237d)` (lane 284, etiquetas del diario). Desde la lane 285 se suman las fuentes de búsqueda y orden, desde la 286 las de plantillas y escala de ánimo y desde la 287 las de estadísticas.
 - Esta app no usa el nombre ni el logotipo de Daily You; el diario es una adaptación propia y así se declara.
 - Licencia GPL pendiente de revisión legal por Gabriel.
 

@@ -8,3 +8,6 @@
 
 ## Ampliación (lane 285, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de búsqueda y filtros: `lib/core/objects/search_filter_object.dart`, `lib/core/storages/search_filter_storage.dart`, `lib/views/search/{search_view,search_view_model,search_content}.dart` y `lib/views/search/filter/{search_filter_view,search_filter_view_model,search_filter_content}.dart`.
+
+## Ampliación (lane 287, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de estadísticas: `lib/core/objects/stats/{stats_range,story_stats_object}.dart`, `lib/core/objects/month_recap_stats_object.dart`, `lib/core/services/stories/{story_stats_service,monthly_story_stats_service}.dart` y `lib/views/stats/{stats_view,stats_view_model,stats_content,stats_section}.dart` con `local_widgets/{stats_emoji_grid,stats_label_list,stats_metric_chip,stats_trend}.dart`.

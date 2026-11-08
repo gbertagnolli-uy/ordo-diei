@@ -12,3 +12,6 @@
 
 ## Ampliación (lane 286, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de plantillas y de la escala de ánimo: `lib/models/{template,mood,mood_scale_level,mood_scale_preset}.dart`, `lib/database/{template_dao,template_tag_dao,mood_scale_dao}.dart`, `lib/providers/{templates,mood_scale}_provider.dart`, `lib/template_renderer.dart`, `lib/utils/{mood_scale_visuals,text_editing}.dart`, `lib/widgets/{edit_template,template_select,template_select_popup,edit_mood_scale,mood_scale_setting,mood_scale_glyph,entry_mood_picker,mood_icon}.dart`, `lib/pages/settings/templates_page.dart`, `lib/pages/edit_entry_page.dart` y `lib/l10n/intl_es.arb` (textos de las plantillas de ejemplo).
+
+## Ampliación (lane 287, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de estadísticas: `lib/stats/{entry_stats,stats_range,streaks}.dart`, `lib/models/stats_subject.dart`, `lib/utils/{bucket_combiner,chart_y_range,chart_axis}.dart`, `lib/pages/statistics_page.dart` y `lib/widgets/{stat_range_selector,stats_overview_card,distribution_chart,label_summary_card,mood_summary_chart,value_by_day_chart,value_over_time_chart}.dart`.

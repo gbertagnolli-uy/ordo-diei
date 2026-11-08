@@ -13,3 +13,6 @@
 
 ## Ampliación (lane 285, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature/moodiary_diary/lib/src/application/{search_controller,diary_filter}.dart`, `packages/feature/moodiary_diary/lib/src/presentation/search/{search_page,search_result_card}.dart`, `packages/feature_base/moodiary_models/lib/src/search.dart` y `packages/feature_base/moodiary_data/lib/src/diary_repository.dart` (búsqueda con resaltado y extracto, orden, página, historial).
+
+## Ampliación (lane 287, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature_base/moodiary_data/lib/src/{mood_insights,mood_insights_controller,mood_insights_repository}.dart` y `packages/feature/moodiary_diary/lib/src/presentation/mood_insights/{mood_insights_page,mood_period_header,mood_period_picker,mood_patterns,mood_calendar}.dart` (resumen de ánimo por semana, mes y año). El calendario de ánimo (`mood_calendar`) se porta en la lane 288.
