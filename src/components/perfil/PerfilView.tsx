@@ -72,7 +72,7 @@ export function PerfilView({ usuario, habitos, premios, animo, conducta, hoy, es
   const infoNivel = nivelDe(totalXp);
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6">
       {/* Componente principal de resumen (Cabecera, estadísticas, logros) */}
       <PerfilResumen usuario={usuario} habitos={habitos} puedeEditarFoto={esPropio} />
 

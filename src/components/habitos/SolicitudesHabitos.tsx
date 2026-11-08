@@ -14,7 +14,7 @@ import type { ItemSolicitud, Solicitudes, TipoSolicitud } from "@/lib/habitos/ap
 import { SwipeRow } from "@/components/SwipeRow";
 import { HabitoIcon } from "./HabitoIcon";
 
-type Fila = ItemSolicitud & { nombre: string; icono: string; detalle: string };
+type Fila = ItemSolicitud & { nombre: string; icono: string; detalle: string; nota?: string | null };
 
 const DETALLE: Record<TipoSolicitud, string> = {
   habito: "Quiere crear este hábito y empezarlo",
@@ -33,6 +33,7 @@ const filasDe = (u: Solicitudes["usuarios"][number]): Fila[] => [
     nombre: r.nombre,
     icono: r.icono,
     detalle: `${DETALLE.registro} · ${format(parseISO(r.fecha), "EEEE d", { locale: es })}`,
+    nota: r.nota,
   })),
 ];
 
@@ -121,6 +122,9 @@ export function SolicitudesHabitos({ inicial }: { inicial: Solicitudes }) {
                   <ItemContent>
                     <ItemTitle>{f.nombre}</ItemTitle>
                     <ItemDescription>{f.detalle}</ItemDescription>
+                    {f.nota && (
+                      <p className="mt-1 whitespace-pre-line rounded-md bg-muted px-2 py-1.5 text-xs text-foreground">{f.nota}</p>
+                    )}
                   </ItemContent>
                   <ItemActions>
                     <Button

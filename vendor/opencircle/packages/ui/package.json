@@ -1,0 +1,39 @@
+{
+  "name": "@opencircle/ui",
+  "version": "0.0.15",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "pnpm dlx @tailwindcss/cli -i ./src/global.css -o ./dist/global.css --watch",
+    "build": "pnpm dlx @tailwindcss/cli -i ./src/global.css -o ./dist/global.css",
+    "format": "pnpm exec biome format --write",
+    "lint:fix": "pnpm exec biome check --write",
+    "lint": "pnpm exec biome check"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    },
+    "./global.css": "./dist/global.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.18.3",
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
+    "@tailwindcss/cli": "^4.1.14",
+    "lucide-react": "^0.546.0",
+    "radix-ui": "^1.4.3",
+    "react": "^19.2.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwind-variants": "^3.1.1",
+    "tailwindcss": "^4.1.14"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  }
+}

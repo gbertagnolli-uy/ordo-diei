@@ -21,6 +21,7 @@ import { ACCESORIOS, motivoNoCompra, RAREZAS, RUTA_IMAGEN, textoPrecio, type Acc
 import { datosDePersonaje, POSES, tieneFondo, type Personaje, type Pose } from "@/lib/engagement/companero";
 import type { CompaneroVista } from "@/lib/engagement/companeroServidor";
 import { toast } from "@/lib/toast";
+import { Modal } from "@/components/ui/Modal";
 
 const MENSAJE_MOTIVO = { nivel: (a: Accesorio) => `Se abre en el nivel ${a.nivel}`, saldo: () => "Te faltan monedas", "ya-lo-tenes": () => "" } as const;
 
@@ -38,19 +39,22 @@ function Miniatura({ a }: { a: Accesorio }) {
 function FilaAccesorio({ a, datos }: { a: Accesorio; datos: CompaneroVista }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
   const suyo = datos.suyos.includes(a.clave);
   const puesto = a.tipo === "fondo" ? datos.equipados.fondo === a.clave : datos.equipados.objetos.includes(a.clave);
   const motivo = motivoNoCompra(a, datos.suyos, datos.nivel.numero, datos.saldos);
   const sinLugar = a.tipo === "objeto" && !puesto && datos.equipados.objetos.length >= datos.ranuras.total;
 
-  async function accion(cuerpo: Record<string, unknown>, ok?: string) {
+  async function accion(cuerpo: Record<string, unknown>, ok?: string): Promise<boolean> {
     setOcupado(true);
     try {
       await enviarCompanero(cuerpo);
       if (ok) toast.success(ok);
       router.refresh();
+      return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo guardar");
+      return false;
     } finally {
       setOcupado(false);
     }
@@ -83,11 +87,31 @@ function FilaAccesorio({ a, datos }: { a: Accesorio; datos: CompaneroVista }) {
             {motivo === "nivel" && <Lock className="size-3" />} {MENSAJE_MOTIVO[motivo](a)}
           </span>
         ) : (
-          <Button size="sm" disabled={ocupado || datos.sancionado} onClick={() => accion({ accion: "comprar", clave: a.clave }, `${a.nombre}: ¡ya es tuyo!`)}>
-            {ocupado && <Spinner />} Comprar
+          <Button size="sm" disabled={ocupado || datos.sancionado} onClick={() => setConfirmar(true)}>
+            Comprar
           </Button>
         )}
       </ItemActions>
+      <Modal isOpen={confirmar} onClose={() => !ocupado && setConfirmar(false)} title={`¿Comprar ${a.nombre}?`} width="sm">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{a.descripcion}</p>
+          <p className="text-sm font-medium">Precio: {textoPrecio(a)}</p>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" disabled={ocupado} onClick={() => setConfirmar(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1"
+              disabled={ocupado || datos.sancionado}
+              onClick={async () => {
+                if (await accion({ accion: "comprar", clave: a.clave }, `${a.nombre}: ¡ya es tuyo!`)) setConfirmar(false);
+              }}
+            >
+              {ocupado && <Spinner />} Sí, comprar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Item>
   );
 }

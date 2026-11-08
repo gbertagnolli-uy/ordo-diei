@@ -16,7 +16,7 @@ import MarkdownTexto from "./MarkdownTexto";
 
 const urlDescarga = (url: string) => (url.startsWith("/api/archivos/") ? `${url}${url.includes("?") ? "&" : "?"}descargar=1` : url);
 
-function Cuerpo({ m }: { m: MaterialVista }) {
+function Cuerpo({ m, onCerrar }: { m: MaterialVista; onCerrar?: () => void }) {
   const v = m.vista;
 
   if (esImagenMaterial(m) && m.url) {
@@ -56,7 +56,7 @@ function Cuerpo({ m }: { m: MaterialVista }) {
   }
 
   // ePub y PDF con enlace propio: se muestran adentro, bajados por la app (sin CORS ni bloqueos de otros sitios)
-  if (m.tipo === "epub" && v.archivoUrl) return <LectorEpub key={m.id} origen={v.archivoUrl} titulo={m.titulo} />;
+  if (m.tipo === "epub" && v.archivoUrl) return <LectorEpub key={m.id} origen={v.archivoUrl} titulo={m.titulo} onCerrar={onCerrar} />;
   if (m.tipo === "pdf" && v.archivoUrl && m.proveedor !== "drive") {
     return (
       <div className="space-y-2">
@@ -131,9 +131,10 @@ export default function VisorMaterial({
   // Comentarios de la familia sobre este material: se cargan recién al abrirlos (lane 190)
   const [conversando, setConversando] = useState<number | null>(null);
 
-  // ← / → pasan al material anterior / siguiente
+  // ← / → pasan al material anterior / siguiente. Mientras se lee un ePub, las flechas son del lector (lane 280).
   useEffect(() => {
     if (indice === null) return;
+    if (m?.tipo === "epub" && m.vista.archivoUrl) return;
     const tecla = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
@@ -142,7 +143,7 @@ export default function VisorMaterial({
     };
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
-  }, [indice, lista.length, onCambiar]);
+  }, [indice, lista.length, onCambiar, m]);
 
   return (
     <Sheet open={m !== null} onOpenChange={(o) => !o && onClose()}>
@@ -170,7 +171,7 @@ export default function VisorMaterial({
               </div>
             </SheetHeader>
             <div className="mx-auto w-full min-w-0 max-w-4xl flex-1 p-4 sm:p-6">
-              <Cuerpo key={m.id} m={m} />
+              <Cuerpo key={m.id} m={m} onCerrar={onClose} />
               <div className="mt-6 border-t pt-4">
                 <Button variant="ghost" size="sm" className="-ml-2 text-muted-foreground" aria-expanded={conversando === m.id} onClick={() => setConversando(conversando === m.id ? null : m.id)}>
                   <MessageCircle /> {conversando === m.id ? "Ocultar comentarios" : "Comentarios de la familia"}

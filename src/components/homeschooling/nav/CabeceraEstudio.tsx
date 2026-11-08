@@ -1,14 +1,14 @@
 "use client";
 
-// Propio de Ordo: cabecera común de todas las páginas de Estudio — botón del menú lateral, migas de pan y una barra de
-// pestañas para moverse entre las secciones (el padre y el hijo ven las suyas). Sticky y oculta al imprimir.
+// Propio de Ordo: cabecera común de todas las páginas de Estudio — migas de pan, atrás/adelante, buscador, mensajes,
+// avisos y una fila de pestañas para moverse entre las secciones (el padre y el hijo ven las suyas). Desde la lane 280
+// se dibuja dentro de la barra global de /dashboard (sticky y oculta al imprimir).
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, CalendarDays, CalendarOff, Brain, CalendarRange, Camera, ChevronLeft, ChevronRight, ClipboardCheck, Compass, FileBarChart, GraduationCap, HeartHandshake, LayoutDashboard, Library, Megaphone, NotebookPen, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/app/PageHeader";
 import CampanaAvisos from "@/components/homeschooling/comunidad/CampanaAvisos";
 import BotonMensajes from "@/components/homeschooling/mensajes/BotonMensajes";
 import BuscadorEstudio from "./BuscadorEstudio";
@@ -55,56 +55,53 @@ export default function CabeceraEstudio({ esPadre, pendientes }: { esPadre: bool
       : ruta === p.href || ruta.startsWith(`${p.href}/`);
   const actual = pestanas.find(activa);
 
+  // En el panel de Estudio solo «Estudio»; en una sección, «Estudio › Sección»
+  const enSeccion = actual && !(actual.exacta && ruta === RAIZ);
+  const titulo = enSeccion ? (ruta.startsWith(`${RAIZ}/materias`) ? "Materias" : actual.etiqueta) : "Estudio";
+
+  // La barra (botón del menú lateral y migas) es la global de /dashboard (lane 280): acá van el título,
+  // los botones de Estudio y las pestañas como segunda fila de esa barra.
   return (
-    <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 print:hidden">
-      <div className="flex h-12 items-center gap-2 px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon-sm" aria-label="Atrás" title="Atrás" onClick={() => router.back()}>
-            <ChevronLeft />
-          </Button>
-          <Button variant="ghost" size="icon-sm" aria-label="Adelante" title="Adelante" onClick={() => router.forward()}>
-            <ChevronRight />
-          </Button>
-        </div>
-        <nav aria-label="Ubicación" className="flex min-w-0 items-center gap-1.5 text-sm">
-          <Link href={RAIZ} className="font-medium text-muted-foreground hover:text-foreground">
-            Estudio
-          </Link>
-          {actual && !(actual.exacta && ruta === RAIZ) && (
-            <>
-              <span className="text-muted-foreground">/</span>
-              <span className="truncate font-medium text-foreground">{ruta.startsWith(`${RAIZ}/materias`) ? "Materias" : actual.etiqueta}</span>
-            </>
-          )}
+    <PageHeader
+      group={enSeccion ? "Estudio" : undefined}
+      groupHref={enSeccion ? RAIZ : undefined}
+      title={titulo}
+      secciones={
+        <nav aria-label="Secciones de Estudio" className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2">
+          {pestanas.map((p) => {
+            const Icono = p.icono;
+            const on = activa(p);
+            return (
+              <Link
+                key={p.href}
+                href={p.href}
+                aria-current={on ? "page" : undefined}
+                className={`flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
+                  on ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icono className="size-4" />
+                {p.etiqueta}
+                {p.insignia === "revision" && pendientes > 0 && (
+                  <span className="ml-0.5 rounded-full bg-warning px-1.5 text-xs leading-5 font-semibold text-[var(--on-warning)] tabular-nums">{pendientes}</span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
-        <BuscadorEstudio />
-        <BotonMensajes />
-        <CampanaAvisos />
+      }
+    >
+      <div className="flex items-center">
+        <Button variant="ghost" size="icon-sm" aria-label="Atrás" title="Atrás" onClick={() => router.back()}>
+          <ChevronLeft />
+        </Button>
+        <Button variant="ghost" size="icon-sm" aria-label="Adelante" title="Adelante" onClick={() => router.forward()}>
+          <ChevronRight />
+        </Button>
       </div>
-      <nav aria-label="Secciones de Estudio" className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2">
-        {pestanas.map((p) => {
-          const Icono = p.icono;
-          const on = activa(p);
-          return (
-            <Link
-              key={p.href}
-              href={p.href}
-              aria-current={on ? "page" : undefined}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
-                on ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <Icono className="size-4" />
-              {p.etiqueta}
-              {p.insignia === "revision" && pendientes > 0 && (
-                <span className="ml-0.5 rounded-full bg-warning px-1.5 text-xs leading-5 font-semibold text-[var(--on-warning)] tabular-nums">{pendientes}</span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-    </header>
+      <BuscadorEstudio />
+      <BotonMensajes />
+      <CampanaAvisos />
+    </PageHeader>
   );
 }

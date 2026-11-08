@@ -41,7 +41,7 @@ export default function Libreta({ libreta, alumnos }: { libreta: LibretaDatos; a
   };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
           <NotebookPen className="size-6" /> Libreta de {libreta.alumno.nombre}

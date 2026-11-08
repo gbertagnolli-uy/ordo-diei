@@ -9,7 +9,7 @@ export default function NewTaskPage({
   users: { id: number; nombre: string; rolFamiliar: string; fotoUrl?: string | null }[]
 }) {
   return (
-    <div className="flex justify-center p-4 sm:p-6">
+    <div className="flex justify-center">
       <Card className="w-full max-w-2xl">
         <CardContent>
           <TaskForm users={users} />

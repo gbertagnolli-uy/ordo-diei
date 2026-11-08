@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/AppSidebar";
+import { MarcoDashboard } from "@/components/app/MarcoDashboard";
 import { MainDock } from "@/components/dashboard/MainDock";
 import { ModalManager } from "@/components/dashboard/ModalManager";
 import { NoticeBar } from "@/components/dashboard/NoticeBar";
@@ -20,6 +21,7 @@ import { poseFlotante, type EventoApp } from "@/lib/engagement/companeroEscena";
 import { isLate } from "@/components/tasks/taskUtils";
 import { RegistrarServiceWorker } from "@/components/engagement/RegistrarServiceWorker";
 import ModoRelajado from "@/components/homeschooling/neuro/ModoRelajado";
+import { CronometroTarea, type TareaEnCurso } from "@/components/tasks/CronometroTarea";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +46,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
       where: { asignadoId: session.user.id },
-      select: { id: true, estado: true, timerStartedAt: true, fechaVencimiento: true, horaEjecucion: true },
+      select: {
+        id: true,
+        estado: true,
+        timerStartedAt: true,
+        fechaVencimiento: true,
+        horaEjecucion: true,
+        // Cronómetro flotante de la tarea en curso (lane 264)
+        titulo: true,
+        tiempoAcumuladoTimer: true,
+        tiempoEjecucionEstimadoSeg: true,
+        requiereFotoPrueba: true,
+        fotoPruebaUrl: true,
+      },
     }),
     getEstadoHabitos(Number(session.user.id)),
     contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
@@ -76,6 +90,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
     fechaVencimiento: t.fechaVencimiento?.toISOString() ?? null,
     horaEjecucion: t.horaEjecucion?.toISOString() ?? null,
   }));
+  // La tarea con el cronómetro en marcha se ve en todas las pantallas (lane 264)
+  const enCurso = tasks.find((t) => t.timerStartedAt);
+  const tareaEnCurso: TareaEnCurso | null =
+    enCurso && enCurso.timerStartedAt
+      ? {
+          id: enCurso.id,
+          titulo: enCurso.titulo,
+          timerStartedAt: enCurso.timerStartedAt,
+          tiempoAcumuladoTimer: enCurso.tiempoAcumuladoTimer,
+          tiempoEjecucionEstimadoSeg: enCurso.tiempoEjecucionEstimadoSeg,
+          requiereFotoPrueba: enCurso.requiereFotoPrueba,
+          fotoPruebaUrl: enCurso.fotoPruebaUrl,
+        }
+      : null;
   // Lo que está pasando en la app, para que el compañero lo comente (lane 248)
   const eventosCompanero: EventoApp[] = [
     ...(fichaCompanero?.nivelNuevo ? (["nivel"] as const) : []),
@@ -101,11 +129,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <SidebarInset className="min-w-0">
         <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />
         <NoticeBar />
-        <div className="flex flex-1 flex-col pb-24">{children}</div>
+        {/* Barra superior (botón de colapsar + migas) y padding para todas las pantallas (lane 280) */}
+        <MarcoDashboard>{children}</MarcoDashboard>
       </SidebarInset>
       <ModoRelajado activo={modoRelajado} />
       <ActualizarPremios />
       <ModalManager bienvenidaHoy={bienvenidaHoy} />
+      <CronometroTarea tarea={tareaEnCurso} />
       {fichaCompanero && personajeCompanero && (
         <CompaneroFlotante
           datos={{

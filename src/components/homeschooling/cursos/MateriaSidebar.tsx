@@ -143,7 +143,7 @@ export default function MateriaSidebar({
           {contenido}
         </SheetContent>
       </Sheet>
-      <aside className="sticky top-[5.5rem] hidden h-[calc(100svh-5.5rem)] w-72 shrink-0 overflow-hidden border-r bg-card lg:block">{contenido}</aside>
+      <aside className="sticky top-[6.25rem] hidden h-[calc(100svh-6.25rem)] w-72 shrink-0 overflow-hidden border-r bg-card lg:block">{contenido}</aside>
     </>
   );
 }
