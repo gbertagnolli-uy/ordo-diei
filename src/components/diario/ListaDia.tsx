@@ -6,24 +6,37 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
+import type { Catalogo, CategoriaVista } from "@/lib/diario/servidor-catalogo";
 import { animoDe } from "./animo";
 import { EditorTexto } from "./editor/EditorTexto";
+import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
 
 const hora = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
+/** «Fe › Misa › Domingo»: la categoría con sus madres. */
+function caminoDe(id: number, categorias: CategoriaVista[]): CategoriaVista[] {
+  const camino: CategoriaVista[] = [];
+  for (let c = categorias.find((x) => x.id === id); c && camino.length < 5; c = c.padreId != null ? categorias.find((x) => x.id === c!.padreId) : undefined) camino.unshift(c);
+  return camino;
+}
 
 function Tarjeta({
   e,
   tipo,
+  catalogo,
   onEditar,
   onBorrar,
 }: {
   e: EntradaVista;
   tipo: TipoDiario;
+  catalogo: Catalogo | null;
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
   const animo = animoDe(e.animo);
+  const categoria = catalogo && e.categoriaId != null ? caminoDe(e.categoriaId, catalogo.categorias) : [];
+  const chips = catalogo ? e.etiquetas.flatMap((t) => catalogo.etiquetas.filter((x) => x.id === t.id).map((x) => ({ etiqueta: x, valor: t.valor }))) : [];
   const largo = e.texto.length > 280 || e.texto.split("\n").length > 4;
   return (
     <article className="rounded-xl border bg-card p-4">
@@ -55,6 +68,12 @@ function Tarjeta({
         )}
       </header>
       {e.titulo && <h3 className="mb-1 font-semibold">{e.titulo}</h3>}
+      {categoria.length > 0 && (
+        <p className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="size-2.5 shrink-0 rounded-full border" style={{ backgroundColor: categoria[categoria.length - 1].color ?? "transparent" }} aria-hidden />
+          {categoria.map((c) => c.nombre).join(" › ")}
+        </p>
+      )}
       {e.contenido ? (
         // Entrada con formato (lane 283): se muestra con el mismo editor, solo lectura. Plegada a unas 6 líneas.
         <div className={`text-sm ${abierta ? "" : "max-h-36 overflow-hidden"}`}>
@@ -67,6 +86,13 @@ function Tarjeta({
         <button type="button" className="mt-1 text-sm text-primary" onClick={() => setAbierta(!abierta)}>
           {abierta ? "ver menos" : "ver más"}
         </button>
+      )}
+      {chips.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {chips.map(({ etiqueta, valor }) => (
+            <ChipEtiqueta key={etiqueta.id} etiqueta={etiqueta} valor={valor} pequeno />
+          ))}
+        </div>
       )}
       {e.fotos.length > 0 && (
         <div className="mt-3 flex gap-2 overflow-x-auto">
@@ -85,11 +111,13 @@ function Tarjeta({
 export function ListaDia({
   entradas,
   tipo,
+  catalogo,
   onEditar,
   onBorrar,
 }: {
   entradas: EntradaVista[];
   tipo: TipoDiario;
+  catalogo: Catalogo | null;
   onEditar: (e: EntradaVista) => void;
   onBorrar: (e: EntradaVista) => void;
 }) {
@@ -97,7 +125,7 @@ export function ListaDia({
   return (
     <div className="flex flex-col gap-3">
       {entradas.map((e) => (
-        <Tarjeta key={e.id} e={e} tipo={tipo} onEditar={onEditar} onBorrar={onBorrar} />
+        <Tarjeta key={e.id} e={e} tipo={tipo} catalogo={catalogo} onEditar={onEditar} onBorrar={onBorrar} />
       ))}
     </div>
   );

@@ -3,16 +3,21 @@
 // UX basada en Demizo/Daily_You@7cc237d (lib/pages/edit_entry_page.dart): autoguardado a los 5 s y al salir, fecha y hora editables.
 // El texto es el editor Tiptap portado de moodiary (ver ./editor/EditorTexto.tsx).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, Tags, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { textoPlanoDe, tieneImagen, type NodoDoc } from "@/lib/diario/contenido";
+import type { EtiquetaPuesta } from "@/lib/diario/etiquetas";
 import { MAX_FOTOS, MAX_TITULO, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import { toast } from "@/lib/toast";
 import { EditorTexto } from "./editor/EditorTexto";
 import { subirImagen } from "./editor/subir";
+import { ChipEtiqueta } from "./etiquetas/ChipEtiqueta";
+import { SelectorCategoria } from "./etiquetas/SelectorCategoria";
+import { SelectorEtiquetas } from "./etiquetas/SelectorEtiquetas";
+import type { AccionesCatalogo } from "./etiquetas/useCatalogo";
 import { SelectorAnimo } from "./SelectorAnimo";
 
 const AUTOGUARDADO_MS = 5000;
@@ -34,6 +39,8 @@ export function EditorEntrada({
   entrada,
   fecha,
   hoy,
+  acciones,
+  onAdministrar,
   onCerrar,
 }: {
   abierto: boolean;
@@ -41,6 +48,9 @@ export function EditorEntrada({
   entrada?: EntradaVista;
   fecha: string;
   hoy: string;
+  /** Catálogo de etiquetas y categorías (lane 284). */
+  acciones: AccionesCatalogo;
+  onAdministrar: (pestana: "etiquetas" | "categorias") => void;
   /** `huboCambios`: se guardó algo, hay que recargar la lista. */
   onCerrar: (huboCambios: boolean) => void;
 }) {
@@ -49,15 +59,21 @@ export function EditorEntrada({
   const [dia, setDia] = useState(entrada?.fecha ?? fecha);
   const [hora, setHora] = useState<number>(entrada?.hora ?? ahoraEnMinutos());
   const [fotos, setFotos] = useState<string[]>(entrada?.fotos ?? []);
+  const [etiquetas, setEtiquetas] = useState<EtiquetaPuesta[]>(entrada?.etiquetas ?? []);
+  const [categoriaId, setCategoriaId] = useState<number | null>(entrada?.categoriaId ?? null);
+  const [eligiendoEtiquetas, setEligiendoEtiquetas] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [estado, setEstado] = useState<"" | "guardando" | "guardado">("");
 
   // Lo último que se escribió, para que el guardado diferido no use valores viejos
   const doc = useRef<NodoDoc | null>(entrada?.contenido ?? null);
-  const campos = useRef({ animo, titulo, dia, hora, fotos });
+  const campos = useRef({ animo, titulo, dia, hora, fotos, etiquetas, categoriaId });
   useEffect(() => {
-    campos.current = { animo, titulo, dia, hora, fotos };
-  }, [animo, titulo, dia, hora, fotos]);
+    campos.current = { animo, titulo, dia, hora, fotos, etiquetas, categoriaId };
+  }, [animo, titulo, dia, hora, fotos, etiquetas, categoriaId]);
+  // El catálogo puede haber cambiado desde que se abrió la entrada (se borró una etiqueta): solo se guardan las que siguen existiendo
+  const catalogo = useRef(acciones.catalogo);
+  catalogo.current = acciones.catalogo;
 
   const id = useRef<number | null>(entrada?.id ?? null);
   const version = useRef(0); // sube con cada cambio
@@ -88,6 +104,8 @@ export function EditorEntrada({
           titulo: c.titulo,
           animo: c.animo,
           fotos: c.fotos,
+          etiquetas: catalogo.current ? c.etiquetas.filter((t) => catalogo.current!.etiquetas.some((e) => e.id === t.id)) : c.etiquetas,
+          categoriaId: catalogo.current && !catalogo.current.categorias.some((x) => x.id === c.categoriaId) ? null : c.categoriaId,
           ...(doc.current ? { contenido: doc.current } : { texto: entrada?.texto ?? "" }),
         };
         const r = await fetch(id.current ? `/api/diario/${id.current}` : "/api/diario", {
@@ -207,6 +225,26 @@ export function EditorEntrada({
               cambio();
             }}
           />
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {etiquetas.map((t) => {
+                const e = acciones.catalogo?.etiquetas.find((x) => x.id === t.id);
+                return e ? <ChipEtiqueta key={t.id} etiqueta={e} valor={t.valor} onQuitar={() => { setEtiquetas((x) => x.filter((y) => y.id !== t.id)); cambio(); }} /> : null;
+              })}
+              <Button type="button" variant="outline" size="sm" onClick={() => setEligiendoEtiquetas(true)}>
+                <Tags /> Etiquetas
+              </Button>
+            </div>
+            <SelectorCategoria
+              categorias={acciones.catalogo?.categorias ?? []}
+              valor={categoriaId}
+              onCambio={(id) => {
+                setCategoriaId(id);
+                cambio();
+              }}
+              onAdministrar={() => onAdministrar("categorias")}
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             {fotos.map((url) => (
               <div key={url} className="relative">
@@ -234,6 +272,18 @@ export function EditorEntrada({
             )}
           </div>
         </div>
+        {eligiendoEtiquetas && (
+          <SelectorEtiquetas
+            acciones={acciones}
+            puestas={etiquetas}
+            onCambio={(p) => {
+              setEtiquetas(p);
+              cambio();
+            }}
+            onAdministrar={() => onAdministrar("etiquetas")}
+            onCerrar={() => setEligiendoEtiquetas(false)}
+          />
+        )}
         <SheetFooter className="flex-row items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground" aria-live="polite">
             {estado === "guardando" ? "Guardando…" : estado === "guardado" ? "Guardado" : ""}

@@ -1,6 +1,7 @@
 // Diario personal y familiar (lane 272, Plane #31). Reglas puras: sin base ni red.
 // Escala de ánimo 1–5 basada en Daily You (Demizo/Daily_You@7cc237d, lib/models/mood.dart).
 import { sanearDocumento, textoPlanoDe, tieneImagen, type NodoDoc } from "./contenido.ts";
+import { validarPuestas, type EtiquetaPuesta } from "./etiquetas.ts";
 
 export type TipoDiario = "personal" | "familiar";
 
@@ -32,6 +33,10 @@ export interface EntradaValida {
   contenido: NodoDoc | null;
   animo: number | null;
   fotos: string[];
+  /** Lane 284. `undefined` = el cuerpo no las trae: no se tocan las de la entrada. */
+  etiquetas?: EtiquetaPuesta[];
+  /** Lane 284. `undefined` = no se toca; `null` = sin categoría. */
+  categoriaId?: number | null;
 }
 
 const diasEntre = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
@@ -67,7 +72,24 @@ export function validarEntrada(e: Record<string, unknown>, hoy: string): Entrada
     animo = Number(e.animo);
     if (!Number.isInteger(animo) || animo < 1 || animo > 5) throw new Error("Ánimo inválido");
   }
-  return { fecha, hora, titulo: tituloCrudo || null, texto, contenido, animo, fotos };
+  const etiquetas = validarPuestas(e.etiquetas);
+  let categoriaId: number | null | undefined;
+  if (e.categoriaId !== undefined) {
+    if (e.categoriaId === null) categoriaId = null;
+    else if (typeof e.categoriaId === "number" && Number.isInteger(e.categoriaId) && e.categoriaId > 0) categoriaId = e.categoriaId;
+    else throw new Error("Categoría inválida");
+  }
+  return {
+    fecha,
+    hora,
+    titulo: tituloCrudo || null,
+    texto,
+    contenido,
+    animo,
+    fotos,
+    ...(etiquetas !== undefined ? { etiquetas } : {}),
+    ...(categoriaId !== undefined ? { categoriaId } : {}),
+  };
 }
 
 type Lector = { id: number; esPadre: boolean };

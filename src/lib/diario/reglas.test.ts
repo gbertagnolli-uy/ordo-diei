@@ -67,3 +67,15 @@ test("resumenMes: ánimo del día = el de la última entrada con ánimo", () => 
   assert.equal(r.totalEntradas, 4);
   assert.deepEqual(r.diasPorAnimo, [0, 0, 0, 0, 1]);
 });
+
+test("validarEntrada: etiquetas y categoría solo aparecen si vienen en el cuerpo", () => {
+  const sin = validarEntrada({ texto: "hola" }, HOY);
+  assert.ok(!("etiquetas" in sin) && !("categoriaId" in sin));
+  const con = validarEntrada({ texto: "hola", etiquetas: [{ id: 2, valor: "4" }], categoriaId: 7 }, HOY);
+  assert.deepEqual(con.etiquetas, [{ id: 2, valor: "4" }]);
+  assert.equal(con.categoriaId, 7);
+  assert.equal(validarEntrada({ texto: "hola", categoriaId: null }, HOY).categoriaId, null);
+  assert.deepEqual(validarEntrada({ texto: "hola", etiquetas: [] }, HOY).etiquetas, []);
+  assert.throws(() => validarEntrada({ texto: "hola", categoriaId: "7" }, HOY));
+  assert.throws(() => validarEntrada({ texto: "hola", etiquetas: "x" }, HOY));
+});
