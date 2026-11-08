@@ -28,3 +28,6 @@
 
 ## Ampliación (lane 291, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature/moodiary_export/lib/src/data/{export_doc,export_options,export_scope,export_service,markdown_writer,tiptap_to_ir}.dart`, `lib/src/presentation/{export_page,format_export_page,scope_picker_page}.dart` y sus pruebas (`test/`): del documento Tiptap al Markdown y alcance de la exportación (todo, categoría, rango de fechas).
+
+## Ampliación (lane 292, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_export/lib/src/data/import/{markdown_importer,markdown_front_matter,import_source,import_media_stage}.dart`, `lib/src/presentation/markdown_import_page.dart` y `test/import/*.dart` (importar notas Markdown con front matter y sus imágenes).

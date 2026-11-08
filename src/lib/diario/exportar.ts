@@ -56,6 +56,8 @@ export interface NivelExport {
 
 export interface CatalogoExport {
   escala: NivelExport[];
+  /** Categorías de etiquetas (Daily You `TagCategory`). */
+  grupos: { nombre: string; icono: string | null; tipoIcono: "emoji" | "icono"; color: string | null; seleccionUnica: boolean; orden: number }[];
   categorias: { nombre: string; camino: string; color: string | null }[];
   etiquetas: { nombre: string; tipo: "etiqueta" | "contador"; grupo: string | null; icono: string | null; tipoIcono: "emoji" | "icono"; color: string | null; orden: number }[];
 }
@@ -363,6 +365,18 @@ export function csvDeEntradas(nombradas: EntradaNombrada[], catalogo: CatalogoEx
   return `﻿${filas.map((f) => f.map(celdaCsv).join(",")).join("\r\n")}\r\n`;
 }
 
+/** Copia del documento con el `src` de cada imagen cambiado por `nuevo(src)`; con `null` la imagen se quita. */
+export function reescribirImagenes(doc: NodoDoc, nuevo: (src: string) => string | null): NodoDoc {
+  const recorrer = (n: NodoDoc): NodoDoc[] => {
+    if (n.type === "image" && typeof n.attrs?.src === "string") {
+      const src = nuevo(n.attrs.src);
+      return src === null ? [] : [{ ...n, attrs: { ...n.attrs, src } }];
+    }
+    return [n.content ? { ...n, content: n.content.flatMap(recorrer) } : n];
+  };
+  return recorrer(doc)[0] ?? { type: "doc", content: [] };
+}
+
 // ── JSON (Daily You `export_json.dart`) ──────────────────────────────────────
 
 export function documentoJson(datos: DatosExport, nombradas: EntradaNombrada[], conFotos: boolean): Record<string, unknown> {
@@ -371,15 +385,19 @@ export function documentoJson(datos: DatosExport, nombradas: EntradaNombrada[], 
     version: VERSION_JSON,
     diario: datos.tipo,
     exportedAt: datos.exportadaEn,
-    moodScale: datos.catalogo.escala,
-    categories: datos.catalogo.categorias,
-    tags: datos.catalogo.etiquetas,
-    entries: nombradas.map(({ entrada: e, fotos }) => ({
+    moodScale: datos.catalogo.escala.map((n) => ({ mood: n.valor, label: n.etiqueta, icon: n.icono, iconType: n.tipoIcono, color: n.color })),
+    tagGroups: datos.catalogo.grupos.map((g) => ({ name: g.nombre, icon: g.icono, iconType: g.tipoIcono, color: g.color, singleChoice: g.seleccionUnica, sortOrder: g.orden })),
+    categories: datos.catalogo.categorias.map((c) => ({ name: c.nombre, path: c.camino, color: c.color })),
+    tags: datos.catalogo.etiquetas.map((t) => ({ name: t.nombre, type: t.tipo, group: t.grupo, icon: t.icono, iconType: t.tipoIcono, color: t.color, sortOrder: t.orden })),
+    entries: nombradas.map(({ entrada: e, fotos }) => {
+      // Con fotos, las imágenes del documento apuntan a su archivo dentro del ZIP (si no, quedan con su URL)
+      const rutas = new Map(e.fotos.map((f, i) => [f, fotos[i]]));
+      return {
       date: e.fecha,
       time: horaTexto(e.hora),
       title: e.titulo,
       text: e.texto,
-      content: e.contenido,
+      content: e.contenido && conFotos ? reescribirImagenes(e.contenido, (src) => rutas.get(src) ?? src) : e.contenido,
       mood: e.animo,
       category: e.categoria,
       tags: e.etiquetas.map((t) => ({ name: t.nombre, type: t.tipo, value: t.valor })),
@@ -389,7 +407,8 @@ export function documentoJson(datos: DatosExport, nombradas: EntradaNombrada[], 
       created: e.creadaEn,
       modified: e.editadaEn,
       photos: conFotos ? fotos : [],
-    })),
+      };
+    }),
   };
 }
 

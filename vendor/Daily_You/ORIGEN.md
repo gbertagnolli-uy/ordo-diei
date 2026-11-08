@@ -24,3 +24,6 @@
 
 ## Ampliación (lane 291, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de exportación: `lib/utils/exports/{export_snapshot,export_json,export_csv,export_markdown,export_format,export_naming,export_registry,export_runner,export_attachment_picker}.dart` y `lib/pages/settings/backup_restore_settings.dart` (JSON v2, CSV con una columna por contador, Markdown con front matter, nombres por día).
+
+## Ampliación (lane 292, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de importación: `lib/utils/imports/{import_json,import_bundle,import_writer,import_runner,import_registry,import_daylio,import_diarium,import_diaro,import_daybook,import_mybrain,import_oneshot,import_pixels,import_attachments,import_format,import_source,import_text,import_time}.dart` (JSON de Daily You versión 2 y el formato viejo, Daylio, Daybook, Diaro, MyBrain, OneShot, Pixels; Diarium queda sin portar, ver `LANE_292`).

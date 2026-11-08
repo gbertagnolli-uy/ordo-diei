@@ -115,6 +115,7 @@ export async function exportarDiario(actor: Actor, tipo: TipoDiario, o: Opciones
   const etiquetaPorId = new Map(cat.etiquetas.map((e) => [e.id, e]));
   const catalogo: CatalogoExport = {
     escala,
+    grupos: cat.grupos.map((g) => ({ nombre: g.nombre, icono: g.icono, tipoIcono: g.tipoIcono, color: g.color, seleccionUnica: g.seleccionUnica, orden: g.orden })),
     categorias: cat.categorias.map((c) => ({ nombre: c.nombre, camino: camino(c.id) ?? c.nombre, color: c.color })),
     etiquetas: cat.etiquetas.map((e) => ({ nombre: e.nombre, tipo: e.tipo, grupo: e.grupoId === null ? null : (grupoPorId.get(e.grupoId) ?? null), icono: e.icono, tipoIcono: e.tipoIcono, color: e.color, orden: e.orden })),
   };
