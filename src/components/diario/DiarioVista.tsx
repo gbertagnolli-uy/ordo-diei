@@ -2,7 +2,7 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarHeart, Download, FileText, History, Images, MapPin, PenLine, Route, Search, Smile, Tags, Upload, Waypoints } from "lucide-react";
+import { BarChart3, CalendarHeart, Download, FileText, History, Images, MapPin, MapPinned, PenLine, Route, Search, Smile, Tags, Upload, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
@@ -37,6 +37,7 @@ import { useCatalogo } from "./etiquetas/useCatalogo";
 import { ListaDia } from "./ListaDia";
 import { AdministrarLugares } from "./lugares/AdministrarLugares";
 import { ProveedorLugares } from "./lugares/ContextoLugares";
+import { MapaHuellas } from "./mapa/MapaHuellas";
 import { useLugares } from "./lugares/useLugares";
 import { cambiarMarcasRemoto } from "./MarcasEntrada";
 import { AdministrarPlantillas } from "./plantillas/AdministrarPlantillas";
@@ -66,6 +67,8 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [verAnio, setVerAnio] = useState(false);
   const [verLinea, setVerLinea] = useState(false);
   const [verGaleria, setVerGaleria] = useState(false);
+  /** Lane 297: el mapa de huellas. */
+  const [verMapa, setVerMapa] = useState(false);
   /** Lane 295: el grafo de enlaces. `desdeGeneral`: el local se abrió desde el general, y al salir se vuelve a él. */
   const [grafo, setGrafo] = useState<{ modo: "general" } | { modo: "local"; id: number; desdeGeneral: boolean } | null>(null);
   const [compartiendo, setCompartiendo] = useState<EntradaVista | null>(null);
@@ -129,6 +132,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setVerAnio(false);
     setVerLinea(false);
     setVerGaleria(false);
+    setVerMapa(false);
     setGrafo(null);
   }
 
@@ -186,6 +190,10 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
       ) : verEstadisticas ? (
         <div className="md:col-span-2">
           <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
+        </div>
+      ) : verMapa ? (
+        <div className="md:col-span-2">
+          <MapaHuellas tipo={tipo} lugares={lugares} catalogo={acciones.catalogo} version={version} onVolver={() => setVerMapa(false)} onIrADia={irADia} />
         </div>
       ) : verGaleria ? (
         <div className="md:col-span-2">
@@ -273,6 +281,9 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             </Button>
             <Button variant="outline" onClick={() => setAdministrandoLugares(true)}>
               <MapPin /> Lugares
+            </Button>
+            <Button variant="outline" onClick={() => setVerMapa(true)}>
+              <MapPinned /> Mapa de huellas
             </Button>
             <Button variant="outline" onClick={() => setExportando(true)}>
               <Download /> Exportar
