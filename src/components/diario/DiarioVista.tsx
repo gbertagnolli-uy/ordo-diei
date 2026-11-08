@@ -2,7 +2,8 @@
 // Diario (lane 272): pantalla completa — calendario, resumen, entradas del día y botón «Escribir».
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarHeart, Download, FileText, History, Images, MapPin, MapPinned, PenLine, Route, Search, Smile, Tags, Upload, Waypoints } from "lucide-react";
+import dynamic from "next/dynamic";
+import { BarChart3, CalendarHeart, Download, FileText, History, Images, MapPin, MapPinned, PenLine, Route, Search, Smile, Sparkles, Tags, Upload, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
@@ -39,6 +40,9 @@ import { AdministrarLugares } from "./lugares/AdministrarLugares";
 import { ProveedorLugares } from "./lugares/ContextoLugares";
 import { MapaHuellas } from "./mapa/MapaHuellas";
 import { useLugares } from "./lugares/useLugares";
+
+// Lane 298: el asistente (con su motor de Markdown) se baja recién cuando se abre
+const AsistenteDiario = dynamic(() => import("./asistente/AsistenteDiario").then((m) => m.AsistenteDiario), { ssr: false });
 import { cambiarMarcasRemoto } from "./MarcasEntrada";
 import { AdministrarPlantillas } from "./plantillas/AdministrarPlantillas";
 import { usePlantillas } from "./plantillas/usePlantillas";
@@ -69,6 +73,8 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
   const [verGaleria, setVerGaleria] = useState(false);
   /** Lane 297: el mapa de huellas. */
   const [verMapa, setVerMapa] = useState(false);
+  /** Lane 298: el asistente de IA (solo en el diario personal). */
+  const [verAsistente, setVerAsistente] = useState(false);
   /** Lane 295: el grafo de enlaces. `desdeGeneral`: el local se abrió desde el general, y al salir se vuelve a él. */
   const [grafo, setGrafo] = useState<{ modo: "general" } | { modo: "local"; id: number; desdeGeneral: boolean } | null>(null);
   const [compartiendo, setCompartiendo] = useState<EntradaVista | null>(null);
@@ -133,6 +139,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     setVerLinea(false);
     setVerGaleria(false);
     setVerMapa(false);
+    setVerAsistente(false);
     setGrafo(null);
   }
 
@@ -190,6 +197,10 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
       ) : verEstadisticas ? (
         <div className="md:col-span-2">
           <PanelEstadisticas tipo={tipo} hoy={hoy} catalogo={acciones.catalogo} version={version} onVolver={() => setVerEstadisticas(false)} onIrADia={irADia} />
+        </div>
+      ) : verAsistente && tipo === "personal" ? (
+        <div className="md:col-span-2">
+          <AsistenteDiario usuarioId={usuarioId} onVolver={() => setVerAsistente(false)} />
         </div>
       ) : verMapa ? (
         <div className="md:col-span-2">
@@ -285,6 +296,11 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
             <Button variant="outline" onClick={() => setVerMapa(true)}>
               <MapPinned /> Mapa de huellas
             </Button>
+            {tipo === "personal" && (
+              <Button variant="outline" onClick={() => setVerAsistente(true)}>
+                <Sparkles /> Asistente
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setExportando(true)}>
               <Download /> Exportar
             </Button>
