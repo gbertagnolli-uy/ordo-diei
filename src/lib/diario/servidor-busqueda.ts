@@ -58,12 +58,24 @@ const valorNumerico = (v: string | null | undefined) => {
   return Number.isFinite(n) ? n : null;
 };
 
+/**
+ * Lane 293: ids de las entradas con una imagen dentro del documento (las fotos adjuntas se filtran con Prisma).
+ * Solo lectura y sin datos del usuario en el SQL; la privacidad del personal la aplica el `where` de Prisma sobre estos ids.
+ */
+async function idsConImagenEnTexto(tipo: TipoDiario): Promise<number[]> {
+  const filas = await prisma.$queryRaw<{ id: number }[]>(
+    Prisma.sql`SELECT "id" FROM "Diario_Entradas" WHERE "Tipo"::text = ${tipo} AND "Contenido" IS NOT NULL AND "Contenido"::text ~ '"type": ?"image"'`,
+  );
+  return filas.map((f) => f.id);
+}
+
 async function filtroSql(actor: Actor, tipo: TipoDiario, f: FiltroBusqueda): Promise<Prisma.DiarioEntradaWhereInput> {
   const y: Prisma.DiarioEntradaWhereInput[] = [];
   if (f.desde || f.hasta) y.push({ fecha: { ...(f.desde ? { gte: aFecha(f.desde) } : {}), ...(f.hasta ? { lte: aFecha(f.hasta) } : {}) } });
   if (f.animos.length) y.push({ animo: { in: f.animos } });
   if (f.favorita !== null) y.push({ favorita: f.favorita });
   if (f.fijada !== null) y.push({ fijada: f.fijada });
+  if (f.soloFotos) y.push({ OR: [{ fotos: { some: {} } }, { id: { in: await idsConImagenEnTexto(tipo) } }] });
   if (f.sinCategoria) y.push({ categoriaId: null });
   else if (f.categoriaId !== null) {
     const todas = await prisma.diarioCategoria.findMany({

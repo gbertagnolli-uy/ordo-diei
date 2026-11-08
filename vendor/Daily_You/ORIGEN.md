@@ -27,3 +27,6 @@
 
 ## Ampliación (lane 292, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de importación: `lib/utils/imports/{import_json,import_bundle,import_writer,import_runner,import_registry,import_daylio,import_diarium,import_diaro,import_daybook,import_mybrain,import_oneshot,import_pixels,import_attachments,import_format,import_source,import_text,import_time}.dart` (JSON de Daily You versión 2 y el formato viejo, Daylio, Daybook, Diaro, MyBrain, OneShot, Pixels; Diarium queda sin portar, ver `LANE_292`).
+
+## Ampliación (lane 293, 2026-11-08)
+- Se agregan, sin cambios: `lib/pages/{gallery_page,share_page}.dart` (galería de entradas con fotos, con búsqueda, filtro por etiquetas, orden y tarjetas grandes o chicas; recibir texto de otra app y elegir el día).

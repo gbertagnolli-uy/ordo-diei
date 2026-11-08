@@ -31,3 +31,6 @@
 
 ## Ampliación (lane 292, 2026-11-08)
 - Se agregan, sin cambios: `packages/feature/moodiary_export/lib/src/data/import/{markdown_importer,markdown_front_matter,import_source,import_media_stage}.dart`, `lib/src/presentation/markdown_import_page.dart` y `test/import/*.dart` (importar notas Markdown con front matter y sus imágenes).
+
+## Ampliación (lane 293, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_export/lib/src/data/image_composer.dart` y `lib/src/presentation/{image_export_page,share_sheet}.dart`, `lib/src/presentation/image_card/{card,card_style,blocks}.dart` (compartir una entrada como imagen: tarjeta con fecha, ánimo, etiquetas y cuerpo con formato, claro u oscuro, marca de agua).
