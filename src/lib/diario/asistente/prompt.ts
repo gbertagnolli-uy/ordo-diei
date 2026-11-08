@@ -98,6 +98,22 @@ export function contextoDelTurno(ahora: Date, cantidadDeHechos?: number): string
   return t;
 }
 
+/** moodiary `buildCompactionSystemPrompt` (lane 299): lo que se le pide al modelo para resumir los turnos viejos. */
+export const promptDeCompactacion = () =>
+  `You are compacting an ongoing chat between a user and their diary assistant to save context. You will be shown earlier turns (and possibly a prior summary). Produce a compact summary that lets the assistant continue seamlessly.
+
+Preserve:
+- Concrete facts the user shared (names, dates, events, feelings) and any diary or category ids referenced.
+- The user's stated preferences and any decisions or actions already taken (including tool calls that succeeded or were denied).
+- Open threads and questions that are still unresolved.
+
+Drop pleasantries, filler, and repetition.
+
+Write the summary in the user's language, as short bullet points under these headings (omit a heading if it would be empty). Output only the summary, nothing else:
+Facts:
+Decisions:
+Open threads:`;
+
 /** moodiary `buildTitleSystemPrompt`. */
 export const promptDelTitulo = () =>
   `You write one short title that helps the user find this diary-assistant conversation later. Reply with the title alone.

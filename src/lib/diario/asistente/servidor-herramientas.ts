@@ -18,9 +18,9 @@ import {
   MAX_ESCRITURA,
   MAX_LECTURA,
   PREFIJO_FALLO,
-  esHerramienta,
+  esHerramientaDelDiario,
   idsDe,
-  type Herramienta,
+  type HerramientaDelDiario,
 } from "./herramientas";
 import {
   ejecutarLote,
@@ -251,7 +251,8 @@ async function borrarCategoria(actor: Actor, item: Objeto): Promise<string> {
 
 /** Ejecuta una herramienta. Nunca lanza: un error se devuelve como `Failed: …` para que el modelo lo vea. */
 export async function ejecutarHerramienta(actor: Actor, nombre: string, args: Objeto): Promise<string> {
-  if (!esHerramienta(nombre)) return `${PREFIJO_FALLO} unknown tool "${nombre}".`;
+  // Las de memoria (lane 299) corren en el navegador: acá solo se ejecutan las del diario
+  if (!esHerramientaDelDiario(nombre)) return `${PREFIJO_FALLO} unknown tool "${nombre}".`;
   try {
     return await despachar(actor, nombre, args);
   } catch (e) {
@@ -259,7 +260,7 @@ export async function ejecutarHerramienta(actor: Actor, nombre: string, args: Ob
   }
 }
 
-function despachar(actor: Actor, nombre: Herramienta, args: Objeto): Promise<string> {
+function despachar(actor: Actor, nombre: HerramientaDelDiario, args: Objeto): Promise<string> {
   switch (nombre) {
     case "searchDiaries":
       return buscar(actor, args);

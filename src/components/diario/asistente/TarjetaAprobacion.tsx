@@ -3,7 +3,8 @@
 // Portado de la idea de vendor/moodiary/.../presentation/{tool_approval_card,tool_approval_preview}.dart (ZhuJHua/moodiary@2c552dd).
 import { AlertTriangle, Check, ShieldQuestion, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { itemsDe, idsDe, type Herramienta, type Nivel } from "@/lib/diario/asistente/herramientas";
+import { itemsDe, idsDe, esHerramientaDeMemoria, type Herramienta, type Nivel } from "@/lib/diario/asistente/herramientas";
+import { CATEGORIAS_HECHO, ROTULO_CATEGORIA, type CategoriaHecho, type Hecho } from "@/lib/diario/asistente/memoria";
 import { cn } from "@/lib/utils";
 
 const TITULO: Record<Herramienta, string> = {
@@ -17,6 +18,9 @@ const TITULO: Record<Herramienta, string> = {
   createCategory: "Crear categorías",
   updateCategory: "Cambiar categorías",
   deleteCategory: "Borrar categorías",
+  recallMemory: "Consultar la memoria",
+  rememberFact: "Guardar en la memoria",
+  forgetFact: "Borrar de la memoria",
 };
 
 const recortar = (s: unknown, max = 140) => {
@@ -25,7 +29,7 @@ const recortar = (s: unknown, max = 140) => {
 };
 
 /** Las líneas que le muestran a la persona qué va a pasar con cada elemento. */
-export function vistaPreviaDe(nombre: Herramienta, args: Record<string, unknown>): string[] {
+export function vistaPreviaDe(nombre: Herramienta, args: Record<string, unknown>, hechos: Hecho[] = []): string[] {
   const items = itemsDe(args);
   switch (nombre) {
     case "createDiary":
@@ -43,20 +47,49 @@ export function vistaPreviaDe(nombre: Herramienta, args: Record<string, unknown>
       return items.map((i) => `Categoría ${String(i.id ?? "?")}${i.name !== undefined ? ` → ${recortar(i.name, 60)}` : ""}${i.parentId !== undefined ? " (cambia de madre)" : ""}`);
     case "deleteCategory":
       return [`Categorías ${idsDe(args).join(", ") || "?"}`];
+    case "rememberFact":
+      return items.map((i) => {
+        const id = typeof i.id === "string" ? i.id.trim() : "";
+        if (id) return `Corregir: ${recortar(i.text)}`;
+        const cat = typeof i.category === "string" && (CATEGORIAS_HECHO as readonly string[]).includes(i.category) ? (i.category as CategoriaHecho) : "fact";
+        return `${ROTULO_CATEGORIA[cat]}: ${recortar(i.text)}`;
+      });
+    case "forgetFact": {
+      const ids = idsDe(args);
+      const primeros = ids.slice(0, 8).map((id) => {
+        const h = hechos.find((x) => x.id === id);
+        return h ? `“${h.texto}”` : id;
+      });
+      if (ids.length > 8) primeros.push(`… y ${ids.length - 8} más`);
+      return primeros;
+    }
     default:
       return [];
   }
 }
 
-export function TarjetaAprobacion({ nombre, args, nivel, onResolver }: { nombre: Herramienta; args: Record<string, unknown>; nivel: Nivel; onResolver: (ok: boolean) => void }) {
-  const lineas = vistaPreviaDe(nombre, args);
+export function TarjetaAprobacion({
+  nombre,
+  args,
+  nivel,
+  hechos = [],
+  onResolver,
+}: {
+  nombre: Herramienta;
+  args: Record<string, unknown>;
+  nivel: Nivel;
+  hechos: Hecho[];
+  onResolver: (ok: boolean) => void;
+}) {
+  const lineas = vistaPreviaDe(nombre, args, hechos);
   const destructivo = nivel === "destructive";
+  const subtitulo = destructivo ? "No se puede deshacer" : esHerramientaDeMemoria(nombre) ? "Cambia la memoria del asistente" : "Cambia tu diario";
   return (
     <div role="group" aria-label={`Permiso: ${TITULO[nombre]}`} className={cn("rounded-xl border p-3 text-sm", destructivo ? "border-destructive/50 bg-destructive/5" : "border-primary/40 bg-primary/5")}>
       <div className="flex items-center gap-2 font-medium">
         {destructivo ? <AlertTriangle className="size-4 text-destructive" aria-hidden /> : <ShieldQuestion className="size-4 text-primary" aria-hidden />}
         <span>{TITULO[nombre]}</span>
-        <span className="ml-auto text-xs font-normal text-muted-foreground">{destructivo ? "No se puede deshacer" : "Cambia tu diario"}</span>
+        <span className="ml-auto text-xs font-normal text-muted-foreground">{subtitulo}</span>
       </div>
       {lineas.length > 0 && (
         <ul className="mt-2 max-h-40 list-disc space-y-1 overflow-y-auto pl-5 text-xs text-muted-foreground">

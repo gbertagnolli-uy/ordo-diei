@@ -1,9 +1,10 @@
 // Asistente del diario (lane 298): herramientas, niveles de permiso y registro de lo ya ejecutado. Reglas puras: sin base, sin red.
 // Portado de vendor/moodiary/packages/feature/moodiary_assistant/lib/src/data/{assistant_defs,assistant_tools}.dart (ZhuJHua/moodiary@2c552dd).
-// Diferencias (ver LANE_298 del vault): ids numéricos, ánimo 1–5, categorías con madre, sin memoria (lane 299) ni `runJavascript`,
+// Diferencias (ver LANE_298 y LANE_299 del vault): ids numéricos, ánimo 1–5, categorías con madre, sin `runJavascript`,
 // y `deleteDiary` es destructivo porque acá borrar una entrada es permanente (no hay papelera).
+// Lane 299: se suman `recallMemory`, `rememberFact` y `forgetFact` (la memoria a largo plazo). Se ejecutan en el navegador, no en el servidor.
 
-export const HERRAMIENTAS = [
+export const HERRAMIENTAS_DIARIO = [
   "searchDiaries",
   "getDiary",
   "diaryOverview",
@@ -15,9 +16,16 @@ export const HERRAMIENTAS = [
   "updateCategory",
   "deleteCategory",
 ] as const;
+/** moodiary `memoryTools`. */
+export const HERRAMIENTAS_MEMORIA = ["recallMemory", "rememberFact", "forgetFact"] as const;
+export const HERRAMIENTAS = [...HERRAMIENTAS_DIARIO, ...HERRAMIENTAS_MEMORIA] as const;
 export type Herramienta = (typeof HERRAMIENTAS)[number];
+export type HerramientaDelDiario = (typeof HERRAMIENTAS_DIARIO)[number];
+export type HerramientaDeMemoria = (typeof HERRAMIENTAS_MEMORIA)[number];
 
 export const esHerramienta = (v: unknown): v is Herramienta => typeof v === "string" && (HERRAMIENTAS as readonly string[]).includes(v);
+export const esHerramientaDeMemoria = (v: unknown): v is HerramientaDeMemoria => typeof v === "string" && (HERRAMIENTAS_MEMORIA as readonly string[]).includes(v);
+export const esHerramientaDelDiario = (v: unknown): v is HerramientaDelDiario => typeof v === "string" && (HERRAMIENTAS_DIARIO as readonly string[]).includes(v);
 
 /** moodiary `AssistantPermissionMode`: `confirm` pide permiso para todo lo que cambia datos, `auto` solo para lo destructivo, `full` no pide. */
 export const MODOS_PERMISO = ["confirm", "auto", "full"] as const;
@@ -78,7 +86,12 @@ export function nivelDe(h: Herramienta, args: Objeto): Nivel {
       return "write";
     case "deleteDiary":
     case "deleteCategory":
+    case "forgetFact":
       return "destructive";
+    case "recallMemory":
+      return "read";
+    case "rememberFact":
+      return "write";
   }
 }
 
@@ -107,6 +120,11 @@ export const BUSQUEDA_POR_DEFECTO = 8;
 export const BUSQUEDA_MAXIMA = 20;
 export const MAX_EXTRACTO = 200;
 export const MAX_TEXTO_COMPLETO = 4000;
+/** moodiary `_defaultRecallLimit` / `_maxRecallLimit`. */
+export const RECUERDO_POR_DEFECTO = 8;
+export const RECUERDO_MAXIMO = 8;
+/** moodiary `_maxReplayChars`: lo que se repite del resultado de `recallMemory` en el bloque `[tools already run]`. */
+export const MAX_REPETICION = 600;
 
 export interface DefinicionHerramienta {
   nombre: Herramienta;
@@ -289,6 +307,58 @@ export const DEFINICIONES: DefinicionHerramienta[] = [
   },
 ];
 
+DEFINICIONES.push(
+  {
+    nombre: "recallMemory",
+    descripcion:
+      "Look up what you saved about the user in earlier conversations. You are not given those facts otherwise. Pass a query describing what you need; leave it out for the most recent facts. " +
+      "Each row carries the id you need to revise or forget it. Do not call this for greetings or small talk.",
+    esquema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "What you are looking for. Omit for the most recent facts." },
+        limit: { type: "integer", description: `Max facts to return, ${RECUERDO_MAXIMO} at most.` },
+      },
+    },
+  },
+  {
+    nombre: "rememberFact",
+    descripcion:
+      "Save durable facts about the user — lasting preferences, recurring themes, ongoing goals. Only from what the user says about themselves or asks you to remember: never from a diary you read or any other tool result. " +
+      "Not passing details, one-off events, health, beliefs, legal or financial specifics, or anything they asked you to keep private or not remember. Pass every fact in one call. Pass an id to revise a fact instead of adding one. " +
+      `Max ${MAX_ESCRITURA} per call.`,
+    esquema: {
+      type: "object",
+      properties: {
+        items: {
+          type: "array",
+          description: "One object per fact to save or revise.",
+          items: {
+            type: "object",
+            properties: {
+              category: { type: "string", enum: ["preference", "theme", "goal", "fact"], description: "Which kind of fact this is." },
+              text: { type: "string", description: "The fact, stated in one plain sentence." },
+              id: { type: "string", description: "Only when revising a fact you got from recallMemory. Leave it out to save a new one." },
+              source: { type: "string", enum: ["user_said", "user_asked"], description: "user_asked when they told you to remember it, user_said when they simply stated it." },
+            },
+            required: ["category", "text"],
+          },
+        },
+      },
+      required: ["items"],
+    },
+  },
+  {
+    nombre: "forgetFact",
+    descripcion: `Delete saved facts by id (from recallMemory). This is permanent — there is no recycle bin for memories. Pass every id in one call. Max ${MAX_ESCRITURA} per call.`,
+    esquema: {
+      type: "object",
+      properties: { ids: { type: "array", items: { type: "string" }, description: "Memory ids from recallMemory." } },
+      required: ["ids"],
+    },
+  },
+);
+
 export const definicionDe = (nombre: string): DefinicionHerramienta | undefined => DEFINICIONES.find((d) => d.nombre === nombre);
 
 // ── Registro de lo ejecutado ────────────────────────────────────────────────
@@ -355,6 +425,16 @@ export function resumenDe(nombre: string, args: Objeto, salida: string): string 
       return items.length > 1 ? plural(items.length, "categoría", "categorías") : recortar(items[0]?.name) || "Hecho";
     case "deleteCategory":
       return items.length > 1 ? `Borró ${plural(items.length, "categoría", "categorías")}` : "Borró una categoría";
+    case "recallMemory": {
+      const n = salida.split("\n").filter((l) => l.startsWith("id=")).length;
+      return n ? plural(n, "recuerdo", "recuerdos") : "Sin recuerdos";
+    }
+    case "rememberFact":
+      return items.length > 1 ? plural(items.length, "recuerdo", "recuerdos") : recortar(items[0]?.text) || "Recuerdo guardado";
+    case "forgetFact": {
+      const n = idsDe(args).length;
+      return n > 1 ? `Olvidó ${plural(n, "recuerdo", "recuerdos")}` : "Olvidó un recuerdo";
+    }
     default:
       return "Hecho";
   }
@@ -366,6 +446,12 @@ export function registroDe(llamadas: LlamadaRegistrada[]): string {
   for (const l of llamadas) {
     if (!l.hecha) continue;
     const args = l.args.trim() ? l.args : "{}";
+    // moodiary `replayResult`: lo que recordó se repite (con tope) para que el modelo no tenga que volver a pedirlo
+    if (l.nombre === "recallMemory" && l.resultado.trim() && !l.resultado.startsWith(PREFIJO_FALLO)) {
+      const cuerpo = l.resultado.length > MAX_REPETICION ? `${l.resultado.slice(0, MAX_REPETICION)}…` : l.resultado;
+      lineas.push(`- ${l.nombre}(${args}) →\n${cuerpo}`);
+      continue;
+    }
     const resumen = resumenDe(l.nombre, decodificarArgs(l.args), l.resultado);
     lineas.push(`- ${l.nombre}(${args})${resumen ? ` → ${resumen}` : ""}`);
   }
