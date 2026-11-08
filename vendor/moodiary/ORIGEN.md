@@ -25,3 +25,6 @@
 
 ## Nota (lane 290, 2026-11-08)
 - No se agregan archivos: los enlaces entre entradas (`editor/src/core/editor/nodes/diary-link.ts`, `ui/{DiaryLinkSuggestion,EditorLinksPanel,link-intercept}`), la búsqueda en el documento (`editor/src/core/editor/search.ts`) y las funciones de enlaces de `diary_repository.dart` ya estaban en esta copia.
+
+## Ampliación (lane 291, 2026-11-08)
+- Se agregan, sin cambios: `packages/feature/moodiary_export/lib/src/data/{export_doc,export_options,export_scope,export_service,markdown_writer,tiptap_to_ir}.dart`, `lib/src/presentation/{export_page,format_export_page,scope_picker_page}.dart` y sus pruebas (`test/`): del documento Tiptap al Markdown y alcance de la exportación (todo, categoría, rango de fechas).

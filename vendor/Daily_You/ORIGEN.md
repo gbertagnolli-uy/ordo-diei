@@ -21,3 +21,6 @@
 
 ## Ampliación (lane 289, 2026-11-08)
 - Se agregan, sin cambios, las fuentes de recuerdos y línea de tiempo: `lib/{flashback_manager,time_manager}.dart`, `lib/models/flashback.dart`, `lib/widgets/flashback_card.dart`, `lib/pages/{entry_timeline_page,home_page}.dart` y `lib/pages/settings/flashback_settings.dart` (recuerdos «En este día», hace 6 meses, 1 mes y 1 semana, un buen día y un día aleatorio; línea de tiempo con orden ascendente o descendente).
+
+## Ampliación (lane 291, 2026-11-08)
+- Se agregan, sin cambios, las fuentes de exportación: `lib/utils/exports/{export_snapshot,export_json,export_csv,export_markdown,export_format,export_naming,export_registry,export_runner,export_attachment_picker}.dart` y `lib/pages/settings/backup_restore_settings.dart` (JSON v2, CSV con una columna por contador, Markdown con front matter, nombres por día).
