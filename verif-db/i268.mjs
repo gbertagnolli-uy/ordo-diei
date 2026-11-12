@@ -1,0 +1,14 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ executablePath: "C:/Users/evoxu/AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe" });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const base = "http://localhost:3168";
+await p.request.post(base + "/api/auth/login", { data: { userId: 3, pinSecreto: "1234" } });
+await p.goto(base + "/dashboard?s=today", { waitUntil: "networkidle", timeout: 120000 });
+await p.keyboard.press("Escape"); await p.waitForTimeout(500);
+const fila = p.getByRole("row").filter({ hasText: "Ordenar el cuarto" });
+console.log("fila en Para hoy:", await fila.count(), "·", (await fila.first().innerText()).replace(/\s+/g, " "));
+await fila.first().click(); await p.waitForTimeout(800);
+const panel = await p.locator("body").innerText();
+console.log("detalle: 00:00", panel.includes("00:00"), "· Iniciar tarea", panel.includes("Iniciar tarea"), "· Marcar realizada", /Marcar realizada/.test(panel), "· Pausar", panel.includes("Pausar"));
+await p.screenshot({ path: process.argv[2] });
+await b.close();

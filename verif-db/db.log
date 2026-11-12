@@ -1,0 +1,27 @@
+2026-11-07 14:38:34.760 GMT [41368] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 14:38:34.763 GMT [41368] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 14:38:34.763 GMT [41368] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+
+2026-11-07 14:38:34.862 GMT [13412] LOG:  database system was interrupted; last known up at 2026-11-07 13:04:35 GMT
+
+2026-11-07 14:38:37.842 GMT [13412] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 14:38:37.845 GMT [13412] LOG:  redo starts at 0/226EBD8
+
+2026-11-07 14:38:37.850 GMT [13412] LOG:  invalid record length at 0/2276A60: expected at least 24, got 0
+
+2026-11-07 14:38:37.850 GMT [13412] LOG:  redo done at 0/2276A28 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+
+2026-11-07 14:38:37.856 GMT [25796] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 14:38:37.879 GMT [25796] LOG:  checkpoint complete: wrote 7 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.009 s, total=0.026 s; sync files=7, longest=0.002 s, average=0.002 s; distance=31 kB, estimate=31 kB; lsn=0/2276A60, redo lsn=0/2276A60
+
+2026-11-07 14:38:37.893 GMT [41368] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 14:43:37.888 GMT [25796] LOG:  checkpoint starting: time
+
+2026-11-07 14:43:38.155 GMT [25796] LOG:  checkpoint complete: wrote 2 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.213 s, sync=0.033 s, total=0.268 s; sync files=3, longest=0.030 s, average=0.011 s; distance=8 kB, estimate=29 kB; lsn=0/2278BB8, redo lsn=0/2278B60
+

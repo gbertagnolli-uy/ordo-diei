@@ -1,0 +1,85 @@
+2026-11-07 09:41:57.882 GMT [24300] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 09:41:57.886 GMT [24300] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 09:41:57.886 GMT [24300] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+
+2026-11-07 09:41:57.941 GMT [34640] LOG:  database system was interrupted; last known up at 2026-11-07 09:31:30 GMT
+
+2026-11-07 09:41:59.055 GMT [24016] FATAL:  the database system is starting up
+
+2026-11-07 09:41:59.095 GMT [34640] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 09:41:59.098 GMT [34640] LOG:  redo starts at 0/21692E8
+
+2026-11-07 09:41:59.110 GMT [34640] LOG:  invalid record length at 0/216C7A8: expected at least 24, got 0
+
+2026-11-07 09:41:59.110 GMT [34640] LOG:  redo done at 0/216C770 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s
+
+2026-11-07 09:41:59.115 GMT [12028] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 09:41:59.172 GMT [12028] LOG:  checkpoint complete: wrote 22 buffers (0.1%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.016 s, sync=0.027 s, total=0.059 s; sync files=24, longest=0.002 s, average=0.002 s; distance=13 kB, estimate=13 kB; lsn=0/216C7A8, redo lsn=0/216C7A8
+
+2026-11-07 09:41:59.187 GMT [24300] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 09:42:00.405 GMT [13924] FATAL:  password authentication failed for user "postgres"
+2026-11-07 09:42:00.405 GMT [13924] DETAIL:  Password does not match for user "postgres".
+	Connection matched file "C:/Users/evoxu/Downloads/Agencia/Dev/18_OrdoDiei/verif-db/datos/pg_hba.conf" line 117: "host    all             all             ::1/128                 password"
+
+2026-11-07 09:46:59.176 GMT [12028] LOG:  checkpoint starting: time
+
+2026-11-07 09:47:07.974 GMT [12028] LOG:  checkpoint complete: wrote 79 buffers (0.5%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=8.649 s, sync=0.120 s, total=8.798 s; sync files=68, longest=0.056 s, average=0.002 s; distance=474 kB, estimate=474 kB; lsn=0/21E33A0, redo lsn=0/21E3310
+
+2026-11-07 09:51:37.635 GMT [22144] ERROR:  duplicate key value violates unique constraint "Social_Canales_Slug_key"
+2026-11-07 09:51:37.635 GMT [22144] DETAIL:  Key ("Slug")=(general-1794045095543) already exists.
+2026-11-07 09:51:37.635 GMT [22144] STATEMENT:  INSERT INTO "public"."Social_Canales" ("Emoji","Nombre","Descripcion","Slug","Tipo","Created_At") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."SocialTipoCanal"),$6) RETURNING "public"."Social_Canales"."id", "public"."Social_Canales"."Emoji", "public"."Social_Canales"."Nombre", "public"."Social_Canales"."Descripcion", "public"."Social_Canales"."Slug", "public"."Social_Canales"."Tipo"::text, "public"."Social_Canales"."Materia_ID", "public"."Social_Canales"."Created_At", "public"."Social_Canales"."Deleted_At"
+
+2026-11-07 09:51:43.878 GMT [21284] ERROR:  invalid input syntax for type uuid: "no-es-uuid"
+2026-11-07 09:51:43.878 GMT [21284] CONTEXT:  unnamed portal parameter $1 = '...'
+2026-11-07 09:51:43.878 GMT [21284] STATEMENT:  SELECT "public"."Social_Posts"."id", "public"."Social_Posts"."Contenido", "public"."Social_Posts"."Autor_ID", "public"."Social_Posts"."Canal_ID", "public"."Social_Posts"."Padre_ID", "public"."Social_Posts"."Enlace_LMS", "public"."Social_Posts"."Fijado", "public"."Social_Posts"."Created_At", "public"."Social_Posts"."Updated_At", "public"."Social_Posts"."Deleted_At" FROM "public"."Social_Posts" WHERE ("public"."Social_Posts"."id" = $1 AND "public"."Social_Posts"."Deleted_At" IS NULL) LIMIT $2 OFFSET $3
+
+2026-11-07 09:51:59.983 GMT [12028] LOG:  checkpoint starting: time
+
+2026-11-07 09:52:05.205 GMT [12028] LOG:  checkpoint complete: wrote 47 buffers (0.3%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=5.159 s, sync=0.036 s, total=5.223 s; sync files=34, longest=0.007 s, average=0.002 s; distance=74 kB, estimate=434 kB; lsn=0/21F6320, redo lsn=0/21F5C08
+
+2026-11-07 09:52:05.263 GMT [30612] ERROR:  duplicate key value violates unique constraint "Social_Canales_Slug_key"
+2026-11-07 09:52:05.263 GMT [30612] DETAIL:  Key ("Slug")=(general-1794045124874) already exists.
+2026-11-07 09:52:05.263 GMT [30612] STATEMENT:  INSERT INTO "public"."Social_Canales" ("Emoji","Nombre","Descripcion","Slug","Tipo","Created_At") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."SocialTipoCanal"),$6) RETURNING "public"."Social_Canales"."id", "public"."Social_Canales"."Emoji", "public"."Social_Canales"."Nombre", "public"."Social_Canales"."Descripcion", "public"."Social_Canales"."Slug", "public"."Social_Canales"."Tipo"::text, "public"."Social_Canales"."Materia_ID", "public"."Social_Canales"."Created_At", "public"."Social_Canales"."Deleted_At"
+
+2026-11-07 09:52:07.147 GMT [30448] ERROR:  invalid input syntax for type uuid: "no-es-uuid"
+2026-11-07 09:52:07.147 GMT [30448] CONTEXT:  unnamed portal parameter $1 = '...'
+2026-11-07 09:52:07.147 GMT [30448] STATEMENT:  SELECT "public"."Social_Posts"."id", "public"."Social_Posts"."Contenido", "public"."Social_Posts"."Autor_ID", "public"."Social_Posts"."Canal_ID", "public"."Social_Posts"."Padre_ID", "public"."Social_Posts"."Enlace_LMS", "public"."Social_Posts"."Fijado", "public"."Social_Posts"."Created_At", "public"."Social_Posts"."Updated_At", "public"."Social_Posts"."Deleted_At" FROM "public"."Social_Posts" WHERE ("public"."Social_Posts"."id" = $1 AND "public"."Social_Posts"."Deleted_At" IS NULL) LIMIT $2 OFFSET $3
+
+2026-11-07 09:56:59.213 GMT [12028] LOG:  checkpoint starting: time
+
+2026-11-07 09:57:02.048 GMT [12028] LOG:  checkpoint complete: wrote 25 buffers (0.2%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=2.769 s, sync=0.042 s, total=2.836 s; sync files=26, longest=0.008 s, average=0.002 s; distance=18 kB, estimate=393 kB; lsn=0/21FA6C0, redo lsn=0/21FA630
+
+2026-11-07 11:57:48.329 GMT [26660] ERROR:  duplicate key value violates unique constraint "Social_Canales_Slug_key"
+2026-11-07 11:57:48.329 GMT [26660] DETAIL:  Key ("Slug")=(general-1794052666965) already exists.
+2026-11-07 11:57:48.329 GMT [26660] STATEMENT:  INSERT INTO "public"."Social_Canales" ("Emoji","Nombre","Descripcion","Slug","Tipo","Created_At") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."SocialTipoCanal"),$6) RETURNING "public"."Social_Canales"."id", "public"."Social_Canales"."Emoji", "public"."Social_Canales"."Nombre", "public"."Social_Canales"."Descripcion", "public"."Social_Canales"."Slug", "public"."Social_Canales"."Tipo"::text, "public"."Social_Canales"."Materia_ID", "public"."Social_Canales"."Created_At", "public"."Social_Canales"."Deleted_At"
+
+2026-11-07 11:57:53.585 GMT [34044] ERROR:  invalid input syntax for type uuid: "no-es-uuid"
+2026-11-07 11:57:53.585 GMT [34044] CONTEXT:  unnamed portal parameter $1 = '...'
+2026-11-07 11:57:53.585 GMT [34044] STATEMENT:  SELECT "public"."Social_Posts"."id", "public"."Social_Posts"."Contenido", "public"."Social_Posts"."Autor_ID", "public"."Social_Posts"."Canal_ID", "public"."Social_Posts"."Padre_ID", "public"."Social_Posts"."Enlace_LMS", "public"."Social_Posts"."Fijado", "public"."Social_Posts"."Created_At", "public"."Social_Posts"."Updated_At", "public"."Social_Posts"."Deleted_At" FROM "public"."Social_Posts" WHERE ("public"."Social_Posts"."id" = $1 AND "public"."Social_Posts"."Deleted_At" IS NULL) LIMIT $2 OFFSET $3
+
+2026-11-07 11:58:00.048 GMT [12648] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 11:58:00.049 GMT [24636] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 11:58:00.049 GMT [33864] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 11:58:00.049 GMT [36500] LOG:  could not receive data from client: unrecognized winsock error 10054
+2026-11-07 11:58:00.049 GMT [564] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:01:59.286 GMT [12028] LOG:  checkpoint starting: time
+
+2026-11-07 12:02:02.090 GMT [12028] LOG:  checkpoint complete: wrote 25 buffers (0.2%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=2.737 s, sync=0.039 s, total=2.804 s; sync files=26, longest=0.006 s, average=0.002 s; distance=23 kB, estimate=356 kB; lsn=0/2200290, redo lsn=0/2200238
+
+2026-11-07 12:04:01.124 GMT [24300] LOG:  lock file "postmaster.pid" contains wrong PID: 20196 instead of 24300
+2026-11-07 12:04:01.124 GMT [24300] LOG:  performing immediate shutdown because data directory lock file is invalid
+
+2026-11-07 12:04:01.124 GMT [24300] LOG:  received immediate shutdown request
+
+2026-11-07 12:04:01.242 GMT [24300] LOG:  database system is shut down
+

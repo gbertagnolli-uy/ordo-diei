@@ -1,0 +1,36 @@
+{"usuario":1,"ancho":1440,"ruta":"/dashboard","final":"/dashboard","triggers":1,"titulo":"","izq":null,"arriba":null,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/horarios","final":"/dashboard/horarios","triggers":1,"titulo":"Horarios","izq":24,"arriba":27,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/habitos","final":"/dashboard/habitos","triggers":1,"titulo":"Mis hábitos","izq":24,"arriba":31,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/mis-premios","final":"/dashboard/mis-premios","triggers":1,"titulo":"Mis premios","izq":92,"arriba":48,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/premio-grupal","final":"/dashboard/premio-grupal","triggers":1,"titulo":"Premio grupal","izq":438,"arriba":51,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/liturgia","final":"/dashboard/liturgia","triggers":1,"titulo":"Liturgia","izq":24,"arriba":27,"errores":[]}
+TIMEOUT /dashboard/liturgia/calendarium
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/liturgia/calendarium","final":"/dashboard/liturgia/calendarium","triggers":1,"titulo":"Calendarium","izq":24,"arriba":24,"errores":[]}
+TIMEOUT /dashboard/liturgia/rosarium
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/liturgia/rosarium","final":"/dashboard/liturgia/rosarium","triggers":1,"titulo":"Rosarium","izq":23,"arriba":24,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/biblioteca","final":"/dashboard/biblioteca","triggers":1,"titulo":"Biblioteca","izq":24,"arriba":24,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/biblioteca/gestionar","final":"/dashboard/biblioteca/gestionar","triggers":1,"titulo":"Gestionar","izq":140,"arriba":37,"errores":[]}
+SIN LIBRO LIBRO
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/biblioteca/leer/102","final":"/dashboard/biblioteca/leer/102","triggers":1,"titulo":"Historia de un alma","izq":41,"arriba":34,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/notas","final":"/dashboard/notas","triggers":1,"titulo":"Notas","izq":27,"arriba":35,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/diario","final":"/dashboard/diario","triggers":1,"titulo":"Mi diario","izq":92,"arriba":42,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/diario/familia","final":"/dashboard/diario/familia","triggers":1,"titulo":"Diario familiar","izq":92,"arriba":42,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/cartas","final":"/dashboard/cartas","triggers":1,"titulo":"Cartas","izq":24,"arriba":27,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/cartas/admin","final":"/dashboard/cartas/admin","triggers":1,"titulo":"Administración de Cartas","izq":28,"arriba":31,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/companero","final":"/dashboard/companero","triggers":1,"titulo":"Compañero","izq":359,"arriba":52,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/tienda","final":"/dashboard/tienda","triggers":1,"titulo":"Tienda","izq":76,"arriba":40,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin","final":"/dashboard/admin","triggers":1,"titulo":"Panel de administración","izq":76,"arriba":42,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/aprobaciones","final":"/dashboard/admin/aprobaciones","triggers":1,"titulo":"Aprobaciones","izq":64,"arriba":44,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/comportamiento","final":"/dashboard/admin/comportamiento","triggers":1,"titulo":"Regalar premio","izq":447,"arriba":31,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/conducta","final":"/dashboard/admin/conducta","triggers":1,"titulo":"Registrar conducta","izq":92,"arriba":45,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/hijos","final":"/dashboard/admin/hijos","triggers":1,"titulo":"Resumen de los hijos","izq":91,"arriba":31,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/premio-grupal","final":"/dashboard/admin/premio-grupal","triggers":1,"titulo":"Premio grupal","izq":92,"arriba":43,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/reposo","final":"/dashboard/admin/reposo","triggers":1,"titulo":"Reposo","izq":92,"arriba":44,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/rutina","final":"/dashboard/admin/rutina","triggers":1,"titulo":"Rutina familiar","izq":92,"arriba":43,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/tareas","final":"/dashboard/admin/tareas","triggers":1,"titulo":"Tareas","izq":40,"arriba":45,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/admin/tienda","final":"/dashboard/admin/tienda","triggers":1,"titulo":"Tienda","izq":86,"arriba":31,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/premios","final":"/dashboard/premios","triggers":1,"titulo":"Premios sorpresa","izq":40,"arriba":47,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/tasks/new","final":"/dashboard/tasks/new","triggers":1,"titulo":"Nueva tarea","izq":268,"arriba":55,"errores":[]}
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/users/new","final":"/dashboard/users/new","triggers":1,"titulo":"Nuevo miembro","izq":316,"arriba":40,"errores":[]}
+TIMEOUT /dashboard/users/pines
+{"usuario":1,"ancho":1440,"ruta":"/dashboard/users/pines","final":"/dashboard/users/pines","error":"page.evaluate: Execution context was destroyed, most likely because of a navigation","errores":[]}

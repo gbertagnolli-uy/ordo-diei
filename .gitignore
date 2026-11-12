@@ -1,0 +1,15 @@
+# Secretos y entorno local (nunca versionar)
+.env
+.env.*
+
+# Repositorios Git anidados (se restauran con restaurar-entorno.ps1)
+/ordo-diei/
+/ordo-diei-lanes/
+/repos-externos/
+
+# Dependencias y archivos runtime regenerables
+/verif-db/node_modules/
+/verif-db/datos/postmaster.pid
+node_modules/
+.DS_Store
+Thumbs.db

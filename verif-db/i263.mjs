@@ -1,0 +1,17 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ executablePath: "C:/Users/evoxu/AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe" });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const base = "http://localhost:3163";
+await p.request.post(base + "/api/auth/login", { data: { userId: 3, pinSecreto: "1234" } });
+await p.goto(base + "/dashboard?s=today", { waitUntil: "networkidle", timeout: 120000 });
+await p.keyboard.press("Escape"); await p.waitForTimeout(500);
+const panel = p.locator('[aria-label="Detalle de la tarea"]');
+const botones = async () => (await panel.getByRole("button").allInnerTexts()).map((t) => t.replace(/\s+/g, " ").trim()).filter((t) => /Iniciar|Pausar|Reanudar|Finalizar|Marcar/.test(t));
+await p.getByRole("row").filter({ hasText: "Tarea de prueba 10" }).first().click(); await p.waitForTimeout(700);
+console.log("sin iniciar:", await botones());
+await panel.getByRole("button", { name: "Iniciar tarea" }).click(); await p.waitForTimeout(1500);
+console.log("iniciada:", await botones());
+await panel.getByRole("button", { name: "Pausar" }).click(); await p.waitForTimeout(1500);
+console.log("pausada:", await botones());
+await p.screenshot({ path: process.argv[2] });
+await b.close();

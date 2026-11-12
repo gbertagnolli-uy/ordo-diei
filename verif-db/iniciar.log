@@ -1,0 +1,43 @@
+2026-11-07 09:26:15.828 GMT [31620] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 09:26:15.832 GMT [31620] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 09:26:15.832 GMT [31620] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+
+2026-11-07 09:26:15.886 GMT [34200] LOG:  database system was interrupted; last known up at 2026-11-07 09:16:09 GMT
+
+2026-11-07 09:26:17.004 GMT [34200] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 09:26:17.007 GMT [34200] LOG:  redo starts at 0/20DB5A8
+
+2026-11-07 09:26:17.010 GMT [34200] LOG:  invalid record length at 0/20DD360: expected at least 24, got 0
+
+2026-11-07 09:26:17.010 GMT [34200] LOG:  redo done at 0/20DD328 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+
+2026-11-07 09:26:17.019 GMT [30584] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 09:26:17.049 GMT [30584] LOG:  checkpoint complete: wrote 2 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.007 s, total=0.036 s; sync files=4, longest=0.003 s, average=0.002 s; distance=7 kB, estimate=7 kB; lsn=0/20DD360, redo lsn=0/20DD360
+
+2026-11-07 09:26:17.064 GMT [31620] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 09:27:03.297 GMT [24804] ERROR:  duplicate key value violates unique constraint "Biblioteca_Estantes_Nombre_key"
+2026-11-07 09:27:03.297 GMT [24804] DETAIL:  Key ("Nombre")=(Clásicos 1794043622484) already exists.
+2026-11-07 09:27:03.297 GMT [24804] STATEMENT:  INSERT INTO "public"."Biblioteca_Estantes" ("Nombre","Orden") VALUES ($1,$2) RETURNING "public"."Biblioteca_Estantes"."id", "public"."Biblioteca_Estantes"."Nombre", "public"."Biblioteca_Estantes"."Orden"
+
+2026-11-07 09:27:22.164 GMT [9088] ERROR:  duplicate key value violates unique constraint "Biblioteca_Estantes_Nombre_key"
+2026-11-07 09:27:22.164 GMT [9088] DETAIL:  Key ("Nombre")=(Clásicos 1794043642016) already exists.
+2026-11-07 09:27:22.164 GMT [9088] STATEMENT:  INSERT INTO "public"."Biblioteca_Estantes" ("Nombre","Orden") VALUES ($1,$2) RETURNING "public"."Biblioteca_Estantes"."id", "public"."Biblioteca_Estantes"."Nombre", "public"."Biblioteca_Estantes"."Orden"
+
+2026-11-07 09:31:17.061 GMT [30584] LOG:  checkpoint starting: time
+
+2026-11-07 09:31:30.200 GMT [30584] LOG:  checkpoint complete: wrote 118 buffers (0.7%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=13.030 s, sync=0.093 s, total=13.140 s; sync files=70, longest=0.008 s, average=0.002 s; distance=559 kB, estimate=559 kB; lsn=0/2169378, redo lsn=0/21692E8
+
+2026-11-07 09:35:24.599 GMT [40780] ERROR:  duplicate key value violates unique constraint "Biblioteca_Estantes_Nombre_key"
+2026-11-07 09:35:24.599 GMT [40780] DETAIL:  Key ("Nombre")=(Clásicos 1794044124396) already exists.
+2026-11-07 09:35:24.599 GMT [40780] STATEMENT:  INSERT INTO "public"."Biblioteca_Estantes" ("Nombre","Orden") VALUES ($1,$2) RETURNING "public"."Biblioteca_Estantes"."id", "public"."Biblioteca_Estantes"."Nombre", "public"."Biblioteca_Estantes"."Orden"
+
+2026-11-07 09:35:25.848 GMT [34616] ERROR:  duplicate key value violates unique constraint "Biblioteca_Estantes_Nombre_key"
+2026-11-07 09:35:25.848 GMT [34616] DETAIL:  Key ("Nombre")=(Clásicos 1794044125802) already exists.
+2026-11-07 09:35:25.848 GMT [34616] STATEMENT:  INSERT INTO "public"."Biblioteca_Estantes" ("Nombre","Orden") VALUES ($1,$2) RETURNING "public"."Biblioteca_Estantes"."id", "public"."Biblioteca_Estantes"."Nombre", "public"."Biblioteca_Estantes"."Orden"
+

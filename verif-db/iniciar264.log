@@ -1,0 +1,56 @@
+2026-11-07 12:21:34.308 GMT [5756] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 12:21:34.312 GMT [5756] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 12:21:34.312 GMT [5756] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+
+2026-11-07 12:21:34.376 GMT [25608] LOG:  database system was interrupted; last known up at 2026-11-07 12:11:11 GMT
+
+2026-11-07 12:21:35.592 GMT [28684] FATAL:  the database system is starting up
+
+2026-11-07 12:21:35.666 GMT [25608] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 12:21:35.671 GMT [25608] LOG:  redo starts at 0/2217CA0
+
+2026-11-07 12:21:35.684 GMT [25608] LOG:  invalid record length at 0/22251C0: expected at least 24, got 0
+
+2026-11-07 12:21:35.684 GMT [25608] LOG:  redo done at 0/2225188 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s
+
+2026-11-07 12:21:35.688 GMT [11740] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 12:21:35.757 GMT [11740] LOG:  checkpoint complete: wrote 28 buffers (0.2%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.017 s, sync=0.035 s, total=0.071 s; sync files=29, longest=0.002 s, average=0.002 s; distance=53 kB, estimate=53 kB; lsn=0/22251C0, redo lsn=0/22251C0
+
+2026-11-07 12:21:35.772 GMT [5756] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 12:26:35.768 GMT [11740] LOG:  checkpoint starting: time
+
+2026-11-07 12:26:38.354 GMT [11740] LOG:  checkpoint complete: wrote 23 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=2.520 s, sync=0.029 s, total=2.587 s; sync files=20, longest=0.007 s, average=0.002 s; distance=33 kB, estimate=51 kB; lsn=0/222DA00, redo lsn=0/222D9A8
+
+2026-11-07 12:28:20.892 GMT [12272] ERROR:  column "ID" does not exist at character 8
+2026-11-07 12:28:20.892 GMT [12272] STATEMENT:  select "ID","Estado","Timer_Started_At","Tiempo_Acumulado_Timer" from "Tareas" where "ID" in (18,26,27)
+
+2026-11-07 12:28:20.918 GMT [12272] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:28:31.208 GMT [34072] ERROR:  column "ID" does not exist at character 103
+2026-11-07 12:28:31.208 GMT [34072] STATEMENT:  update "Tareas" set estado='Pendiente', "Timer_Started_At"=null, "Tiempo_Acumulado_Timer_Seg"=0 where "ID" in (26,27) returning "ID", estado
+
+2026-11-07 12:28:31.231 GMT [34072] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:28:31.487 GMT [12628] ERROR:  column "ID" does not exist at character 78
+2026-11-07 12:28:31.487 GMT [12628] STATEMENT:  update "Tareas" set "Timer_Started_At"=null where "Asignado_ID" in (3,4) and "ID" not in (26,27) returning "ID"
+
+2026-11-07 12:28:31.512 GMT [12628] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:31:35.356 GMT [11740] LOG:  checkpoint starting: time
+
+2026-11-07 12:31:36.594 GMT [11740] LOG:  checkpoint complete: wrote 11 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.211 s, sync=0.014 s, total=1.238 s; sync files=12, longest=0.004 s, average=0.002 s; distance=31 kB, estimate=49 kB; lsn=0/22356A0, redo lsn=0/2235610
+
+2026-11-07 12:36:35.600 GMT [11740] LOG:  checkpoint starting: time
+
+2026-11-07 12:36:36.072 GMT [11740] LOG:  checkpoint complete: wrote 4 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.443 s, sync=0.014 s, total=0.472 s; sync files=5, longest=0.007 s, average=0.003 s; distance=15 kB, estimate=45 kB; lsn=0/2239658, redo lsn=0/2239600
+
+2026-11-07 12:41:35.087 GMT [11740] LOG:  checkpoint starting: time
+
+2026-11-07 12:41:35.507 GMT [11740] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.328 s, sync=0.044 s, total=0.421 s; sync files=4, longest=0.023 s, average=0.011 s; distance=12 kB, estimate=42 kB; lsn=0/223CA08, redo lsn=0/223C9B0
+

@@ -1,0 +1,13 @@
+import { chromium } from "playwright";
+const base = `http://localhost:${process.argv[2]}`;
+const b = await chromium.launch({ executablePath: "C:/Users/evoxu/AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe" });
+const p = await (await b.newContext({ viewport: { width: 1400, height: 900 } })).newPage();
+const errs = []; p.on("pageerror", (e) => errs.push(e.message.slice(0, 120)));
+await p.request.post(`${base}/api/auth/login`, { data: { userId: 1, pinSecreto: "1234" } });
+await p.goto(`${base}/dashboard`, { waitUntil: "networkidle", timeout: 180000 });
+const l = p.getByRole("link", { name: "Imprimir agenda semanal" });
+console.log("botón:", await l.count());
+await l.click(); await p.waitForURL(/imprimir\/agenda-semanal/, { timeout: 60000 }); await p.waitForLoadState("networkidle");
+console.log("url:", new URL(p.url()).pathname, "· texto:", (await p.locator("body").innerText()).slice(0, 80).replace(/\s+/g, " "));
+await p.screenshot({ path: "cap273/m6.png" });
+console.log("errores:", errs.length ? errs : "ninguno"); await b.close();

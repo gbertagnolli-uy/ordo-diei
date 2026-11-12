@@ -1,0 +1,35 @@
+2026-11-07 12:04:01.344 GMT [20196] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 12:04:01.348 GMT [20196] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 12:04:01.348 GMT [20196] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+2026-11-07 12:04:01.348 GMT [20196] LOG:  could not open file "postmaster.pid": No such file or directory
+
+2026-11-07 12:04:01.357 GMT [20196] LOG:  could not open file "postmaster.pid": No such file or directory
+
+2026-11-07 12:04:01.400 GMT [12660] LOG:  database system was interrupted; last known up at 2026-11-07 12:02:02 GMT
+
+2026-11-07 12:04:04.794 GMT [12660] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 12:04:04.799 GMT [12660] LOG:  redo starts at 0/2200238
+
+2026-11-07 12:04:04.800 GMT [12660] LOG:  invalid record length at 0/22006B0: expected at least 24, got 0
+2026-11-07 12:04:04.800 GMT [12660] LOG:  redo done at 0/2200678 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+
+2026-11-07 12:04:04.806 GMT [28984] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 12:04:04.823 GMT [28984] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.005 s, total=0.020 s; sync files=3, longest=0.002 s, average=0.002 s; distance=1 kB, estimate=1 kB; lsn=0/22006B0, redo lsn=0/22006B0
+
+2026-11-07 12:04:04.841 GMT [20196] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 12:04:04.841 GMT [20196] LOG:  could not open file "postmaster.pid": No such file or directory
+
+2026-11-07 12:05:04.879 GMT [20196] LOG:  could not open file "postmaster.pid": No such file or directory
+2026-11-07 12:05:04.879 GMT [20196] LOG:  performing immediate shutdown because data directory lock file is invalid
+
+2026-11-07 12:05:04.879 GMT [20196] LOG:  received immediate shutdown request
+2026-11-07 12:05:04.879 GMT [20196] LOG:  could not open file "postmaster.pid": No such file or directory
+
+2026-11-07 12:05:04.911 GMT [20196] LOG:  database system is shut down
+

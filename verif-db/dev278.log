@@ -1,0 +1,13 @@
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3178
+- Network:       http://169.254.109.16:3178
+- Environments: .env.local
+✓ Ready in 692ms
+
+ POST /api/auth/login 200 in 832ms (next.js: 540ms, application-code: 292ms)
+○ Compiling /dashboard/tienda ...
+ GET /dashboard/tienda 200 in 6.8s (next.js: 5.1s, application-code: 1662ms)
+ GET /api/tienda/compras 200 in 715ms (next.js: 689ms, application-code: 26ms)
+ POST /api/auth/login 200 in 162ms (next.js: 39ms, application-code: 123ms)
+ GET /dashboard/tienda 200 in 660ms (next.js: 107ms, application-code: 553ms)
+ GET /api/tienda/compras 200 in 108ms (next.js: 86ms, application-code: 22ms)

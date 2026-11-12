@@ -1,0 +1,10 @@
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3173
+- Network:       http://169.254.109.16:3173
+- Environments: .env.local
+✓ Ready in 1380ms
+
+ POST /api/auth/login 200 in 635ms (next.js: 285ms, application-code: 351ms)
+ GET /dashboard 200 in 4.1s (next.js: 2.4s, application-code: 1773ms)
+ GET /api/cartas/eventos 200 in 589ms (next.js: 570ms, application-code: 20ms)
+ GET /dashboard/imprimir/agenda-semanal 200 in 92ms (next.js: 41ms, application-code: 51ms)

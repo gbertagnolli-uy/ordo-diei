@@ -1,0 +1,57 @@
+2026-11-07 12:06:06.796 GMT [15188] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 12:06:06.799 GMT [15188] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 12:06:06.800 GMT [15188] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+
+2026-11-07 12:06:06.858 GMT [11744] LOG:  database system was interrupted; last known up at 2026-11-07 12:04:04 GMT
+
+2026-11-07 12:06:08.046 GMT [25992] FATAL:  the database system is starting up
+
+2026-11-07 12:06:08.108 GMT [11744] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 12:06:08.111 GMT [11744] LOG:  redo starts at 0/2200728
+
+2026-11-07 12:06:08.123 GMT [11744] LOG:  invalid record length at 0/220E470: expected at least 24, got 0
+
+2026-11-07 12:06:08.123 GMT [11744] LOG:  redo done at 0/220E448 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s
+
+2026-11-07 12:06:08.127 GMT [14520] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 12:06:08.188 GMT [14520] LOG:  checkpoint complete: wrote 28 buffers (0.2%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.023 s, sync=0.029 s, total=0.063 s; sync files=26, longest=0.003 s, average=0.002 s; distance=55 kB, estimate=55 kB; lsn=0/220E470, redo lsn=0/220E470
+
+2026-11-07 12:06:08.205 GMT [15188] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 12:11:08.197 GMT [14520] LOG:  checkpoint starting: time
+
+2026-11-07 12:11:11.130 GMT [14520] LOG:  checkpoint complete: wrote 26 buffers (0.2%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=2.866 s, sync=0.046 s, total=2.933 s; sync files=26, longest=0.007 s, average=0.002 s; distance=38 kB, estimate=53 kB; lsn=0/2217CF8, redo lsn=0/2217CA0
+
+2026-11-07 12:14:12.983 GMT [27568] ERROR:  duplicate key value violates unique constraint "Biblioteca_Estantes_Nombre_key"
+2026-11-07 12:14:12.983 GMT [27568] DETAIL:  Key ("Nombre")=(Clásicos 1794053652929) already exists.
+2026-11-07 12:14:12.983 GMT [27568] STATEMENT:  INSERT INTO "public"."Biblioteca_Estantes" ("Nombre","Orden") VALUES ($1,$2) RETURNING "public"."Biblioteca_Estantes"."id", "public"."Biblioteca_Estantes"."Nombre", "public"."Biblioteca_Estantes"."Orden"
+
+2026-11-07 12:14:14.134 GMT [24796] ERROR:  duplicate key value violates unique constraint "Biblioteca_Estantes_Nombre_key"
+2026-11-07 12:14:14.134 GMT [24796] DETAIL:  Key ("Nombre")=(Clásicos 1794053654075) already exists.
+2026-11-07 12:14:14.134 GMT [24796] STATEMENT:  INSERT INTO "public"."Biblioteca_Estantes" ("Nombre","Orden") VALUES ($1,$2) RETURNING "public"."Biblioteca_Estantes"."id", "public"."Biblioteca_Estantes"."Nombre", "public"."Biblioteca_Estantes"."Orden"
+
+2026-11-07 12:14:21.059 GMT [14776] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:14:21.059 GMT [7352] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:14:21.063 GMT [41036] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:14:21.064 GMT [12460] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:14:21.064 GMT [32108] LOG:  could not receive data from client: unrecognized winsock error 10054
+2026-11-07 12:14:21.064 GMT [35692] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:14:21.066 GMT [9912] LOG:  could not receive data from client: unrecognized winsock error 10054
+2026-11-07 12:14:21.066 GMT [27948] LOG:  could not receive data from client: unrecognized winsock error 10054
+
+2026-11-07 12:14:23.047 GMT [15188] LOG:  io worker (PID 2956) was terminated by exception 0xFFFFFFFF
+2026-11-07 12:14:23.047 GMT [15188] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-11-07 12:14:23.047 GMT [15188] LOG:  terminating any other active server processes
+
+2026-11-07 12:14:23.061 GMT [15188] LOG:  all server processes terminated; reinitializing
+

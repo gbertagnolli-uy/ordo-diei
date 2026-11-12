@@ -1,0 +1,283 @@
+
+> family-tasker@0.1.0 build
+> next build
+
+▲ Next.js 16.2.1 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./Downloads/Agencia/Dev/18_OrdoDiei/ordo-diei-lanes/lane-276/next.config.mjs
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Import trace:
+  App Route:
+    ./Downloads/Agencia/Dev/18_OrdoDiei/ordo-diei-lanes/lane-276/next.config.mjs
+    ./Downloads/Agencia/Dev/18_OrdoDiei/ordo-diei-lanes/lane-276/src/app/api/cartas/arte/route.ts
+
+
+✓ Compiled successfully in 14.7s
+  Running TypeScript ...
+  Finished TypeScript in 19.7s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/20) ...
+  Generating static pages using 11 workers (5/20) 
+  Generating static pages using 11 workers (10/20) 
+  Generating static pages using 11 workers (15/20) 
+✓ Generating static pages using 11 workers (20/20) in 245ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /agenda
+├ ƒ /agenda-del-dia
+├ ƒ /api/admin/historia-acciones
+├ ƒ /api/admin/reposo
+├ ƒ /api/admin/reposo/fotos
+├ ƒ /api/admin/reposo/refrescar
+├ ƒ /api/admin/tienda/compras
+├ ƒ /api/admin/tienda/compras/[id]
+├ ƒ /api/admin/tienda/productos
+├ ƒ /api/admin/tienda/productos/[id]
+├ ƒ /api/admin/tienda/productos/[id]/desbloquear
+├ ƒ /api/archivos/[clave]
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/cartas
+├ ƒ /api/cartas/[clave]
+├ ƒ /api/cartas/[clave]/imagen
+├ ƒ /api/cartas/[clave]/version
+├ ƒ /api/cartas/admin
+├ ƒ /api/cartas/arte
+├ ƒ /api/cartas/comprar
+├ ƒ /api/cartas/eventos
+├ ƒ /api/cartas/reclamar
+├ ƒ /api/companero
+├ ƒ /api/comportamiento
+├ ƒ /api/comportamiento/[id]
+├ ƒ /api/conducta
+├ ƒ /api/cron/avisos
+├ ƒ /api/cron/daily
+├ ƒ /api/habitos
+├ ƒ /api/habitos/[id]
+├ ƒ /api/habitos/adopciones
+├ ƒ /api/habitos/aprobaciones
+├ ƒ /api/habitos/libros
+├ ƒ /api/habitos/registro
+├ ƒ /api/homeschooling/actividades
+├ ƒ /api/homeschooling/actividades/[id]
+├ ƒ /api/homeschooling/alumnos/[id]/al-dia
+├ ƒ /api/homeschooling/alumnos/[id]/lectura
+├ ƒ /api/homeschooling/alumnos/[id]/libreta
+├ ƒ /api/homeschooling/alumnos/[id]/memoria
+├ ƒ /api/homeschooling/anio
+├ ƒ /api/homeschooling/avisos
+├ ƒ /api/homeschooling/biblioteca
+├ ƒ /api/homeschooling/buscar
+├ ƒ /api/homeschooling/calendario/[alumnoId]/[token]
+├ ƒ /api/homeschooling/comentarios
+├ ƒ /api/homeschooling/comentarios/[id]
+├ ƒ /api/homeschooling/cursos
+├ ƒ /api/homeschooling/cursos/[id]
+├ ƒ /api/homeschooling/cursos/[id]/duplicar
+├ ƒ /api/homeschooling/cursos/[id]/exportar
+├ ƒ /api/homeschooling/cursos/[id]/lecciones
+├ ƒ /api/homeschooling/dias/[id]
+├ ƒ /api/homeschooling/dias/[id]/hoja
+├ ƒ /api/homeschooling/dias/[id]/nota
+├ ƒ /api/homeschooling/dias/[id]/tarea
+├ ƒ /api/homeschooling/evidencias
+├ ƒ /api/homeschooling/evidencias/[id]
+├ ƒ /api/homeschooling/evidencias/[id]/imagenes
+├ ƒ /api/homeschooling/evidencias/estadisticas
+├ ƒ /api/homeschooling/historias
+├ ƒ /api/homeschooling/historias/[id]
+├ ƒ /api/homeschooling/historias/[id]/mostrar
+├ ƒ /api/homeschooling/historias/[id]/vista
+├ ƒ /api/homeschooling/hoy
+├ ƒ /api/homeschooling/lecciones
+├ ƒ /api/homeschooling/lecciones/[id]
+├ ƒ /api/homeschooling/lecciones/[id]/calificar
+├ ƒ /api/homeschooling/lecciones/[id]/checkpoint
+├ ƒ /api/homeschooling/lecciones/[id]/completar
+├ ƒ /api/homeschooling/lecciones/[id]/preguntas
+├ ƒ /api/homeschooling/lecciones/lote
+├ ƒ /api/homeschooling/lectura
+├ ƒ /api/homeschooling/lectura/[id]
+├ ƒ /api/homeschooling/lectura/[id]/registrar
+├ ƒ /api/homeschooling/lectura/[id]/terminar
+├ ƒ /api/homeschooling/materiales
+├ ƒ /api/homeschooling/materiales/[id]
+├ ƒ /api/homeschooling/materiales/[id]/archivo
+├ ƒ /api/homeschooling/materiales/[id]/hecho
+├ ƒ /api/homeschooling/materiales/[id]/impresiones
+├ ƒ /api/homeschooling/materiales/[id]/imprimir
+├ ƒ /api/homeschooling/materiales/detectar
+├ ƒ /api/homeschooling/materiales/semana
+├ ƒ /api/homeschooling/materias
+├ ƒ /api/homeschooling/materias/[id]
+├ ƒ /api/homeschooling/materias/[id]/biblioteca
+├ ƒ /api/homeschooling/materias/[id]/cursos
+├ ƒ /api/homeschooling/materias/[id]/importar
+├ ƒ /api/homeschooling/memoria
+├ ƒ /api/homeschooling/memoria/[id]
+├ ƒ /api/homeschooling/mensajes
+├ ƒ /api/homeschooling/mensajes/[conId]
+├ ƒ /api/homeschooling/metas
+├ ƒ /api/homeschooling/muro
+├ ƒ /api/homeschooling/muro/[id]
+├ ƒ /api/homeschooling/no-lectivos
+├ ƒ /api/homeschooling/no-lectivos/[id]
+├ ƒ /api/homeschooling/no-lectivos/vista-previa
+├ ƒ /api/homeschooling/notas
+├ ƒ /api/homeschooling/notas/[id]
+├ ƒ /api/homeschooling/notificaciones
+├ ƒ /api/homeschooling/periodos
+├ ƒ /api/homeschooling/periodos/[id]
+├ ƒ /api/homeschooling/periodos/[id]/boletin/[alumnoId]
+├ ƒ /api/homeschooling/planes
+├ ƒ /api/homeschooling/planes/[id]
+├ ƒ /api/homeschooling/planes/vista-previa
+├ ƒ /api/homeschooling/preferencias
+├ ƒ /api/homeschooling/reacciones
+├ ƒ /api/homeschooling/repasos/[id]
+├ ƒ /api/homeschooling/repasos/hoy
+├ ƒ /api/homeschooling/reportes/resumen
+├ ƒ /api/liturgia/dia
+├ ƒ /api/liturgia/hora
+├ ƒ /api/liturgia/indice
+├ ƒ /api/liturgia/kalendarium
+├ ƒ /api/liturgia/libro
+├ ƒ /api/liturgia/martyrologium
+├ ƒ /api/liturgia/mes
+├ ƒ /api/liturgia/missa
+├ ƒ /api/meta-semanal
+├ ƒ /api/premios
+├ ƒ /api/premios/[id]
+├ ƒ /api/premios/calcular
+├ ƒ /api/premios/entregar
+├ ƒ /api/premios/mi-premio
+├ ƒ /api/push/desuscribir
+├ ƒ /api/push/probar
+├ ƒ /api/push/suscribir
+├ ƒ /api/recompensas
+├ ƒ /api/recompensas/[id]
+├ ƒ /api/reposo/config
+├ ƒ /api/reposo/dia
+├ ƒ /api/reposo/fotos
+├ ƒ /api/rules
+├ ƒ /api/rules/get
+├ ƒ /api/rutina
+├ ƒ /api/social/channel-members
+├ ƒ /api/social/channels
+├ ƒ /api/social/channels/[id]
+├ ƒ /api/social/notifications
+├ ƒ /api/social/notifications/[id]/read
+├ ƒ /api/social/notifications/no-leidas
+├ ƒ /api/social/posts
+├ ƒ /api/social/posts/[id]
+├ ƒ /api/social/posts/with-files
+├ ƒ /api/social/reactions
+├ ƒ /api/social/reactions/[postId]
+├ ƒ /api/social/users
+├ ƒ /api/social/users/username/[username]
+├ ƒ /api/tasks
+├ ƒ /api/tasks/[id]
+├ ƒ /api/tasks/[id]/approve
+├ ƒ /api/tasks/[id]/checklist
+├ ƒ /api/tasks/[id]/complete
+├ ƒ /api/tasks/[id]/foto-prueba
+├ ƒ /api/tasks/[id]/not-done
+├ ƒ /api/tasks/[id]/reject
+├ ƒ /api/tasks/[id]/timer
+├ ƒ /api/tasks/bulk
+├ ƒ /api/tienda
+├ ƒ /api/tienda/compartida
+├ ƒ /api/tienda/compartida/[id]
+├ ƒ /api/tienda/comprar
+├ ƒ /api/tienda/compras
+├ ƒ /api/tienda/meta
+├ ƒ /api/upload
+├ ƒ /api/users
+├ ƒ /api/users/foto
+├ ƒ /api/users/history
+├ ƒ /api/users/mood
+├ ƒ /api/users/reset-pin
+├ ƒ /api/users/subir-nivel
+├ ƒ /api/vales
+├ ƒ /dashboard
+├ ƒ /dashboard/admin
+├ ƒ /dashboard/admin/agenda
+├ ƒ /dashboard/admin/aprobaciones
+├ ƒ /dashboard/admin/comportamiento
+├ ƒ /dashboard/admin/conducta
+├ ƒ /dashboard/admin/hijos
+├ ƒ /dashboard/admin/reposo
+├ ƒ /dashboard/admin/tareas
+├ ƒ /dashboard/admin/tienda
+├ ƒ /dashboard/cartas
+├ ƒ /dashboard/cartas/[clave]
+├ ƒ /dashboard/cartas/admin
+├ ƒ /dashboard/companero
+├ ƒ /dashboard/habitos
+├ ƒ /dashboard/homeschooling
+├ ƒ /dashboard/homeschooling/boletin
+├ ƒ /dashboard/homeschooling/dias-sin-clase
+├ ƒ /dashboard/homeschooling/horas
+├ ƒ /dashboard/homeschooling/imprimir/[token]
+├ ƒ /dashboard/homeschooling/imprimir/dia/[token]
+├ ƒ /dashboard/homeschooling/imprimir/quiz/[id]
+├ ƒ /dashboard/homeschooling/lectura
+├ ƒ /dashboard/homeschooling/libreta
+├ ƒ /dashboard/homeschooling/materias
+├ ƒ /dashboard/homeschooling/materias/[id]
+├ ƒ /dashboard/homeschooling/memoria
+├ ƒ /dashboard/homeschooling/memoria/copia/[id]
+├ ƒ /dashboard/homeschooling/memoria/recitar
+├ ƒ /dashboard/homeschooling/mensajes
+├ ƒ /dashboard/homeschooling/muro
+├ ƒ /dashboard/homeschooling/neurodivergencia
+├ ƒ /dashboard/homeschooling/plan
+├ ƒ /dashboard/homeschooling/portafolio
+├ ƒ /dashboard/homeschooling/portafolio/imprimir
+├ ƒ /dashboard/homeschooling/reportes
+├ ƒ /dashboard/homeschooling/revision
+├ ƒ /dashboard/homeschooling/semana
+├ ƒ /dashboard/horarios
+├ ƒ /dashboard/liturgia
+├ ƒ /dashboard/liturgia/breviarium
+├ ƒ /dashboard/liturgia/breviarium/[hora]
+├ ƒ /dashboard/liturgia/calendarium
+├ ƒ /dashboard/liturgia/missale
+├ ƒ /dashboard/liturgia/ordinarium
+├ ƒ /dashboard/liturgia/proprium-de-tempore
+├ ƒ /dashboard/liturgia/proprium-sanctorum
+├ ƒ /dashboard/liturgia/psalterium
+├ ƒ /dashboard/liturgia/rosarium
+├ ƒ /dashboard/liturgia/rosarium/rezar
+├ ƒ /dashboard/liturgia/rosarium/rezar-completo
+├ ƒ /dashboard/mis-premios
+├ ƒ /dashboard/oracion
+├ ƒ /dashboard/perfil
+├ ƒ /dashboard/premios
+├ ƒ /dashboard/rules
+├ ƒ /dashboard/rutina
+├ ƒ /dashboard/tasks/new
+├ ƒ /dashboard/tienda
+├ ƒ /dashboard/users/new
+├ ƒ /dashboard/users/pines
+└ ○ /manifest.webmanifest
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -1,0 +1,9 @@
+OK   el segundo dispositivo recibe la página
+DETALLE ["Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://react.dev/link/setstate-in-render","NotasWorkspace","Router","Router"]
+OK   A tiene los dos textos tras reconectar
+OK   B tiene los dos textos tras reconectar
+aviso: 1 página es demasiado grande para respaldar (más de 900 KB). Sigue guardada en este dispositivo.
+OK   una página de más de 900 KB muestra el aviso «demasiado grande»
+errores: [
+  '[3] Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://react.dev/link/setstate-in-'
+]

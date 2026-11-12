@@ -1,0 +1,5 @@
+TRUNCATE "Usuarios" RESTART IDENTITY CASCADE;
+INSERT INTO "Usuarios" (nombre,"PIN_Secreto","Fecha_Nacimiento","Rol_Familiar","Available_Points") VALUES ('Papá Prueba','$2b$10$bSmpVx9q/7btyzHjj0giKufdyL1VfraK0l2krn1tnWfJCXn93uFuG','1985-03-10','Padre',0);
+INSERT INTO "Usuarios" (nombre,"PIN_Secreto","Fecha_Nacimiento","Rol_Familiar","Available_Points") VALUES ('Mamá Prueba','$2b$10$bSmpVx9q/7btyzHjj0giKufdyL1VfraK0l2krn1tnWfJCXn93uFuG','1987-07-22','Madre',0);
+INSERT INTO "Usuarios" (nombre,"PIN_Secreto","Fecha_Nacimiento","Rol_Familiar","Available_Points") VALUES ('Juan Prueba','$2b$10$bSmpVx9q/7btyzHjj0giKufdyL1VfraK0l2krn1tnWfJCXn93uFuG','2014-05-02','Hijo',500);
+INSERT INTO "Usuarios" (nombre,"PIN_Secreto","Fecha_Nacimiento","Rol_Familiar","Available_Points") VALUES ('Ana Prueba','$2b$10$bSmpVx9q/7btyzHjj0giKufdyL1VfraK0l2krn1tnWfJCXn93uFuG','2016-09-15','Hija',300);

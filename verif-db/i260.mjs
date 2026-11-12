@@ -1,0 +1,17 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ executablePath: "C:/Users/evoxu/AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe" });
+const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+const base = "http://localhost:3160";
+await p.request.post(base + "/api/auth/login", { data: { userId: 3, pinSecreto: "1234" } });
+await p.goto(base + "/dashboard/cartas?tab=coleccion", { waitUntil: "networkidle", timeout: 120000 });
+await p.keyboard.press("Escape"); await p.waitForTimeout(800);
+const txt = (await p.locator("body").innerText()).replace(/\s+/g, " ");
+for (const m of txt.matchAll(/\d+\/\d+ fragmentos · Grado [IV]+|Grado IV glorioso/g)) console.log("colección:", m[0]);
+console.log("barras:", await p.locator('[aria-label^="Progreso hacia el Grado"]').count());
+await p.screenshot({ path: process.argv[2] });
+await p.goto(base + "/dashboard/cartas/santo-tomas-apostol", { waitUntil: "networkidle", timeout: 120000 });
+await p.keyboard.press("Escape"); await p.waitForTimeout(800);
+const det = (await p.locator("body").innerText()).replace(/\s+/g, " ");
+console.log("detalle:", (det.match(/.{0,60}(Faltan|faltan).{0,60}/) || ["(sin «Faltan»)"])[0]);
+await p.screenshot({ path: process.argv[2].replace(".png", "-detalle.png") });
+await b.close();

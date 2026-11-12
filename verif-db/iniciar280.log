@@ -1,0 +1,36 @@
+2026-11-07 21:38:17.842 GMT [21692] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+
+2026-11-07 21:38:17.846 GMT [21692] LOG:  listening on IPv6 address "::1", port 55432
+
+2026-11-07 21:38:17.846 GMT [21692] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+
+2026-11-07 21:38:17.986 GMT [5956] LOG:  database system was interrupted; last known up at 2026-11-07 14:43:38 GMT
+
+2026-11-07 21:38:23.277 GMT [5956] LOG:  database system was not properly shut down; automatic recovery in progress
+
+2026-11-07 21:38:23.289 GMT [5956] LOG:  redo starts at 0/2278B60
+
+2026-11-07 21:38:23.289 GMT [5956] LOG:  invalid record length at 0/2278C68: expected at least 24, got 0
+2026-11-07 21:38:23.289 GMT [5956] LOG:  redo done at 0/2278C30 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+
+2026-11-07 21:38:23.309 GMT [32944] LOG:  checkpoint starting: end-of-recovery immediate wait
+
+2026-11-07 21:38:23.338 GMT [32944] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.005 s, sync=0.011 s, total=0.031 s; sync files=2, longest=0.009 s, average=0.006 s; distance=0 kB, estimate=0 kB; lsn=0/2278C68, redo lsn=0/2278C68
+
+2026-11-07 21:38:23.365 GMT [21692] LOG:  database system is ready to accept connections
+
+LISTA postgresql://postgres:local@localhost:55432/ordo
+2026-11-07 21:43:23.342 GMT [32944] LOG:  checkpoint starting: time
+
+2026-11-07 21:43:29.158 GMT [32944] LOG:  checkpoint complete: wrote 50 buffers (0.3%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=5.494 s, sync=0.301 s, total=5.819 s; sync files=15, longest=0.106 s, average=0.021 s; distance=340 kB, estimate=340 kB; lsn=0/22CE020, redo lsn=0/22CDF78
+
+2026-11-07 21:48:23.165 GMT [32944] LOG:  checkpoint starting: time
+
+2026-11-07 21:48:23.450 GMT [32944] LOG:  checkpoint complete: wrote 2 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.226 s, sync=0.004 s, total=0.286 s; sync files=2, longest=0.003 s, average=0.002 s; distance=1 kB, estimate=306 kB; lsn=0/22CE620, redo lsn=0/22CE5C8
+
+2026-11-07 21:53:23.457 GMT [32944] LOG:  checkpoint starting: time
+
+2026-11-07 21:53:24.988 GMT [32944] LOG:  checkpoint complete: wrote 8 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.171 s, sync=0.137 s, total=1.531 s; sync files=9, longest=0.032 s, average=0.016 s; distance=11 kB, estimate=277 kB; lsn=0/22D1520, redo lsn=0/22D14C8
+
+2026-11-07 21:56:13.572 GMT [9800] WARNING:  there is already a transaction in progress
+
