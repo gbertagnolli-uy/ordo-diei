@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Delete } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -10,23 +10,28 @@ interface NumpadProps {
 
 export function Numpad({ onComplete, title = "Ingresa tu PIN" }: NumpadProps) {
   const [pin, setPin] = useState("");
+  const onCompleteRef = useRef(onComplete);
 
-  const handlePress = (num: string) => {
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  const handlePress = useCallback((num: string) => {
     setPin(prev => {
       if (prev.length >= 4) return prev;
       const newPin = prev + num;
       if (newPin.length === 4) {
-        setTimeout(() => onComplete(newPin), 300);
+        setTimeout(() => onCompleteRef.current(newPin), 300);
       }
       return newPin;
     });
-  };
+  }, []);
 
-  const handleBackspace = () => {
+  const handleBackspace = useCallback(() => {
     setPin(prev => prev.slice(0, -1));
-  };
+  }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key >= '0' && e.key <= '9') {
         handlePress(e.key);
@@ -36,7 +41,7 @@ export function Numpad({ onComplete, title = "Ingresa tu PIN" }: NumpadProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handlePress, handleBackspace]);
 
   const key = "h-14 rounded-full text-xl font-medium";
 

@@ -14,6 +14,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { SelectorNivel } from "@/components/SelectorNivel";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MAX_NOTA_CONDUCTA, NIVEL_CONDUCTA_DEFAULT, NIVELES_CONDUCTA, etiquetaConducta } from "@/lib/conducta/niveles";
 import type { DiaConducta } from "@/lib/conducta/server";
@@ -81,7 +82,13 @@ export function RegistroConducta({ hijos, hoy, recientes: inicial }: { hijos: Hi
     <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_1fr]">
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading text-lg">Conducta del día</CardTitle>
+          <CardTitle className="flex items-center gap-1.5 font-heading text-lg">
+            <span>Conducta del día</span>
+            <AyudaIcono titulo="Efecto de la conducta diaria">
+              <p>Si la nota del día es buena (4 o más), se desbloquea el <strong>cofre diario</strong> a las 18:00.</p>
+              <p>Una calificación muy baja activa <strong>sanción por el día</strong> (sin Tienda ni Cartas, y premios a la mitad).</p>
+            </AyudaIcono>
+          </CardTitle>
           <CardDescription>Elegí al hijo, el día y cómo se portó.</CardDescription>
         </CardHeader>
         <CardContent>

@@ -8,7 +8,7 @@ import { regalarCartaEnTx, type FragmentosOtorgados } from "../cartas/server.ts"
 import { APP_TZ } from "../cartas/eventos.ts";
 import { crearVale } from "../recompensas/vales.ts";
 import { cofreDeHoy } from "./cofreHorario.ts";
-import { desbloquearCofresDePadres } from "../engagement/servidor.ts";
+import { desbloquearCofresDePadres, limpiarCacheLayoutCofres } from "../engagement/servidor.ts";
 import { cofreMerecido, contenidoCofre, elegirRareza, HORA_COFRE } from "./cofre.ts";
 import { haySancion, origenCofreDelDia, rangoDelDia, retirarCofreDeHoy } from "./sancionServer.ts";
 import { hoyDia } from "../conducta/server.ts";
@@ -157,6 +157,7 @@ export async function registrarComportamiento(
     );
     // Si con esto ya están registrados todos los hijos, los cofres de los administradores se desbloquean ya
     await desbloquearCofresDePadres(ahora).catch((e) => console.error("[CofresPadres]", e));
+    limpiarCacheLayoutCofres();
     return;
   }
 
@@ -191,6 +192,7 @@ export async function registrarComportamiento(
     }
   });
   await desbloquearCofresDePadres().catch((e) => console.error("[CofresPadres]", e));
+  limpiarCacheLayoutCofres();
 }
 
 /** Elimina el registro; si el premio sorpresa todavía no se abrió, también desaparece de «Mis premios» */
@@ -202,6 +204,7 @@ export async function eliminarComportamiento(rol: string | undefined, id: number
     if (c.recompensa?.estado === "disponible") await tx.recompensa.delete({ where: { id: c.recompensa.id } });
     await tx.comportamiento.delete({ where: { id } });
   });
+  limpiarCacheLayoutCofres();
 }
 
 export type ResultadoApertura = {

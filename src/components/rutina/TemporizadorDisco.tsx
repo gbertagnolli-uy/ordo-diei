@@ -30,7 +30,6 @@ import {
 import { EtapaRutina, CATEGORIAS_INFO } from "@/lib/rutina/tipos";
 import { formatearSegundos } from "@/lib/rutina/calculadorHorarios";
 import { IconoRutina } from "./IconoRutina";
-import { RelojFlip } from "./RelojFlip";
 import { useThemeStore } from "@/store/themeStore";
 import { TipoSonidoRutina } from "@/lib/rutina/audioRutina";
 
@@ -67,7 +66,6 @@ export function TemporizadorDisco({
   proximaEtapa,
   etapaAnterior = null,
   restanteSeg,
-  totalSeg,
   ratioRestante,
   fase,
   estaPausado = false,
@@ -363,14 +361,11 @@ export function TemporizadorDisco({
         </div>
       </div>
 
-      {/* Modo Enfoque: el reloj Flip manda; el temporizador queda debajo con menor jerarquía */}
-      {esFullscreen && <RelojFlip className="my-2" alto="min(26vh, 21vw)" />}
-
-      {/* Temporizador Circular Central: dentro del disco solo va el tiempo */}
+      {/* Temporizador Circular Central: en Modo Enfoque ocupa más espacio al no tener reloj flip encima */}
       <div
         className="relative my-4 flex items-center justify-center"
         style={{
-          width: esFullscreen ? "min(30vh, 52vw, 340px)" : 280,
+          width: esFullscreen ? "min(42vh, 62vw, 360px)" : 280,
           aspectRatio: "1 / 1",
           containerType: "size",
         }}

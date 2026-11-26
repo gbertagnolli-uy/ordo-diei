@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistModal } from "@/components/dashboard/ChecklistModal";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { cn } from "@/lib/utils";
 import { describirRotacion, normalizarRotacionConfig } from "@/lib/rotacionTarea";
 import { fotoPruebaPendiente, pideFotoPrueba } from "@/lib/tareas/fotoPrueba";
@@ -98,7 +99,13 @@ export function TaskDetailPanel({
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-5 p-4">
           <div>
-            <h2 className="font-heading text-xl leading-snug">{task.titulo}</h2>
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="font-heading text-xl leading-snug">{task.titulo}</h2>
+              <AyudaIcono titulo="¿Cómo funcionan los puntos?">
+                <p>Si tocás <strong>Iniciar tarea</strong> antes de hacerla, ganás el <strong>100%</strong> de los puntos.</p>
+                <p>Si la marcás hecha directo sin cronómetro, ganás el <strong>80%</strong>.</p>
+              </AyudaIcono>
+            </div>
             {task.descripcion && <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{task.descripcion}</p>}
           </div>
 

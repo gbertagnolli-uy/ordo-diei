@@ -17,7 +17,7 @@ export default function EvidenciaCard({ evidencia, mostrarAlumno, onClick }: { e
       <div className="relative aspect-4/3 bg-muted">
         {foto && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={foto} alt={evidencia.title || "Evidencia"} className="size-full object-cover" />
+          <img src={foto} alt={evidencia.title || "Evidencia"} loading="lazy" decoding="async" className="size-full object-cover" />
         )}
         {evidencia.is_featured && (
           <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-xs font-medium text-[var(--on-warning)]">

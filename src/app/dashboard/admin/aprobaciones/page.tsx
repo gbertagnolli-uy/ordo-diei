@@ -35,7 +35,7 @@ export default async function AdminAprobacionesPage() {
       <PageHeader group="Administración" groupHref="/dashboard/admin" title="Aprobaciones" />
       <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col">
         <SolicitudesHabitos inicial={solicitudes} />
-        <ParentReviewPanel tasks={tareasSerialized} />
+        <ParentReviewPanel tasks={tareasSerialized} sinHabitosPendientes={solicitudes.total === 0} />
       </main>
     </div>
   );

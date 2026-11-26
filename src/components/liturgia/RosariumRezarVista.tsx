@@ -419,6 +419,8 @@ function TarjetaMisterioRezo({
             <img
               src={imagenSrc}
               alt={misterio.castellano}
+              loading="lazy"
+              decoding="async"
               className="block size-full object-cover"
             />
           </div>

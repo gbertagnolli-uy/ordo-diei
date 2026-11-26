@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { toast } from "@/lib/toast";
 import { PanelHistoriaAcciones } from "./PanelHistoriaAcciones";
 
@@ -133,7 +134,17 @@ export function PanelAdmin({ pendientes }: { pendientes: PendientesAdmin }) {
     <div className="space-y-8">
       {grupos.map((g) => (
         <section key={g.titulo} className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground">{g.titulo}</h2>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-medium text-muted-foreground">{g.titulo}</h2>
+            {g.titulo === "Hijos y conducta" && (
+              <AyudaIcono titulo="¿Qué herramienta de premios usar?">
+                <p><strong>Registrar conducta:</strong> calificación diaria (habilita el cofre de las 18:00 o sanciones).</p>
+                <p><strong>Regalar premio:</strong> sorpresa o penitencia puntual por algo fuera de la app.</p>
+                <p><strong>Premios familiares:</strong> premios semanales o mensuales automáticos por tareas.</p>
+                <p><strong>Premio grupal:</strong> meta compartida por % de tareas entre fechas.</p>
+              </AyudaIcono>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {g.acciones.map((a) => (
               <Link

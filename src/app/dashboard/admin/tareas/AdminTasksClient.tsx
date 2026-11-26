@@ -1,10 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "moment/locale/es";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import dynamic from "next/dynamic";
 import {
   Table as TableIcon,
   Calendar as CalendarIcon,
@@ -20,11 +17,22 @@ import {
   Gift,
   ArrowUpDown,
   Search,
+  SlidersHorizontal,
   X,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import TaskForm from "@/components/dashboard/TaskForm";
-import "@/components/tasks/mission-calendar.css";
+import { Spinner } from "@/components/ui/spinner";
+
+const AdminTasksCalendar = dynamic(() => import("./AdminTasksCalendar"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[420px] items-center justify-center gap-2 text-sm text-muted-foreground">
+      <Spinner className="size-5 text-primary" />
+      <span>Cargando calendario...</span>
+    </div>
+  ),
+});
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,9 +60,6 @@ import {
   type OrdenTareas,
 } from "./filtrosTareas";
 
-moment.locale("es");
-const localizer = momentLocalizer(moment);
-
 const COLORES_DIFICULTAD = {
   claro: ["#2D6A2E", "#557224", "#7C7A1A", "#A48210", "#B27809", "#A55C06", "#984103", "#8B2500"],
   oscuro: ["#6AAF6A", "#85AD61", "#A0AB59", "#BBA950", "#CB9E4A", "#CE8947", "#D17543", "#D46040"],
@@ -81,6 +86,7 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
   const [recompensaFiltro, setRecompensaFiltro] = useState<FiltroRecompensa>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [orden, setOrden] = useState<OrdenTareas>("vencimiento_asc");
+  const [mostrarMasFiltros, setMostrarMasFiltros] = useState(false);
 
   // Selección múltiple y acciones en masa
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -184,13 +190,16 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
     });
   };
 
+  const filtrosAvanzadosActivos =
+    (dificultadFiltro !== "todas" ? 1 : 0) +
+    (tipoTareaFiltro !== "todas" ? 1 : 0) +
+    (recurrenciaFiltro !== "todas" ? 1 : 0) +
+    (recompensaFiltro !== "todas" ? 1 : 0) +
+    (checklistFiltro !== "todas" ? 1 : 0);
+
   const hayFiltrosActivos =
     personaId !== null ||
-    dificultadFiltro !== "todas" ||
-    checklistFiltro !== "todas" ||
-    recurrenciaFiltro !== "todas" ||
-    tipoTareaFiltro !== "todas" ||
-    recompensaFiltro !== "todas" ||
+    filtrosAvanzadosActivos > 0 ||
     busqueda.trim() !== "";
 
   const limpiarFiltros = () => {
@@ -408,103 +417,127 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
           </div>
 
           {/* Barra de filtros y ordenamiento */}
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar tarea..."
-                aria-label="Buscar tarea"
-                className="pl-8"
-              />
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar tarea..."
+                  aria-label="Buscar tarea"
+                  className="pl-8"
+                />
+              </div>
+
+              <NativeSelect
+                aria-label="Filtrar por persona"
+                value={personaId === null ? "todas" : String(personaId)}
+                onChange={(e) => setPersonaId(e.target.value === "todas" ? null : Number(e.target.value))}
+                className="w-full"
+              >
+                <NativeSelectOption value="todas">Persona: Todas</NativeSelectOption>
+                {users.map((u) => (
+                  <NativeSelectOption key={u.id} value={String(u.id)}>
+                    {u.nombre} ({u.rolFamiliar})
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+
+              <NativeSelect
+                aria-label="Ordenar tareas"
+                value={orden}
+                onChange={(e) => setOrden(e.target.value as OrdenTareas)}
+                className="w-full"
+              >
+                <NativeSelectOption value="vencimiento_asc">Ordenar: Vencimiento (próximas)</NativeSelectOption>
+                <NativeSelectOption value="vencimiento_desc">Ordenar: Vencimiento (lejanas)</NativeSelectOption>
+                <NativeSelectOption value="tiempo_asc">Ordenar: Tiempo (menor a mayor)</NativeSelectOption>
+                <NativeSelectOption value="tiempo_desc">Ordenar: Tiempo (mayor a menor)</NativeSelectOption>
+              </NativeSelect>
+
+              <Button
+                type="button"
+                variant={mostrarMasFiltros || filtrosAvanzadosActivos > 0 ? "secondary" : "outline"}
+                onClick={() => setMostrarMasFiltros((v) => !v)}
+                aria-expanded={mostrarMasFiltros || filtrosAvanzadosActivos > 0}
+                className="w-full justify-between"
+              >
+                <span className="flex items-center gap-1.5">
+                  <SlidersHorizontal className="size-4" />
+                  Más filtros
+                </span>
+                {filtrosAvanzadosActivos > 0 && (
+                  <Badge variant="default" className="h-5 px-1.5 text-[11px] tabular-nums">
+                    {filtrosAvanzadosActivos}
+                  </Badge>
+                )}
+              </Button>
             </div>
 
-            <NativeSelect
-              aria-label="Filtrar por persona"
-              value={personaId === null ? "todas" : String(personaId)}
-              onChange={(e) => setPersonaId(e.target.value === "todas" ? null : Number(e.target.value))}
-              className="w-full"
-            >
-              <NativeSelectOption value="todas">Persona: Todas</NativeSelectOption>
-              {users.map((u) => (
-                <NativeSelectOption key={u.id} value={String(u.id)}>
-                  {u.nombre} ({u.rolFamiliar})
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            {(mostrarMasFiltros || filtrosAvanzadosActivos > 0) && (
+              <div className="grid grid-cols-1 gap-2.5 rounded-lg border bg-muted/30 p-2.5 sm:grid-cols-2 lg:grid-cols-5">
+                <NativeSelect
+                  aria-label="Filtrar por dificultad"
+                  value={dificultadFiltro}
+                  onChange={(e) => setDificultadFiltro(e.target.value as Dificultad | "todas")}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="todas">Dificultad: Todas</NativeSelectOption>
+                  {DIFICULTADES.map((d) => (
+                    <NativeSelectOption key={d} value={d}>
+                      {DIFICULTAD_INFO[d].etiqueta}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
 
-            <NativeSelect
-              aria-label="Filtrar por dificultad"
-              value={dificultadFiltro}
-              onChange={(e) => setDificultadFiltro(e.target.value as Dificultad | "todas")}
-              className="w-full"
-            >
-              <NativeSelectOption value="todas">Dificultad: Todas</NativeSelectOption>
-              {DIFICULTADES.map((d) => (
-                <NativeSelectOption key={d} value={d}>
-                  {DIFICULTAD_INFO[d].etiqueta}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+                <NativeSelect
+                  aria-label="Filtrar por tipo de tarea"
+                  value={tipoTareaFiltro}
+                  onChange={(e) => setTipoTareaFiltro(e.target.value as FiltroTipoTarea)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="todas">Tipo: Todas</NativeSelectOption>
+                  <NativeSelectOption value="rotativa">Rotativas</NativeSelectOption>
+                  <NativeSelectOption value="grupal">Grupales</NativeSelectOption>
+                  <NativeSelectOption value="individual">Individuales</NativeSelectOption>
+                </NativeSelect>
 
-            <NativeSelect
-              aria-label="Filtrar por tipo de tarea"
-              value={tipoTareaFiltro}
-              onChange={(e) => setTipoTareaFiltro(e.target.value as FiltroTipoTarea)}
-              className="w-full"
-            >
-              <NativeSelectOption value="todas">Tipo: Todas</NativeSelectOption>
-              <NativeSelectOption value="rotativa">Rotativas</NativeSelectOption>
-              <NativeSelectOption value="grupal">Grupales</NativeSelectOption>
-              <NativeSelectOption value="individual">Individuales</NativeSelectOption>
-            </NativeSelect>
+                <NativeSelect
+                  aria-label="Filtrar por recurrencia"
+                  value={recurrenciaFiltro}
+                  onChange={(e) => setRecurrenciaFiltro(e.target.value as FiltroRecurrencia)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="todas">Recurrencia: Todas</NativeSelectOption>
+                  <NativeSelectOption value="recurrente">Recurrentes</NativeSelectOption>
+                  <NativeSelectOption value="unica">No recurrentes (Únicas)</NativeSelectOption>
+                </NativeSelect>
 
-            <NativeSelect
-              aria-label="Filtrar por recurrencia"
-              value={recurrenciaFiltro}
-              onChange={(e) => setRecurrenciaFiltro(e.target.value as FiltroRecurrencia)}
-              className="w-full"
-            >
-              <NativeSelectOption value="todas">Recurrencia: Todas</NativeSelectOption>
-              <NativeSelectOption value="recurrente">Recurrentes</NativeSelectOption>
-              <NativeSelectOption value="unica">No recurrentes (Únicas)</NativeSelectOption>
-            </NativeSelect>
+                <NativeSelect
+                  aria-label="Filtrar por recompensa"
+                  value={recompensaFiltro}
+                  onChange={(e) => setRecompensaFiltro(e.target.value as FiltroRecompensa)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="todas">Recompensa: Todas</NativeSelectOption>
+                  <NativeSelectOption value="con_recompensa">Con recompensas</NativeSelectOption>
+                  <NativeSelectOption value="sin_recompensa">Sin recompensas</NativeSelectOption>
+                </NativeSelect>
 
-            <NativeSelect
-              aria-label="Filtrar por recompensa"
-              value={recompensaFiltro}
-              onChange={(e) => setRecompensaFiltro(e.target.value as FiltroRecompensa)}
-              className="w-full"
-            >
-              <NativeSelectOption value="todas">Recompensa: Todas</NativeSelectOption>
-              <NativeSelectOption value="con_recompensa">Con recompensas</NativeSelectOption>
-              <NativeSelectOption value="sin_recompensa">Sin recompensas</NativeSelectOption>
-            </NativeSelect>
-
-            <NativeSelect
-              aria-label="Filtrar por checklist"
-              value={checklistFiltro}
-              onChange={(e) => setChecklistFiltro(e.target.value as FiltroChecklist)}
-              className="w-full"
-            >
-              <NativeSelectOption value="todas">Checklist: Todas</NativeSelectOption>
-              <NativeSelectOption value="con">Con checklist</NativeSelectOption>
-              <NativeSelectOption value="sin">Sin checklist</NativeSelectOption>
-            </NativeSelect>
-
-            <NativeSelect
-              aria-label="Ordenar tareas"
-              value={orden}
-              onChange={(e) => setOrden(e.target.value as OrdenTareas)}
-              className="w-full"
-            >
-              <NativeSelectOption value="vencimiento_asc">Ordenar: Vencimiento (próximas)</NativeSelectOption>
-              <NativeSelectOption value="vencimiento_desc">Ordenar: Vencimiento (lejanas)</NativeSelectOption>
-              <NativeSelectOption value="tiempo_asc">Ordenar: Tiempo (menor a mayor)</NativeSelectOption>
-              <NativeSelectOption value="tiempo_desc">Ordenar: Tiempo (mayor a menor)</NativeSelectOption>
-            </NativeSelect>
+                <NativeSelect
+                  aria-label="Filtrar por checklist"
+                  value={checklistFiltro}
+                  onChange={(e) => setChecklistFiltro(e.target.value as FiltroChecklist)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="todas">Checklist: Todas</NativeSelectOption>
+                  <NativeSelectOption value="con">Con checklist</NativeSelectOption>
+                  <NativeSelectOption value="sin">Sin checklist</NativeSelectOption>
+                </NativeSelect>
+              </div>
+            )}
           </div>
 
           {hayFiltrosActivos && (
@@ -786,55 +819,35 @@ export function AdminTasksClient({ tasks, users }: { tasks: any[]; users: any[] 
           )}
 
           {viewMode === "calendar" && (
-            <div className="mission-calendar h-[650px]">
-              <Calendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                views={["month", "week", "agenda"]}
-                view={calendarView}
-                onView={(cv: any) => setCalendarView(cv)}
-                date={currentDate}
-                onNavigate={(d: any) => setCurrentDate(d)}
-                onSelectEvent={(event) => {
-                  const res = event.resource;
-                  let base = res?.parentTaskId ? tasks.find((t) => t.id === res.parentTaskId) : res;
-                  if (!base) base = res;
-                  if (base.grupoTareaId && !base.asignadoIds) {
-                    const coTasks = tasks.filter((t) => t.grupoTareaId === base.grupoTareaId);
-                    base = {
-                      ...base,
-                      asignadoIds: [...new Set(coTasks.map((t) => t.asignadoId))],
-                      _assignees: coTasks.map((t) => t.asignado).filter(Boolean),
-                    };
-                  } else if (res.asignadosIds && !base.asignadoIds) {
-                    base = {
-                      ...base,
-                      asignadoIds: res.asignadosIds,
-                      _assignees: res.asignados,
-                    };
-                  }
-                  setSelectedTask(base);
-                }}
-                components={{ event: CustomEvent }}
-                eventPropGetter={eventPropGetter}
-                messages={{
-                  allDay: "Todo el día",
-                  previous: "Anterior",
-                  next: "Siguiente",
-                  today: "Hoy",
-                  month: "Mensual",
-                  week: "Semanal",
-                  day: "Diaria",
-                  agenda: "Agenda",
-                  date: "Fecha",
-                  time: "Hora",
-                  event: "Misión",
-                  noEventsInRange: "No hay misiones programadas en esta franja.",
-                }}
-              />
-            </div>
+            <AdminTasksCalendar
+              events={events}
+              calendarView={calendarView}
+              onView={(cv: any) => setCalendarView(cv)}
+              currentDate={currentDate}
+              onNavigate={(d: any) => setCurrentDate(d)}
+              onSelectEvent={(event) => {
+                const res = event.resource;
+                let base = res?.parentTaskId ? tasks.find((t) => t.id === res.parentTaskId) : res;
+                if (!base) base = res;
+                if (base.grupoTareaId && !base.asignadoIds) {
+                  const coTasks = tasks.filter((t) => t.grupoTareaId === base.grupoTareaId);
+                  base = {
+                    ...base,
+                    asignadoIds: [...new Set(coTasks.map((t) => t.asignadoId))],
+                    _assignees: coTasks.map((t) => t.asignado).filter(Boolean),
+                  };
+                } else if (res.asignadosIds && !base.asignadoIds) {
+                  base = {
+                    ...base,
+                    asignadoIds: res.asignadosIds,
+                    _assignees: res.asignados,
+                  };
+                }
+                setSelectedTask(base);
+              }}
+              eventComponent={CustomEvent}
+              eventPropGetter={eventPropGetter}
+            />
           )}
         </CardContent>
 

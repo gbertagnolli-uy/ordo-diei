@@ -13,6 +13,7 @@ import type { EstadoLectura } from "./useLectura";
 import type { VersionLiturgica } from "@/lib/liturgia/tipos";
 import { ColorLiturgicoPunto } from "./ColorLiturgicoPunto";
 import { SelectorVersion } from "./SelectorVersion";
+import { AyudaIcono } from "@/components/AyudaIcono";
 
 type Props = {
   /** Nombre latino de la pantalla («Breviarium») y su castellano debajo. */
@@ -39,7 +40,14 @@ export function CabeceraLiturgica({ titulo, subtitulo, version, onVersion, notaM
     <header className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{titulo}</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{titulo}</h1>
+            <AyudaIcono titulo="Guía rápida de Liturgia">
+              <p><strong>Versiones:</strong> 1906 (San Pío X, recomendada), 1888 (León XIII) o 1570 (San Pío V).</p>
+              <p><strong>Rangos:</strong> I cl / II cl (fiestas mayores), D.M. (Duplex majus), Sd (Semiduplex), F (Feria).</p>
+              <p><strong>Símbolos:</strong> ℣. Versículo · ℟. Respuesta · Ant. Antífona.</p>
+            </AyudaIcono>
+          </div>
           {subtitulo && <p className="text-sm text-muted-foreground">{subtitulo}</p>}
         </div>
         <SelectorVersion version={version} onChange={onVersion} notaMisal={notaMisal} />

@@ -152,6 +152,58 @@ export const contarSorpresasSinAbrir = (usuarioId: number, ahora = Date.now()) =
     },
   });
 
+export type ContadoresRecompensasLayout = {
+  premiosPendientes: number;
+  sorpresas: number;
+  reconocimientos: number;
+};
+
+/** Combina en una sola consulta los tres conteos de premios que usa el chrome de `/dashboard`. */
+export async function contadoresRecompensasLayout(
+  usuarioId: number,
+  rol?: string,
+  ahora = Date.now()
+): Promise<ContadoresRecompensasLayout> {
+  const conCofre = ahora >= cofreDeHoy(ahora);
+  const [grupos, porEntregar] = await Promise.all([
+    prisma.recompensa.groupBy({
+      by: ["tipo"],
+      where: { usuarioId, estado: "disponible" },
+      _count: { _all: true },
+    }),
+    esPadre(rol)
+      ? prisma.recompensa.count({ where: { estado: "reclamado" } })
+      : Promise.resolve(0),
+  ]);
+
+  let porReclamar = 0;
+  let sorpresas = 0;
+  let reconocimientos = 0;
+
+  for (const g of grupos) {
+    const n = g._count._all;
+    if (g.tipo === "cofre") {
+      if (conCofre) {
+        porReclamar += n;
+        sorpresas += n;
+      }
+      continue;
+    }
+    porReclamar += n;
+    if (g.tipo === "comportamiento" || g.tipo === "vale") {
+      sorpresas += n;
+    } else if (g.tipo === "reconocimiento") {
+      reconocimientos += n;
+    }
+  }
+
+  return {
+    premiosPendientes: porReclamar + porEntregar,
+    sorpresas,
+    reconocimientos,
+  };
+}
+
 /** Reconocimientos que el usuario todavía no reclamó (banner «Ganaste un reconocimiento») */
 export const contarReconocimientosSinAbrir = (usuarioId: number) =>
   prisma.recompensa.count({ where: { usuarioId, tipo: "reconocimiento", estado: "disponible" } });

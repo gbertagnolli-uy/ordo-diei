@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, type ReactNode } from "react";
-import HoloCard from "@/components/HoloCard";
+import dynamic from "next/dynamic";
 import { Lock, Sparkles } from "lucide-react";
+
+const HoloCard = dynamic(() => import("@/components/HoloCard"), { ssr: false });
 import { cn } from "@/lib/utils";
 import {
   CONFIG_RAREZAS,
@@ -98,6 +100,7 @@ export function CartaVista({
   ancho = 280,
   className,
   onClick,
+  prioridad = false,
   mostrarTitulo = true,
   blancoYNegro = false,
   reverso,
@@ -132,6 +135,8 @@ export function CartaVista({
         <img
           src={urlArte(carta.imagenUrl)}
           alt=""
+          loading={prioridad ? "eager" : "lazy"}
+          decoding="async"
           className="size-full object-cover grayscale"
           draggable={false}
         />
@@ -272,6 +277,8 @@ export function CartaVista({
       <img
         src={imagenActual}
         alt={carta.nombre}
+        loading={prioridad ? "eager" : "lazy"}
+        decoding="async"
         className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100"
         draggable={false}
       />

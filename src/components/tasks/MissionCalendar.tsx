@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Calendar, momentLocalizer, View } from "react-big-calendar";
-import moment from "moment";
-import "moment/locale/es";
+import { Calendar, dateFnsLocalizer, View } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+import { es } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./mission-calendar.css";
 import { Repeat, X } from "lucide-react";
@@ -17,8 +17,13 @@ import {
   type RecompensaFiltro,
 } from "@/lib/proyeccionCalendario";
 
-moment.locale("es");
-const localizer = momentLocalizer(moment);
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: (d: Date) => startOfWeek(d, { weekStartsOn: 1 }),
+  getDay,
+  locales: { es },
+});
 
 export function MissionCalendar({
   tasks,

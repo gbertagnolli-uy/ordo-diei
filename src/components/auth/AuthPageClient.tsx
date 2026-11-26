@@ -5,6 +5,7 @@ import { UserSelector, User } from "@/components/auth/UserSelector";
 import { Numpad } from "@/components/auth/Numpad";
 import { FirstSetupForm } from "@/components/auth/FirstSetupForm";
 import { ReposoPantalla } from "@/components/reposo/ReposoPantalla";
+import { SistemaAyudaPantalla } from "@/components/ayuda/SistemaAyudaPantalla";
 import { useAuthStore } from "@/store/authStore";
 import { useModalStore } from "@/store/modalStore";
 import { useInactividad } from "@/hooks/useInactividad";
@@ -23,6 +24,7 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
   const [modo, setModo] = useState<ModoAuth>(initialUsers.length === 0 ? "SELECTOR" : "REPOSO");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [errorPin, setErrorPin] = useState(false);
+  const [intentosPin, setIntentosPin] = useState(0);
   const [segundosLogin, setSegundosLogin] = useState(15);
 
   const login = useAuthStore((s) => s.login);
@@ -84,10 +86,12 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
         }
       } else {
         setErrorPin(true);
+        setIntentosPin((n) => n + 1);
         setTimeout(() => setErrorPin(false), 1000);
       }
     } catch {
       setErrorPin(true);
+      setIntentosPin((n) => n + 1);
       setTimeout(() => setErrorPin(false), 1000);
     }
   };
@@ -107,6 +111,7 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
   // 2. Estado SELECTOR o PIN (Auth clásico)
   return (
     <div className="relative z-10 flex w-full max-w-4xl flex-col items-center px-4 py-12">
+      <SistemaAyudaPantalla usuarioId={null} rolFamiliar={null} variante="flotante-publica" />
       <AnimatePresence mode="wait">
         {modo === "SELECTOR" ? (
           <motion.div
@@ -163,7 +168,7 @@ export function AuthPageClient({ initialUsers }: { initialUsers: User[] }) {
               </div>
 
               <div className={errorPin ? "animate-shake" : ""}>
-                <Numpad onComplete={handlePinComplete} />
+                <Numpad key={`${selectedUser?.id ?? 0}-${intentosPin}`} onComplete={handlePinComplete} />
               </div>
 
               <p role="alert" className={cn("h-5 text-sm font-medium text-destructive", !errorPin && "invisible")}>

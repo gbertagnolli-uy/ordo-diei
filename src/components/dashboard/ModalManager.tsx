@@ -4,11 +4,22 @@ import { useModalStore } from "@/store/modalStore";
 import { Modal } from "@/components/ui/Modal";
 import { CheckCircle2, Flame, Gift, Save, Sparkles, Star } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
+import dynamic from "next/dynamic";
 import { useAuthStore } from "@/store/authStore";
-import { PerfilResumen } from "@/components/perfil/PerfilResumen";
-import { HistoryModal } from "./HistoryModal";
-import { LeaderboardModal } from "./LeaderboardModal";
 import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
+
+const PerfilResumen = dynamic(
+  () => import("@/components/perfil/PerfilResumen").then((m) => m.PerfilResumen),
+  { ssr: false }
+);
+const HistoryModal = dynamic(
+  () => import("./HistoryModal").then((m) => m.HistoryModal),
+  { ssr: false }
+);
+const LeaderboardModal = dynamic(
+  () => import("./LeaderboardModal").then((m) => m.LeaderboardModal),
+  { ssr: false }
+);
 import { MoodSelector } from "./MoodSelector";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

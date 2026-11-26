@@ -21,7 +21,9 @@ const TONO = { bien: "text-success", medio: "text-warning", bajo: "text-destruct
 
 export default function BoletinVista({ boletin, periodos, alumnos, anio }: { boletin: Boletin | null; periodos: Periodo[]; alumnos: { id: number; nombre: string }[]; anio: number }) {
   const router = useRouter();
-  const [comentario, setComentario] = useState(boletin?.comentario ?? "");
+  const claveBoletin = `${boletin?.alumno.id ?? ""}:${boletin?.periodo.id ?? ""}:${boletin?.comentario ?? ""}`;
+  const [borrador, setBorrador] = useState<{ clave: string; texto: string } | null>(null);
+  const comentario = borrador?.clave === claveBoletin ? borrador.texto : (boletin?.comentario ?? "");
   const base = "/dashboard/homeschooling/boletin";
 
   const guardar = async () => {
@@ -141,7 +143,7 @@ export default function BoletinVista({ boletin, periodos, alumnos, anio }: { bol
 
           <section aria-label="Comentario" className="sin-corte space-y-1.5">
             <h2 className="text-lg font-bold">Comentario de papá y mamá</h2>
-            <Textarea value={comentario} onChange={(e) => setComentario(e.target.value)} onBlur={guardar} rows={4} maxLength={2000} placeholder="Lo que notamos este período…" className="print:hidden" />
+            <Textarea key={claveBoletin} value={comentario} onChange={(e) => setBorrador({ clave: claveBoletin, texto: e.target.value })} onBlur={guardar} rows={4} maxLength={2000} placeholder="Lo que notamos este período…" className="print:hidden" />
             <p className="hidden min-h-24 whitespace-pre-wrap text-sm print:block">{comentario}</p>
           </section>
 
