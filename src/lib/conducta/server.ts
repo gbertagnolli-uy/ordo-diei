@@ -1,6 +1,6 @@
 // Conducta diaria (vault/LANE_205_CONDUCTA_DIARIA.md): los padres marcan un nivel por hijo y por día;
 // el hijo y los padres lo ven en el perfil y en el resumen de los hijos.
-import { desbloquearCofresDePadres } from "../engagement/servidor.ts";
+import { desbloquearCofresDePadres, limpiarCacheLayoutCofres } from "../engagement/servidor.ts";
 import { HORA_COFRE } from "../comportamiento/cofre.ts";
 import { horaEnFamilia, otorgarCofreDelDia } from "../comportamiento/server.ts";
 import { avisoCofre } from "../push/avisos.ts";
@@ -62,6 +62,7 @@ export async function registrarConducta(
       await enviarAviso(usuarioId, avisoCofre(), { ahora }).catch((e) => console.error("[PushCofre]", e));
     }
     await desbloquearCofresDePadres(ahora).catch((e) => console.error("[CofresPadres]", e));
+    limpiarCacheLayoutCofres();
   }
   return { fecha: dia, nivel: fila.nivel, nota: fila.nota };
 }

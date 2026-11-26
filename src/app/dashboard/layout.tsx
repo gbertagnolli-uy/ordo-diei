@@ -10,11 +10,10 @@ import { NoticeBar } from "@/components/dashboard/NoticeBar";
 import { ActualizarPremios } from "@/components/dashboard/ActualizarPremios";
 import { PremioBanner } from "@/components/dashboard/PremioBanner";
 import { getEstadoHabitos } from "@/lib/habitos/server";
-import { contarReconocimientosSinAbrir, contarRecompensasPendientes, contarSorpresasSinAbrir } from "@/lib/recompensas/server";
+import { contadoresRecompensasLayout } from "@/lib/recompensas/server";
 import { contarComprasCompartidasPendientes } from "@/lib/tienda/server";
-import { otorgarCofreDelDia } from "@/lib/comportamiento/server";
 import { eventosDeHoy } from "@/lib/cartas/server";
-import { enriquecerConRachaYRanking, parteDeHoy, registrarIngreso } from "@/lib/engagement/servidor";
+import { enriquecerConRachaYRanking, evaluarIngresoYCofresLayout } from "@/lib/engagement/servidor";
 import { bienvenidaDiariaDe, companeroDe } from "@/lib/engagement/companeroServidor";
 import { CompaneroFlotante } from "@/components/engagement/CompaneroFlotante";
 import { poseFlotante, type EventoApp } from "@/lib/engagement/companeroEscena";
@@ -30,18 +29,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getSession();
   if (!session?.user) redirect("/");
 
-  // Desde las 18:00 el cofre del día llega al entrar (si los padres evaluaron bien el día)
-  // y se anota el ingreso del día para la racha en la app (lane 201 + lane 243: +5 XP y +5 puntos)
-  await Promise.all([
-    otorgarCofreDelDia(Number(session.user.id)).catch((e) => console.error("[Cofre]", e)),
-    registrarIngreso(Number(session.user.id)).catch((e) => console.error("[Ingreso]", e)),
-  ]);
-  // Los padres: se premian las misiones de «Tu parte de hoy» (y llega el cofre) donde sea que estén,
-  // no solo al abrir el panel de administración
-  await parteDeHoy({ id: Number(session.user.id), rol: session.user.rolFamiliar }).catch((e) => console.error("[ParteDeHoy]", e));
+  const usuarioId = Number(session.user.id);
+  // Ingreso diario + evaluación acotada de cofres y «Tu parte de hoy» (sin recalcular cada navegación en <45s)
+  await evaluarIngresoYCofresLayout({ id: usuarioId, rol: session.user.rolFamiliar });
 
   // Sin PIN_Secreto: estos datos viajan al cliente (ranking, dock, menú de usuario)
-  const [usersRaw, myTasks, estadoUsuario, premiosPendientes, eventosCartas, sorpresas, reconocimientos, tiendaCompartidasPendientes, bienvenidaHoy, fichaCompanero] = await Promise.all([
+  const [usersRaw, myTasks, estadoUsuario, recompensasLayout, eventosCartas, tiendaCompartidasPendientes, bienvenidaHoy, fichaCompanero, prefAlumno] = await Promise.all([
     prisma.usuario.findMany({ omit: { pinSecretoHash: true } }),
     // Solo lo necesario para los contadores de la barra lateral
     prisma.tarea.findMany({
@@ -60,25 +53,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
         fotoPruebaUrl: true,
       },
     }),
-    getEstadoHabitos(Number(session.user.id)),
-    contarRecompensasPendientes(Number(session.user.id), session.user.rolFamiliar),
-    eventosDeHoy(Number(session.user.id)).catch(() => null),
-    contarSorpresasSinAbrir(Number(session.user.id)),
-    contarReconocimientosSinAbrir(Number(session.user.id)),
-    contarComprasCompartidasPendientes(Number(session.user.id)).catch(() => 0),
-    bienvenidaDiariaDe(Number(session.user.id)).catch((e) => {
+    getEstadoHabitos(usuarioId),
+    contadoresRecompensasLayout(usuarioId, session.user.rolFamiliar),
+    eventosDeHoy(usuarioId).catch(() => null),
+    contarComprasCompartidasPendientes(usuarioId).catch(() => 0),
+    bienvenidaDiariaDe(usuarioId).catch((e) => {
       console.error("[Bienvenida]", e);
       return null;
     }),
     // El compañero flotante (lane 247) aparece en todas las pantallas de /dashboard
-    companeroDe(Number(session.user.id)).catch((e) => {
+    companeroDe(usuarioId).catch((e) => {
       console.error("[Companero]", e);
       return null;
     }),
+    prisma.preferenciaAlumno.findUnique({ where: { alumnoId: usuarioId }, select: { modoRelajado: true } }).catch(() => null),
   ]);
+  const { premiosPendientes, sorpresas, reconocimientos } = recompensasLayout;
   const users = await enriquecerConRachaYRanking(usersRaw);
   const hayEventosCartas = !!eventosCartas?.hayPendientes;
-  const modoRelajado = !!(await prisma.preferenciaAlumno.findUnique({ where: { alumnoId: Number(session.user.id) }, select: { modoRelajado: true } }).catch(() => null))?.modoRelajado;
+  const modoRelajado = !!prefAlumno?.modoRelajado;
   const habitosPendientes = estadoUsuario.habitos.filter((h) => h.programadoHoy && !h.hoy).length;
   const currentUser = users.find((u) => u.id === session.user.id) ?? session.user;
   // El compañero llama la atención hasta que se lo elige y cada vez que sube de nivel
@@ -130,10 +123,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <PremioBanner cantidad={sorpresas} reconocimientos={reconocimientos} />
         <NoticeBar />
         {/* Barra superior (botón de colapsar + migas) y padding para todas las pantallas (lane 280) */}
-        <MarcoDashboard>{children}</MarcoDashboard>
+        <MarcoDashboard usuarioId={usuarioId} rolFamiliar={session.user.rolFamiliar}>{children}</MarcoDashboard>
       </SidebarInset>
       <ModoRelajado activo={modoRelajado} />
-      <ActualizarPremios />
+      <ActualizarPremios inicial={{ premiosPendientes, sorpresas, reconocimientos, tiendaCompartidasPendientes }} />
       <ModalManager bienvenidaHoy={bienvenidaHoy} />
       <CronometroTarea tarea={tareaEnCurso} />
       {fichaCompanero && personajeCompanero && (

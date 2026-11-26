@@ -44,7 +44,9 @@ export function UserSelector({ users, onSelect }: Props) {
               </span>
             )}
           </div>
-          <span className="sr-only">{user.nombre}</span>
+          <span className="mt-2 max-w-28 truncate text-sm font-medium text-foreground/90 group-hover:text-primary">
+            {user.nombre}
+          </span>
         </button>
       ))}
     </div>

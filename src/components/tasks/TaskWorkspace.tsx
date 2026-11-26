@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, Columns3, List, PanelRight, Printer } from "lucide-react";
@@ -13,14 +14,24 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { HistoryView } from "@/components/dashboard/HistoryView";
-import { FamilyTree } from "@/components/dashboard/FamilyTree";
+import { Spinner } from "@/components/ui/spinner";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { SchedulePanel } from "./SchedulePanel";
 import { TaskBoard } from "./TaskBoard";
 import { TaskTable } from "./TaskTable";
-import { MissionCalendar } from "./MissionCalendar";
 import { CoResponsableMap, isActionable, isDueToday, isLate, sortTasks, taskGroup } from "./taskUtils";
+
+const MissionCalendar = dynamic(() => import("./MissionCalendar").then((m) => m.MissionCalendar), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[420px] items-center justify-center gap-2 text-sm text-muted-foreground">
+      <Spinner className="size-5 text-primary" />
+      <span>Cargando calendario...</span>
+    </div>
+  ),
+});
+const HistoryView = dynamic(() => import("@/components/dashboard/HistoryView").then((m) => m.HistoryView), { ssr: false });
+const FamilyTree = dynamic(() => import("@/components/dashboard/FamilyTree").then((m) => m.FamilyTree), { ssr: false });
 
 type Filter = "all" | "points" | "checklist";
 type Layout = "list" | "board" | "calendar";

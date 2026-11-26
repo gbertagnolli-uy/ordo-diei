@@ -35,7 +35,8 @@ interface PropriumSanctorumVistaProps {
  */
 export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProps) {
   const { version, setVersion } = useParametrosLiturgia("proprium-sanctorum");
-  const [mesActivo, setMesActivo] = useState<string>("10"); // Octubre por defecto o actual
+  const anioActual = new Date().getFullYear();
+  const [mesActivo, setMesActivo] = useState<string>(() => String(new Date().getMonth() + 1).padStart(2, "0"));
   const [busqueda, setBusqueda] = useState<string>("");
   const [santoSeleccionado, setSantoSeleccionado] = useState<EntradaKalendarium | null>(null);
   const [tabDetalle, setTabDetalle] = useState<"missa" | "officium">("missa");
@@ -94,9 +95,9 @@ export function PropriumSanctorumVista({ className }: PropriumSanctorumVistaProp
             </Button>
 
             <Button asChild variant="outline" size="sm" className="text-xs gap-1.5">
-              <Link href={`/dashboard/liturgia/calendarium?fecha=2026-${santoSeleccionado.fecha}&version=${version}`}>
+              <Link href={`/dashboard/liturgia/calendarium?fecha=${anioActual}-${santoSeleccionado.fecha}&version=${version}`}>
                 <Calendar className="size-3.5" />
-                <span>Ver en Calendarium 2026</span>
+                <span>Ver en Calendarium {anioActual}</span>
               </Link>
             </Button>
           </div>

@@ -41,6 +41,49 @@ export {
 type Cliente = Prisma.TransactionClient | typeof prisma;
 
 const DIAS_HISTORIAL = 400;
+const MAX_CACHE_ENGAGEMENT = 500;
+const TTL_LAYOUT_COFRES_MS = 45_000;
+
+type CacheEngagementGlobal = {
+  ingresosHoy: Set<string>;
+  bienvenidaVistaHoy: Set<string>;
+  layoutEvaluado: Map<string, number>;
+};
+
+const gEngagement = globalThis as unknown as { __ordoEngagementCache?: CacheEngagementGlobal };
+const cacheEngagement: CacheEngagementGlobal = (gEngagement.__ordoEngagementCache ??= {
+  ingresosHoy: new Set(),
+  bienvenidaVistaHoy: new Set(),
+  layoutEvaluado: new Map(),
+});
+
+function agregarAcotado(set: Set<string>, clave: string) {
+  if (set.has(clave)) return;
+  if (set.size >= MAX_CACHE_ENGAGEMENT) {
+    const primera = set.values().next().value;
+    if (primera !== undefined) set.delete(primera);
+  }
+  set.add(clave);
+}
+
+function guardarTtlAcotado(map: Map<string, number>, clave: string, expiraEn: number) {
+  if (!map.has(clave) && map.size >= MAX_CACHE_ENGAGEMENT) {
+    const primera = map.keys().next().value;
+    if (primera !== undefined) map.delete(primera);
+  }
+  map.set(clave, expiraEn);
+}
+
+export function limpiarCacheLayoutCofres() {
+  cacheEngagement.layoutEvaluado.clear();
+}
+
+export function limpiarCacheEngagement() {
+  cacheEngagement.ingresosHoy.clear();
+  cacheEngagement.bienvenidaVistaHoy.clear();
+  cacheEngagement.layoutEvaluado.clear();
+}
+
 const diaDeFamilia = (ahora: Date) => format(ahora, "yyyy-MM-dd", { in: tz(APP_TZ) });
 
 /** Días en que la persona entró, hasta `hoy` inclusive (ya en la zona de la familia) */
@@ -179,9 +222,15 @@ async function otorgarHitos(cliente: Cliente, usuarioId: number, racha: RachaApp
  */
 export async function registrarIngreso(usuarioId: number, ahora: Date = new Date()): Promise<{ nuevo: boolean; hitos: Hito[] }> {
   const hoy = diaDeFamilia(ahora);
+  const claveCache = `${usuarioId}:${hoy}`;
+  if (cacheEngagement.ingresosHoy.has(claveCache)) return { nuevo: false, hitos: [] };
+
   const fecha = aFecha(hoy);
   const ya = await prisma.actividadDia.findUnique({ where: { usuarioId_fecha: { usuarioId, fecha } }, select: { id: true } });
-  if (ya) return { nuevo: false, hitos: [] };
+  if (ya) {
+    agregarAcotado(cacheEngagement.ingresosHoy, claveCache);
+    return { nuevo: false, hitos: [] };
+  }
   try {
     await prisma.$transaction([
       prisma.actividadDia.create({ data: { usuarioId, fecha } }),
@@ -193,9 +242,13 @@ export async function registrarIngreso(usuarioId: number, ahora: Date = new Date
         },
       }),
     ]);
+    agregarAcotado(cacheEngagement.ingresosHoy, claveCache);
   } catch (e) {
     // Dos pestañas a la vez: la otra ya lo anotó
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { nuevo: false, hitos: [] };
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      agregarAcotado(cacheEngagement.ingresosHoy, claveCache);
+      return { nuevo: false, hitos: [] };
+    }
     throw e;
   }
   const racha = calcularRachaApp(await fechasDeIngreso(prisma, usuarioId, hoy), hoy);
@@ -221,18 +274,45 @@ export async function marcarBienvenidaVista(usuarioId: number, ahora: Date = new
       });
     }
   });
+  agregarAcotado(cacheEngagement.bienvenidaVistaHoy, `${usuarioId}:${hoy}`);
 }
 
 /** ¿Sigue pendiente mostrar el modal de bienvenida del ingreso de hoy? */
 export async function bienvenidaPendienteHoy(usuarioId: number, ahora: Date = new Date()): Promise<boolean> {
   const hoy = diaDeFamilia(ahora);
+  const claveCache = `${usuarioId}:${hoy}`;
+  if (cacheEngagement.bienvenidaVistaHoy.has(claveCache)) return false;
+
   const fecha = aFecha(hoy);
   const fila = await prisma.actividadDia.findUnique({
     where: { usuarioId_fecha: { usuarioId, fecha } },
     select: { misiones: true },
   });
   if (!fila) return true;
-  return !leerClaves(fila.misiones).includes(CLAVE_BIENVENIDA_VISTA);
+  if (leerClaves(fila.misiones).includes(CLAVE_BIENVENIDA_VISTA)) {
+    agregarAcotado(cacheEngagement.bienvenidaVistaHoy, claveCache);
+    return false;
+  }
+  return true;
+}
+
+/** Evalúa ingreso diario siempre y acota el recálculo de cofres/«Tu parte de hoy» en el layout a cada 45s. */
+export async function evaluarIngresoYCofresLayout(
+  usuario: { id: number; rol?: string },
+  ahora: Date = new Date()
+): Promise<void> {
+  await registrarIngreso(usuario.id, ahora).catch((e) => console.error("[Ingreso]", e));
+  const hoy = diaDeFamilia(ahora);
+  const clave = `${usuario.id}:${hoy}`;
+  const ahoraMs = ahora.getTime();
+  const expira = cacheEngagement.layoutEvaluado.get(clave);
+  if (expira && expira > ahoraMs) return;
+
+  await Promise.all([
+    otorgarCofreDelDia(usuario.id, ahora).catch((e) => console.error("[Cofre]", e)),
+    parteDeHoy({ id: usuario.id, rol: usuario.rol }, ahora).catch((e) => console.error("[ParteDeHoy]", e)),
+  ]);
+  guardarTtlAcotado(cacheEngagement.layoutEvaluado, clave, ahoraMs + TTL_LAYOUT_COFRES_MS);
 }
 
 // ─────────────────────────────── «Tu parte de hoy» (padres) ───────────────────────────────

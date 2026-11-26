@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/session";
 import { enriquecerConRachaYRanking } from "@/lib/engagement/servidor";
 import { proyectarEventosCalendario } from "@/lib/proyeccionCalendario";
 import { AgendaDashboardClient, AgendaTaskItem, AgendaUser } from "@/components/agenda/AgendaDashboardClient";
@@ -6,6 +7,7 @@ import { AgendaDashboardClient, AgendaTaskItem, AgendaUser } from "@/components/
 export const dynamic = "force-dynamic";
 
 export default async function AgendaPage() {
+  const session = await getSession();
   let users: AgendaUser[] = [];
   let tasks: any[] = [];
 
@@ -72,6 +74,9 @@ export default async function AgendaPage() {
       initialUsers={users}
       tasks={taskItems}
       fechaTexto={fechaTexto}
+      sesionActiva={!!session?.user}
+      usuarioId={session?.user ? Number(session.user.id) : null}
+      rolFamiliar={session?.user?.rolFamiliar ?? null}
     />
   );
 }

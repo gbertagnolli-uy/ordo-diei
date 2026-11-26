@@ -3,51 +3,52 @@
 // Lane 288: calendario con portada/ánimo/etiqueta, filtro por etiqueta, selector de mes, vista del año y todo el mes cuando no hay un día elegido.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { BarChart3, CalendarHeart, Download, FileText, History, Images, MapPin, MapPinned, PenLine, Route, Search, Smile, Sparkles, Tags, Upload, Waypoints } from "lucide-react";
+import Link from "next/link";
+import { BarChart3, BookHeart, CalendarHeart, Download, FileText, History, Images, Lock, MapPin, MapPinned, PenLine, Route, Search, Smile, Sparkles, Tags, Upload, Users, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPCIONES_CALENDARIO, elegirDia, esOpcionesCalendario, filtrarPorEtiqueta, resumenDeDias } from "@/lib/diario/calendario";
 import { OPCIONES_RECUERDOS, esOpcionesRecuerdos } from "@/lib/diario/recuerdos";
 import { resumenMes, type Marcas, type TipoDiario } from "@/lib/diario/reglas";
 import type { EntradaVista } from "@/lib/diario/servidor";
 import { toast } from "@/lib/toast";
-import { BuscadorDiario } from "./BuscadorDiario";
 import { CalendarioAnimo } from "./CalendarioAnimo";
 import { FiltroEtiquetasCalendario } from "./calendario/FiltroEtiquetasCalendario";
-import { OpcionesDelCalendario } from "./calendario/OpcionesDelCalendario";
-import { SelectorMesDiario } from "./calendario/SelectorMesDiario";
-import { VistaAnual } from "./calendario/VistaAnual";
-import { EditarEscalaAnimo } from "./EditarEscalaAnimo";
-import { EditorEntrada } from "./EditorEntrada";
 import { ProveedorEscala, useEscalaAnimo } from "./EscalaAnimo";
 import { ProveedorEnlaces, ProveedorGrafo } from "./enlaces/ContextoEnlaces";
-import { GrafoEnlaces } from "./grafo/GrafoEnlaces";
-import { GrafoLocal } from "./grafo/GrafoLocal";
-import { LineaDeTiempo } from "./linea/LineaDeTiempo";
-import { ExportarDiario } from "./exportar/ExportarDiario";
-import { ImportarDiario } from "./importar/ImportarDiario";
-import { CompartirEntrada } from "./compartir/CompartirEntrada";
-import { GaleriaDiario } from "./galeria/GaleriaDiario";
-import { EnEsteDiaDialog } from "./recuerdos/EnEsteDiaDialog";
-import { OpcionesDeRecuerdos } from "./recuerdos/OpcionesRecuerdos";
 import { SeccionRecuerdos } from "./recuerdos/SeccionRecuerdos";
 import { useRecuerdos } from "./recuerdos/useRecuerdos";
-import { AdministrarDiario } from "./etiquetas/AdministrarDiario";
-import { PanelEstadisticas } from "./estadisticas/PanelEstadisticas";
 import { usePreferencia } from "./estadisticas/controles";
 import { useCatalogo } from "./etiquetas/useCatalogo";
 import { ListaDia } from "./ListaDia";
-import { AdministrarLugares } from "./lugares/AdministrarLugares";
 import { ProveedorLugares } from "./lugares/ContextoLugares";
-import { MapaHuellas } from "./mapa/MapaHuellas";
 import { useLugares } from "./lugares/useLugares";
-
-// Lane 298: el asistente (con su motor de Markdown) se baja recién cuando se abre
-const AsistenteDiario = dynamic(() => import("./asistente/AsistenteDiario").then((m) => m.AsistenteDiario), { ssr: false });
 import { cambiarMarcasRemoto } from "./MarcasEntrada";
-import { AdministrarPlantillas } from "./plantillas/AdministrarPlantillas";
 import { usePlantillas } from "./plantillas/usePlantillas";
 import { ResumenMes } from "./ResumenMes";
 import { SeccionFijadas } from "./SeccionFijadas";
+
+// Paneles y editores pesados bajo demanda (reduce drásticamente el JS inicial de /dashboard/diario)
+const AsistenteDiario = dynamic(() => import("./asistente/AsistenteDiario").then((m) => m.AsistenteDiario), { ssr: false });
+const BuscadorDiario = dynamic(() => import("./BuscadorDiario").then((m) => m.BuscadorDiario), { ssr: false });
+const OpcionesDelCalendario = dynamic(() => import("./calendario/OpcionesDelCalendario").then((m) => m.OpcionesDelCalendario), { ssr: false });
+const SelectorMesDiario = dynamic(() => import("./calendario/SelectorMesDiario").then((m) => m.SelectorMesDiario), { ssr: false });
+const VistaAnual = dynamic(() => import("./calendario/VistaAnual").then((m) => m.VistaAnual), { ssr: false });
+const EditarEscalaAnimo = dynamic(() => import("./EditarEscalaAnimo").then((m) => m.EditarEscalaAnimo), { ssr: false });
+const EditorEntrada = dynamic(() => import("./EditorEntrada").then((m) => m.EditorEntrada), { ssr: false });
+const GrafoEnlaces = dynamic(() => import("./grafo/GrafoEnlaces").then((m) => m.GrafoEnlaces), { ssr: false });
+const GrafoLocal = dynamic(() => import("./grafo/GrafoLocal").then((m) => m.GrafoLocal), { ssr: false });
+const LineaDeTiempo = dynamic(() => import("./linea/LineaDeTiempo").then((m) => m.LineaDeTiempo), { ssr: false });
+const ExportarDiario = dynamic(() => import("./exportar/ExportarDiario").then((m) => m.ExportarDiario), { ssr: false });
+const ImportarDiario = dynamic(() => import("./importar/ImportarDiario").then((m) => m.ImportarDiario), { ssr: false });
+const CompartirEntrada = dynamic(() => import("./compartir/CompartirEntrada").then((m) => m.CompartirEntrada), { ssr: false });
+const GaleriaDiario = dynamic(() => import("./galeria/GaleriaDiario").then((m) => m.GaleriaDiario), { ssr: false });
+const EnEsteDiaDialog = dynamic(() => import("./recuerdos/EnEsteDiaDialog").then((m) => m.EnEsteDiaDialog), { ssr: false });
+const OpcionesDeRecuerdos = dynamic(() => import("./recuerdos/OpcionesRecuerdos").then((m) => m.OpcionesDeRecuerdos), { ssr: false });
+const AdministrarDiario = dynamic(() => import("./etiquetas/AdministrarDiario").then((m) => m.AdministrarDiario), { ssr: false });
+const PanelEstadisticas = dynamic(() => import("./estadisticas/PanelEstadisticas").then((m) => m.PanelEstadisticas), { ssr: false });
+const AdministrarLugares = dynamic(() => import("./lugares/AdministrarLugares").then((m) => m.AdministrarLugares), { ssr: false });
+const MapaHuellas = dynamic(() => import("./mapa/MapaHuellas").then((m) => m.MapaHuellas), { ssr: false });
+const AdministrarPlantillas = dynamic(() => import("./plantillas/AdministrarPlantillas").then((m) => m.AdministrarPlantillas), { ssr: false });
 
 /** `esPadre`: en el diario familiar, la escala de ánimo y la plantilla predeterminada las cambia un padre. */
 export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiario; hoy: string; usuarioId: number; esPadre: boolean }) {
@@ -174,6 +175,32 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
     <ProveedorEnlaces value={(id) => void abrirEntrada(id)}>
     <ProveedorGrafo value={(id) => setGrafo({ modo: "local", id, desdeGeneral: false })}>
     <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
+      <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/70 px-3 py-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button asChild size="sm" variant={tipo === "personal" ? "default" : "ghost"} className="h-8 gap-1.5 text-xs">
+            <Link href="/dashboard/diario">
+              <BookHeart className="size-3.5" /> Mi diario
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant={tipo === "familiar" ? "default" : "ghost"} className="h-8 gap-1.5 text-xs">
+            <Link href="/dashboard/diario/familia">
+              <Users className="size-3.5" /> Diario familiar
+            </Link>
+          </Button>
+          <span className="hidden items-center gap-1 pl-1 text-xs text-muted-foreground sm:inline-flex">
+            {tipo === "personal" ? (
+              <>
+                <Lock className="size-3" /> Privado: solo vos podés leerlo
+              </>
+            ) : (
+              "Compartido: visible para toda la familia"
+            )}
+          </span>
+        </div>
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => setEditor({ clave: Date.now() })}>
+          <PenLine className="size-3.5" /> Escribir
+        </Button>
+      </div>
       {grafo?.modo === "general" ? (
         <div className="md:col-span-2 diario-entra">
           <GrafoEnlaces
@@ -330,7 +357,7 @@ export function DiarioVista({ tipo, hoy, usuarioId, esPadre }: { tipo: TipoDiari
           </div>
         </>
       )}
-      <Button className="fixed right-4 bottom-20 z-30 h-12 rounded-full px-5 shadow-lg sm:right-6 sm:bottom-6" onClick={() => setEditor({ clave: Date.now() })}>
+      <Button className="fixed bottom-6 left-4 z-30 h-11 rounded-full px-5 shadow-lg sm:hidden" onClick={() => setEditor({ clave: Date.now() })}>
         <PenLine /> Escribir
       </Button>
       {editor && (

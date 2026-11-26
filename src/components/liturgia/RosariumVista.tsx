@@ -96,6 +96,8 @@ export function RosariumVista({ className }: RosariumVistaProps) {
                     <img
                       src={obtenerImagen(primerMisterioHoy)}
                       alt={primerMisterioHoy.castellano}
+                      loading="lazy"
+                      decoding="async"
                       className="block size-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
@@ -148,6 +150,8 @@ export function RosariumVista({ className }: RosariumVistaProps) {
                   <img
                     src={obtenerImagen(GRUPOS_INFO.gloriosa.misterios[4])}
                     alt={GRUPOS_INFO.gloriosa.misterios[4].castellano}
+                    loading="lazy"
+                    decoding="async"
                     className="block size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
@@ -460,6 +464,8 @@ function TarjetaMisterio({
             <img
               src={imagenSrc}
               alt={misterio.castellano}
+              loading="lazy"
+              decoding="async"
               className="block size-full object-cover"
             />
           </div>

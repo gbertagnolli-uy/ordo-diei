@@ -4,6 +4,7 @@
 // El saludo, el avatar y la racha son de solo lectura.
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { BookOpen, Brain, Camera, ChevronDown, Compass, Flame, GraduationCap, Mic, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -23,11 +24,12 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import type { DiaHoy } from "@/lib/homeschooling/servidor/hoy";
 import type { MaterialVista } from "@/lib/homeschooling/servidor/materiales";
 import MaterialSuelto from "@/components/homeschooling/material/MaterialSuelto";
-import EnviarEvidencia from "@/components/homeschooling/evidencia/EnviarEvidencia";
 import RepasoDeHoy from "./RepasoDeHoy";
 import BotonHoja from "./BotonHoja";
 import TarjetaHoy from "./TarjetaHoy";
-import VisorLeccion from "./VisorLeccion";
+
+const EnviarEvidencia = dynamic(() => import("@/components/homeschooling/evidencia/EnviarEvidencia"), { ssr: false });
+const VisorLeccion = dynamic(() => import("./VisorLeccion"), { ssr: false });
 
 export default function HoyAprendo({
   nombre,

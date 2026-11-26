@@ -20,6 +20,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { llevaPadding, migasDeRuta, type MigaRuta } from "./rutasDashboard";
+import { SistemaAyudaPantalla } from "@/components/ayuda/SistemaAyudaPantalla";
 
 type Ranuras = { titulo: HTMLElement | null; secciones: HTMLElement | null };
 const RanurasBarra = createContext<Ranuras>({ titulo: null, secciones: null });
@@ -27,7 +28,15 @@ const RanurasBarra = createContext<Ranuras>({ titulo: null, secciones: null });
 /** Dónde dibuja <PageHeader> su contenido (null fuera del marco o antes de montar). */
 export const useRanurasBarra = () => useContext(RanurasBarra);
 
-export function MarcoDashboard({ children }: { children: React.ReactNode }) {
+export function MarcoDashboard({
+  children,
+  usuarioId,
+  rolFamiliar,
+}: {
+  children: React.ReactNode;
+  usuarioId?: number | null;
+  rolFamiliar?: string | null;
+}) {
   const pathname = usePathname();
   const [titulo, setTitulo] = useState<HTMLElement | null>(null);
   const [secciones, setSecciones] = useState<HTMLElement | null>(null);
@@ -41,6 +50,9 @@ export function MarcoDashboard({ children }: { children: React.ReactNode }) {
           {/* Migas automáticas: se ocultan cuando la página manda las suyas */}
           <Migas {...migasDeRuta(pathname)} className="group-has-[[data-titulo-pagina]]/barra:hidden" />
           <div ref={setTitulo} className="contents" />
+          <div className="ml-auto flex shrink-0 items-center">
+            <SistemaAyudaPantalla usuarioId={usuarioId} rolFamiliar={rolFamiliar} />
+          </div>
         </div>
         <div ref={setSecciones} className="empty:hidden" />
       </header>

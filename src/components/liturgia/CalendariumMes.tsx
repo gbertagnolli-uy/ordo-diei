@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +53,16 @@ export function CalendariumMes({
 }: CalendariumMesProps) {
   const [anio, setAnio] = useState(() => Number(fechaSeleccionada.slice(0, 4)));
   const [mes, setMes] = useState(() => Number(fechaSeleccionada.slice(5, 7)));
+
+  // Mantiene sincronizada la grilla mensual cuando fechaSeleccionada cambia desde afuera (ej. botón «Hoy» o selector)
+  useEffect(() => {
+    const nuevoAnio = Number(fechaSeleccionada.slice(0, 4));
+    const nuevoMes = Number(fechaSeleccionada.slice(5, 7));
+    if (nuevoAnio && nuevoMes && (nuevoAnio !== anio || nuevoMes !== mes)) {
+      setAnio(nuevoAnio);
+      setMes(nuevoMes);
+    }
+  }, [fechaSeleccionada, anio, mes]);
 
   // Carga del mes litúrgico
   const mesRuta = rutaLiturgia("mes", { anio, mes, version });

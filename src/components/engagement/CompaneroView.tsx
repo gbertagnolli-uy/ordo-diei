@@ -22,6 +22,7 @@ import { datosDePersonaje, POSES, tieneFondo, type Personaje, type Pose } from "
 import type { CompaneroVista } from "@/lib/engagement/companeroServidor";
 import { toast } from "@/lib/toast";
 import { Modal } from "@/components/ui/Modal";
+import { AyudaIcono } from "@/components/AyudaIcono";
 
 const MENSAJE_MOTIVO = { nivel: (a: Accesorio) => `Se abre en el nivel ${a.nivel}`, saldo: () => "Te faltan monedas", "ya-lo-tenes": () => "" } as const;
 
@@ -167,6 +168,12 @@ function Mejoras({ datos }: { datos: CompaneroVista }) {
 function Accesorios({ datos }: { datos: CompaneroVista }) {
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs">
+        <span className="font-medium text-muted-foreground">Tus monedas:</span>
+        <Badge variant="secondary" className="tabular-nums">Puntos: {datos.saldos.puntos}</Badge>
+        <Badge variant="secondary" className="tabular-nums">Estrellas: {datos.saldos.estrellas}</Badge>
+        <Badge variant="secondary" className="tabular-nums">Incienso: {datos.saldos.incienso}</Badge>
+      </div>
       {datos.sancionado && (
         <Alert variant="destructive">
           <Lock />
@@ -274,6 +281,10 @@ export function CompaneroView({ datos }: { datos: CompaneroVista }) {
               <div className="min-w-0">
                 <p className="flex items-center gap-1 truncate font-heading text-lg font-medium">
                   {nombre} <NombrarCompanero nombreActual={nombre} />
+                  <AyudaIcono titulo="Tu compañero en la app">
+                    <p>Tu compañero sube de nivel junto con vos y desbloquea poses y espacios para objetos.</p>
+                    <p>Podés arrastrarlo por la pantalla dejándolo apretado, o llevarlo abajo del todo para guardarlo en el Dock.</p>
+                  </AyudaIcono>
                 </p>
                 <p className="text-sm text-muted-foreground">{relacion.titulo}</p>
               </div>

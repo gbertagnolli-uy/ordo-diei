@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { HeartHandshake, Plus, Sprout, Sun, Sunset, Moon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -22,8 +23,9 @@ import type { EstadoHabito, EstadoUsuario, HabitoVista } from "@/lib/habitos/ser
 import { HabitoCard } from "./HabitoCard";
 import { Escalera } from "./Escalera";
 import { CalendarioHabitos } from "./CalendarioHabitos";
-import { TrayectoriaHabitos } from "./TrayectoriaHabitos";
-import { HabitosCarrusel } from "./HabitosCarrusel";
+
+const TrayectoriaHabitos = dynamic(() => import("./TrayectoriaHabitos").then((m) => m.TrayectoriaHabitos), { ssr: false });
+const HabitosCarrusel = dynamic(() => import("./HabitosCarrusel").then((m) => m.HabitosCarrusel), { ssr: false });
 import { AdminItem } from "@/components/AdminItem";
 import { HabitosComunitarios } from "./HabitosComunitarios";
 import { HabitoDialog, type MiembroSelector } from "./HabitoDialog";

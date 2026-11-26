@@ -7,20 +7,34 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Clock, User, AlertCircle, Camera } from "lucide-react";
+import { Check, X, Clock, User, AlertCircle, Camera, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { SwipeRow } from "@/components/SwipeRow";
 import { Modal } from "@/components/ui/Modal";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
+export function ParentReviewPanel({ tasks, sinHabitosPendientes = false }: { tasks: any[]; sinHabitosPendientes?: boolean }) {
   const router = useRouter();
   // Tareas ya resueltas: desaparecen al instante, sin esperar a que la página se actualice
   const [resolved, setResolved] = useState<Set<number>>(new Set());
   const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
   const waitingTasks = tasks.filter(t => t.estado === "Esperando_Aprobacion" && !resolved.has(t.id));
 
-  if (waitingTasks.length === 0) return null;
+  if (waitingTasks.length === 0) {
+    if (!sinHabitosPendientes) return null;
+    return (
+      <Empty className="border rounded-2xl bg-muted/20 py-14">
+        <EmptyMedia variant="icon">
+          <CheckCircle2 className="size-6 text-emerald-500" />
+        </EmptyMedia>
+        <EmptyHeader>
+          <EmptyTitle>¡Todo al día!</EmptyTitle>
+          <EmptyDescription>No hay tareas ni hábitos esperando tu aprobación en este momento.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
 
   const handleAction = async (task: any, action: "approve" | "reject") => {
     // El servidor también lo verifica; acá evitamos que la fila desaparezca para volver a aparecer
@@ -60,7 +74,7 @@ export function ParentReviewPanel({ tasks }: { tasks: any[] }) {
         <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="size-4 text-primary" /> Tareas Pendientes de Revisión ({waitingTasks.length})
         </CardTitle>
-        <Badge>Action Required</Badge>
+        <Badge>Pendiente de revisión</Badge>
       </CardHeader>
       <ItemGroup className="gap-0 divide-y">
         {waitingTasks.map((task) => (

@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Clock } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
 import { CabeceraLiturgica } from "./CabeceraLiturgica";
 import { LiturgiaTexto } from "./LiturgiaTexto";
 import { useLectura, rutaLiturgia } from "./useLectura";
@@ -30,7 +29,6 @@ interface BreviariumVistaProps {
  * Lector de la Hora con barra de navegación de 8 Horas y LiturgiaTexto bilingüe.
  */
 export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps) {
-  const reduceMotion = useReducedMotion();
   const searchParams = useSearchParams();
   const { version, setVersion, fecha, setFecha } = useParametrosLiturgia("breviarium");
 
@@ -172,21 +170,16 @@ export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps
           {/* Card destacada: AHORA (SPEC §10.2, D54) */}
           <div className="group">
             <Card className="relative min-h-[22rem] md:min-h-[26rem] overflow-hidden rounded-2xl border-border/80 bg-black p-0 shadow-lg cursor-pointer select-none transition-all group-hover:ring-2 group-hover:ring-primary/80">
-              {/* Imagen a sangre con Ken Burns */}
-              <motion.div
-                animate={{
-                  scale: reduceMotion ? 1 : [1, 1.06],
-                  transition: { duration: 18, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" },
-                }}
-                className="absolute inset-0 size-full"
-              >
+              {/* Imagen a sangre con transición suave en hover (sin animación continua en GPU) */}
+              <div className="absolute inset-0 size-full overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={HORAS_INFO[horaVigente].fotoUrl}
                   alt=""
-                  className="size-full object-cover"
+                  decoding="async"
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100"
                 />
-              </motion.div>
+              </div>
 
               {/* Overlay de contraste D54: negro a transparente concentrado en la base. Medido (scripts/liturgia/medir-contraste.py): texto blanco ≥ 5,3:1 en las 8 fotos (percentil 95 de la luminancia de la zona de texto) */}
               <div className="absolute inset-x-0 bottom-0 h-4/5 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none" />
@@ -268,6 +261,8 @@ export function BreviariumVista({ horaInicial, className }: BreviariumVistaProps
                       <img
                         src={h.fotoUrl}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="size-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />

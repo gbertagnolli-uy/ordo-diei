@@ -36,6 +36,7 @@ import {
   type AgendaTaskItem,
   type AgendaUser,
 } from "./agendaUtils";
+import { SistemaAyudaPantalla } from "@/components/ayuda/SistemaAyudaPantalla";
 
 export type { AgendaTaskItem, AgendaUser };
 
@@ -43,9 +44,12 @@ interface Props {
   initialUsers: AgendaUser[];
   tasks: AgendaTaskItem[];
   fechaTexto: string;
+  sesionActiva?: boolean;
+  usuarioId?: number | null;
+  rolFamiliar?: string | null;
 }
 
-export function AgendaDashboardClient({ initialUsers, tasks, fechaTexto }: Props) {
+export function AgendaDashboardClient({ initialUsers, tasks, fechaTexto, sesionActiva = false, usuarioId = null, rolFamiliar = null }: Props) {
   const router = useRouter();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedEstado, setSelectedEstado] = useState<string>("todas");
@@ -164,15 +168,15 @@ export function AgendaDashboardClient({ initialUsers, tasks, fechaTexto }: Props
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/60 backdrop-blur-xl px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/">
+            <Link href={sesionActiva ? "/dashboard" : "/"}>
               <Button
                 variant="ghost"
                 size="sm"
                 className="gap-2 text-muted-foreground hover:text-foreground"
-                title="Volver a la pantalla de acceso"
+                title={sesionActiva ? "Volver a Mis tareas" : "Volver a la pantalla de acceso"}
               >
                 <ArrowLeft className="size-4" />
-                <span className="hidden sm:inline">Volver</span>
+                <span className="hidden sm:inline">{sesionActiva ? "Volver al panel" : "Volver"}</span>
               </Button>
             </Link>
 
@@ -220,16 +224,19 @@ export function AgendaDashboardClient({ initialUsers, tasks, fechaTexto }: Props
               </button>
             </div>
 
-            <Link href="/">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-amber-500/30 text-xs text-amber-200 hover:bg-amber-500/10"
-              >
-                <LogIn className="size-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Iniciar sesión</span>
-              </Button>
-            </Link>
+            {!sesionActiva && (
+              <Link href="/">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-amber-500/30 text-xs text-amber-200 hover:bg-amber-500/10"
+                >
+                  <LogIn className="size-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">Iniciar sesión</span>
+                </Button>
+              </Link>
+            )}
+            <SistemaAyudaPantalla usuarioId={usuarioId} rolFamiliar={rolFamiliar} />
           </div>
         </div>
       </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -29,8 +30,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CarruselVersionesCarta } from "@/components/cartas/CarruselVersionesCarta";
 import { CartaVista } from "@/components/cartas/CartaVista";
+
+const CarruselVersionesCarta = dynamic(
+  () => import("@/components/cartas/CarruselVersionesCarta").then((m) => m.CarruselVersionesCarta),
+  { ssr: false },
+);
 import { BordeReclamable } from "@/components/cartas/BordeReclamable";
 import { useReclamoCarta } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";

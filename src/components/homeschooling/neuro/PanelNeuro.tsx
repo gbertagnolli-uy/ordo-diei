@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { api } from "@/lib/homeschooling/roost/services/http";
 import { PLANTILLAS_HISTORIA } from "@/lib/homeschooling/neuro";
 import type { HistoriaVista, Preferencia } from "@/lib/homeschooling/servidor/neuro";
@@ -54,7 +55,14 @@ export default function PanelNeuro({ alumnos, preferencias, historias }: { alumn
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Apoyos para cada alumno</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-foreground">Apoyos para cada alumno</h1>
+        <AyudaIcono titulo="Apoyos visuales">
+          <p><strong>Modo relajado:</strong> oculta animaciones y confeti para estudiar sin distracciones.</p>
+          <p><strong>Primero / Después:</strong> muestra una sola tarea con reloj visual y qué recompensa viene después.</p>
+          <p><strong>Historias sociales:</strong> guías paso a paso para anticipar rutinas nuevas o difíciles.</p>
+        </AyudaIcono>
+      </div>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-foreground">Vista de «Hoy aprendo»</h2>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -33,9 +34,11 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { CartaVista } from "@/components/cartas/CartaVista";
-import { AlbumDomo } from "@/components/cartas/AlbumDomo";
 import { BannerEventosCartas } from "@/components/cartas/BannerEventosCartas";
+
+const AlbumDomo = dynamic(() => import("@/components/cartas/AlbumDomo").then((m) => m.AlbumDomo), { ssr: false });
 import { BordeReclamable } from "@/components/cartas/BordeReclamable";
+import { AyudaIcono } from "@/components/AyudaIcono";
 import { useReclamoCarta, claveReclamo } from "@/components/cartas/useReclamoCarta";
 import { TEXTOS_CARTAS } from "@/lib/cartas/textos";
 import { progresoSiguienteGrado } from "@/lib/cartas/fragmentos";
@@ -276,6 +279,11 @@ export function ColeccionView({ inicial, rolFamiliar }: ColeccionViewProps) {
               <span className="text-muted-foreground/60">
                 ({totalDesbloqueadas} de {totalCartas} descubiertas)
               </span>
+              <AyudaIcono titulo="Fragmentos, grados e incienso">
+                <p>Al reunir el <strong>100%</strong> de fragmentos consagrás la carta (Grado I).</p>
+                <p>Seguí juntando hasta el <strong>300%</strong> para llegar a Grado IV glorioso.</p>
+                <p>Cada fragmento extra se convierte en <strong>Incienso</strong> para usar en la Tienda.</p>
+              </AyudaIcono>
             </div>
           </div>
         </div>
